@@ -1135,7 +1135,7 @@ void compute_action_symbols_range(const short *state_start,
       /* that has not yet been processed into the list.            */
       /* Continue until stack is empty...                          */
       /* Recall that the stack is represented by a circular queue. */
-      for (BOOLEAN end_node = (state = state_no) == NIL;
+      for (bool end_node = (state = state_no) == NIL;
            !end_node; end_node = state == state_no) {
         state = state_stack[state];
         struct shift_header_type sh = shift[statset[state].shift_number];
@@ -1202,7 +1202,7 @@ void compute_naction_symbols_range(const short *state_start,
       /* that has not yet been processed into the list.            */
       /* Continue until stack is empty...                          */
       /* Recall that the stack is represented by a circular queue. */
-      for (BOOLEAN end_node = ((state = state_no) == NIL);
+      for (bool end_node = ((state = state_no) == NIL);
            !end_node; end_node = (state == state_no)) {
         state = state_stack[state];
         for (j = gd_index[state];

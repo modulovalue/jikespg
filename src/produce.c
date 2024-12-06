@@ -23,7 +23,7 @@ static struct scope_elmt {
       index;
 } *scope_element;
 
-static BOOLEAN *symbol_seen;
+static bool *symbol_seen;
 
 static SET_PTR produces,
     right_produces,
@@ -37,17 +37,17 @@ static void print_name_map(int symbol);
 
 static void process_scopes(void);
 
-static BOOLEAN is_scope(int item_no);
+static bool is_scope(int item_no);
 
-static BOOLEAN scope_check(int lhs_symbol, int target, int source);
+static bool scope_check(int lhs_symbol, int target, int source);
 
 static int insert_prefix(int item_no);
 
-static BOOLEAN is_prefix_equal(int item_no, int item_no2);
+static bool is_prefix_equal(int item_no, int item_no2);
 
 static int insert_suffix(int item_no);
 
-static BOOLEAN is_suffix_equal(int item_no1, int item_no2);
+static bool is_suffix_equal(int item_no1, int item_no2);
 
 static void print_scopes(void);
 
@@ -96,7 +96,7 @@ void produce(void) {
       *p,
       *q;
 
-  BOOLEAN *name_used,
+  bool *name_used,
       end_node;
 
   SET_PTR set;
@@ -306,10 +306,10 @@ void produce(void) {
 
     /* Adjust name map to remove unused elements and update SYMNO map. */
     for (i = 1; i <= num_names; i++)
-      name_used[i] = FALSE;
+      name_used[i] = false;
 
     for ALL_SYMBOLS(symbol)
-      name_used[symno[symbol].name_index] = TRUE;
+      name_used[symno[symbol].name_index] = true;
 
     n = 0;
     for (i = 1; i <= num_names; i++) {
@@ -448,7 +448,7 @@ static void process_scopes(void) {
       state_no,
       nt_root;
 
-  BOOLEAN end_node;
+  bool end_node;
 
   struct node *p,
       *q;
@@ -635,7 +635,7 @@ static void process_scopes(void) {
           }
           if (symbol IS_A_NON_TERMINAL) {
             for ALL_NON_TERMINALS(nt)
-              symbol_seen[nt] = FALSE;
+              symbol_seen[nt] = false;
             symbol = get_shift_symbol(symbol);
           }
 
@@ -659,14 +659,14 @@ static void process_scopes(void) {
     scope_table[i] = NIL;
 
   for ALL_NON_TERMINALS(nt)
-    symbol_seen[nt] = FALSE;
+    symbol_seen[nt] = false;
 
   for (item_no = item_root; item_no != NIL; item_no = item_list[item_no]) {
     rule_no = item_table[item_no].rule_number;
     symbol = rules[rule_no].lhs;
     num_scopes = num_scopes + 1;
 
-    symbol_seen[symbol] = TRUE;
+    symbol_seen[symbol] = true;
 
     prefix_index[item_no] = insert_prefix(item_no);
     suffix_index[item_no] = insert_suffix(item_no);
@@ -873,7 +873,7 @@ process_scope_states: {
       scope[i].look_ahead = symbol;
     else {
       for ALL_NON_TERMINALS(j)
-        symbol_seen[j] = FALSE;
+        symbol_seen[j] = false;
       scope[i].look_ahead = get_shift_symbol(symbol);
     }
     scope[i].state_set = state_index[scope[i].lhs_symbol];
@@ -937,28 +937,28 @@ process_scope_states: {
 /* 3) it is not the case that whenever A is introduced through       */
 /*    closure, it is introduced by a nonterminal C where C =>rm* A   */
 /*    and C =>rm+ B.                                                 */
-static BOOLEAN is_scope(int item_no) {
+static bool is_scope(int item_no) {
   int
       nt;
 
   for (int i = item_no - item_table[item_no].dot; i < item_no; i++) {
     int symbol = item_table[i].symbol;
     if (symbol IS_A_TERMINAL)
-      return (TRUE);
+      return true;
     if (!null_nt[symbol])
-      return (TRUE);
+      return true;
   }
 
   int lhs_symbol = rules[item_table[item_no].rule_number].lhs;
   int target = item_table[item_no].symbol;
   if (IS_IN_NTSET(left_produces, target, lhs_symbol - num_terminals))
-    return (FALSE);
+    return false;
 
   if (item_table[item_no].dot > 0)
-    return (TRUE);
+    return true;
 
   for ALL_NON_TERMINALS(nt)
-    symbol_seen[nt] = FALSE;
+    symbol_seen[nt] = false;
 
   return (scope_check(lhs_symbol, target, lhs_symbol));
 }
@@ -977,28 +977,28 @@ static BOOLEAN is_scope(int item_no) {
 /*                                                                   */
 /*                     SOURCE ->rm+ TARGET                           */
 /*                                                                   */
-static BOOLEAN scope_check(int lhs_symbol, int target, int source) {
-  symbol_seen[source] = TRUE;
+static bool scope_check(int lhs_symbol, int target, int source) {
+  symbol_seen[source] = true;
 
   if (IS_IN_NTSET(right_produces, target, source - num_terminals) &&
       IS_IN_NTSET(right_produces, lhs_symbol, source - num_terminals))
-    return (FALSE);
+    return false;
 
   for (int item_no = item_of[source];
        item_no != NIL; item_no = next_item[item_no]) {
     if (item_table[item_no].dot != 0)
-      return (TRUE);
+      return true;
 
     int rule_no = item_table[item_no].rule_number;
     int symbol = rules[rule_no].lhs;
     if (!symbol_seen[symbol]) /* not yet processed */
     {
       if (scope_check(lhs_symbol, target, symbol))
-        return (TRUE);
+        return (1);
     }
   }
 
-  return (FALSE);
+  return false;
 }
 
 
@@ -1041,13 +1041,13 @@ static int insert_prefix(int item_no) {
 /*                      IS_PREFIX_EQUAL:                          */
 /* This boolean function takes two items as arguments and checks  */
 /* whether they have the same prefix.                      */
-static BOOLEAN is_prefix_equal(int item_no, int item_no2) {
+static bool is_prefix_equal(int item_no, int item_no2) {
   if (item_no > 0) /* a suffix */
-    return (FALSE);
+    return false;
 
   int item_no1 = -item_no;
   if (item_table[item_no1].dot != item_table[item_no2].dot)
-    return (FALSE);
+    return false;
 
   int j = rules[item_table[item_no1].rule_number].rhs;
   int start = rules[item_table[item_no2].rule_number].rhs;
@@ -1055,11 +1055,11 @@ static BOOLEAN is_prefix_equal(int item_no, int item_no2) {
   for (int i = start; i <= dot; i++) /* symbols before dot */
   {
     if (rhs_sym[i] != rhs_sym[j])
-      return (FALSE);
+      return false;
     j++;
   }
 
-  return (TRUE);
+  return true;
 }
 
 
@@ -1111,10 +1111,10 @@ static int insert_suffix(int item_no) {
 
 /*                        IS_SUFFIX_EQUAL:                        */
 /* This boolean function takes two items as arguments and checks  */
-/* whether or not they have the same suffix.                      */
-static BOOLEAN is_suffix_equal(int item_no1, int item_no2) {
+/* whether they have the same suffix.                      */
+static bool is_suffix_equal(int item_no1, int item_no2) {
   if (item_no1 < 0) /* a prefix */
-    return (FALSE);
+    return false;
 
   int rule_no = item_table[item_no1].rule_number;
   int i = rules[rule_no].rhs + item_table[item_no1].dot;
@@ -1147,7 +1147,7 @@ static BOOLEAN is_suffix_equal(int item_no1, int item_no2) {
     }
 
     if (rhs_sym[i] != rhs_sym[j])
-      return (FALSE);
+      return false;
 
     j++;
     i++;
@@ -1156,20 +1156,20 @@ static BOOLEAN is_suffix_equal(int item_no1, int item_no2) {
   for (; i <= dot1; i++) {
     if (rhs_sym[i] IS_A_NON_TERMINAL) {
       if (!null_nt[rhs_sym[i]])
-        return (FALSE);
+        return false;
     } else if (rhs_sym[i] != error_image)
-      return (FALSE);
+      return false;
   }
 
   for (; j <= dot2; j++) {
     if (rhs_sym[j] IS_A_NON_TERMINAL) {
       if (!null_nt[rhs_sym[j]])
-        return (FALSE);
+        return false;
     } else if (rhs_sym[j] != error_image)
-      return (FALSE);
+      return false;
   }
 
-  return (TRUE);
+  return true;
 }
 
 
@@ -1241,9 +1241,9 @@ static void print_scopes(void) {
 static int get_shift_symbol(int lhs_symbol) {
   if (!symbol_seen[lhs_symbol]) {
     struct node *p;
-    symbol_seen[lhs_symbol] = TRUE;
+    symbol_seen[lhs_symbol] = true;
 
-    for (BOOLEAN end_node = (p = clitems[lhs_symbol]) == NULL;
+    for (bool end_node = (p = clitems[lhs_symbol]) == NULL;
          !end_node; end_node = p == clitems[lhs_symbol]) {
       p = p->next;
       int item_no = p->value;

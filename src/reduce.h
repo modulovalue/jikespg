@@ -24,11 +24,11 @@
 /* grammar. If we can detect that the grammar is not LALR(k), we set       */
 /* HIGHEST_LEVEL to INFINITY.                                              */
 extern struct node **conflict_symbols;
-extern BOOLEAN_CELL *read_set,
-    *la_set;
+extern BOOLEAN_CELL *read_set;
+extern BOOLEAN_CELL *la_set;
 extern int highest_level;
 extern long la_top;
 extern short *la_index;
-extern BOOLEAN not_lrk;
+extern bool not_lrk;
 
 #endif /* REDUCE_INCLUDED */

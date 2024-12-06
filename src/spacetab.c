@@ -20,7 +20,7 @@ static short *row_size,
     *frequency_symbol,
     *frequency_count;
 
-static BOOLEAN *shift_on_error_symbol;
+static bool *shift_on_error_symbol;
 
 /*                            REMAP_NON_TERMINALS:                          */
 /*  REMAP_NON_TERMINALS remaps the non-terminal symbols and states based on */
@@ -308,7 +308,7 @@ static void merge_similar_t_rows(void) {
   top = 0;
 
   for (i = 1; i <= (int) max_la_state; i++)
-    shift_on_error_symbol[i] = FALSE;
+    shift_on_error_symbol[i] = false;
 
   for (i = 0; i <= num_shift_maps; i++)
     table[i] = NIL;
@@ -452,7 +452,7 @@ static void merge_shift_domains(void) {
   struct shift_header_type sh;
   struct reduce_header_type red;
 
-  BOOLEAN *shift_symbols;
+  bool *shift_symbols;
 
   unsigned long hash_address;
 
@@ -511,7 +511,7 @@ static void merge_shift_domains(void) {
   for (state_no = 1; state_no <= num_terminal_states; state_no++) {
     shift_no = new_state_element[state_no].shift_number;
     for (i = 1; i <= num_terminals; i++)
-      shift_symbols[i] = FALSE;
+      shift_symbols[i] = false;
 
     sh = shift[shift_no];
     shift_size = sh.size;
@@ -519,7 +519,7 @@ static void merge_shift_domains(void) {
     for (i = 1; i <= shift_size; i++) {
       symbol = SHIFT_SYMBOL(sh, i);
       hash_address += symbol;
-      shift_symbols[symbol] = TRUE;
+      shift_symbols[symbol] = true;
     }
 
     hash_address %= SHIFT_TABLE_SIZE;

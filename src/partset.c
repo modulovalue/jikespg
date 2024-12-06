@@ -16,7 +16,7 @@ static char hostfile[] = __FILE__;
             s1[dest * bound + j] |= s2[source * bound + j]; \
     }
 
-static BOOLEAN equal_sets(SET_PTR set1, int indx1,
+static bool equal_sets(SET_PTR set1, int indx1,
                           SET_PTR set2, int indx2, int bound);
 
 
@@ -69,7 +69,6 @@ void partset(SET_PTR collection,
              const short *element_size, const short *list,
              short *start, short *stack, int set_size, int from_scope_processing) {
   int
-      i,
       base_set,
       size,
       bctype,
@@ -97,7 +96,7 @@ void partset(SET_PTR collection,
   short *domain_link = Allocate_short_array(collection_size + 1);
   short *head = Allocate_short_array(collection_size + 1);
   short *next = Allocate_short_array(collection_size + 1);
-  BOOLEAN *is_a_base = Allocate_boolean_array(collection_size + 1);
+  bool *is_a_base = Allocate_boolean_array(collection_size + 1);
   SET_PTR temp_set = calloc(1, bctype * sizeof(BOOLEAN_CELL));
   if (temp_set == NULL)
     nospace(__FILE__, __LINE__);
@@ -111,14 +110,14 @@ void partset(SET_PTR collection,
   /* subsets that are identical.  The elements of the list are placed */
   /* in the array NEXT.  When a state is at te root of a list, it is  */
   /* used as a representative of that list.                           */
-  for (i = 0; i <= STATE_TABLE_UBOUND; i++)
+  for (int i = 0; i <= STATE_TABLE_UBOUND; i++)
     domain_table[i] = NIL;
 
   /* We now iterate over the states and attempt to insert each */
   /* domain set into the hash table...                         */
   for (index = 1; index <= collection_size; index++) {
     unsigned long hash_address = 0;
-    for (i = 0; i < bctype; i++)
+    for (int i = 0; i < bctype; i++)
       hash_address += collection[index * bctype + i];
 
     hash_address %= STATE_TABLE_SIZE;
@@ -128,7 +127,7 @@ void partset(SET_PTR collection,
     /* add INDEX to a list associated with the subset found and    */
     /* mark it as a duplicate by setting the head of its list to   */
     /* OMEGA.  Otherwise, we have a new set...                     */
-    for (i = domain_table[hash_address]; i != NIL; i = domain_link[i]) {
+    for (int i = domain_table[hash_address]; i != NIL; i = domain_link[i]) {
       if (equal_sets(collection, index, collection, i, bctype)) {
         head[index] = OMEGA;
         next[index] = head[i];
@@ -151,7 +150,7 @@ void partset(SET_PTR collection,
   /* the unique elements are roots of lists. Hence, their      */
   /* corresponding HEAD elements are used, but their           */
   /* corresponding NEXT field is still unused.                 */
-  for (i = 0; i <= set_size; i++)
+  for (int i = 0; i <= set_size; i++)
     partition[i] = NIL;
 
   for (index = 1; index <= collection_size; index++) {
@@ -170,7 +169,7 @@ void partset(SET_PTR collection,
   /* the list in ascending order and in stack-fashion, the     */
   /* resulting list will be sorted in descending order.        */
   int size_root = NIL;
-  for (i = 0; i <= set_size; i++) {
+  for (int i = 0; i <= set_size; i++) {
     if (partition[i] != NIL) {
       size_list[i] = size_root;
       size_root = i;
@@ -180,8 +179,8 @@ void partset(SET_PTR collection,
   /* Merge subsets that are mergeable using heuristic described*/
   /* above.  The vector IS_A_BASE is used to mark subsets      */
   /* chosen as bases.                                          */
-  for (i = 0; i <= collection_size; i++)
-    is_a_base[i] = FALSE;
+  for (int i = 0; i <= collection_size; i++)
+    is_a_base[i] = false;
   for (size = size_root; size != NIL; size = size_list[size]) {
     /* For biggest partition there is */
     for (base_set = partition[size];
@@ -190,7 +189,7 @@ void partset(SET_PTR collection,
       /* Mark the state as a base state, and initialize    */
       /* its stack.  The list representing the stack will  */
       /* be circular...                                    */
-      is_a_base[base_set] = TRUE;
+      is_a_base[base_set] = true;
       stack[base_set] = base_set;
 
       /* For remaining elements in partitions in decreasing order...*/
@@ -234,7 +233,7 @@ void partset(SET_PTR collection,
   /* Notice that an extra element is added to the size of each */
   /* base subset for the "fence" element.                      */
   int offset = 1;
-  for (i = 1; i <= collection_size; i++) {
+  for (int i = 1; i <= collection_size; i++) {
     base_set = list[i];
     if (is_a_base[base_set]) {
       start[base_set] = offset;
@@ -283,12 +282,12 @@ void partset(SET_PTR collection,
 
 /*                               EQUAL_SETS:                                */
 /* EQUAL_SETS checks to see if two sets are equal and returns True or False */
-static BOOLEAN equal_sets(const SET_PTR set1, int indx1,
+static bool equal_sets(const SET_PTR set1, int indx1,
                           const SET_PTR set2, int indx2, int bound) {
   for (register int i = 0; i < bound; i++) {
     if (set1[indx1 * bound + i] != set2[indx2 * bound + i])
       return (0);
   }
 
-  return TRUE;
+  return true;
 }

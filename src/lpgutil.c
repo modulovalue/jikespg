@@ -27,7 +27,7 @@ static long temp_top = 0,
 
 /*                          ALLOCATE_MORE_SPACE:                      */
 /* This procedure obtains more TEMPORARY space.                       */
-static BOOLEAN allocate_more_space(cell ***base, long *size, long *base_size) {
+static bool allocate_more_space(cell ***base, long *size, long *base_size) {
   /* The variable size always indicates the maximum number of cells     */
   /* that has been allocated and reserved for the storage pool.         */
   /* Initially, size should be set to 0 to indicate that no space has   */
@@ -42,13 +42,13 @@ static BOOLEAN allocate_more_space(cell ***base, long *size, long *base_size) {
   int k = (*size) >> LOG_BLKSIZE; /* which segment? */
   if (k == (*base_size)) /* base overflow? reallocate */
   {
-    register int i = (*base_size);
+    register int i = *base_size;
 
-    (*base_size) += BASE_INCREMENT;
-    (*base) = (cell **)
-        ((*base) == NULL ? malloc(sizeof(cell *) * (*base_size)) : realloc((*base), sizeof(cell *) * (*base_size)));
-    if ((*base) == (cell **) NULL)
-      return FALSE;
+    *base_size += BASE_INCREMENT;
+    *base = (cell **)
+        (*base == NULL ? malloc(sizeof(cell *) * (*base_size)) : realloc((*base), sizeof(cell *) * (*base_size)));
+    if (*base == (cell **) NULL)
+      return false;
 
     for (i = i; i < (*base_size); i++)
       (*base)[i] = NULL;
@@ -65,14 +65,14 @@ static BOOLEAN allocate_more_space(cell ***base, long *size, long *base_size) {
   if ((*base)[k] == NULL) {
     (*base)[k] = (cell *) malloc(sizeof(cell) << LOG_BLKSIZE);
     if ((*base)[k] == (cell *) NULL)
-      return FALSE;
+      return false;
     (*base)[k] -= (*size);
   }
 
   memset((void *)((*base)[k] + (*size)), 0, sizeof(cell) << LOG_BLKSIZE);
-  (*size) += BLKSIZE;
+  *size += BLKSIZE;
 
-  return TRUE;
+  return true;
 }
 
 
@@ -170,7 +170,7 @@ static struct node *node_pool = NULL;
 /* waste the space, as many NODE structures as possible are allocated */
 /* in that space and stacked up in the NODE_POOL list.                */
 static void process_global_waste(long top) {
-  while (TRUE) {
+  while (true) {
     long i = top;
     top += ((sizeof(struct node) + sizeof(cell) - 1) / sizeof(cell));
     if (top > global_size)
@@ -179,8 +179,6 @@ static void process_global_waste(long top) {
     p->next = node_pool;
     node_pool = p;
   }
-
-  return;
 }
 
 /*                                GALLOC:                             */
@@ -339,11 +337,11 @@ short *allocate_short_array(long size, char *file, long line) {
 
 /*                           ALLOCATE_BOOLEAN_ARRAY:                        */
 /*   This function allocates an array of size "size" of type boolean.       */
-BOOLEAN *allocate_boolean_array(long size, char *file, long line) {
-  BOOLEAN *p;
+bool *allocate_boolean_array(long size, char *file, long line) {
+  bool *p;
 
-  p = (BOOLEAN *) calloc(size, sizeof(BOOLEAN));
-  if (p == (BOOLEAN *) 0)
+  p = (bool *) calloc(size, sizeof(bool));
+  if (p == (bool *) 0)
     nospace(file, line);
 
   return (&p[0]);
@@ -602,17 +600,17 @@ void print_state(int state_no) {
   /* Duplicates can also occur because of the elimination of single    */
   /* productions.                                                      */
 
-  BOOLEAN *state_seen = Allocate_boolean_array(max_la_state + 1);
-  BOOLEAN *item_seen = Allocate_boolean_array(num_items + 1);
+  bool *state_seen = Allocate_boolean_array(max_la_state + 1);
+  bool *item_seen = Allocate_boolean_array(num_items + 1);
   short *item_list = Allocate_short_array(num_items + 1);
 
   /* INITIALIZATION -----------------------------------------------------------*/
 
   for ALL_STATES(i)
-    state_seen[i] = FALSE;
+    state_seen[i] = false;
 
   for ALL_ITEMS(i)
-    item_seen[i] = FALSE;
+    item_seen[i] = false;
 
   int kernel_size = 0;
 
@@ -628,13 +626,13 @@ void print_state(int state_no) {
   int n = 0;
   strcpy(line, "( ");
 
-  for (BOOLEAN end_node = ((q = in_stat[state_no]) == NULL);
+  for (bool end_node = ((q = in_stat[state_no]) == NULL);
        !end_node;
        end_node = (q == in_stat[state_no])) {
     /* copy list of IN_STAT into array */
     q = q->next;
     if (!state_seen[q->value]) {
-      state_seen[q->value] = TRUE;
+      state_seen[q->value] = true;
       if (strlen(line) + number_len(q->value) > PRINT_LINE_SIZE - 2) {
         fprintf(syslis, "\n%s", line);
         ENDPAGE_CHECK;
@@ -658,7 +656,7 @@ void print_state(int state_no) {
     kernel_size++;
     item_no = q->value;
     item_list[kernel_size] = item_no; /* add to array */
-    item_seen[item_no] = TRUE; /* Mark as "seen" */
+    item_seen[item_no] = true; /* Mark as "seen" */
   }
 
   /* Add the Complete Items to the array ITEM_LIST, and mark used.     */
@@ -666,7 +664,7 @@ void print_state(int state_no) {
   for (q = statset[state_no].complete_items; q != NULL; q = q->next) {
     item_no = q->value;
     if (!item_seen[item_no]) {
-      item_seen[item_no] = TRUE; /* Mark as "seen" */
+      item_seen[item_no] = true; /* Mark as "seen" */
       item_list[++n] = item_no;
     }
   }
@@ -703,7 +701,7 @@ void print_state(int state_no) {
     for (; q != NULL; q = q->next) {
       item_no = q->value - 1;
       if (!item_seen[item_no]) {
-        item_seen[item_no] = TRUE;
+        item_seen[item_no] = true;
         item_list[++n] = item_no;
       }
     }
@@ -722,7 +720,7 @@ void print_state(int state_no) {
     for (; q != NULL; q = q->next) {
       item_no = q->value - 1;
       if (!item_seen[item_no]) {
-        item_seen[item_no] = TRUE;
+        item_seen[item_no] = true;
         item_list[++n] = item_no;
       }
     }
@@ -744,10 +742,7 @@ void print_state(int state_no) {
   ffree(item_list);
   ffree(item_seen);
   ffree(state_seen);
-
-  return;
 }
-
 
 /*                                 NOSPACE:                                  */
 /* This procedure is invoked when a call to MALLOC, CALLOC or REALLOC fails. */
@@ -767,7 +762,7 @@ void nospace(char *file_name, long line_number) {
 char *strupr(char *string) {
   /* While not at end of string, change all lower case to upper case.  */
   for (char *s = string; *s != '\0'; s++)
-    *s = (islower((int) *s) ? toupper((int) *s) : *s);
+    *s = islower((int) *s) ? toupper((int) *s) : *s;
 
   return string;
 }

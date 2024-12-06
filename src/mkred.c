@@ -13,7 +13,7 @@ static char hostfile[] = __FILE__;
 /* identify states whose read sets can be completely computed from     */
 /* their kernel items.                                                 */
 static struct node *stack_root = NULL;
-static BOOLEAN *single_complete_item;
+static bool *single_complete_item;
 static int *la_base;
 
 /*                                 LPGACCESS:                                */
@@ -36,7 +36,7 @@ struct node *lpgaccess(int state_no, int item_no) {
     access_root = NULL; /* Initialize ACCESS_ROOT for new list */
     for (struct node *p = head; p != NULL; tail = p, p = p->next) {
       /* Compute set of states with transition into p->value.    */
-      for (BOOLEAN end_node = (s = in_stat[p->value]) == NULL;
+      for (bool end_node = (s = in_stat[p->value]) == NULL;
            !end_node;
            end_node = s == in_stat[p->value]) {
         s = s->next;
@@ -97,19 +97,17 @@ static void trace_lalr_path(int state_no, int goto_indx) {
   la_top++; /* allocate new slot */
   INT_CHECK(la_top);
   GOTO_LAPTR(go_to, goto_indx) = la_top;
-  BOOLEAN contains_empty = FALSE;
+  bool contains_empty = false;
 
   for (; r != NULL; r = r->next) {
     int item = r->value - 1;
     if (IS_IN_SET(first, item_table[item].suffix_index, empty)) {
-      contains_empty = TRUE;
+      contains_empty = true;
       int symbol = rules[item_table[item].rule_number].lhs;
       struct node *w = lpgaccess(state_no, item);
       for (struct node *t = w; t != NULL; p = t, t = t->next) {
         struct goto_header_type go_to = statset[t->value].go_to;
-
-        for (i = 1; GOTO_SYMBOL(go_to, i) != symbol; i++);
-
+        for (i = 1; GOTO_SYMBOL(go_to, i) != symbol; i++) {}
         if (GOTO_LAPTR(go_to, i) == OMEGA)
           trace_lalr_path(t->value, i);
       }
@@ -193,7 +191,7 @@ static void compute_read(void) {
         v = lpgaccess(state_no, item_no);
         for (s = v; s != NULL; q = s, s = s->next) {
           struct goto_header_type go_to = statset[s->value].go_to;
-          for (i = 1; GOTO_SYMBOL(go_to, i) != lhs_symbol; i++);
+          for (i = 1; GOTO_SYMBOL(go_to, i) != lhs_symbol; i++) {}
 
           if (GOTO_LAPTR(go_to, i) == OMEGA)
             trace_lalr_path(s->value, i);
@@ -224,7 +222,7 @@ static void compute_read(void) {
           v = lpgaccess(state_no, item_no);
           for (s = v; s != NULL; q = s, s = s->next) {
             struct goto_header_type go_to = statset[s->value].go_to;
-            for (i = 1; GOTO_SYMBOL(go_to, i) != lhs_symbol; i++);
+            for (i = 1; GOTO_SYMBOL(go_to, i) != lhs_symbol; i++) {}
             if (GOTO_LAPTR(go_to, i) == OMEGA)
               trace_lalr_path(s->value, i);
           }
@@ -365,7 +363,7 @@ void la_traverse(int state_no, int goto_indx, int *stack_top) {
         /* RULE to its left hand side (SYMBOL). Q points to the   */
         /* GOTO_ELEMENT in question.                              */
         struct goto_header_type go_to = statset[t->value].go_to;
-        for (i = 1; GOTO_SYMBOL(go_to, i) != symbol; i++);
+        for (i = 1; GOTO_SYMBOL(go_to, i) != symbol; i++) {}
         if (la_index[GOTO_LAPTR(go_to, i)] == OMEGA)
           la_traverse(t->value, i, stack_top);
         SET_UNION(la_set, la_ptr,
@@ -423,7 +421,7 @@ void compute_la(int state_no, int item_no, SET_PTR look_ahead) {
     /* Search for GOTO action in Access-State after reducing rule to */
     /* its left hand side(LHS_SYMBOL). Q points to the state.        */
     struct goto_header_type go_to = statset[s->value].go_to;
-    for (i = 1; GOTO_SYMBOL(go_to, i) != lhs_symbol; i++);
+    for (i = 1; GOTO_SYMBOL(go_to, i) != lhs_symbol; i++) {}
     /* If look-ahead after left hand side is not yet computed, */
     /* LA_TRAVERSE the graph to compute it.                    */
     if (la_index[GOTO_LAPTR(go_to, i)] == OMEGA) {
@@ -544,12 +542,11 @@ void mkrdcts(void) {
     nospace(__FILE__, __LINE__);
 
   short *rule_count = Allocate_short_array(num_rules + 1);
-  BOOLEAN *no_shift_on_error_sym = Allocate_boolean_array(num_states + 1);
+  bool *no_shift_on_error_sym = Allocate_boolean_array(num_states + 1);
   short *symbol_list = Allocate_short_array(num_terminals + 1);
   single_complete_item = Allocate_boolean_array(num_states + 1);
 
-  struct node **action = (struct node **)
-      calloc(num_terminals + 1, sizeof(struct node *));
+  struct node **action = calloc(num_terminals + 1, sizeof(struct node *));
   if (action == NULL)
     nospace(__FILE__, __LINE__);
 
@@ -582,14 +579,14 @@ void mkrdcts(void) {
   build_in_stat();
 
   for ALL_STATES(state_no) {
-    no_shift_on_error_sym[state_no] = TRUE;
+    no_shift_on_error_sym[state_no] = true;
 
     if (default_opt == 5) {
       n = statset[state_no].shift_number;
       struct shift_header_type sh = shift[n];
       for (i = 1; i <= sh.size; ++i) {
         if (SHIFT_SYMBOL(sh, i) == error_image)
-          no_shift_on_error_sym[state_no] = FALSE;
+          no_shift_on_error_sym[state_no] = false;
       }
     }
 

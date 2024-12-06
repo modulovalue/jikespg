@@ -141,7 +141,7 @@ static short *nt_items = NULL,
 /* RMPSELF is a boolean vector that indicates whether or not a given   */
 /* non-terminal can right-most produce itself. It is only constructed  */
 /* when LALR_LEVEL > 1.                                                */
-static BOOLEAN *lalr_visited,
+static bool *lalr_visited,
     *slr_visited,
     *symbol_seen,
     *cyclic,
@@ -432,7 +432,7 @@ static void clear_visited(void) {
 /*                                WAS_VISITED:                             */
 /* This boolean function checks whether or not a given pair [state, symbol]*/
 /* was already inserted in the VISITED set.                                */
-static BOOLEAN was_visited(int state_no, int symbol) {
+static bool was_visited(int state_no, int symbol) {
   struct node *p;
 
   for (p = visited.map[state_no]; p != NULL; p = p->next) {
@@ -468,7 +468,7 @@ static void compute_cyclic(short state_no) {
 
   stack[++top] = state_no;
   const int indx = top;
-  cyclic[state_no] = FALSE;
+  cyclic[state_no] = false;
   index_of[state_no] = indx;
 
   struct goto_header_type go_to = statset[state_no].go_to;
@@ -480,7 +480,7 @@ static void compute_cyclic(short state_no) {
       if (index_of[act] == OMEGA)
         compute_cyclic(act);
       else if (index_of[act] != INFINITY)
-        cyclic[state_no] = TRUE;
+        cyclic[state_no] = true;
       cyclic[state_no] = cyclic[state_no] || cyclic[act];
 
       index_of[state_no] = MIN(index_of[state_no], index_of[act]);
@@ -509,22 +509,22 @@ static void compute_cyclic(short state_no) {
 /* array, SLR_VISITED, indexable by non-terminals, is used.  For       */
 /* trace-backs to the root item, the boolean array SYMBOL_SEEN, also   */
 /* also indexable by non-terminals, is used.                           */
-static BOOLEAN trace_root(int lhs_symbol) {
+static bool trace_root(int lhs_symbol) {
   if (lhs_symbol == accept_image)
-    return (TRUE);
+    return true;
 
   if (symbol_seen[lhs_symbol])
-    return (FALSE);
+    return false;
 
-  symbol_seen[lhs_symbol] = TRUE;
+  symbol_seen[lhs_symbol] = true;
   for (int item = nt_items[lhs_symbol]; item != NIL; item = item_list[item]) {
     if (trace_root(rules[item_table[item].rule_number].lhs)) {
       print_item(item);
-      return (TRUE);
+      return true;
     }
   }
 
-  return (FALSE);
+  return false;
 }
 
 
@@ -553,7 +553,7 @@ static void print_root_path(int item_no) {
 /* to a state where the conflict symbol can be read. If a path is      */
 /* found, all items along the path are printed and SUCCESS is returned.*/
 /*  Otherwise, FAILURE is returned.                                    */
-static BOOLEAN lalr_path_retraced(int state_no,
+static bool lalr_path_retraced(int state_no,
                                   int goto_indx,
                                   int conflict_symbol) {
   int
@@ -565,9 +565,9 @@ static BOOLEAN lalr_path_retraced(int state_no,
       *tail;
 
   struct goto_header_type go_to = statset[state_no].go_to;
-  lalr_visited[GOTO_LAPTR(go_to, goto_indx)] = TRUE;
+  lalr_visited[GOTO_LAPTR(go_to, goto_indx)] = true;
 
-  BOOLEAN found = FALSE;
+  bool found = false;
 
   int state = GOTO_ACTION(go_to, goto_indx);
   for (struct node *p = (state > 0
@@ -579,7 +579,7 @@ static BOOLEAN lalr_path_retraced(int state_no,
       /* Conflict_symbol can be read in state? */
       if (trace_opt == TRACE_FULL)
         print_root_path(item);
-      found = TRUE;
+      found = true;
     } else if IS_IN_SET(first, item_table[item].suffix_index, empty) {
       int symbol = rules[item_table[item].rule_number].lhs;
       struct node *w = lpgaccess(state_no, item);
@@ -589,7 +589,7 @@ static BOOLEAN lalr_path_retraced(int state_no,
 
         if (!lalr_visited[GOTO_LAPTR(go_to, i)]) {
           if (lalr_path_retraced(q->value, i, conflict_symbol)) {
-            found = TRUE;
+            found = true;
             break;
           }
         }
@@ -647,13 +647,13 @@ static void print_relevant_lalr_items(int state_no,
 /* The procedure below is invoked to retrace a path that may have      */
 /* introduced the CONFLICT_SYMBOL in the FOLLOW set of the nonterminal */
 /* that produces ITEM_NO.  Note that such a path must exist.           */
-static BOOLEAN slr_trace(int lhs_symbol, int conflict_symbol) {
+static bool slr_trace(int lhs_symbol, int conflict_symbol) {
   int item;
 
   if (slr_visited[lhs_symbol])
-    return (FALSE);
+    return false;
 
-  slr_visited[lhs_symbol] = TRUE;
+  slr_visited[lhs_symbol] = true;
 
   for (item = nt_items[lhs_symbol]; item != NIL; item = item_list[item]) {
     if IS_IN_SET(first, item_table[item].suffix_index, conflict_symbol) {
@@ -670,9 +670,10 @@ static BOOLEAN slr_trace(int lhs_symbol, int conflict_symbol) {
 
   if (item != NIL) {
     print_item(item);
-    return (TRUE);
-  } else
-    return (FALSE);
+    return true;
+  } else {
+    return false;
+  }
 }
 
 
@@ -1128,11 +1129,11 @@ static void next_la(struct stack_element *stack,
 /* STACK. It searches the hash table to see if it already contained    */
 /* the stack in question. If yes, it returns TRUE. Otherwise, it       */
 /* inserts the stack into the table and returns FALSE.                 */
-static BOOLEAN stack_was_seen(struct stack_element **stack_seen,
+static bool stack_was_seen(struct stack_element **stack_seen,
                               struct stack_element *stack) {
-  struct stack_element *p,
-      *q,
-      *r;
+  struct stack_element *p;
+  struct stack_element *q;
+  struct stack_element *r;
 
   unsigned long hash_address = stack->size; /* Initialize hash address */
   for (p = stack; p != NULL; p = p->previous)
@@ -1148,14 +1149,14 @@ static BOOLEAN stack_was_seen(struct stack_element **stack_seen,
           break;
       }
       if (q == NULL)
-        return TRUE;
+        return true;
     }
   }
 
   stack->link = stack_seen[hash_address];
   stack_seen[hash_address] = stack;
 
-  return FALSE;
+  return false;
 }
 
 
@@ -1570,7 +1571,7 @@ void init_rmpself(SET_PTR produces) {
 /* nonterminals. If such a cyle exists, the grammar can also be        */
 /* claimed to be not LR(k) for any k.                                  */
 void init_lalrk_process(void) {
-  not_lrk = FALSE;
+  not_lrk = false;
 
   if (lalr_level > 1) {
     int symbol;

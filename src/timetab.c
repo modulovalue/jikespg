@@ -8,7 +8,7 @@ static char hostfile[] = __FILE__;
 static int default_saves = 0;
 static short default_rule;
 
-static BOOLEAN *is_terminal;
+static bool *is_terminal;
 
 /*                            REMAP_SYMBOLS:                         */
 /* We now remap the symbols in the unified Table based on frequency. */
@@ -19,8 +19,7 @@ static void remap_symbols(void) {
   struct reduce_header_type red;
 
   int symbol,
-      state_no,
-      i;
+      state_no;
 
   ordered_state = Allocate_short_array(max_la_state + 1);
   symbol_map = Allocate_short_array(num_symbols + 1);
@@ -37,7 +36,7 @@ static void remap_symbols(void) {
   /* symbol.                                                           */
   /* ORDERED_STATE and ROW_SIZE are used in a similar fashion for      */
   /* states.                                                           */
-  for (i = 1; i <= num_symbols; i++) {
+  for (int i = 1; i <= num_symbols; i++) {
     frequency_symbol[i] = i;
     frequency_count[i] = 0;
   }
@@ -45,14 +44,14 @@ static void remap_symbols(void) {
     ordered_state[state_no] = state_no;
     row_size[state_no] = 0;
     sh = shift[statset[state_no].shift_number];
-    for (i = 1; i <= sh.size; i++) {
+    for (int i = 1; i <= sh.size; i++) {
       row_size[state_no]++;
       symbol = SHIFT_SYMBOL(sh, i);
       frequency_count[symbol]++;
     }
 
     go_to = statset[state_no].go_to;
-    for (i = 1; i <= go_to.size; i++) {
+    for (int i = 1; i <= go_to.size; i++) {
       row_size[state_no]++;
       symbol = GOTO_SYMBOL(go_to, i);
       frequency_count[symbol]++;
@@ -60,7 +59,7 @@ static void remap_symbols(void) {
 
     red = reduce[state_no];
     default_rule = REDUCE_RULE_NO(red, 0);
-    for (i = 1; i <= red.size; i++) {
+    for (int i = 1; i <= red.size; i++) {
       if (REDUCE_RULE_NO(red, i) != default_rule) {
         row_size[state_no]++;
         symbol = REDUCE_SYMBOL(red, i);
@@ -77,14 +76,14 @@ static void remap_symbols(void) {
     ordered_state[state_no] = state_no;
     row_size[state_no] = 0;
     sh = shift[lastats[state_no].shift_number];
-    for (i = 1; i <= sh.size; i++) {
+    for (int i = 1; i <= sh.size; i++) {
       row_size[state_no]++;
       symbol = SHIFT_SYMBOL(sh, i);
       frequency_count[symbol]++;
     }
     red = lastats[state_no].reduce;
     default_rule = REDUCE_RULE_NO(red, 0);
-    for (i = 1; i <= red.size; i++) {
+    for (int i = 1; i <= red.size; i++) {
       if (REDUCE_RULE_NO(red, i) != default_rule) {
         row_size[state_no]++;
         symbol = REDUCE_SYMBOL(red, i);
@@ -116,18 +115,18 @@ static void remap_symbols(void) {
   /* As we merge the symbols, we keep track of which ones are terminals*/
   /* and which ones are non-terminals.  We also keep track of the new  */
   /* mapping for the symbols in SYMBOL_MAP.                            */
-  i = 1;
+  int i = 1;
   int j = num_terminals + 1;
   int k = 0;
   while (i <= num_terminals) {
     k++;
     if (frequency_count[i] >= frequency_count[j]) {
       symbol = frequency_symbol[i];
-      is_terminal[k] = TRUE;
+      is_terminal[k] = true;
       i++;
     } else {
       symbol = frequency_symbol[j];
-      is_terminal[k] = FALSE;
+      is_terminal[k] = false;
       j++;
     }
     symbol_map[symbol] = k;
@@ -138,7 +137,7 @@ static void remap_symbols(void) {
   for (; j <= num_symbols; j++) {
     k++;
     symbol = frequency_symbol[j];
-    is_terminal[k] = FALSE;
+    is_terminal[k] = false;
     symbol_map[symbol] = k;
   }
 
@@ -154,20 +153,20 @@ static void remap_symbols(void) {
   /* actions defined on them.                                          */
   for ALL_STATES(state_no) {
     go_to = statset[state_no].go_to;
-    for (i = 1; i <= go_to.size; i++) /* Remap Goto map */
+    for (int i = 1; i <= go_to.size; i++) /* Remap Goto map */
       GOTO_SYMBOL(go_to, i) = symbol_map[GOTO_SYMBOL(go_to, i)];
     red = reduce[state_no];
-    for (i = 1; i <= red.size; i++)
+    for (int i = 1; i <= red.size; i++)
       REDUCE_SYMBOL(red, i) = symbol_map[REDUCE_SYMBOL(red, i)];
   }
 
   for ALL_LA_STATES(state_no) {
     red = lastats[state_no].reduce;
-    for (i = 1; i <= red.size; i++)
+    for (int i = 1; i <= red.size; i++)
       REDUCE_SYMBOL(red, i) = symbol_map[REDUCE_SYMBOL(red, i)];
   }
 
-  for (i = 1; i <= num_shift_maps; i++) {
+  for (int i = 1; i <= num_shift_maps; i++) {
     sh = shift[i];
     for (j = 1; j <= sh.size; j++)
       SHIFT_SYMBOL(sh, j) = symbol_map[SHIFT_SYMBOL(sh, j)];
@@ -240,7 +239,7 @@ static void overlap_tables(void) {
       red = lastats[state_no].reduce;
     } else {
       struct goto_header_type go_to = statset[state_no].go_to;
-      for (i = 1; i <= go_to.size; i++) {
+      for (int i = 1; i <= go_to.size; i++) {
         symbol = GOTO_SYMBOL(go_to, i);
         symbol_list[symbol] = root_symbol;
         root_symbol = symbol;
@@ -249,7 +248,7 @@ static void overlap_tables(void) {
       red = reduce[state_no];
     }
 
-    for (i = 1; i <= sh.size; i++) {
+    for (int i = 1; i <= sh.size; i++) {
       symbol = SHIFT_SYMBOL(sh, i);
       symbol_list[symbol] = root_symbol;
       root_symbol = symbol;
@@ -258,7 +257,7 @@ static void overlap_tables(void) {
     root_symbol = 0;
 
     default_rule = REDUCE_RULE_NO(red, 0);
-    for (i = 1; i <= red.size; i++) {
+    for (int i = 1; i <= red.size; i++) {
       if (REDUCE_RULE_NO(red, i) != default_rule) {
         symbol = REDUCE_SYMBOL(red, i);
         symbol_list[symbol] = root_symbol;
@@ -428,13 +427,13 @@ static void print_tables(void) {
 
   /* Initialize all unfilled slots with default values.                */
   indx = first_index;
-  for (i = indx; (i != NIL) && (i <= (int) action_size); i = indx) {
+  for (int i = indx; (i != NIL) && (i <= (int) action_size); i = indx) {
     indx = next[i];
 
     check[i] = DEFAULT_SYMBOL;
     action[i] = error_act;
   }
-  for (i = (int) action_size + 1; i <= (int) table_size; i++)
+  for (int i = (int) action_size + 1; i <= (int) table_size; i++)
     check[i] = DEFAULT_SYMBOL;
 
   /* We set the rest of the table with the proper table entries.       */
@@ -664,7 +663,7 @@ static void print_tables(void) {
 
   /* Write size of right hand side of rules followed by CHECK table.   */
   k = 0;
-  for (i = 1; i <= num_rules; i++) {
+  for (int i = 1; i <= num_rules; i++) {
     field(RHS_SIZE(i), 4);
     k++;
     if (k == 18) {
@@ -674,7 +673,7 @@ static void print_tables(void) {
     }
   }
 
-  for (i = 1; i <= (int) table_size; i++) {
+  for (int i = 1; i <= (int) table_size; i++) {
     field(check[i], 4);
     k++;
     if (k == 18) {
@@ -691,7 +690,7 @@ static void print_tables(void) {
 
   /* Write left hand side symbol of rules followed by ACTION table.    */
   k = 0;
-  for (i = 1; i <= num_rules; i++) {
+  for (int i = 1; i <= num_rules; i++) {
     field(symbol_map[rules[i].lhs], 6);
     k++;
     if (k == 12) {
@@ -701,7 +700,7 @@ static void print_tables(void) {
     }
   }
 
-  for (i = 1; i <= (int) action_size; i++) {
+  for (int i = 1; i <= (int) action_size; i++) {
     field(action[i], 6);
     k++;
     if (k == 12) {
@@ -724,7 +723,7 @@ static void print_tables(void) {
 
     default_map = Allocate_short_array(num_symbols + 1);
 
-    for (i = 0; i <= num_symbols; i++)
+    for (int i = 0; i <= num_symbols; i++)
       default_map[i] = error_act;
 
     for ALL_NON_TERMINALS(symbol) {
@@ -765,13 +764,13 @@ static void print_tables(void) {
     int max_indx;
 
     max_indx = accept_act - num_rules - 1;
-    for (i = 1; i <= max_indx; i++)
+    for (int i = 1; i <= max_indx; i++)
       action[i] = OMEGA;
     for ALL_STATES(state_no)
       action[state_index[state_no]] = state_no;
 
     j = num_states + 1;
-    for (i = max_indx; i >= 1; i--) {
+    for (int i = max_indx; i >= 1; i--) {
       state_no = action[i];
       if (state_no != OMEGA) {
         j--;

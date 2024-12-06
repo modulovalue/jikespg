@@ -21,7 +21,7 @@ void *talloc(long size);
 
 struct node *allocate_node(char *file, long line);
 
-BOOLEAN *allocate_boolean_array(long size, char *file, long line);
+bool *allocate_boolean_array(long size, char *file, long line);
 
 int *allocate_int_array(long size, char *file, long line);
 
@@ -29,11 +29,9 @@ short *allocate_short_array(long size, char *file, long line);
 
 struct goto_header_type allocate_goto_map(int size, char *file, long line);
 
-struct shift_header_type allocate_shift_map(int size,
-                                            char *file, long line);
+struct shift_header_type allocate_shift_map(int size, char *file, long line);
 
-struct reduce_header_type allocate_reduce_map(int size,
-                                              char *file, long line);
+struct reduce_header_type allocate_reduce_map(int size, char *file, long line);
 
 void cmprspa(void);
 

@@ -555,7 +555,7 @@ static void act77(void)
             nospace(__FILE__, __LINE__);
     }
 
-    rulehdr[num_rules].sp = ((SYM3.kind == ARROW_TK) ? TRUE : FALSE);
+    rulehdr[num_rules].sp = ((SYM3.kind == ARROW_TK) ? true : false);
     rulehdr[num_rules].lhs = symbol_image(SYM2.name);
     rulehdr[num_rules].rhs_root = NULL;
 
@@ -599,7 +599,7 @@ static void act79(void)
         if (rulehdr == (struct rulehdr_type *) NULL)
             nospace(__FILE__, __LINE__);
     }
-    rulehdr[num_rules].sp = ((SYM3.kind == ARROW_TK) ? TRUE : FALSE);
+    rulehdr[num_rules].sp = ((SYM3.kind == ARROW_TK) ? true : false);
     assign_symbol_no(SYM2.name, OMEGA);
     rulehdr[num_rules].lhs = symbol_image(SYM2.name);
     rulehdr[num_rules].rhs_root = NULL;

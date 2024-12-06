@@ -16,10 +16,10 @@ static char hostfile[] = __FILE__;
                  first[nt * term_set_size + k] = 0;\
         }
 
-static BOOLEAN is_terminal_rhs(short *rhs_start,
-                               const BOOLEAN *produces_terminals, int rule_no);
+static bool is_terminal_rhs(short *rhs_start,
+                               const bool *produces_terminals, int rule_no);
 
-static BOOLEAN is_nullable_rhs(short *rhs_start, int rule_no);
+static bool is_nullable_rhs(short *rhs_start, int rule_no);
 
 static void compute_first(int nt);
 
@@ -103,10 +103,9 @@ void mkfirst(void) {
       nt,
       item_no,
       first_of_empty,
-      rule_no,
-      i;
+      rule_no;
 
-  BOOLEAN end_node;
+  bool end_node;
 
   term_set_size = num_terminals / SIZEOF_BC
                   + (num_terminals % SIZEOF_BC ? 1 : 0);
@@ -154,6 +153,7 @@ void mkfirst(void) {
   if (item_table == NULL)
     nospace(__FILE__, __LINE__);
 
+  int i;
   for ALL_NON_TERMINALS(i) /* Initialize LHS_RULE to NIL */
     lhs_rule[i] = NIL;
 
@@ -214,7 +214,7 @@ void mkfirst(void) {
   /*  symbol, FIRST[accept_image] cannot contain empty but     */
   /*  instead must contain the EOFT symbol.                    */
   if (null_nt[accept_image]) {
-    null_nt[accept_image] = FALSE;
+    null_nt[accept_image] = false;
     RESET_BIT_IN(nt_first, accept_image, empty);
     SET_BIT_IN(nt_first, accept_image, eoft_image);
   }
@@ -588,7 +588,7 @@ static void compute_closure(int lhs_symbol) {
   struct node *p,
       *q;
 
-  BOOLEAN end_node;
+  bool end_node;
 
   short *nont_list = Allocate_short_array(num_non_terminals);
   nont_list -= (num_terminals + 1); /* Temporary direct        */
@@ -701,7 +701,7 @@ static void nullables_computation(void) {
   int rule_no,
       nt;
 
-  BOOLEAN changed = TRUE;
+  bool changed = true;
 
   short *rhs_start = Allocate_short_array(NEXT_RULE_SIZE);
 
@@ -710,7 +710,7 @@ static void nullables_computation(void) {
   /* into the next symbol in its right-hand side that has not yet   */
   /* proven to be nullable.                                         */
   for ALL_NON_TERMINALS(nt)
-    null_nt[nt] = FALSE;
+    null_nt[nt] = false;
 
   for ALL_RULES(rule_no)
     rhs_start[rule_no] = rules[rule_no].rhs;
@@ -729,16 +729,16 @@ static void nullables_computation(void) {
   /* remaining rules associated with it are not considered.  I.e.,  */
   /* we quit the inner loop.                                        */
   while (changed) {
-    changed = FALSE;
+    changed = false;
 
     for ALL_NON_TERMINALS(nt) {
-      for (BOOLEAN end_node = (rule_no = lhs_rule[nt]) == NIL;
+      for (bool end_node = (rule_no = lhs_rule[nt]) == NIL;
            !null_nt[nt] && !end_node;
            end_node = rule_no == lhs_rule[nt]) {
         rule_no = next_rule[rule_no];
         if (is_nullable_rhs(rhs_start, rule_no)) {
-          changed = TRUE;
-          null_nt[nt] = TRUE;
+          changed = true;
+          null_nt[nt] = true;
         }
       }
     }
@@ -754,18 +754,18 @@ static void nullables_computation(void) {
 /* to indicate that it cannot go any further.  If it encounters a  non-null- */
 /* lable non-terminal, it also returns FALSE. Otherwise, the whole right-hand*/
 /* side is consumed, and it returns the value TRUE.                          */
-static BOOLEAN is_nullable_rhs(short *rhs_start, int rule_no) {
+static bool is_nullable_rhs(short *rhs_start, int rule_no) {
   for (rhs_start[rule_no] = rhs_start[rule_no];
        rhs_start[rule_no] <= rules[rule_no + 1].rhs - 1;
        rhs_start[rule_no]++) {
     int symbol = rhs_sym[rhs_start[rule_no]];
     if (symbol IS_A_TERMINAL)
-      return (FALSE);
+      return false;
     else if (!null_nt[symbol]) /* symbol is a non-terminal */
-      return (FALSE);
+      return false;
   }
 
-  return (TRUE);
+  return true;
 }
 
 
@@ -799,11 +799,11 @@ static void compute_first(int nt) {
   /*                                                            */
   /* where Bi is nullable for 1 <= i <= k                       */
 
-  for (BOOLEAN end_node = (rule_no = lhs_rule[nt]) == NIL;
+  for (bool end_node = (rule_no = lhs_rule[nt]) == NIL;
        !end_node; /* Iterate over all rules produced by NT */
        end_node = rule_no == lhs_rule[nt]) {
     rule_no = next_rule[rule_no];
-    BOOLEAN blocked = FALSE;
+    bool blocked = false;
 
     for ENTIRE_RHS(i, rule_no) {
       symbol = rhs_sym[i];
@@ -818,7 +818,7 @@ static void compute_first(int nt) {
         blocked = NOT(null_nt[symbol]);
       } else {
         SET_BIT_IN(nt_first, nt, symbol);
-        blocked = TRUE;
+        blocked = true;
       }
 
       if (blocked)
@@ -859,10 +859,10 @@ static void check_non_terminals(void) {
       nt_last,
       nt;
 
-  BOOLEAN changed = TRUE;
+  bool changed = true;
 
   short *rhs_start = Allocate_short_array(NEXT_RULE_SIZE);
-  BOOLEAN *produces_terminals = Allocate_boolean_array(num_non_terminals);
+  bool *produces_terminals = Allocate_boolean_array(num_non_terminals);
   produces_terminals -= (num_terminals + 1);
 
   /* First, mark all non-terminals as not producing terminals. Then */
@@ -870,9 +870,9 @@ static void check_non_terminals(void) {
   /* the grammar into the next symbol in its right-hand side that   */
   /* has not yet proven to be a symbol that generates terminals.    */
   for ALL_NON_TERMINALS(nt)
-    produces_terminals[nt] = FALSE;
+    produces_terminals[nt] = false;
 
-  produces_terminals[accept_image] = TRUE;
+  produces_terminals[accept_image] = true;
 
   for ALL_RULES(rule_no)
     rhs_start[rule_no] = rules[rule_no].rhs;
@@ -891,16 +891,16 @@ static void check_non_terminals(void) {
   /* remaining rules associated with it are not considered. I.e.,   */
   /* we quit the inner loop.                                        */
   while (changed) {
-    changed = FALSE;
+    changed = false;
 
     for ALL_NON_TERMINALS(nt) {
-      for (BOOLEAN end_node = (rule_no = lhs_rule[nt]) == NIL;
+      for (bool end_node = (rule_no = lhs_rule[nt]) == NIL;
            !produces_terminals[nt] && !end_node;
            end_node = rule_no == lhs_rule[nt]) {
         rule_no = next_rule[rule_no];
         if (is_terminal_rhs(rhs_start, produces_terminals, rule_no)) {
-          changed = TRUE;
-          produces_terminals[nt] = TRUE;
+          changed = true;
+          produces_terminals[nt] = true;
         }
       }
     }
@@ -958,19 +958,19 @@ static void check_non_terminals(void) {
 /* symbol identified by the RHS_START element is a bad non-terminal it       */
 /* returns FALSE.  Otherwise, the whole right-hand side is traversed, and it */
 /* returns the value TRUE.                                                   */
-static BOOLEAN is_terminal_rhs(short *rhs_start,
-                               const BOOLEAN *produces_terminals, int rule_no) {
+static bool is_terminal_rhs(short *rhs_start,
+                               const bool *produces_terminals, int rule_no) {
   for (rhs_start[rule_no] = rhs_start[rule_no];
        rhs_start[rule_no] <= rules[rule_no + 1].rhs - 1;
        rhs_start[rule_no]++) {
     int symbol = rhs_sym[rhs_start[rule_no]];
     if (symbol IS_A_NON_TERMINAL) {
       if (!produces_terminals[symbol])
-        return (FALSE);
+        return false;
     }
   }
 
-  return (TRUE);
+  return true;
 }
 
 
@@ -1157,7 +1157,7 @@ static void print_unreachables(void) {
   for (int nt = nt_root; nt != NIL; nt = nt_root) {
     nt_root = symbol_list[nt];
 
-    for (BOOLEAN end_node = (rule_no = lhs_rule[nt]) == NIL;
+    for (bool end_node = (rule_no = lhs_rule[nt]) == NIL;
          !end_node;
          end_node = rule_no == lhs_rule[nt]) {
       rule_no = next_rule[rule_no];
@@ -1297,7 +1297,7 @@ static void print_xref(void) {
       strcat(line, "  ==>> ");
       const int offset = strlen(line) - 1;
       if (symbol IS_A_NON_TERMINAL) {
-        for (BOOLEAN end_node = (rule_no = lhs_rule[symbol]) == NIL;
+        for (bool end_node = (rule_no = lhs_rule[symbol]) == NIL;
              !end_node;
              end_node = rule_no == lhs_rule[symbol]) {
           rule_no = next_rule[rule_no];

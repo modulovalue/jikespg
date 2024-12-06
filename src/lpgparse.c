@@ -238,10 +238,10 @@ static void exit_process(void) {
 /* VERIFY takes as argument a character string and checks whether or not each*/
 /* character is a digit. If all are digits, then 1 is returned; if not, then */
 /* 0 is returned.                                                            */
-static BOOLEAN verify(const char *item) {
+static bool verify(const char *item) {
   while (IsDigit(*item))
     item++;
-  return (*item == '\0');
+  return *item == '\0';
 }
 
 
@@ -267,13 +267,13 @@ static char *translate(char *str, int len) {
 /* because tolower(ch) is sometimes implemented as (ch-'A'+'a') which */
 /* does not work when "ch" is already a lower case character.         */
 /*                                                                    */
-static BOOLEAN strxeq(char *s1, char *s2) {
+static bool strxeq(char *s1, char *s2) {
   for (; *s2 != '\0'; s1++, s2++) {
     if (*s1 != *s2 && *s1 != toupper(*s2))
-      return FALSE;
+      return false;
   }
 
-  return TRUE;
+  return true;
 }
 
 
@@ -294,7 +294,7 @@ static void options(void) {
   register int
       j;
 
-  BOOLEAN flag;
+  bool flag;
 
   /* If we scan the comment sign, we stop processing the rest of the */
   /* parameter string.                                               */
@@ -360,12 +360,12 @@ static void options(void) {
           (memcmp(token, "NO", 2) == 0)) /* option has "NO" */
       {
         /* prefix?         */
-        flag = FALSE;
+        flag = false;
         len = len - 2;
         /* get rid of "NO" prefix */
         memmove(token, token + 2, strlen(token + 2) + 1);
       } else
-        flag = TRUE;
+        flag = true;
 
       if (memcmp(oaction, token, len) == 0)
         action_bit = flag;
@@ -400,8 +400,8 @@ static void options(void) {
                 (memcmp(ogenprsr2, token, len) == 0) ||
                 (memcmp(ogenprsr3, token, len) == 0))) {
         c_bit = flag;
-        cpp_bit = FALSE;
-        java_bit = FALSE;
+        cpp_bit = false;
+        java_bit = false;
       } else if (len >= 2 &&
                  ((strcmp(token, "GD") == 0) ||
                   (memcmp(ogotodefault, token, len) == 0) ||
@@ -549,31 +549,31 @@ static void options(void) {
                  (memcmp(ogenprsr, token, len) == 0) ||
                  (memcmp(ogenprsr2, token, len) == 0) ||
                  (memcmp(ogenprsr3, token, len) == 0)) {
-        BOOLEAN invalid_language = TRUE;
+        bool invalid_language = true;
 
         if (temp[0] == 'c' || temp[0] == 'C') {
           if (temp[1] == '\0') {
-            c_bit = TRUE;
-            cpp_bit = FALSE;
-            java_bit = FALSE;
-            invalid_language = FALSE;
+            c_bit = true;
+            cpp_bit = false;
+            java_bit = false;
+            invalid_language = false;
           } else if (((temp[1] == '+' && temp[2] == '+') ||
                       ((temp[1] == 'p' || temp[1] == 'P') &&
                        (temp[2] == 'p' || temp[2] == 'P')))
                      && temp[3] == '\0') {
-            c_bit = FALSE;
-            cpp_bit = TRUE;
-            java_bit = FALSE;
-            invalid_language = FALSE;
+            c_bit = false;
+            cpp_bit = true;
+            java_bit = false;
+            invalid_language = false;
           }
         } else if ((len == 1 && (*temp == 'j' || *temp == 'J')) ||
                    (len == 2 && strxeq(temp, "ja")) ||
                    (len == 3 && strxeq(temp, "jav")) ||
                    (len == 4 && strxeq(temp, "java"))) {
-          c_bit = FALSE;
-          cpp_bit = FALSE;
-          java_bit = TRUE;
-          invalid_language = FALSE;
+          c_bit = false;
+          cpp_bit = false;
+          java_bit = true;
+          invalid_language = false;
         }
 
         if (invalid_language) {
@@ -603,7 +603,7 @@ static void options(void) {
                   temp, token);
           PRNTERR(msg_line);
         } else {
-          slr_bit = FALSE;
+          slr_bit = false;
           if (memcmp(omax, translate(temp, len), len) == 0)
             lalr_level = MAXIMUM_LA_LEVEL;
           else {
@@ -839,7 +839,7 @@ static void process_options_lines(void) {
   options(); /* Process new options passed directly to  program */
 
   if (!error_maps_bit) /* Deferred parsing without error maps is useless*/
-    deferred_bit = FALSE;
+    deferred_bit = false;
 
   if (act_file[0] == '\0')
     sprintf(act_file, "%sact.%s", file_prefix, (java_bit ? "java" : "h"));
@@ -852,12 +852,12 @@ static void process_options_lines(void) {
 
   if (verbose_bit) /* turn everything on */
   {
-    first_bit = TRUE;
-    follow_bit = TRUE;
-    list_bit = TRUE;
-    states_bit = TRUE;
-    xref_bit = TRUE;
-    warnings_bit = TRUE;
+    first_bit = true;
+    follow_bit = true;
+    list_bit = true;
+    states_bit = true;
+    xref_bit = true;
+    warnings_bit = true;
   }
 
 
@@ -2106,7 +2106,7 @@ static void make_rules_map(void) {
         num_single_productions++;
       free_nodes(ptr, rulehdr[i].rhs_root);
     } else
-      rules[i].sp = FALSE;
+      rules[i].sp = false;
 
     if (rulehdr[i].lhs == OMEGA) {
       if (list_bit) /* Proper LHS will be updated after printing */

@@ -83,31 +83,31 @@ int num_scopes = 0,
     scope_state_size = 0,
     num_error_rules = 0;
 
-BOOLEAN list_bit = FALSE,
-    slr_bit = FALSE,
-    verbose_bit = FALSE,
-    first_bit = FALSE,
-    follow_bit = FALSE,
-    action_bit = FALSE,
-    edit_bit = FALSE,
-    states_bit = FALSE,
-    xref_bit = FALSE,
-    nt_check_bit = FALSE,
-    conflicts_bit = TRUE,
-    read_reduce_bit = TRUE,
-    goto_default_bit = TRUE,
-    shift_default_bit = FALSE,
-    byte_bit = TRUE,
-    warnings_bit = TRUE,
-    single_productions_bit = FALSE,
-    error_maps_bit = FALSE,
-    debug_bit = FALSE,
-    deferred_bit = TRUE,
-    c_bit = FALSE,
-    cpp_bit = FALSE,
-    java_bit = FALSE,
-    jikes_bit = FALSE,
-    scopes_bit = FALSE;
+bool list_bit = false,
+    slr_bit = false,
+    verbose_bit = false,
+    first_bit = false,
+    follow_bit = false,
+    action_bit = false,
+    edit_bit = false,
+    states_bit = false,
+    xref_bit = false,
+    nt_check_bit = false,
+    conflicts_bit = true,
+    read_reduce_bit = true,
+    goto_default_bit = true,
+    shift_default_bit = false,
+    byte_bit = true,
+    warnings_bit = true,
+    single_productions_bit = false,
+    error_maps_bit = false,
+    debug_bit = false,
+    deferred_bit = true,
+    c_bit = false,
+    cpp_bit = false,
+    java_bit = false,
+    jikes_bit = false,
+    scopes_bit = false;
 
 int lalr_level = 1,
     default_opt = 5,
@@ -146,7 +146,7 @@ struct itemtab *item_table = NULL;
 
 struct symno_type *symno = NULL;
 
-BOOLEAN *null_nt = NULL;
+bool *null_nt = NULL;
 
 int term_set_size,
     non_term_set_size,
@@ -206,7 +206,7 @@ int accept_act,
 SET_PTR naction_symbols = NULL,
     action_symbols = NULL;
 
-BOOLEAN byte_terminal_range = TRUE;
+bool byte_terminal_range = true;
 
 struct node **conflict_symbols = NULL;
 SET_PTR la_set = NULL,
@@ -214,7 +214,7 @@ SET_PTR la_set = NULL,
 int highest_level = 0;
 long la_top = 0;
 short *la_index = NULL;
-BOOLEAN not_lrk;
+bool not_lrk;
 
 struct new_state_type *new_state_element;
 

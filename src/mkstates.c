@@ -110,7 +110,7 @@ static void mklr0(void) {
   struct state_element *state,
       *new_state;
 
-  BOOLEAN end_node;
+  bool end_node;
 
   int goto_size,
       shift_size,

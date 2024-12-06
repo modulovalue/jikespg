@@ -132,7 +132,7 @@ struct rulehdr_type /* structure to store rule in first pass */
 {
   struct node *rhs_root;
   short lhs;
-  BOOLEAN sp;
+  bool sp;
 };
 
 struct defelmt_type /* structure to store location of macro def. */
@@ -154,7 +154,7 @@ struct actelmt_type /* structure to store location of action */
   short rule_number,
       start_column,
       end_column;
-  BOOLEAN header_block;
+  bool header_block;
 };
 
 struct hash_type /* structure used to hash grammar symbols */
@@ -236,7 +236,7 @@ static void init_process(void);
 
 static void exit_process(void);
 
-static BOOLEAN verify(const char *item);
+static bool verify(const char *item);
 
 static char *translate(char *str, int len);
 

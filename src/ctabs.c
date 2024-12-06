@@ -11,7 +11,7 @@ static char dcl_tag[SYMBOL_SIZE],
     def_tag[SYMBOL_SIZE],
     prs_tag[SYMBOL_SIZE];
 
-static int byte_check_bit = 1;
+static bool byte_check_bit = true;
 
 /*                         NON_TERMINAL_TIME_ACTION:                 */
 static void non_terminal_time_action(void) {
@@ -1585,18 +1585,18 @@ static void print_externs(void) {
             (c_bit ? "extern" : "    static"));
 
     if (check_size > 0 || table_opt == OPTIMIZE_TIME) {
-      BOOLEAN small = byte_check_bit && (!error_maps_bit);
+      bool small = byte_check_bit && !error_maps_bit;
 
       fprintf(sysprs, "%s const %s check_table[];\n"
               "%s const %s *%s;\n",
 
-              (c_bit ? "extern" : "    static"),
-              (small ? "unsigned char " : "  signed short"),
-              (c_bit ? "extern" : "    static"),
-              (small ? "unsigned char " : "  signed short"),
-              (table_opt == OPTIMIZE_TIME
-                 ? "check"
-                 : "base_check"));
+              c_bit ? "extern" : "    static",
+              small ? "unsigned char " : "  signed short",
+              c_bit ? "extern" : "    static",
+              small ? "unsigned char " : "  signed short",
+              table_opt == OPTIMIZE_TIME
+                ? "check"
+                : "base_check");
     }
 
     fprintf(sysprs, "%s const unsigned short lhs[];\n"
@@ -1850,7 +1850,7 @@ static void print_space_tables(void) {
   }
   for (i = 1; i <= check_size; i++) {
     if (check[i] < 0 || check[i] > (java_bit ? 127 : 255))
-      byte_check_bit = 0;
+      byte_check_bit = false;
   }
 
   if (c_bit)
@@ -1926,7 +1926,7 @@ static void print_space_tables(void) {
     else mystrcpy("                 };\n");
     *output_ptr++ = '\n';
 
-    if (byte_check_bit && (!error_maps_bit)) {
+    if (byte_check_bit && !error_maps_bit) {
       if (java_bit)
         mystrcpy("    public final static byte base_check(int i)"
           "\n    {\n        return check_table[i - (NUM_RULES + 1)];\n    }\n");
@@ -2579,7 +2579,7 @@ static void print_time_tables(void) {
   *output_ptr++ = '\n';
 
   /* Write CHECK table.                                            */
-  if (byte_check_bit && (!error_maps_bit)) {
+  if (byte_check_bit && !error_maps_bit) {
     if (java_bit)
       mystrcpy("    public final static byte check_table[] = {\n");
     else mystrcpy("const unsigned char  CLASS_HEADER check_table[] = {\n");

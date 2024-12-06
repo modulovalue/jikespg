@@ -1,3 +1,5 @@
+#include <stdbool.h>
+
 #ifndef COMMON_INCLUDED
 #define COMMON_INCLUDED
 
@@ -55,10 +57,6 @@
 #define SHIFT_TABLE_SIZE   (SHIFT_TABLE_UBOUND + 1) /* 401 is a prime */
 #define SCOPE_UBOUND       100
 #define SCOPE_SIZE         (SCOPE_UBOUND + 1)   /* 101 is prime */
-#undef  FALSE
-#undef  TRUE
-#define FALSE              0
-#define TRUE               1
 #define IS_A_TERMINAL      <= num_terminals
 #define IS_A_NON_TERMINAL  > num_terminals
 
@@ -403,8 +401,6 @@ typedef unsigned int BOOLEAN_CELL; /* Basic unit used to represent */
 /* Bit sets                     */
 typedef BOOLEAN_CELL *SET_PTR;
 
-typedef char BOOLEAN;
-
 extern const char HEADER_INFO[];
 extern const char VERSION[];
 extern const char BLANK[];
@@ -426,9 +422,9 @@ struct node {
 /* The RHS vector as mentioned above is used to hold a complete    */
 /* list of allthe right-hand-side symbols specified in the grammar.*/
 struct ruletab_type {
-  short lhs,
-      rhs;
-  BOOLEAN sp;
+  short lhs;
+  short rhs;
+  bool sp;
 };
 
 struct shift_type {
@@ -522,7 +518,7 @@ extern int num_symbols,
     gotodom_size;
 
 /*  The variables below are used for options setting. */
-extern BOOLEAN list_bit,
+extern bool list_bit,
     slr_bit,
     verbose_bit,
     first_bit,
@@ -639,7 +635,7 @@ extern int term_set_size,
 
 /* NULL_NT is a boolean vector that indicates whether or not a given   */
 /* non-terminal is nullable.                                           */
-extern BOOLEAN *null_nt;
+extern bool *null_nt;
 
 /* FOLLOW is a mapping from non-terminals to a set of terminals that   */
 /* may appear immediately after the non-terminal.                      */
@@ -725,6 +721,6 @@ extern int accept_act,
 extern SET_PTR naction_symbols,
     action_symbols;
 
-extern BOOLEAN byte_terminal_range;
+extern bool byte_terminal_range;
 
 #endif /* COMMON_INCLUDED */

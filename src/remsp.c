@@ -46,7 +46,7 @@ static short *sp_rules,
 
     **sp_action;
 
-static BOOLEAN *is_conflict_symbol;
+static bool *is_conflict_symbol;
 
 static SET_PTR look_ahead;
 
@@ -213,7 +213,7 @@ static void compute_sp_action(short state_no, short symbol, short action) {
 
     /* Remove all lookahead symbols on which conflicts were       */
     /* detected from consideration.                               */
-    for (BOOLEAN end_node = ((p = conflict_symbols[action]) == NULL);
+    for (bool end_node = ((p = conflict_symbols[action]) == NULL);
          !end_node; end_node = (p == conflict_symbols[action])) {
       p = p->next;
       sp_action[symbol][p->value] = OMEGA;
@@ -485,14 +485,14 @@ static short sp_state_map(int rule_head, short item_no,
         if (actionp == NULL) /* compatible states */
         {
           struct action_element *action_tail;
-          BOOLEAN no_overwrite = TRUE;
+          bool no_overwrite = true;
           for (actionp = state->action_root;
                actionp != NULL;
                action_tail = actionp, actionp = actionp->next) {
             if (sp_action[symbol][actionp->symbol] == OMEGA) {
               sp_action[symbol][actionp->symbol] =
                   actionp->action;
-              no_overwrite = FALSE;
+              no_overwrite = false;
             }
           }
 
@@ -601,7 +601,7 @@ void remove_single_productions(void) {
       i,
       j;
 
-  BOOLEAN end_node;
+  bool end_node;
 
   short *symbol_list,
       *shift_transition,
@@ -642,8 +642,8 @@ void remove_single_productions(void) {
   if (sp_action == NULL)
     nospace(__FILE__, __LINE__);
 
-  is_conflict_symbol = (BOOLEAN *)
-      calloc(num_symbols + 1, sizeof(BOOLEAN));
+  is_conflict_symbol = (bool *)
+      calloc(num_symbols + 1, sizeof(bool));
   if (is_conflict_symbol == NULL)
     nospace(__FILE__, __LINE__);
 
@@ -755,7 +755,7 @@ void remove_single_productions(void) {
     update_action[state_no] = NULL;
 
   for ALL_NON_TERMINALS(i)
-    is_conflict_symbol[i] = FALSE;
+    is_conflict_symbol[i] = false;
 
   symbol_root = NIL;
   for ALL_SYMBOLS(i)
@@ -778,11 +778,11 @@ void remove_single_productions(void) {
         index_of[i] = OMEGA;
 
       for ALL_TERMINALS(i)
-        is_conflict_symbol[i] = FALSE;
+        is_conflict_symbol[i] = false;
       for (end_node = ((p = conflict_symbols[state_no]) == NULL);
            !end_node; end_node = (p == conflict_symbols[state_no])) {
         p = p->next;
-        is_conflict_symbol[p->value] = TRUE;
+        is_conflict_symbol[p->value] = true;
       }
 
       /* First, use index_of to map each nonterminal symbol on  */
@@ -1123,7 +1123,7 @@ void remove_single_productions(void) {
     /* Update initial automaton with transitions into new SP      */
     /* states.                                                    */
     if (new_action[state_no] != NULL) {
-      BOOLEAN any_shift_action;
+      bool any_shift_action;
       struct action_element *p;
 
       /* Mark the index of each symbol on which there is a      */
@@ -1143,7 +1143,7 @@ void remove_single_productions(void) {
       /* directly for goto actions but update shift_transition  */
       /* for shift actions. Also, keep track as to whether or   */
       /* not there were any shift transitions at all...         */
-      any_shift_action = FALSE;
+      any_shift_action = false;
 
       for (p = new_action[state_no]; p != NULL; p = p->next) {
         if (p->symbol IS_A_NON_TERMINAL) {
@@ -1160,8 +1160,7 @@ void remove_single_productions(void) {
             num_shifts++;
           }
           shift_transition[p->symbol] = p->action;
-
-          any_shift_action = TRUE;
+          any_shift_action = true;
         }
       }
 
