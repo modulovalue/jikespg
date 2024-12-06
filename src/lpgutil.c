@@ -33,8 +33,6 @@ static long temp_top = 0,
 /* This procedure obtains more TEMPORARY space.                       */
 /**********************************************************************/
 static BOOLEAN allocate_more_space(cell ***base, long *size, long *base_size) {
-  int k;
-
   /**********************************************************************/
   /* The variable size always indicates the maximum number of cells     */
   /* that has been allocated and reserved for the storage pool.         */
@@ -48,7 +46,7 @@ static BOOLEAN allocate_more_space(cell ***base, long *size, long *base_size) {
   /* reallocated.                                                       */
   /*                                                                    */
   /**********************************************************************/
-  k = (*size) >> LOG_BLKSIZE; /* which segment? */
+  int k = (*size) >> LOG_BLKSIZE; /* which segment? */
   if (k == (*base_size)) /* base overflow? reallocate */
   {
     register int i = (*base_size);
@@ -107,9 +105,7 @@ void reset_temporary_space(void) {
 /* This procedure frees all allocated temporary space.                */
 /**********************************************************************/
 void free_temporary_space(void) {
-  int k;
-
-  for (k = 0; k < temp_base_size && temp_base[k] != NULL; k++) {
+  for (int k = 0; k < temp_base_size && temp_base[k] != NULL; k++) {
     temp_base[k] += (k * BLKSIZE);
     ffree(temp_base[k]);
   }
@@ -134,9 +130,7 @@ void free_temporary_space(void) {
 /* returns a pointer to it.                                           */
 /**********************************************************************/
 void *talloc(long size) {
-  long i;
-
-  i = temp_top;
+  long i = temp_top;
   temp_top += ((size + sizeof(cell) - 1) / sizeof(cell));
   if (temp_top > temp_size) {
     i = temp_size;
@@ -205,15 +199,12 @@ static struct node *node_pool = NULL;
 /* in that space and stacked up in the NODE_POOL list.                */
 /**********************************************************************/
 static void process_global_waste(long top) {
-  struct node *p;
-  long i;
-
   while (TRUE) {
-    i = top;
+    long i = top;
     top += ((sizeof(struct node) + sizeof(cell) - 1) / sizeof(cell));
     if (top > global_size)
       break;
-    p = (struct node *) &(global_base[i >> LOG_BLKSIZE][i]);
+    struct node *p = (struct node *) &(global_base[i >> LOG_BLKSIZE][i]);
     p->next = node_pool;
     node_pool = p;
   }
@@ -230,9 +221,7 @@ static void process_global_waste(long top) {
 /* other more specialized routines.                                   */
 /**********************************************************************/
 static void *galloc(long size) {
-  long i;
-
-  i = global_top;
+  long i = global_top;
   global_top += ((size + sizeof(cell) - 1) / sizeof(cell));
   if (global_top > global_size) {
     process_global_waste(i);
@@ -258,9 +247,7 @@ static void *galloc(long size) {
 /* a new node is allocated from the global storage pool.                    */
 /****************************************************************************/
 struct node *allocate_node(char *file, long line) {
-  struct node *p;
-
-  p = node_pool;
+  struct node *p = node_pool;
   if (p != NULL) /* is free list not empty? */
     node_pool = p->next;
   else {
@@ -450,26 +437,21 @@ void fill_in(char string[], int amount, char character) {
 /* positions in ARRAY to be sorted.                                          */
 /*****************************************************************************/
 static void qcksrt(short array[], int l, int h) {
-  int lower,
-      upper,
-      top,
-      i,
-      j,
-      pivot,
+  int
       lostack[14], /* A stack of size 14 can sort an array of up to */
       histack[14]; /* 2 ** 15 - 1 elements                          */
 
-  top = 1;
+  int top = 1;
   lostack[top] = l;
   histack[top] = h;
   while (top != 0) {
-    lower = lostack[top];
-    upper = histack[top--];
+    int lower = lostack[top];
+    int upper = histack[top--];
 
     while (upper > lower) {
-      i = lower;
-      pivot = array[lower];
-      for (j = lower + 1; j <= upper; j++) {
+      int i = lower;
+      int pivot = array[lower];
+      for (int j = lower + 1; j <= upper; j++) {
         if (array[j] < pivot) {
           array[i] = array[j];
           i++;
@@ -522,10 +504,8 @@ int number_len(int state_no) {
 /* as IN is copied into the space identified by OUT.                     */
 /* NOTE that it is assumed that IN and OUT do not overlap each other.    */
 /*************************************************************************/
-void restore_symbol(char *out, char *in) {
-  int len;
-
-  len = strlen(in);
+void restore_symbol(char *out, const char *in) {
+  int len = strlen(in);
   if (len > 0) {
     if ((len == 1 && in[0] == ormark) ||
         (in[0] == escape) ||
@@ -569,12 +549,8 @@ void restore_symbol(char *out, char *in) {
 /* the whole line, we forget the indentation, and printed it. Otherwise, it  */
 /* is "chapped up" and printed in pieces that are each indented.             */
 /*****************************************************************************/
-void print_large_token(char *line, char *token, char *indent, int len) {
-  int toklen;
-
-  char temp[SYMBOL_SIZE + 1];
-
-  toklen = strlen(token);
+void print_large_token(char *line, char *token, const char *indent, int len) {
+  int toklen = strlen(token);
 
   if (toklen > len && toklen <= PRINT_LINE_SIZE - 1) {
     fprintf(syslis, "\n%s", token);
@@ -582,6 +558,7 @@ void print_large_token(char *line, char *token, char *indent, int len) {
     token = "";
     strcpy(line, indent);
   } else {
+    char temp[SYMBOL_SIZE + 1];
     for (; toklen > len; toklen = strlen(temp)) {
       memcpy(temp, token, len);
       temp[len] = '\0';
@@ -604,13 +581,6 @@ void print_large_token(char *line, char *token, char *indent, int len) {
 /* PRINT_ITEM takes as parameter an ITEM_NO which it prints.                 */
 /*****************************************************************************/
 void print_item(int item_no) {
-  int rule_no,
-      symbol,
-      len,
-      offset,
-      i,
-      k;
-
   char tempstr[PRINT_LINE_SIZE + 1],
       line[PRINT_LINE_SIZE + 1],
       tok[SYMBOL_SIZE + 1];
@@ -623,19 +593,19 @@ void print_item(int item_no) {
   /* the dot symbol.                                                   */
   /*********************************************************************/
 
-  rule_no = item_table[item_no].rule_number;
-  symbol = rules[rule_no].lhs;
+  int rule_no = item_table[item_no].rule_number;
+  int symbol = rules[rule_no].lhs;
 
   restore_symbol(tok, RETRIEVE_STRING(symbol));
-  len = PRINT_LINE_SIZE - 5;
+  int len = PRINT_LINE_SIZE - 5;
   print_large_token(line, tok, "", len);
   strcat(line, " ::= ");
-  i = (PRINT_LINE_SIZE / 2) - 1;
-  offset = MIN(strlen(line)-1, i);
+  int i = (PRINT_LINE_SIZE / 2) - 1;
+  int offset = MIN(strlen(line)-1, i);
   len = PRINT_LINE_SIZE - (offset + 4);
   i = rules[rule_no].rhs; /* symbols before dot */
 
-  k = ((rules[rule_no].rhs + item_table[item_no].dot) - 1);
+  int k = ((rules[rule_no].rhs + item_table[item_no].dot) - 1);
   for (; i <= k; i++) {
     symbol = rhs_sym[i];
     restore_symbol(tok, RETRIEVE_STRING(symbol));
@@ -703,21 +673,9 @@ void print_item(int item_no) {
 /* the KERNEL and ADEQUATE items of the actions in the GOTO and SHIFT maps.  */
 /*****************************************************************************/
 void print_state(int state_no) {
-  struct shift_header_type sh;
-
-  struct goto_header_type go_to;
-
-  short *item_list;
-
-  int kernel_size,
+  int
       i,
-      n,
-      item_no,
-      next_state;
-
-  BOOLEAN end_node,
-      *state_seen,
-      *item_seen;
+      item_no;
 
   struct node *q;
 
@@ -733,9 +691,9 @@ void print_state(int state_no) {
   /* productions.                                                      */
   /*********************************************************************/
 
-  state_seen = Allocate_boolean_array(max_la_state + 1);
-  item_seen = Allocate_boolean_array(num_items + 1);
-  item_list = Allocate_short_array(num_items + 1);
+  BOOLEAN *state_seen = Allocate_boolean_array(max_la_state + 1);
+  BOOLEAN *item_seen = Allocate_boolean_array(num_items + 1);
+  short *item_list = Allocate_short_array(num_items + 1);
 
   /* INITIALIZATION -----------------------------------------------------------*/
 
@@ -745,7 +703,7 @@ void print_state(int state_no) {
   for ALL_ITEMS(i)
     item_seen[i] = FALSE;
 
-  kernel_size = 0;
+  int kernel_size = 0;
 
   /* END OF INITIALIZATION ----------------------------------------------------*/
 
@@ -758,10 +716,10 @@ void print_state(int state_no) {
   /*********************************************************************/
   /* Print the set of states that have transitions to STATE_NO.        */
   /*********************************************************************/
-  n = 0;
+  int n = 0;
   strcpy(line, "( ");
 
-  for (end_node = ((q = in_stat[state_no]) == NULL);
+  for (BOOLEAN end_node = ((q = in_stat[state_no]) == NULL);
        !end_node;
        end_node = (q == in_stat[state_no])) {
     /* copy list of IN_STAT into array */
@@ -819,13 +777,11 @@ void print_state(int state_no) {
   /* look-ahead state contains shift actions, and retrieve the next    */
   /* state from one of those shift actions.                            */
   /*********************************************************************/
-  sh = shift[statset[state_no].shift_number];
+  struct shift_header_type sh = shift[statset[state_no].shift_number];
   for (i = 1; i <= sh.size; i++) {
-    next_state = SHIFT_ACTION(sh, i);
+    int next_state = SHIFT_ACTION(sh, i);
     while (next_state > (int) num_states) {
-      struct shift_header_type next_sh;
-
-      next_sh = shift[lastats[next_state].shift_number];
+      struct shift_header_type next_sh = shift[lastats[next_state].shift_number];
       if (next_sh.size > 0)
         next_state = SHIFT_ACTION(next_sh, 1);
       else
@@ -853,7 +809,7 @@ void print_state(int state_no) {
   /*********************************************************************/
   /* GOTOS and GOTO-REDUCES are analogous to SHIFTS and SHIFT-REDUCES. */
   /*********************************************************************/
-  go_to = statset[state_no].go_to;
+  struct goto_header_type go_to = statset[state_no].go_to;
   for (i = 1; i <= go_to.size; i++) {
     if (GOTO_ACTION(go_to, i) > 0) {
       q = statset[GOTO_ACTION(go_to, i)].kernel_items;
@@ -916,12 +872,10 @@ void nospace(char *file_name, long line_number) {
 /*  are defined here for the 370 compiler.                              */
 /************************************************************************/
 char *strupr(char *string) {
-  char *s;
-
   /*********************************************************************/
   /* While not at end of string, change all lower case to upper case.  */
   /*********************************************************************/
-  for (s = string; *s != '\0'; s++)
+  for (char *s = string; *s != '\0'; s++)
     *s = (islower((int) *s) ? toupper((int) *s) : *s);
 
   return string;
@@ -931,12 +885,10 @@ char *strupr(char *string) {
 /*                               STRLWR:                                */
 /************************************************************************/
 char *strlwr(char *string) {
-  char *s;
-
   /*********************************************************************/
   /* While not at end of string, change all upper case to lower case.  */
   /*********************************************************************/
-  for (s = string; *s != '\0'; s++)
+  for (char *s = string; *s != '\0'; s++)
     *s = (isupper((int) *s) ? tolower((int) *s) : *s);
 
   return string;

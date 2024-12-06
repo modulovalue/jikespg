@@ -77,7 +77,7 @@ void remove_single_productions(void);
 
 void mkstats(void);
 
-void mystrcpy(char *str);
+void mystrcpy(const char *str);
 
 void padline(void);
 
@@ -85,32 +85,32 @@ void nospace(char *, long);
 
 int number_len(int state_no);
 
-void partset(SET_PTR collection, short *element_size, short *list,
+void partset(SET_PTR collection, const short *element_size, const short *list,
              short *start, short *stack, int set_size, int from_process_scopes);
 
 void print_item(int item_no);
 
-void print_large_token(char *line, char *token, char *indent, int len);
+void print_large_token(char *line, char *token, const char *indent, int len);
 
 void print_state(int state_no);
 
-void compute_action_symbols_range(short *state_start,
-                                  short *state_stack,
-                                  short *state_list,
+void compute_action_symbols_range(const short *state_start,
+                                  const short *state_stack,
+                                  const short *state_list,
                                   short *action_symbols_range);
 
-void compute_naction_symbols_range(short *state_start,
-                                   short *state_stack,
-                                   short *state_list,
+void compute_naction_symbols_range(const short *state_start,
+                                   const short *state_stack,
+                                   const short *state_list,
                                    short *naction_symbols_range);
 
 void produce(void);
 
 void process_error_maps(void);
 
-void prnt_shorts(char *title, int init, int bound, int perline, short *array);
+void prnt_shorts(const char *title, int init, int bound, int perline, const short *array);
 
-void prnt_ints(char *title, int init, int bound, int perline, int *array);
+void prnt_ints(const char *title, int init, int bound, int perline, const int *array);
 
 void print_space_parser(void);
 
@@ -127,9 +127,9 @@ void sortdes(short array[], short count[], int low, int high, int max);
 void reallocate(void);
 
 void resolve_conflicts(int state_no, struct node **action,
-                       short *reduce_list, int reduce_root);
+                       const short *reduce_list, int reduce_root);
 
-void restore_symbol(char *out, char *in);
+void restore_symbol(char *out, const char *in);
 
 char *strlwr(char *string);
 

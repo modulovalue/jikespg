@@ -1,3 +1,4 @@
+#include <stdlib.h>
 static char hostfile[] = __FILE__;
 
 #include <string.h>
@@ -7,16 +8,6 @@ static char hostfile[] = __FILE__;
 static void print_opts(void);
 
 void process_input(void);
-
-void mkfirst(void);
-
-void mkstats(void);
-
-void mkrdcts(void);
-
-void ptstats(void);
-
-void process_tables(void);
 
 /*********************************************************************/
 /* Jikes PG is a parser generator capable of generating LALR(k) and  */
@@ -50,9 +41,7 @@ void process_tables(void);
 /****************************************************************************/
 /****************************************************************************/
 int main(int argc, char *argv[]) {
-  int i,
-      op_start,
-      j = 0;
+  int i;
 
   char *dot,
       *slash,
@@ -76,6 +65,7 @@ int main(int argc, char *argv[]) {
   /*     If options are passed to the program, copy them into "parm".   */
   /**********************************************************************/
   if (argc > 2) {
+    int j = 0;
     parm[0] = '\0';
     while (j < argc - 2) {
       if (*(argv[++j]) == '-')
@@ -251,7 +241,6 @@ int main(int argc, char *argv[]) {
       PRNTERR("The options GOTO_DEFAULT and NT_CHECK are "
         "incompatible.  Tables not generated");
     } else {
-      struct node *head;
       int state_no;
 
       num_entries = max_la_state + num_shifts + num_shift_reduces
@@ -266,11 +255,10 @@ int main(int argc, char *argv[]) {
       /***********************************************************/
       ffree(rhs_sym);
       if (adequate_item != NULL) {
-        struct node *q;
         int rule_no;
 
         for ALL_RULES(rule_no) {
-          q = adequate_item[rule_no];
+          struct node *q = adequate_item[rule_no];
           if (q != NULL)
             free_nodes(q, q);
         }
@@ -281,7 +269,7 @@ int main(int argc, char *argv[]) {
         ffree(item_table);
 
       for ALL_STATES(state_no) {
-        head = in_stat[state_no];
+        struct node *head = in_stat[state_no];
         if (head != NULL) {
           head = head->next;
           free_nodes(head, in_stat[state_no]);

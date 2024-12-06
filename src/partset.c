@@ -1,3 +1,4 @@
+#include <stdlib.h>
 static char hostfile[] = __FILE__;
 
 #include "common.h"
@@ -69,35 +70,18 @@ static BOOLEAN equal_sets(SET_PTR set1, int indx1,
 /*                                                                   */
 /*********************************************************************/
 void partset(SET_PTR collection,
-             short *element_size, short *list,
+             const short *element_size, const short *list,
              short *start, short *stack, int set_size, int from_scope_processing) {
-  unsigned long hash_address;
-
-  int collection_size,
-      offset,
+  int
       i,
-      previous,
       base_set,
-      size_root,
-      next_size,
       size,
       bctype,
-      j,
-      index,
-      subset;
+      index;
 
-  short domain_table[STATE_TABLE_SIZE],
-      *domain_link,
-      *size_list,
-      *partition,
-      *next,
-      *head;
+  short domain_table[STATE_TABLE_SIZE];
 
-  BOOLEAN *is_a_base;
-
-  SET_PTR temp_set;
-
-  collection_size = num_states;
+  int collection_size = num_states;
 
   if (from_scope_processing) {
     bctype = num_states / SIZEOF_BC
@@ -112,14 +96,13 @@ void partset(SET_PTR collection,
     collection_size = num_states;
   }
 
-  size_list = Allocate_short_array(set_size + 1);
-  partition = Allocate_short_array(set_size + 1);
-  domain_link = Allocate_short_array(collection_size + 1);
-  head = Allocate_short_array(collection_size + 1);
-  next = Allocate_short_array(collection_size + 1);
-  is_a_base = Allocate_boolean_array(collection_size + 1);
-  temp_set = (SET_PTR)
-      calloc(1, bctype * sizeof(BOOLEAN_CELL));
+  short *size_list = Allocate_short_array(set_size + 1);
+  short *partition = Allocate_short_array(set_size + 1);
+  short *domain_link = Allocate_short_array(collection_size + 1);
+  short *head = Allocate_short_array(collection_size + 1);
+  short *next = Allocate_short_array(collection_size + 1);
+  BOOLEAN *is_a_base = Allocate_boolean_array(collection_size + 1);
+  SET_PTR temp_set = calloc(1, bctype * sizeof(BOOLEAN_CELL));
   if (temp_set == NULL)
     nospace(__FILE__, __LINE__);
 
@@ -142,7 +125,7 @@ void partset(SET_PTR collection,
   /* domain set into the hash table...                         */
   /*************************************************************/
   for (index = 1; index <= collection_size; index++) {
-    hash_address = 0;
+    unsigned long hash_address = 0;
     for (i = 0; i < bctype; i++)
       hash_address += collection[index * bctype + i];
 
@@ -202,7 +185,7 @@ void partset(SET_PTR collection,
   /* the list in ascending order and in stack-fashion, the     */
   /* resulting list will be sorted in descending order.        */
   /*************************************************************/
-  size_root = NIL;
+  int size_root = NIL;
   for (i = 0; i <= set_size; i++) {
     if (partition[i] != NIL) {
       size_list[i] = size_root;
@@ -234,9 +217,9 @@ void partset(SET_PTR collection,
       /* For remaining elements in partitions in decreasing order...*/
       /**************************************************************/
 
-      for (next_size = size_list[size];
+      for (int next_size = size_list[size];
            next_size != NIL; next_size = size_list[next_size]) {
-        previous = NIL; /* mark head of list */
+        int previous = NIL; /* mark head of list */
 
         /**************************************************/
         /* Iterate over subsets in the partition until we */
@@ -248,7 +231,7 @@ void partset(SET_PTR collection,
         /* INDEX identifies the state currently on top    */
         /* of the stack.                                  */
         /**************************************************/
-        for (subset = partition[next_size];
+        for (int subset = partition[next_size];
              subset != NIL;
              previous = subset, subset = next[subset]) {
           index = stack[base_set];
@@ -276,7 +259,7 @@ void partset(SET_PTR collection,
   /* Notice that an extra element is added to the size of each */
   /* base subset for the "fence" element.                      */
   /*************************************************************/
-  offset = 1;
+  int offset = 1;
   for (i = 1; i <= collection_size; i++) {
     base_set = list[i];
     if (is_a_base[base_set]) {
@@ -313,7 +296,7 @@ void partset(SET_PTR collection,
         /* same offset as INDEX to each subset j that is     */
         /* identical to the subset INDEX.                    */
         /*****************************************************/
-        for (j = head[index]; j != NIL; j = next[j])
+        for (int j = head[index]; j != NIL; j = next[j])
           start[j] = start[index];
       }
     }
@@ -327,8 +310,6 @@ void partset(SET_PTR collection,
   ffree(next);
   ffree(is_a_base);
   ffree(temp_set);
-
-  return;
 }
 
 
@@ -337,14 +318,12 @@ void partset(SET_PTR collection,
 /****************************************************************************/
 /* EQUAL_SETS checks to see if two sets are equal and returns True or False */
 /****************************************************************************/
-static BOOLEAN equal_sets(SET_PTR set1, int indx1,
-                          SET_PTR set2, int indx2, int bound) {
-  register int i;
-
-  for (i = 0; i < bound; i++) {
+static BOOLEAN equal_sets(const SET_PTR set1, int indx1,
+                          const SET_PTR set2, int indx2, int bound) {
+  for (register int i = 0; i < bound; i++) {
     if (set1[indx1 * bound + i] != set2[indx2 * bound + i])
       return (0);
   }
 
-  return (TRUE);
+  return TRUE;
 }

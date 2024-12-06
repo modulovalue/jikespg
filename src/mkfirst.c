@@ -1,3 +1,4 @@
+#include <stdlib.h>
 static char hostfile[] = __FILE__;
 
 #include <string.h>
@@ -16,7 +17,7 @@ static char hostfile[] = __FILE__;
         }
 
 static BOOLEAN is_terminal_rhs(short *rhs_start,
-                               BOOLEAN *produces_terminals, int rule_no);
+                               const BOOLEAN *produces_terminals, int rule_no);
 
 static BOOLEAN is_nullable_rhs(short *rhs_start, int rule_no);
 
@@ -32,7 +33,7 @@ static void print_follow_map(void);
 
 static short first_map(int root, int tail);
 
-static void s_first(int root, int tail, int set);
+static void s_first(int root, int tail, int index);
 
 static void compute_follow(int nt);
 
@@ -318,9 +319,9 @@ void mkfirst(void) {
   /***************************************************************/
   num_first_sets = top;
 
-  for (end_node = ((rule_no = lhs_rule[accept_image]) == NIL);
+  for (end_node = (rule_no = lhs_rule[accept_image]) == NIL;
        !end_node;
-       end_node = (rule_no == lhs_rule[accept_image])) {
+       end_node = rule_no == lhs_rule[accept_image]) {
     rule_no = next_rule[rule_no];
     num_first_sets++;
   }
@@ -388,9 +389,9 @@ void mkfirst(void) {
   for ALL_NON_TERMINALS(nt) {
     clitems[nt] = NULL;
 
-    for (end_node = ((rule_no = lhs_rule[nt]) == NIL);
+    for (end_node = (rule_no = lhs_rule[nt]) == NIL;
          !end_node;
-         end_node = (rule_no == lhs_rule[nt])) {
+         end_node = rule_no == lhs_rule[nt]) {
       struct node *p;
 
       rule_no = next_rule[rule_no];
@@ -431,8 +432,8 @@ void mkfirst(void) {
       struct node *p,
           *q;
 
-      for (end_node = ((p = clitems[nt]) == NULL);
-           !end_node; end_node = (p == clitems[nt])) {
+      for (end_node = (p = clitems[nt]) == NULL;
+           !end_node; end_node = p == clitems[nt]) {
         p = p->next;
         item_no = p->value;
         symbol = item_table[item_no].symbol;
@@ -569,8 +570,6 @@ void mkfirst(void) {
   ffree(lhs_rule);
   ffree(next_rule);
   ffree(first_item_of);
-
-  return;
 }
 
 
@@ -578,10 +577,7 @@ void mkfirst(void) {
 /*                           NO_RULES_PRODUCED:                              */
 /*****************************************************************************/
 static void no_rules_produced(void) {
-  char line[PRINT_LINE_SIZE + 1],
-      tok[SYMBOL_SIZE + 1];
-
-  int nt_root,
+  int
       nt_last,
       symbol;
 
@@ -589,7 +585,7 @@ static void no_rules_produced(void) {
   /* Build a list of all non-terminals that do not produce any */
   /* rules.                                                    */
   /*************************************************************/
-  nt_root = NIL;
+  int nt_root = NIL;
   for ALL_NON_TERMINALS(symbol) {
     if (lhs_rule[symbol] == NIL) {
       if (nt_root == NIL)
@@ -606,6 +602,7 @@ static void no_rules_produced(void) {
   /*************************************************************/
 
   if (nt_root != NIL) {
+    char line[PRINT_LINE_SIZE + 1];
     PR_HEADING;
     nt_list[nt_last] = NIL;
     if (nt_list[nt_root] == NIL) {
@@ -616,6 +613,7 @@ static void no_rules_produced(void) {
     strcpy(line, "        ");
 
     for (symbol = nt_root; symbol != NIL; symbol = nt_list[symbol]) {
+      char tok[SYMBOL_SIZE + 1];
       restore_symbol(tok, RETRIEVE_STRING(symbol));
       if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE) {
         PRNT(line);
@@ -640,12 +638,8 @@ static void no_rules_produced(void) {
 /* I.e., A *::= Bi X where X is an arbitrary string.                         */
 /*****************************************************************************/
 static void compute_closure(int lhs_symbol) {
-  int indx;
-  short *nont_list;
-
   int symbol,
       rule_no,
-      nt_root,
       i;
 
   struct node *p,
@@ -653,24 +647,24 @@ static void compute_closure(int lhs_symbol) {
 
   BOOLEAN end_node;
 
-  nont_list = Allocate_short_array(num_non_terminals);
+  short *nont_list = Allocate_short_array(num_non_terminals);
   nont_list -= (num_terminals + 1); /* Temporary direct        */
   /* access set for closure. */
   stack[++top] = lhs_symbol;
-  indx = top;
+  int indx = top;
   index_of[lhs_symbol] = indx;
 
   for ALL_NON_TERMINALS(i)
     nont_list[i] = OMEGA;
 
   nont_list[lhs_symbol] = NIL;
-  nt_root = lhs_symbol;
+  int nt_root = lhs_symbol;
 
   closure[lhs_symbol] = NULL; /* Permanent closure set. Linked list */
 
-  for (end_node = ((rule_no = lhs_rule[lhs_symbol]) == NIL);
+  for (end_node = (rule_no = lhs_rule[lhs_symbol]) == NIL;
        !end_node; /* Iterate over all rules of LHS_SYMBOL */
-       end_node = (rule_no == lhs_rule[lhs_symbol])) {
+       end_node = rule_no == lhs_rule[lhs_symbol]) {
     rule_no = next_rule[rule_no];
     symbol = (RHS_SIZE(rule_no) == 0
                 ? empty
@@ -688,9 +682,9 @@ static void compute_closure(int lhs_symbol) {
 
         /* add closure[symbol] to closure of LHS_SYMBOL.  */
 
-        for (end_node = ((q = closure[symbol]) == NULL);
+        for (end_node = (q = closure[symbol]) == NULL;
              !end_node;
-             end_node = (q == closure[symbol])) {
+             end_node = q == closure[symbol]) {
           q = q->next;
           if (nont_list[q->value] == OMEGA) {
             nont_list[q->value] = nt_root;
@@ -727,9 +721,9 @@ static void compute_closure(int lhs_symbol) {
       p->next = p;
       closure[symbol] = p;
 
-      for (end_node = ((q = closure[lhs_symbol]) == NULL);
+      for (end_node = (q = closure[lhs_symbol]) == NULL;
            !end_node;
-           end_node = (q == closure[lhs_symbol])) {
+           end_node = q == closure[lhs_symbol]) {
         q = q->next;
         if (q->value != symbol) {
           p = Allocate_node();
@@ -749,8 +743,6 @@ static void compute_closure(int lhs_symbol) {
 
   nont_list += (num_terminals + 1);
   ffree(nont_list);
-
-  return;
 }
 
 
@@ -766,15 +758,12 @@ static void compute_closure(int lhs_symbol) {
 /* and Bi, for all i, is a nullable non-terminal.                            */
 /*****************************************************************************/
 static void nullables_computation(void) {
-  short *rhs_start;
-
   int rule_no,
       nt;
 
-  BOOLEAN changed = TRUE,
-      end_node;
+  BOOLEAN changed = TRUE;
 
-  rhs_start = Allocate_short_array(NEXT_RULE_SIZE);
+  short *rhs_start = Allocate_short_array(NEXT_RULE_SIZE);
 
   /******************************************************************/
   /* First, mark all non-terminals as non-nullable.  Then initialize*/
@@ -807,9 +796,9 @@ static void nullables_computation(void) {
     changed = FALSE;
 
     for ALL_NON_TERMINALS(nt) {
-      for (end_node = ((rule_no = lhs_rule[nt]) == NIL);
+      for (BOOLEAN end_node = (rule_no = lhs_rule[nt]) == NIL;
            !null_nt[nt] && !end_node;
-           end_node = (rule_no == lhs_rule[nt])) {
+           end_node = rule_no == lhs_rule[nt]) {
         rule_no = next_rule[rule_no];
         if (is_nullable_rhs(rhs_start, rule_no)) {
           changed = TRUE;
@@ -820,8 +809,6 @@ static void nullables_computation(void) {
   }
 
   ffree(rhs_start);
-
-  return;
 }
 
 
@@ -835,12 +822,10 @@ static void nullables_computation(void) {
 /* side is consumed, and it returns the value TRUE.                          */
 /*****************************************************************************/
 static BOOLEAN is_nullable_rhs(short *rhs_start, int rule_no) {
-  int symbol;
-
   for (rhs_start[rule_no] = rhs_start[rule_no];
        rhs_start[rule_no] <= rules[rule_no + 1].rhs - 1;
        rhs_start[rule_no]++) {
-    symbol = rhs_sym[rhs_start[rule_no]];
+    int symbol = rhs_sym[rhs_start[rule_no]];
     if (symbol IS_A_TERMINAL)
       return (FALSE);
     else if (!null_nt[symbol]) /* symbol is a non-terminal */
@@ -860,24 +845,17 @@ static BOOLEAN is_nullable_rhs(short *rhs_start, int rule_no) {
 /* by NT. That is, NT *::= Ti X where X is an arbitrary string.              */
 /*****************************************************************************/
 static void compute_first(int nt) {
-  int indx;
-
-  BOOLEAN end_node,
-      blocked;
-
   int i,
       symbol,
       rule_no;
 
-  SET_PTR temp_set;
-
-  temp_set = (SET_PTR)
+  SET_PTR temp_set =
       calloc(1, term_set_size * sizeof(BOOLEAN_CELL));
   if (temp_set == NULL)
     nospace(__FILE__, __LINE__);
 
   stack[++top] = nt;
-  indx = top;
+  int indx = top;
   index_of[nt] = indx;
 
   /**************************************************************/
@@ -893,11 +871,11 @@ static void compute_first(int nt) {
   /* where Bi is nullable for 1 <= i <= k                       */
   /**************************************************************/
 
-  for (end_node = ((rule_no = lhs_rule[nt]) == NIL);
+  for (BOOLEAN end_node = (rule_no = lhs_rule[nt]) == NIL;
        !end_node; /* Iterate over all rules produced by NT */
-       end_node = (rule_no == lhs_rule[nt])) {
+       end_node = rule_no == lhs_rule[nt]) {
     rule_no = next_rule[rule_no];
-    blocked = FALSE;
+    BOOLEAN blocked = FALSE;
 
     for ENTIRE_RHS(i, rule_no) {
       symbol = rhs_sym[i];
@@ -933,7 +911,6 @@ static void compute_first(int nt) {
     top--;
   }
   ffree(temp_set);
-  return;
 }
 
 
@@ -953,23 +930,14 @@ static void compute_first(int nt) {
 /* This routine is structurally identical to COMPUTE_NULLABLES.              */
 /*****************************************************************************/
 static void check_non_terminals(void) {
-  char line[PRINT_LINE_SIZE + 1],
-      tok[SYMBOL_SIZE + 1];
-
-  short *rhs_start;
-
   int rule_no,
-      nt_root,
       nt_last,
-      symbol,
       nt;
 
-  BOOLEAN changed = TRUE,
-      end_node,
-      *produces_terminals;
+  BOOLEAN changed = TRUE;
 
-  rhs_start = Allocate_short_array(NEXT_RULE_SIZE);
-  produces_terminals = Allocate_boolean_array(num_non_terminals);
+  short *rhs_start = Allocate_short_array(NEXT_RULE_SIZE);
+  BOOLEAN *produces_terminals = Allocate_boolean_array(num_non_terminals);
   produces_terminals -= (num_terminals + 1);
 
   /******************************************************************/
@@ -1005,9 +973,9 @@ static void check_non_terminals(void) {
     changed = FALSE;
 
     for ALL_NON_TERMINALS(nt) {
-      for (end_node = ((rule_no = lhs_rule[nt]) == NIL);
-           (!produces_terminals[nt]) && (!end_node);
-           end_node = (rule_no == lhs_rule[nt])) {
+      for (BOOLEAN end_node = (rule_no = lhs_rule[nt]) == NIL;
+           !produces_terminals[nt] && !end_node;
+           end_node = rule_no == lhs_rule[nt]) {
         rule_no = next_rule[rule_no];
         if (is_terminal_rhs(rhs_start, produces_terminals, rule_no)) {
           changed = TRUE;
@@ -1021,7 +989,7 @@ static void check_non_terminals(void) {
   /* Construct a list of all non-terminals that do not generate*/
   /* terminal strings.                                         */
   /*************************************************************/
-  nt_root = NIL;
+  int nt_root = NIL;
   for ALL_NON_TERMINALS(nt) {
     if (!produces_terminals[nt]) {
       if (nt_root == NIL)
@@ -1037,6 +1005,7 @@ static void check_non_terminals(void) {
   /* terminal strings, print them out and stop the program.    */
   /*************************************************************/
   if (nt_root != NIL) {
+    char line[PRINT_LINE_SIZE + 1];
     nt_list[nt_last] = NIL; /* mark end of list */
     PR_HEADING;
     strcpy(line, "*** ERROR: The following Non-terminal");
@@ -1048,7 +1017,8 @@ static void check_non_terminals(void) {
       strcpy(line, "        "); /* 8 spaces */
     }
 
-    for (symbol = nt_root; symbol != NIL; symbol = nt_list[symbol]) {
+    for (int symbol = nt_root; symbol != NIL; symbol = nt_list[symbol]) {
+      char tok[SYMBOL_SIZE + 1];
       restore_symbol(tok, RETRIEVE_STRING(symbol));
       if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 1) {
         PRNT(line);
@@ -1075,13 +1045,11 @@ static void check_non_terminals(void) {
 /* returns the value TRUE.                                                   */
 /*****************************************************************************/
 static BOOLEAN is_terminal_rhs(short *rhs_start,
-                               BOOLEAN *produces_terminals, int rule_no) {
-  int symbol;
-
+                               const BOOLEAN *produces_terminals, int rule_no) {
   for (rhs_start[rule_no] = rhs_start[rule_no];
        rhs_start[rule_no] <= rules[rule_no + 1].rhs - 1;
        rhs_start[rule_no]++) {
-    symbol = rhs_sym[rhs_start[rule_no]];
+    int symbol = rhs_sym[rhs_start[rule_no]];
     if (symbol IS_A_NON_TERMINAL) {
       if (!produces_terminals[symbol])
         return (FALSE);
@@ -1105,11 +1073,11 @@ static BOOLEAN is_terminal_rhs(short *rhs_start,
 /*       That is, ROOT <= TAIL !!!                                           */
 /*****************************************************************************/
 static short first_map(int root, int tail) {
-  int i,
+  int
       j,
       k;
 
-  for (i = first_table[rhs_sym[root]]; i != NIL; i = first_element[i].link) {
+  for (int i = first_table[rhs_sym[root]]; i != NIL; i = first_element[i].link) {
     for (j = root + 1,
          k = first_element[i].suffix_root + 1;
          (j <= tail && k <= first_element[i].suffix_tail);
@@ -1126,7 +1094,7 @@ static short first_map(int root, int tail) {
   first_element[top].link = first_table[rhs_sym[root]];
   first_table[rhs_sym[root]] = top;
 
-  return (top);
+  return top;
 }
 
 
@@ -1139,10 +1107,7 @@ static short first_map(int root, int tail) {
 /* in the sequence and places the result in the FIRST set indexable by INDEX.*/
 /*****************************************************************************/
 static void s_first(int root, int tail, int index) {
-  int i,
-      symbol;
-
-  symbol = (root > tail ? empty : rhs_sym[root]);
+  int symbol = (root > tail ? empty : rhs_sym[root]);
 
   if (symbol IS_A_TERMINAL) {
     INIT_FIRST(index);
@@ -1151,7 +1116,7 @@ static void s_first(int root, int tail, int index) {
     ASSIGN_SET(first, index, nt_first, symbol);
   }
 
-  for (i = root + 1; i <= tail && IS_IN_SET(first, index, empty); i++) {
+  for (int i = root + 1; i <= tail && IS_IN_SET(first, index, empty); i++) {
     symbol = rhs_sym[i];
     RESET_BIT_IN(first, index, empty); /* remove EMPTY */
     if (symbol IS_A_TERMINAL) {
@@ -1160,8 +1125,6 @@ static void s_first(int root, int tail, int index) {
       SET_UNION(first, index, nt_first, symbol);
     }
   }
-
-  return;
 }
 
 
@@ -1172,18 +1135,16 @@ static void s_first(int root, int tail, int index) {
 /* PRODUCES[symbol].                                              */
 /******************************************************************/
 static void compute_produces(int symbol) {
-  int indx;
-
   int new_symbol;
 
-  struct node *p,
+  struct node
       *q;
 
   stack[++top] = symbol;
-  indx = top;
+  int indx = top;
   index_of[symbol] = indx;
 
-  for (p = direct_produces[symbol]; p != NULL; q = p, p = p->next) {
+  for (struct node *p = direct_produces[symbol]; p != NULL; q = p, p = p->next) {
     new_symbol = p->value;
     if (index_of[new_symbol] == OMEGA) /* first time seen? */
       compute_produces(new_symbol);
@@ -1204,8 +1165,6 @@ static void compute_produces(int symbol) {
     index_of[symbol] = INFINITY;
     top--;
   }
-
-  return;
 }
 
 
@@ -1219,16 +1178,10 @@ static void compute_produces(int symbol) {
 /* recognized by the language.                                               */
 /*****************************************************************************/
 static void compute_follow(int nt) {
-  int indx;
+  int
+      lhs_symbol;
 
-  int rule_no,
-      lhs_symbol,
-      item_no;
-
-  SET_PTR temp_set;
-
-  temp_set = (SET_PTR)
-      calloc(1, term_set_size * sizeof(BOOLEAN_CELL));
+  SET_PTR temp_set = calloc(1, term_set_size * sizeof(BOOLEAN_CELL));
   if (temp_set == NULL)
     nospace(__FILE__, __LINE__);
 
@@ -1237,15 +1190,15 @@ static void compute_follow(int nt) {
   /**************************************************************/
 
   stack[++top] = nt;
-  indx = top;
+  int indx = top;
   index_of[nt] = indx;
 
-  for (item_no = nt_items[nt]; item_no != NIL; item_no = next_item[item_no]) {
+  for (int item_no = nt_items[nt]; item_no != NIL; item_no = next_item[item_no]) {
     /* iterate over all items of NT */
     ASSIGN_SET(temp_set, 0, first, item_table[item_no].suffix_index);
     if (IS_ELEMENT(temp_set, empty)) {
       RESET_BIT(temp_set, empty);
-      rule_no = item_table[item_no].rule_number;
+      int rule_no = item_table[item_no].rule_number;
       lhs_symbol = rules[rule_no].lhs;
       if (index_of[lhs_symbol] == OMEGA)
         compute_follow(lhs_symbol);
@@ -1265,7 +1218,6 @@ static void compute_follow(int nt) {
     top--;
   }
   ffree(temp_set);
-  return;
 }
 
 
@@ -1273,16 +1225,10 @@ static void compute_follow(int nt) {
 /*                           PRINT_UNREACHABLES:                             */
 /*****************************************************************************/
 static void print_unreachables(void) {
-  short *symbol_list;
-
-  int nt,
-      t_root,
-      nt_root,
+  int
       rule_no,
       symbol,
       i;
-
-  BOOLEAN end_node;
 
   char line[PRINT_LINE_SIZE + 1],
       tok[SYMBOL_SIZE + 1];
@@ -1294,7 +1240,7 @@ static void print_unreachables(void) {
   /*  2) to construct lists of symbols that are not reachable.   */
   /***************************************************************/
 
-  symbol_list = Allocate_short_array(num_symbols + 1);
+  short *symbol_list = Allocate_short_array(num_symbols + 1);
   for ALL_SYMBOLS(i)
     symbol_list[i] = OMEGA;
   symbol_list[eoft_image] = NIL;
@@ -1311,15 +1257,15 @@ static void print_unreachables(void) {
   /* 2) All non-terminals in one of its right-hand sides are placed    */
   /*     in the the work pile of it had not been processed previously  */
   /*********************************************************************/
-  nt_root = accept_image;
+  int nt_root = accept_image;
   symbol_list[nt_root] = NIL;
 
-  for (nt = nt_root; nt != NIL; nt = nt_root) {
+  for (int nt = nt_root; nt != NIL; nt = nt_root) {
     nt_root = symbol_list[nt];
 
-    for (end_node = ((rule_no = lhs_rule[nt]) == NIL);
+    for (BOOLEAN end_node = (rule_no = lhs_rule[nt]) == NIL;
          !end_node;
-         end_node = (rule_no == lhs_rule[nt])) {
+         end_node = rule_no == lhs_rule[nt]) {
       rule_no = next_rule[rule_no];
       for ENTIRE_RHS(i, rule_no) {
         symbol = rhs_sym[i];
@@ -1339,7 +1285,7 @@ static void print_unreachables(void) {
   /* list. If the list is not empty, we signal that these symbols*/
   /* are unused.                                                 */
   /***************************************************************/
-  t_root = NIL;
+  int t_root = NIL;
   for ALL_TERMINALS_BACKWARDS(symbol) {
     if (symbol_list[symbol] == OMEGA) {
       symbol_list[symbol] = t_root;
@@ -1407,8 +1353,6 @@ static void print_unreachables(void) {
   }
 
   ffree(symbol_list);
-
-  return;
 }
 
 
@@ -1423,23 +1367,16 @@ static void print_unreachables(void) {
 /* First out.                                                                */
 /*****************************************************************************/
 static void print_xref(void) {
-  short *sort_sym,
-      *t_items;
-
   int i,
-      offset,
       rule_no,
       item_no,
       symbol;
 
-  char line[PRINT_LINE_SIZE + 1],
-      tok[SYMBOL_SIZE + 1];
-
   /*********************************************************************/
   /* SORT_SYM is used to sort the symbols for cross_reference listing. */
   /*********************************************************************/
-  sort_sym = Allocate_short_array(num_symbols + 1);
-  t_items = Allocate_short_array(num_terminals + 1);
+  short *sort_sym = Allocate_short_array(num_symbols + 1);
+  short *t_items = Allocate_short_array(num_terminals + 1);
 
   for ALL_TERMINALS(i)
     t_items[i] = NIL;
@@ -1466,27 +1403,25 @@ static void print_xref(void) {
     symbol = sort_sym[i];
     if (symbol != accept_image && symbol != eoft_image
         && symbol != empty) {
+      char line[PRINT_LINE_SIZE + 1];
+      char tok[SYMBOL_SIZE + 1];
       fprintf(syslis, "\n");
       ENDPAGE_CHECK;
       restore_symbol(tok, RETRIEVE_STRING(symbol));
       print_large_token(line, tok, "", PRINT_LINE_SIZE - 7);
       strcat(line, "  ==>> ");
-      offset = strlen(line) - 1;
+      const int offset = strlen(line) - 1;
       if (symbol IS_A_NON_TERMINAL) {
-        BOOLEAN end_node;
-
-        for (end_node = ((rule_no = lhs_rule[symbol]) == NIL);
+        for (BOOLEAN end_node = (rule_no = lhs_rule[symbol]) == NIL;
              !end_node;
-             end_node = (rule_no == lhs_rule[symbol])) {
+             end_node = rule_no == lhs_rule[symbol]) {
           rule_no = next_rule[rule_no];
           sprintf(tok, "%d", rule_no);
           if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE) {
-            int j;
-
             fprintf(syslis, "\n%s", line);
             ENDPAGE_CHECK;
             strcpy(line, BLANK);
-            for (j = 1; j <= offset; j++)
+            for (int j = 1; j <= offset; j++)
               strcat(line, BLANK);
           }
           strcat(line, tok);
@@ -1502,12 +1437,10 @@ static void print_xref(void) {
           rule_no = item_table[item_no].rule_number;
           sprintf(tok, "%d", rule_no);
           if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE) {
-            int j;
-
             fprintf(syslis, "\n%s", line);
             ENDPAGE_CHECK;
             strcpy(line, BLANK);
-            for (j = 1; j <= offset; j++)
+            for (int j = 1; j <= offset; j++)
               strcat(line, BLANK);
           }
           strcat(line, tok);
@@ -1523,8 +1456,6 @@ static void print_xref(void) {
   output_line_no += 2;
   ffree(t_items);
   ffree(sort_sym);
-
-  return;
 }
 
 
@@ -1542,35 +1473,27 @@ static void quick_sym(short array[], int l, int h) {
   /**************************************************************/
 
   int lostack[14],
-      histack[14],
-      lower,
-      upper,
-      top,
-      i,
-      j;
+      histack[14];
 
-  short temp,
-      pivot;
-
-  top = 1;
+  int top = 1;
   lostack[top] = l;
   histack[top] = h;
 
   while (top != 0) {
-    lower = lostack[top];
-    upper = histack[top--];
+    int lower = lostack[top];
+    int upper = histack[top--];
 
     while (upper > lower) {
       /********************************************************/
       /* Split the array section indicated by LOWER and UPPER */
       /* using ARRAY[LOWER] as the pivot.                     */
       /********************************************************/
-      i = lower;
-      pivot = array[lower];
-      for (j = lower + 1; j <= upper; j++) {
+      int i = lower;
+      short pivot = array[lower];
+      for (int j = lower + 1; j <= upper; j++) {
         if (strcmp(RETRIEVE_STRING(array[j]),
                    RETRIEVE_STRING(pivot)) < 0) {
-          temp = array[++i];
+          short temp = array[++i];
           array[i] = array[j];
           array[j] = temp;
         }
@@ -1591,8 +1514,6 @@ static void quick_sym(short array[], int l, int h) {
       }
     }
   }
-
-  return;
 }
 
 
@@ -1605,14 +1526,13 @@ static void print_nt_first(void) {
   int nt,
       t;
 
-  char line[PRINT_LINE_SIZE + 1],
-      tok[SYMBOL_SIZE + 1];
-
   PR_HEADING;
   fprintf(syslis, "\nFirst map for non-terminals:\n\n");
   output_line_no += 3;
 
   for ALL_NON_TERMINALS(nt) {
+    char tok[SYMBOL_SIZE + 1];
+    char line[PRINT_LINE_SIZE + 1];
     restore_symbol(tok, RETRIEVE_STRING(nt));
     print_large_token(line, tok, "", PRINT_LINE_SIZE - 7);
     strcat(line, "  ==>> ");
@@ -1632,8 +1552,6 @@ static void print_nt_first(void) {
     output_line_no++;
     ENDPAGE_CHECK;
   }
-
-  return;
 }
 
 
@@ -1646,14 +1564,13 @@ static void print_follow_map(void) {
   int nt,
       t;
 
-  char line[PRINT_LINE_SIZE + 1],
-      tok[SYMBOL_SIZE + 1];
-
   PR_HEADING;
   fprintf(syslis, "\nFollow Map:\n\n");
   output_line_no += 3;
 
   for ALL_NON_TERMINALS(nt) {
+    char tok[SYMBOL_SIZE + 1];
+    char line[PRINT_LINE_SIZE + 1];
     restore_symbol(tok, RETRIEVE_STRING(nt));
     print_large_token(line, tok, "", PRINT_LINE_SIZE - 7);
     strcat(line, "  ==>> ");
@@ -1673,5 +1590,4 @@ static void print_follow_map(void) {
     output_line_no++;
     ENDPAGE_CHECK;
   }
-  return;
 }

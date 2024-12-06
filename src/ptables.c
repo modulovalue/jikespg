@@ -1,3 +1,4 @@
+#include <stdlib.h>
 static char hostfile[] = __FILE__;
 
 #include "common.h"
@@ -20,17 +21,12 @@ struct action_element {
 /****************************************************************************/
 static void process_shift_actions(struct action_element **action_count,
                                   int shift_no) {
-  struct shift_header_type sh;
   struct action_element *q;
 
-  int symbol,
-      act,
-      i;
-
-  sh = shift[shift_no];
-  for (i = 1; i <= sh.size; i++) {
-    symbol = SHIFT_SYMBOL(sh, i);
-    act = SHIFT_ACTION(sh, i);
+  struct shift_header_type sh = shift[shift_no];
+  for (int i = 1; i <= sh.size; i++) {
+    int symbol = SHIFT_SYMBOL(sh, i);
+    int act = SHIFT_ACTION(sh, i);
     for (q = action_count[symbol]; q != NULL; q = q->next) {
       if (q->action == act)
         break;
@@ -49,8 +45,6 @@ static void process_shift_actions(struct action_element **action_count,
       action_count[symbol] = q;
     } else (q->count)++;
   }
-
-  return;
 }
 
 
@@ -62,26 +56,19 @@ static void process_shift_actions(struct action_element **action_count,
 /* most frequently defined on the symbol in question.                       */
 /****************************************************************************/
 static void compute_shift_default(void) {
-  struct action_element **action_count,
-      *q;
-
   int state_no,
       symbol,
-      default_action,
-      max_count,
       shift_count = 0,
       shift_reduce_count = 0;
 
   /******************************************************************/
-  /* Set up a a pool of temporary space.                            */
+  /* Set up a pool of temporary space.                            */
   /******************************************************************/
   reset_temporary_space();
 
   shiftdf = Allocate_short_array(num_terminals + 1);
 
-  action_count = (struct action_element **)
-      calloc(num_terminals + 1,
-             sizeof(struct action_element *));
+  struct action_element **action_count = calloc(num_terminals + 1, sizeof(struct action_element *));
   if (action_count == NULL)
     nospace(__FILE__, __LINE__);
 
@@ -105,10 +92,10 @@ static void compute_shift_default(void) {
   /* frequently defined on t.                                          */
   /*********************************************************************/
   for ALL_TERMINALS(symbol) {
-    max_count = 0;
-    default_action = 0;
+    int max_count = 0;
+    int default_action = 0;
 
-    for (q = action_count[symbol]; q != NULL; q = q->next) {
+    for (struct action_element *q = action_count[symbol]; q != NULL; q = q->next) {
       if (q->count > max_count) {
         max_count = q->count;
         default_action = q->action;
@@ -137,8 +124,6 @@ static void compute_shift_default(void) {
   num_entries = num_entries - shift_count - shift_reduce_count;
 
   ffree(action_count);
-
-  return;
 }
 
 
@@ -153,16 +138,12 @@ static void compute_shift_default(void) {
 static void compute_goto_default(void) {
   struct goto_header_type go_to;
 
-  struct action_element **action_count,
+  struct action_element
       *q;
 
   int state_no,
       symbol,
-      default_action,
-      act,
       i,
-      k,
-      max_count,
       goto_count = 0,
       goto_reduce_count = 0;
 
@@ -174,7 +155,7 @@ static void compute_goto_default(void) {
   gotodef = Allocate_short_array(num_non_terminals);
   gotodef -= (num_terminals + 1);
 
-  action_count = (struct action_element **)
+  struct action_element **action_count = (struct action_element **)
       calloc(num_non_terminals,
              sizeof(struct action_element *));
   action_count -= (num_terminals + 1);
@@ -192,7 +173,7 @@ static void compute_goto_default(void) {
     go_to = statset[state_no].go_to;
     for (i = 1; i <= go_to.size; i++) {
       symbol = GOTO_SYMBOL(go_to, i);
-      act = GOTO_ACTION(go_to, i);
+      int act = GOTO_ACTION(go_to, i);
       for (q = action_count[symbol]; q != NULL; q = q->next) {
         if (q->action == act)
           break;
@@ -219,8 +200,8 @@ static void compute_goto_default(void) {
   /* most frequently defined on A.                                   */
   /*******************************************************************/
   for ALL_NON_TERMINALS(symbol) {
-    max_count = 0;
-    default_action = 0;
+    int max_count = 0;
+    int default_action = 0;
 
     for (q = action_count[symbol]; q != NULL; q = q->next) {
       if (q->count > max_count) {
@@ -241,7 +222,7 @@ static void compute_goto_default(void) {
   /* for which there is a DEFAULT.                                       */
   /***********************************************************************/
   for ALL_STATES(state_no) {
-    k = 0;
+    int k = 0;
     go_to = statset[state_no].go_to;
     for (i = 1; i <= go_to.size; i++) {
       if (gotodef[GOTO_SYMBOL(go_to, i)] != GOTO_ACTION(go_to, i)) {
@@ -268,8 +249,6 @@ static void compute_goto_default(void) {
 
   action_count += (num_terminals + 1);
   ffree(action_count);
-
-  return;
 }
 
 
@@ -281,13 +260,10 @@ static void compute_goto_default(void) {
 /***********************************************************************/
 void process_tables(void) {
   int i,
-      j,
       state_no,
       rule_no,
       symbol;
 
-  struct goto_header_type go_to;
-  struct shift_header_type sh;
   struct reduce_header_type red;
 
   /*******************************************************************/
@@ -312,7 +288,7 @@ void process_tables(void) {
   /* Release space trapped by the maps IN_STAT and FIRST.        */
   /***************************************************************/
   for ALL_STATES(state_no) {
-    go_to = statset[state_no].go_to;
+    struct goto_header_type go_to = statset[state_no].go_to;
     for (i = 1; i <= go_to.size; i++)
       GOTO_SYMBOL(go_to, i)--;
 
@@ -342,8 +318,8 @@ void process_tables(void) {
   /* Remap all symbols in the domain of the Shift maps.              */
   /*******************************************************************/
   for (i = 1; i <= num_shift_maps; i++) {
-    sh = shift[i];
-    for (j = 1; j <= sh.size; j++)
+    struct shift_header_type sh = shift[i];
+    for (int j = 1; j <= sh.size; j++)
       SHIFT_SYMBOL(sh, j)--;
   }
 
@@ -435,6 +411,4 @@ void process_tables(void) {
               "\n%5d  ==>>  %5d", ordered_state[i], state_list[i]);
     fprintf(syslis, "\n");
   }
-
-  return;
 }

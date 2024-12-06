@@ -1,7 +1,6 @@
 static char hostfile[] = __FILE__;
 
 #include "common.h"
-#include "reduce.h"
 #include "space.h"
 
 /*******************************************************************/

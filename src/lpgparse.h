@@ -252,7 +252,7 @@ static void init_process(void);
 
 static void exit_process(void);
 
-static BOOLEAN verify(char *item);
+static BOOLEAN verify(const char *item);
 
 static char *translate(char *str, int len);
 
@@ -260,17 +260,17 @@ static void options(void);
 
 static void process_options_lines(void);
 
-static int hash(char *symbl);
+static int hash(const char *symbl);
 
-static void insert_string(struct hash_type *q, char *string);
+static void insert_string(struct hash_type *q, const char *string);
 
-static void assign_symbol_no(char *string_ptr, int image);
+static void assign_symbol_no(const char *string_ptr, int image);
 
-static void alias_map(char *stringptr, int image);
+static void alias_map(const char *stringptr, int image);
 
-static int symbol_image(char *item);
+static int symbol_image(const char *item);
 
-static int name_map(char *symb);
+static int name_map(const char *symb);
 
 static void process_grammar(void);
 

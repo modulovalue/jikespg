@@ -16,7 +16,6 @@ void ptstats(void) {
       number,
       i;
 
-  struct goto_header_type go_to;
   struct shift_header_type sh;
   struct reduce_header_type red;
 
@@ -44,7 +43,7 @@ void ptstats(void) {
       max_size = MAX(max_size, strlen(temp));
     }
 
-    go_to = statset[state_no].go_to;
+    struct goto_header_type go_to = statset[state_no].go_to;
     for (i = 1; i <= go_to.size; i++) {
       symbol = GOTO_SYMBOL(go_to, i);
       restore_symbol(temp, RETRIEVE_STRING(symbol));
@@ -252,6 +251,4 @@ void ptstats(void) {
 
   fprintf(syslis, "\n");
   ENDPAGE_CHECK;
-
-  return;
 }

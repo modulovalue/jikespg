@@ -1,3 +1,4 @@
+#include <stdlib.h>
 static char hostfile[] = __FILE__;
 
 #include <string.h>
@@ -506,9 +507,7 @@ static void terminal_shift_default_space_lalr_k(void) {
 /*                            INIT_FILE:                             */
 /*********************************************************************/
 static void init_file(FILE **file, char *file_name, char *file_tag) {
-  char *p;
-
-  p = strrchr(file_name, '.');
+  char *p = strrchr(file_name, '.');
   if ((*file = fopen(file_name, "w")) == NULL)
   {
     fprintf(stderr,
@@ -541,8 +540,6 @@ static void init_file(FILE **file, char *file_name, char *file_tag) {
     fprintf(*file, "#ifdef HAVE_JIKES_NAMESPACE\n"
             "namespace Jikes { // Open namespace Jikes block\n"
             "#endif\n\n");
-
-  return;
 }
 
 
@@ -554,8 +551,6 @@ static void init_parser_files(void) {
   init_file(&syssym, sym_file, sym_tag);
   init_file(&sysdef, def_file, def_tag);
   init_file(&sysprs, prs_file, prs_tag);
-
-  return;
 }
 
 
@@ -572,8 +567,6 @@ static void exit_file(FILE **file, char *file_tag) {
     fprintf(*file, "\n#endif /* %s_INCLUDED */\n", file_tag);
 
   fclose(*file);
-
-  return;
 }
 
 
@@ -585,8 +578,6 @@ static void exit_parser_files(void) {
   exit_file(&syssym, sym_tag);
   exit_file(&sysdef, def_tag);
   exit_file(&sysprs, prs_tag);
-
-  return;
 }
 
 
@@ -594,18 +585,18 @@ static void exit_parser_files(void) {
 /*                              PRINT_C_NAMES:                            */
 /**************************************************************************/
 static void print_c_names(void) {
-  char tok[SYMBOL_SIZE + 1];
   short *name_len = Allocate_short_array(num_names + 1);
   long num_bytes = 0;
-  int i, j, k, n;
+  int i, k;
 
   max_name_length = 0;
   mystrcpy("\nconst char  CLASS_HEADER string_buffer[] = {0,\n");
 
-  n = 0;
-  j = 0;
+  int n = 0;
+  int j = 0;
   padline();
   for (i = 1; i <= num_names; i++) {
+    char tok[SYMBOL_SIZE + 1];
     strcpy(tok, RETRIEVE_NAME(i));
     name_len[i] = strlen(tok);
     num_bytes += name_len[i];
@@ -707,24 +698,22 @@ static void print_c_names(void) {
 /*                             PRINT_JAVA_NAMES:                          */
 /**************************************************************************/
 static void print_java_names(void) {
-  char tok[SYMBOL_SIZE + 1];
   long num_bytes = 0;
-  int i, j, k;
 
   max_name_length = 0;
   mystrcpy("\n    public final static String name[] = { null,\n");
 
-  for (i = 1; i <= num_names; i++) {
-    int len;
+  for (int i = 1; i <= num_names; i++) {
+    char tok[SYMBOL_SIZE + 1];
     strcpy(tok, RETRIEVE_NAME(i));
-    len = strlen(tok);
+    int len = strlen(tok);
     num_bytes += (len * 2);
     if (max_name_length < len)
       max_name_length = len;
     padline();
     *output_ptr++ = '\"';
-    k = 0;
-    for (j = 0; j < len; j++) {
+    int k = 0;
+    for (int j = 0; j < len; j++) {
       if (tok[j] == '\"' || tok[j] == '\\')
         *output_ptr++ = '\\';
 
@@ -733,7 +722,7 @@ static void print_java_names(void) {
       else
         *output_ptr++ = tok[j];
       k++;
-      if (k == 30 && (!(j == len - 1))) {
+      if (k == 30 && (j != len - 1)) {
         k = 0;
         *output_ptr++ = '\"';
         *output_ptr++ = ' ';
@@ -781,7 +770,6 @@ static void print_error_maps(void) {
       *naction_symbols_range;
 
   int i,
-      j,
       k,
       n,
       offset,
@@ -1133,6 +1121,7 @@ static void print_error_maps(void) {
     PRNT(msg_line);
   }
   if (num_scopes > 0) {
+    int j;
     short root = 0;
     short *list;
     list = Allocate_short_array(scope_rhs_size + 1);
@@ -1399,10 +1388,10 @@ static void print_error_maps(void) {
     k = 1;
     for (state_no = 2; state_no <= (int) num_states; state_no++) {
       struct node *q;
-      int item_no;
 
       q = statset[state_no].kernel_items;
       if (q != NULL) {
+        int item_no;
         item_no = q->value - 1;
         i = item_table[item_no].symbol;
       } else i = 0;
@@ -2560,7 +2549,6 @@ static void print_time_tables(void) {
   /* We set the rest of the table with the proper table entries.       */
   /*********************************************************************/
   for (state_no = 1; state_no <= (int) max_la_state; state_no++) {
-    struct goto_header_type go_to;
     struct shift_header_type sh;
     struct reduce_header_type red;
 
@@ -2569,7 +2557,7 @@ static void print_time_tables(void) {
       sh = shift[lastats[state_no].shift_number];
       red = lastats[state_no].reduce;
     } else {
-      go_to = statset[state_no].go_to;
+      struct goto_header_type go_to = statset[state_no].go_to;
       for (j = 1; j <= go_to.size; j++) {
         symbol = GOTO_SYMBOL(go_to, j);
         i = indx + symbol;

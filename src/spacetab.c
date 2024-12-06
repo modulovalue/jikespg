@@ -1,3 +1,4 @@
+#include <stdlib.h>
 static char hostfile[] = __FILE__;
 
 #include <string.h>
@@ -28,10 +29,6 @@ static BOOLEAN *shift_on_error_symbol;
 /* frequency of entries.                                                    */
 /****************************************************************************/
 static void remap_non_terminals(void) {
-  short *frequency_symbol,
-      *frequency_count,
-      *row_size;
-
   struct goto_header_type go_to;
 
   int i,
@@ -44,11 +41,11 @@ static void remap_non_terminals(void) {
   /* hold the number of actions defined on each non-terminal.           */
   /* ORDERED_STATE and ROW_SIZE are used in a similar fashion for states*/
   /**********************************************************************/
-  frequency_symbol = Allocate_short_array(num_non_terminals);
+  short *frequency_symbol = Allocate_short_array(num_non_terminals);
   frequency_symbol -= (num_terminals + 1);
-  frequency_count = Allocate_short_array(num_non_terminals);
+  short *frequency_count = Allocate_short_array(num_non_terminals);
   frequency_count -= (num_terminals + 1);
-  row_size = Allocate_short_array(num_states + 1);
+  short *row_size = Allocate_short_array(num_states + 1);
 
   for ALL_NON_TERMINALS(i) {
     frequency_symbol[i] = i;
@@ -95,9 +92,7 @@ static void remap_non_terminals(void) {
   /* based on the new mapping of the non-terminals.                     */
   /**********************************************************************/
   if (goto_default_bit) {
-    short *temp_goto_default;
-
-    temp_goto_default = Allocate_short_array(num_non_terminals);
+    short *temp_goto_default = Allocate_short_array(num_non_terminals);
     temp_goto_default -= (num_terminals + 1);
 
     for (last_symbol = num_symbols;
@@ -147,17 +142,10 @@ static void remap_non_terminals(void) {
 /* stored in the vector STATE_INDEX.                                        */
 /****************************************************************************/
 static void overlap_nt_rows(void) {
-  struct goto_header_type go_to;
-
-  int max_indx,
+  int
       indx,
       k,
-      j,
-      i,
-      k_bytes,
-      percentage,
-      state_no,
-      symbol;
+      i;
 
   long num_bytes;
 
@@ -188,7 +176,7 @@ static void overlap_nt_rows(void) {
   previous[last_index] = last_index - 1;
   next[last_index] = NIL;
 
-  max_indx = first_index;
+  int max_indx = first_index;
 
   /*******************************************************************/
   /* We now iterate over all the states in their new sorted order as */
@@ -196,7 +184,7 @@ static void overlap_nt_rows(void) {
   /* position for them.                                              */
   /*******************************************************************/
   for ALL_STATES(k) {
-    state_no = ordered_state[k];
+    int state_no = ordered_state[k];
 
     /****************************************************************/
     /* INDX is set to the beginning of the list of available slots  */
@@ -204,7 +192,7 @@ static void overlap_nt_rows(void) {
     /* position.  If not, INDX is moved to the next element, and we */
     /* repeat the process until a valid position is found.          */
     /****************************************************************/
-    go_to = statset[state_no].go_to;
+    struct goto_header_type go_to = statset[state_no].go_to;
     indx = first_index;
 
   look_for_match_in_base_table:
@@ -226,8 +214,8 @@ static void overlap_nt_rows(void) {
     /* NOTE tha since SYMBOLs start at 1, the first index can never  */
     /* be a candidate (==> I = INDX + SYMBOL) in this loop.          */
     /*****************************************************************/
-    for (j = 1; j <= go_to.size; j++) {
-      symbol = GOTO_SYMBOL(go_to, j);
+    for (int j = 1; j <= go_to.size; j++) {
+      int symbol = GOTO_SYMBOL(go_to, j);
       i = indx + symbol;
       if (i == last_index) {
         last_index = previous[last_index];
@@ -283,8 +271,8 @@ static void overlap_nt_rows(void) {
           num_table_entries);
   PRNT(msg_line);
 
-  percentage = ((action_size - num_table_entries) * 1000)
-               / num_table_entries;
+  int percentage = ((action_size - num_table_entries) * 1000)
+                   / num_table_entries;
   sprintf(msg_line, "Percentage of increase: %d.%d%%",
           percentage / 10, percentage % 10);
   PRNT(msg_line);
@@ -302,7 +290,7 @@ static void overlap_nt_rows(void) {
     num_bytes += ((long) 2 * num_non_terminals);
   total_bytes = num_bytes;
 
-  k_bytes = (num_bytes / 1024) + 1;
+  int k_bytes = (num_bytes / 1024) + 1;
 
   sprintf(msg_line, "Storage required for base Tables: %ld Bytes, %dK",
           num_bytes, k_bytes);
@@ -325,30 +313,23 @@ static void overlap_nt_rows(void) {
 /*********************************************************************/
 /* We now try to merge states in the terminal table that are similar.*/
 /* Two states S1 and S2 are said to be similar if they contain the   */
-/* same shift actions and they reduce to the same set of rules.  In  */
+/* same shift actions, and they reduce to the same set of rules.  In  */
 /* addition,  there must not exist a terminal symbol "t" such that:  */
 /* REDUCE(S1, t) and REDUCE(S2, t) are defined, and                  */
 /* REDUCE(S1, t) ^= REDUCE(S2, t)                                    */
 /*********************************************************************/
 static void merge_similar_t_rows(void) {
-  struct shift_header_type sh;
   struct reduce_header_type red;
 
-  short *table;
-
-  int i,
-      j,
-      rule_no,
-      state_no;
+  int i;
 
   unsigned long hash_address;
 
   struct node *q,
       *r,
-      *tail,
-      *reduce_root;
+      *tail;
 
-  table = Allocate_short_array(num_shift_maps + 1);
+  short *table = Allocate_short_array(num_shift_maps + 1);
 
   empty_root = NIL;
   single_root = NIL;
@@ -367,15 +348,15 @@ static void merge_similar_t_rows(void) {
   /* The rules in the range of the REDUCE MAP are placed in sorted     */
   /* order in a linear linked list headed by REDUCE_ROOT.              */
   /*********************************************************************/
-  for (state_no = 1; state_no <= (int) max_la_state; state_no++) {
-    reduce_root = NULL;
+  for (int state_no = 1; state_no <= (int) max_la_state; state_no++) {
+    struct node *reduce_root = NULL;
     if (state_no > (int) num_states)
       red = lastats[state_no].reduce;
     else
       red = reduce[state_no];
 
     for (i = 1; i <= red.size; i++) {
-      rule_no = REDUCE_RULE_NO(red, i);
+      int rule_no = REDUCE_RULE_NO(red, i);
 
       for (q = reduce_root; q != NULL; tail = q, q = q->next) {
         /* Is it or not in REDUCE_ROOT list? */
@@ -406,9 +387,9 @@ static void merge_similar_t_rows(void) {
       hash_address = lastats[state_no].shift_number;
     else {
       if (default_opt == 5) {
-        sh = shift[statset[state_no].shift_number];
-        for (j = 1; (j <= sh.size) &&
-                    (!shift_on_error_symbol[state_no]); j++)
+        struct shift_header_type sh = shift[statset[state_no].shift_number];
+        for (int j = 1; (j <= sh.size) &&
+                        (!shift_on_error_symbol[state_no]); j++)
           shift_on_error_symbol[state_no] =
               (SHIFT_SYMBOL(sh, j) == error_image);
       }
@@ -1221,30 +1202,19 @@ static void overlay_sim_t_rows(void) {
 /* The starting positions are stored in the vector TERM_STATE_INDEX. */
 /*********************************************************************/
 static void overlap_t_rows(void) {
-  struct shift_header_type sh;
-  struct reduce_header_type red;
-
-  short *terminal_list;
-
-  int root_symbol,
+  int
       symbol,
       i,
-      k,
-      k_bytes,
-      percentage,
-      state_no,
-      old_size,
-      max_indx,
       indx;
 
   long num_bytes;
 
-  terminal_list = Allocate_short_array(num_terminals + 1);
+  short *terminal_list = Allocate_short_array(num_terminals + 1);
   term_state_index = Allocate_int_array(max_la_state + 1);
 
   increment_size = MAX((num_table_entries * increment / 100),
                        (num_terminals + 1));
-  old_size = table_size;
+  int old_size = table_size;
   table_size = MIN((num_table_entries + increment_size), MAX_TABLE_SIZE);
   if ((int) table_size > old_size) {
     ffree(previous);
@@ -1265,18 +1235,18 @@ static void overlap_t_rows(void) {
   previous[last_index] = last_index - 1;
   next[last_index] = NIL;
 
-  max_indx = first_index;
+  int max_indx = first_index;
 
-  for (k = 1; k <= num_terminal_states; k++) {
-    state_no = ordered_state[k];
+  for (int k = 1; k <= num_terminal_states; k++) {
+    int state_no = ordered_state[k];
     /*********************************************************************/
     /* For the terminal table, we are dealing with two lists, the SHIFT  */
     /* list, and the REDUCE list. Those lists are merged together first  */
     /* in TERMINAL_LIST.  Since we have to iterate over the list twice,  */
     /* this merging makes things easy.                                   */
     /*********************************************************************/
-    root_symbol = NIL;
-    sh = shift[new_state_element[state_no].shift_number];
+    int root_symbol = NIL;
+    struct shift_header_type sh = shift[new_state_element[state_no].shift_number];
     for (i = 1; i <= sh.size; i++) {
       symbol = SHIFT_SYMBOL(sh, i);
       if (!shift_default_bit ||
@@ -1286,7 +1256,7 @@ static void overlap_t_rows(void) {
       }
     }
 
-    red = new_state_element[state_no].reduce;
+    struct reduce_header_type red = new_state_element[state_no].reduce;
     for (i = 1; i <= red.size; i++) {
       terminal_list[REDUCE_SYMBOL(red, i)] = root_symbol;
       root_symbol = REDUCE_SYMBOL(red, i);
@@ -1376,8 +1346,8 @@ static void overlap_t_rows(void) {
           num_table_entries);
   PRNT(msg_line);
 
-  percentage = (((long) term_action_size - num_table_entries) * 1000)
-               / num_table_entries;
+  int percentage = (((long) term_action_size - num_table_entries) * 1000)
+                   / num_table_entries;
 
   sprintf(msg_line, "Percentage of increase: %d.%d%%",
           (percentage / 10), (percentage % 10));
@@ -1393,7 +1363,7 @@ static void overlap_t_rows(void) {
   if (shift_default_bit)
     num_bytes += (2 * num_terminal_states);
 
-  k_bytes = (num_bytes / 1024) + 1;
+  int k_bytes = (num_bytes / 1024) + 1;
 
   sprintf(msg_line,
           "Storage required for Terminal Tables: %ld Bytes, %dK",

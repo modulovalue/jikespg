@@ -1,3 +1,4 @@
+#include <stdlib.h>
 static char hostfile[] = __FILE__;
 
 #include <string.h>
@@ -20,22 +21,16 @@ static void remap_symbols(void) {
   struct shift_header_type sh;
   struct reduce_header_type red;
 
-  short *frequency_symbol,
-      *frequency_count,
-      *row_size;
-
   int symbol,
       state_no,
-      i,
-      j,
-      k;
+      i;
 
   ordered_state = Allocate_short_array(max_la_state + 1);
   symbol_map = Allocate_short_array(num_symbols + 1);
   is_terminal = Allocate_boolean_array(num_symbols + 1);
-  frequency_symbol = Allocate_short_array(num_symbols + 1);
-  frequency_count = Allocate_short_array(num_symbols + 1);
-  row_size = Allocate_short_array(max_la_state + 1);
+  short *frequency_symbol = Allocate_short_array(num_symbols + 1);
+  short *frequency_count = Allocate_short_array(num_symbols + 1);
+  short *row_size = Allocate_short_array(max_la_state + 1);
 
   fprintf(syslis, "\n");
 
@@ -131,8 +126,8 @@ static void remap_symbols(void) {
   /* mapping for the symbols in SYMBOL_MAP.                            */
   /*********************************************************************/
   i = 1;
-  j = num_terminals + 1;
-  k = 0;
+  int j = num_terminals + 1;
+  int k = 0;
   while (i <= num_terminals) {
     k++;
     if (frequency_count[i] >= frequency_count[j]) {
@@ -208,25 +203,18 @@ static void remap_symbols(void) {
 /* The starting positions are stored in the vector STATE_INDEX.      */
 /*********************************************************************/
 static void overlap_tables(void) {
-  struct goto_header_type go_to;
   struct shift_header_type sh;
   struct reduce_header_type red;
 
-  short *symbol_list;
-
   int symbol,
-      state_no,
-      root_symbol,
-      max_indx,
       indx,
-      k,
       i;
 
   long num_bytes;
 
   state_index = Allocate_int_array(max_la_state + 1);
 
-  symbol_list = Allocate_short_array(num_symbols + 1);
+  short *symbol_list = Allocate_short_array(num_symbols + 1);
 
   num_entries -= default_saves;
   increment_size = MAX((num_entries*increment/100), (num_symbols + 1));
@@ -254,26 +242,26 @@ static void overlap_tables(void) {
   previous[last_index] = last_index - 1;
   next[last_index] = NIL;
 
-  max_indx = first_index;
+  int max_indx = first_index;
 
   /*********************************************************************/
   /* We now iterate over all the states in their new sorted order as   */
   /* indicated by the variable STATE_NO, and deternime an "overlap"    */
   /* position for them.                                                */
   /*********************************************************************/
-  for (k = 1; k <= (int) max_la_state; k++) {
-    state_no = ordered_state[k];
+  for (int k = 1; k <= (int) max_la_state; k++) {
+    int state_no = ordered_state[k];
 
     /*********************************************************************/
     /* First, we iterate over all actions defined in STATE_NO, and       */
     /* create a set with all the symbols involved.                       */
     /*********************************************************************/
-    root_symbol = NIL;
+    int root_symbol = NIL;
     if (state_no > (int) num_states) {
       sh = shift[lastats[state_no].shift_number];
       red = lastats[state_no].reduce;
     } else {
-      go_to = statset[state_no].go_to;
+      struct goto_header_type go_to = statset[state_no].go_to;
       for (i = 1; i <= go_to.size; i++) {
         symbol = GOTO_SYMBOL(go_to, i);
         symbol_list[symbol] = root_symbol;

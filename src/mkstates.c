@@ -1,3 +1,4 @@
+#include <stdlib.h>
 static char hostfile[] = __FILE__;
 
 #include "common.h"
@@ -61,9 +62,9 @@ void mkstats(void) {
   /* Free space trapped by the CLOSURE and CLITEMS maps.                */
   /**********************************************************************/
   for ALL_NON_TERMINALS(j) {
-    struct node *p, *q;
+    struct node *p;
 
-    q = clitems[j];
+    struct node *q = clitems[j];
     if (q != NULL) {
       p = q->next;
       free_nodes(p, q);
@@ -80,8 +81,6 @@ void mkstats(void) {
   ffree(closure);
   clitems += (num_terminals + 1);
   ffree(clitems);
-
-  return;
 }
 
 
@@ -128,7 +127,6 @@ static void mklr0(void) {
   int goto_size,
       shift_size,
       i,
-      state_no,
       next_item_no,
       item_no,
       symbol,
@@ -188,9 +186,9 @@ static void mklr0(void) {
   /* rule produced by Accept non-terminal.                         */
   /*****************************************************************/
   q = NULL;
-  for (end_node = ((p = clitems[accept_image]) == NULL);
+  for (end_node = (p = clitems[accept_image]) == NULL;
        !end_node; /* Loop over circular list */
-       end_node = (p == clitems[accept_image])) {
+       end_node = p == clitems[accept_image]) {
     p = p->next;
 
     new_item = Allocate_node();
@@ -224,9 +222,9 @@ static void mklr0(void) {
           nt_list[symbol] = nt_root;
           nt_root = symbol;
 
-          for (end_node = ((p = closure[symbol]) == NULL);
+          for (end_node = (p = closure[symbol]) == NULL;
                !end_node; /* Loop over circular list */
-               end_node = (p == closure[symbol])) {
+               end_node = p == closure[symbol]) {
             /* add its closure to list */
             p = p->next;
 
@@ -251,9 +249,9 @@ static void mklr0(void) {
          nt_list[symbol] = OMEGA, symbol = nt_root) {
       nt_root = nt_list[symbol];
 
-      for (end_node = ((p = clitems[symbol]) == NULL);
+      for (end_node = (p = clitems[symbol]) == NULL;
            !end_node; /* Loop over circular list */
-           end_node = (p == clitems[symbol])) {
+           end_node = p == clitems[symbol]) {
         p = p->next;
 
         item_no = p->value;
@@ -521,6 +519,7 @@ static void mklr0(void) {
   /* Release all NODEs used by  the maps CLITEMS and CLOSURE.          */
   /*********************************************************************/
   {
+    int state_no;
     struct state_element *p;
 
     /*********************************************************************/
@@ -555,8 +554,6 @@ static void mklr0(void) {
   ffree(partition);
   ffree(state_table);
   ffree(shift_table);
-
-  return;
 }
 
 
@@ -571,8 +568,6 @@ static void mklr0(void) {
 static struct state_element *lr0_state_map(struct node *kernel) {
   unsigned long hash_address = 0;
   struct node *p;
-  struct state_element *state_ptr,
-      *ptr;
 
   /*********************************************/
   /*       Compute the hash address.           */
@@ -585,7 +580,7 @@ static struct state_element *lr0_state_map(struct node *kernel) {
   /*************************************************************************/
   /* Check whether a state is already defined by the KERNEL set.           */
   /*************************************************************************/
-  for (state_ptr = state_table[hash_address];
+  for (struct state_element *state_ptr = state_table[hash_address];
        state_ptr != NULL; state_ptr = state_ptr->link) {
     struct node *q,
         *r;
@@ -608,7 +603,7 @@ static struct state_element *lr0_state_map(struct node *kernel) {
   /*******************************************************************/
   /* Add a new state based on the KERNEL set.                        */
   /*******************************************************************/
-  ptr = (struct state_element *) talloc(sizeof(struct state_element));
+  struct state_element *ptr = (struct state_element *) talloc(sizeof(struct state_element));
   if (ptr == (struct state_element *) NULL)
     nospace(__FILE__, __LINE__);
 

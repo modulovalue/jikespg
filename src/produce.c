@@ -1,3 +1,4 @@
+#include <stdlib.h>
 static char hostfile[] = __FILE__;
 
 #include <string.h>
@@ -147,8 +148,8 @@ void produce(void) {
   /*********************************************************************/
   item_root = NIL;
   for ALL_NON_TERMINALS(nt) {
-    for (end_node = ((p = clitems[nt]) == NULL);
-         !end_node; end_node = (p == clitems[nt])) {
+    for (end_node = (p = clitems[nt]) == NULL;
+         !end_node; end_node = p == clitems[nt]) {
       p = p->next;
       item_no = p->value;
       symbol = item_table[item_no].symbol;
@@ -378,8 +379,6 @@ void produce(void) {
   direct_produces += (num_terminals + 1);
   ffree(direct_produces);
   ffree(goto_domain);
-
-  return;
 }
 
 
@@ -390,17 +389,16 @@ void produce(void) {
 /* the PRODUCES, LEFT_PRODUCES and RIGHT_MOST_PRODUCES maps.      */
 /******************************************************************/
 static void compute_produces(int symbol) {
-  int indx;
   int new_symbol;
 
-  struct node *p,
+  struct node
       *q;
 
   stack[++top] = symbol;
-  indx = top;
+  int indx = top;
   index_of[symbol] = indx;
 
-  for (p = direct_produces[symbol]; p != NULL; q = p, p = p->next) {
+  for (struct node *p = direct_produces[symbol]; p != NULL; q = p, p = p->next) {
     new_symbol = p->value;
     if (index_of[new_symbol] == OMEGA) /* first time seen? */
       compute_produces(new_symbol);
@@ -421,8 +419,6 @@ static void compute_produces(int symbol) {
     index_of[symbol] = INFINITY;
     top--;
   }
-
-  return;
 }
 
 
@@ -434,14 +430,12 @@ static void compute_produces(int symbol) {
 /* to print aliases is used to print name mappings.               */
 /******************************************************************/
 static void print_name_map(int symbol) {
-  int len;
-
   char line[PRINT_LINE_SIZE],
       tok[SYMBOL_SIZE + 1];
 
   restore_symbol(tok, RETRIEVE_STRING(symbol));
 
-  len = PRINT_LINE_SIZE - 5;
+  int len = PRINT_LINE_SIZE - 5;
   print_large_token(line, tok, "", len);
   strcat(line, " ::= ");
   restore_symbol(tok, RETRIEVE_NAME(symno[symbol].name_index));
@@ -455,8 +449,6 @@ static void print_name_map(int symbol) {
 
   fprintf(syslis, "\n%s", line);
   ENDPAGE_CHECK;
-
-  return;
 }
 
 
@@ -545,7 +537,7 @@ static void process_scopes(void) {
 
     direct_produces[nt] = NULL;
 
-    for (end_node = ((p = clitems[nt]) == NULL);
+    for (end_node = (p = clitems[nt]) == NULL;
          !end_node; end_node = (p == clitems[nt])) {
       p = p->next;
       for (item_no = p->value;
@@ -597,8 +589,8 @@ static void process_scopes(void) {
 
     direct_produces[nt] = NULL;
 
-    for (end_node = ((p = clitems[nt]) == NULL);
-         !end_node; end_node = (p == clitems[nt])) {
+    for (end_node = (p = clitems[nt]) == NULL;
+         !end_node; end_node = p == clitems[nt]) {
       p = p->next;
       for (item_no = p->value;
            item_table[item_no].symbol != empty; item_no++) {
@@ -836,8 +828,8 @@ process_scope_states: {
         state_root = 0;
         state_list[state_root] = NIL;
 
-        for (end_node = ((j = i) == NIL);
-             !end_node; end_node = (j == i)) {
+        for (end_node = (j = i) == NIL;
+             !end_node; end_node = j == i) {
           j = stack[j];
           symbol = ordered_symbol[j];
           for (p = states_of[symbol]; p != NULL; p = p->next) {
@@ -986,8 +978,6 @@ process_scope_states: {
   state_index += (num_terminals + 1);
   ffree(state_index);
   ffree(scope_element);
-
-  return;
 }
 
 
@@ -1007,22 +997,19 @@ process_scope_states: {
 /*    and C =>rm+ B.                                                 */
 /*********************************************************************/
 static BOOLEAN is_scope(int item_no) {
-  int i,
-      nt,
-      lhs_symbol,
-      target,
-      symbol;
+  int
+      nt;
 
-  for (i = item_no - item_table[item_no].dot; i < item_no; i++) {
-    symbol = item_table[i].symbol;
+  for (int i = item_no - item_table[item_no].dot; i < item_no; i++) {
+    int symbol = item_table[i].symbol;
     if (symbol IS_A_TERMINAL)
       return (TRUE);
     if (!null_nt[symbol])
       return (TRUE);
   }
 
-  lhs_symbol = rules[item_table[item_no].rule_number].lhs;
-  target = item_table[item_no].symbol;
+  int lhs_symbol = rules[item_table[item_no].rule_number].lhs;
+  int target = item_table[item_no].symbol;
   if (IS_IN_NTSET(left_produces, target, lhs_symbol - num_terminals))
     return (FALSE);
 
@@ -1053,23 +1040,19 @@ static BOOLEAN is_scope(int item_no) {
 /*                                                                   */
 /*********************************************************************/
 static BOOLEAN scope_check(int lhs_symbol, int target, int source) {
-  int item_no,
-      rule_no,
-      symbol;
-
   symbol_seen[source] = TRUE;
 
   if (IS_IN_NTSET(right_produces, target, source - num_terminals) &&
       IS_IN_NTSET(right_produces, lhs_symbol, source - num_terminals))
     return (FALSE);
 
-  for (item_no = item_of[source];
+  for (int item_no = item_of[source];
        item_no != NIL; item_no = next_item[item_no]) {
     if (item_table[item_no].dot != 0)
       return (TRUE);
 
-    rule_no = item_table[item_no].rule_number;
-    symbol = rules[rule_no].lhs;
+    int rule_no = item_table[item_no].rule_number;
+    int symbol = rules[rule_no].lhs;
     if (!symbol_seen[symbol]) /* not yet processed */
     {
       if (scope_check(lhs_symbol, target, symbol))
@@ -1093,20 +1076,18 @@ static BOOLEAN scope_check(int lhs_symbol, int target, int source) {
 /* -ITEM_NO, whereas the suffix of that item is encoded as +ITEM_NO. */
 /*********************************************************************/
 static int insert_prefix(int item_no) {
-  int i,
-      j,
-      rule_no;
+  int i;
 
   unsigned long hash_address = 0;
 
-  rule_no = item_table[item_no].rule_number;
+  int rule_no = item_table[item_no].rule_number;
   for (i = rules[rule_no].rhs; /* symbols before dot */
        i < rules[rule_no].rhs + item_table[item_no].dot; i++)
     hash_address += rhs_sym[i];
 
   i = hash_address % SCOPE_SIZE;
 
-  for (j = scope_table[i]; j != NIL; j = scope_element[j].link) {
+  for (int j = scope_table[i]; j != NIL; j = scope_element[j].link) {
     if (is_prefix_equal(scope_element[j].item, item_no))
       return (scope_element[j].index);
   }
@@ -1126,26 +1107,20 @@ static int insert_prefix(int item_no) {
 /*                      IS_PREFIX_EQUAL:                          */
 /******************************************************************/
 /* This boolean function takes two items as arguments and checks  */
-/* whether or not they have the same prefix.                      */
+/* whether they have the same prefix.                      */
 /******************************************************************/
 static BOOLEAN is_prefix_equal(int item_no, int item_no2) {
-  int item_no1,
-      start,
-      dot,
-      i,
-      j;
-
   if (item_no > 0) /* a suffix */
     return (FALSE);
 
-  item_no1 = -item_no;
+  int item_no1 = -item_no;
   if (item_table[item_no1].dot != item_table[item_no2].dot)
     return (FALSE);
 
-  j = rules[item_table[item_no1].rule_number].rhs;
-  start = rules[item_table[item_no2].rule_number].rhs;
-  dot = start + item_table[item_no2].dot - 1;
-  for (i = start; i <= dot; i++) /* symbols before dot */
+  int j = rules[item_table[item_no1].rule_number].rhs;
+  int start = rules[item_table[item_no2].rule_number].rhs;
+  int dot = start + item_table[item_no2].dot - 1;
+  for (int i = start; i <= dot; i++) /* symbols before dot */
   {
     if (rhs_sym[i] != rhs_sym[j])
       return (FALSE);
@@ -1168,13 +1143,11 @@ static BOOLEAN is_prefix_equal(int item_no, int item_no2) {
 /*********************************************************************/
 static int insert_suffix(int item_no) {
   int i,
-      j,
-      rule_no,
       num_elements = 0;
 
   unsigned long hash_address = 0;
 
-  rule_no = item_table[item_no].rule_number;
+  int rule_no = item_table[item_no].rule_number;
   for (i = rules[rule_no].rhs + item_table[item_no].dot;
        i < rules[rule_no + 1].rhs; /* symbols after dot */
        i++) {
@@ -1191,7 +1164,7 @@ static int insert_suffix(int item_no) {
 
   i = hash_address % SCOPE_SIZE;
 
-  for (j = scope_table[i]; j != NIL; j = scope_element[j].link) {
+  for (int j = scope_table[i]; j != NIL; j = scope_element[j].link) {
     if (is_suffix_equal(scope_element[j].item, item_no))
       return (scope_element[j].index);
   }
@@ -1201,9 +1174,9 @@ static int insert_suffix(int item_no) {
   scope_element[scope_top].link = scope_table[i];
   scope_table[i] = scope_top;
 
-  scope_rhs_size += (num_elements + 1);
+  scope_rhs_size += num_elements + 1;
 
-  return (scope_element[scope_top].index);
+  return scope_element[scope_top].index;
 }
 
 
@@ -1214,22 +1187,16 @@ static int insert_suffix(int item_no) {
 /* whether or not they have the same suffix.                      */
 /******************************************************************/
 static BOOLEAN is_suffix_equal(int item_no1, int item_no2) {
-  int rule_no,
-      dot1,
-      dot2,
-      i,
-      j;
-
   if (item_no1 < 0) /* a prefix */
     return (FALSE);
 
-  rule_no = item_table[item_no1].rule_number;
-  i = rules[rule_no].rhs + item_table[item_no1].dot;
-  dot1 = rules[rule_no + 1].rhs - 1;
+  int rule_no = item_table[item_no1].rule_number;
+  int i = rules[rule_no].rhs + item_table[item_no1].dot;
+  int dot1 = rules[rule_no + 1].rhs - 1;
 
   rule_no = item_table[item_no2].rule_number;
-  j = rules[rule_no].rhs + item_table[item_no2].dot;
-  dot2 = rules[rule_no + 1].rhs - 1;
+  int j = rules[rule_no].rhs + item_table[item_no2].dot;
+  int dot2 = rules[rule_no + 1].rhs - 1;
 
   while (i <= dot1 && j <= dot2) /* non-nullable syms before dot */
   {
@@ -1286,28 +1253,21 @@ static BOOLEAN is_suffix_equal(int item_no1, int item_no2) {
 /* This procedure is similar to the global procedure PTITEM.      */
 /******************************************************************/
 static void print_scopes(void) {
-  int len,
-      offset,
-      i,
-      k,
-      symbol;
-
-  char line[PRINT_LINE_SIZE + 1],
-      tok[SYMBOL_SIZE + 1],
-      tmp[PRINT_LINE_SIZE];
-
   PR_HEADING;
   fprintf(syslis, "\nScopes:\n");
   output_line_no += 2;
 
-  for (k = 1; k <= num_scopes; k++) {
-    symbol = scope[k].lhs_symbol;
+  for (int k = 1; k <= num_scopes; k++) {
+    char tmp[PRINT_LINE_SIZE];
+    char tok[SYMBOL_SIZE + 1];
+    char line[PRINT_LINE_SIZE + 1];
+    int symbol = scope[k].lhs_symbol;
     restore_symbol(tok, RETRIEVE_STRING(symbol));
-    len = PRINT_LINE_SIZE - 5;
+    int len = PRINT_LINE_SIZE - 5;
     print_large_token(line, tok, "", len);
     strcat(line, " ::= ");
-    i = (PRINT_LINE_SIZE / 2) - 1;
-    offset = MIN(strlen(line) - 1, i);
+    int i = (PRINT_LINE_SIZE / 2) - 1;
+    int offset = MIN(strlen(line) - 1, i);
     len = PRINT_LINE_SIZE - (offset + 4);
 
     /* locate end of list */
@@ -1349,8 +1309,6 @@ static void print_scopes(void) {
     fprintf(syslis, "\n%s", line);
     ENDPAGE_CHECK;
   }
-
-  return;
 }
 
 
@@ -1363,24 +1321,17 @@ static void print_scopes(void) {
 /* returned, otherwise EMPTY is returned.                            */
 /*********************************************************************/
 static int get_shift_symbol(int lhs_symbol) {
-  int item_no,
-      rule_no,
-      symbol;
-
-  BOOLEAN end_node;
-
-  struct node *p;
-
   if (!symbol_seen[lhs_symbol]) {
+    struct node *p;
     symbol_seen[lhs_symbol] = TRUE;
 
-    for (end_node = ((p = clitems[lhs_symbol]) == NULL);
-         !end_node; end_node = (p == clitems[lhs_symbol])) {
+    for (BOOLEAN end_node = (p = clitems[lhs_symbol]) == NULL;
+         !end_node; end_node = p == clitems[lhs_symbol]) {
       p = p->next;
-      item_no = p->value;
-      rule_no = item_table[item_no].rule_number;
+      int item_no = p->value;
+      int rule_no = item_table[item_no].rule_number;
       if (RHS_SIZE(rule_no) > 0) {
-        symbol = rhs_sym[rules[rule_no].rhs];
+        int symbol = rhs_sym[rules[rule_no].rhs];
         if (symbol IS_A_TERMINAL)
           return (symbol);
         else {

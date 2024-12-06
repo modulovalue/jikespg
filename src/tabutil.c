@@ -1,3 +1,4 @@
+#include <stdlib.h>
 static char hostfile[] = __FILE__;
 
 #include <string.h>
@@ -9,15 +10,12 @@ static const char digits[] = "0123456789";
 /**************************************************************************/
 /*                           PRNT_SHORTS:                                 */
 /**************************************************************************/
-void prnt_shorts(char *title, int init, int bound, int perline, short *array) {
-  int i,
-      k;
-
+void prnt_shorts(const char *title, int init, int bound, int perline, const short *array) {
   mystrcpy(title);
 
   padline();
-  k = 0;
-  for (i = init; i <= bound; i++) {
+  int k = 0;
+  for (int i = init; i <= bound; i++) {
     itoc(array[i]);
     *output_ptr++ = COMMA;
     k++;
@@ -33,26 +31,23 @@ void prnt_shorts(char *title, int init, int bound, int perline, short *array) {
     BUFFER_CHECK(sysdcl);
   }
 
-  if (java_bit)
+  if (java_bit) {
     mystrcpy("    };\n");
-  else mystrcpy("                 };\n");
-
-  return;
+  } else {
+    mystrcpy("                 };\n");
+  }
 }
 
 
 /**************************************************************************/
 /*                              PRNT_INTS:                                */
 /**************************************************************************/
-void prnt_ints(char *title, int init, int bound, int perline, int *array) {
-  int i,
-      k;
-
+void prnt_ints(const char *title, int init, int bound, int perline, const int *array) {
   mystrcpy(title);
 
   padline();
-  k = 0;
-  for (i = init; i <= bound; i++) {
+  int k = 0;
+  for (int i = init; i <= bound; i++) {
     itoc(array[i]);
     *output_ptr++ = COMMA;
     k++;
@@ -71,22 +66,18 @@ void prnt_ints(char *title, int init, int bound, int perline, int *array) {
   if (java_bit)
     mystrcpy("    };\n");
   else mystrcpy("                 };\n");
-
-  return;
 }
 
 
 /***************************************************************************/
 /*                               MYSTRCPY:                                 */
 /***************************************************************************/
-void mystrcpy(char *str) {
+void mystrcpy(const char *str) {
   while (*str != '\0')
     *output_ptr++ = *str++;
 
   BUFFER_CHECK(sysdcl);
   BUFFER_CHECK(syssym);
-
-  return;
 }
 
 
@@ -94,12 +85,8 @@ void mystrcpy(char *str) {
 /*                               PADLINE:                                  */
 /***************************************************************************/
 void padline(void) {
-  register int i;
-
-  for (i = 0; i < 12; i++)
+  for (register int i = 0; i < 12; i++)
     *output_ptr++ = ' ';
-
-  return;
 }
 
 
@@ -112,13 +99,11 @@ void padline(void) {
 /* negative, a leading "-" is added.                                       */
 /***************************************************************************/
 void itoc(int num) {
-  register int val;
-  register char *p;
   char tmp[12];
 
-  val = ABS(num);
+  register int val = ABS(num);
   tmp[11] = '\0';
-  p = &tmp[11];
+  register char *p = &tmp[11];
   do {
     p--;
     *p = digits[val % 10];
@@ -132,8 +117,6 @@ void itoc(int num) {
 
   while (*p != '\0')
     *(output_ptr++) = *(p++);
-
-  return;
 }
 
 
@@ -147,11 +130,8 @@ void itoc(int num) {
 /* leading "-" is added.                                                   */
 /***************************************************************************/
 void field(int num, int len) {
-  register int val;
-  register char *p;
-
-  val = ABS(num);
-  p = output_ptr + len;
+  register int val = ABS(num);
+  register char *p = output_ptr + len;
   do {
     p--;
     *p = digits[val % 10];
@@ -169,8 +149,6 @@ void field(int num, int len) {
   }
 
   output_ptr += len;
-
-  return;
 }
 
 
@@ -183,9 +161,6 @@ void field(int num, int len) {
 /* than zero, we can use a bucket sort technique.                          */
 /***************************************************************************/
 void sortdes(short array[], short count[], int low, int high, int max) {
-  short *bucket,
-      *list;
-
   register int element,
       i,
       k;
@@ -194,8 +169,8 @@ void sortdes(short array[], short count[], int low, int high, int max) {
   /* BUCKET is used to hold the roots of lists that contain the    */
   /* elements of each bucket.  LIST is used to hold these lists.   */
   /*****************************************************************/
-  bucket = Allocate_short_array(max + 1);
-  list = Allocate_short_array(high - low + 1);
+  short *bucket = Allocate_short_array(max + 1);
+  short *list = Allocate_short_array(high - low + 1);
 
   for (i = 0; i <= max; i++)
     bucket[i] = NIL;
@@ -231,8 +206,6 @@ void sortdes(short array[], short count[], int low, int high, int max) {
   }
   ffree(bucket);
   ffree(list);
-
-  return;
 }
 
 
@@ -244,10 +217,7 @@ void sortdes(short array[], short count[], int low, int high, int max) {
 /* is copied, and the old space is released.                               */
 /***************************************************************************/
 void reallocate(void) {
-  int *n,
-      *p;
-
-  register int old_size,
+  register int
       i;
 
   if (table_size == MAX_TABLE_SIZE) {
@@ -257,7 +227,7 @@ void reallocate(void) {
     exit(12);
   }
 
-  old_size = table_size;
+  register int old_size = table_size;
   table_size = MIN(table_size + increment_size, MAX_TABLE_SIZE);
 
   if (verbose_bit) {
@@ -273,8 +243,8 @@ void reallocate(void) {
     PRNT(msg_line);
   }
 
-  n = Allocate_int_array(table_size + 1);
-  p = Allocate_int_array(table_size + 1);
+  int *n = Allocate_int_array(table_size + 1);
+  int *p = Allocate_int_array(table_size + 1);
 
   for (i = 1; i <= old_size; i++) /* Copy old information */
   {
@@ -304,8 +274,6 @@ void reallocate(void) {
   last_index = table_size;
   next[last_index] = NIL;
   previous[last_index] = last_index - 1;
-
-  return;
 }
 
 
@@ -336,17 +304,16 @@ void process_error_maps(void) {
       *action_symbols_range,
       *naction_symbols_range;
 
-  int offset,
-      item_no,
-      lhs_symbol,
-      state_no,
-      symbol,
-      max_len,
-      i,
-      k,
-
-      terminal_ubound,
-      non_terminal_ubound;
+  int offset;
+  int item_no;
+  int lhs_symbol;
+  int state_no;
+  int symbol;
+  int max_len;
+  int i;
+  int k;
+  int terminal_ubound;
+  int non_terminal_ubound;
 
   long num_bytes;
 
@@ -594,7 +561,6 @@ void process_error_maps(void) {
     }
   }
   field(offset, 6);
-  k++;
   *output_ptr++ = '\n';
   BUFFER_CHECK(systab);
 
@@ -682,7 +648,6 @@ void process_error_maps(void) {
     }
   }
   field(offset, 6);
-  k++;
   *output_ptr++ = '\n';
   BUFFER_CHECK(systab);
 
@@ -1213,8 +1178,6 @@ void process_error_maps(void) {
   ffree(state_start);
   ffree(state_stack);
   ffree(term_list);
-
-  return;
 }
 
 
@@ -1234,37 +1197,30 @@ void process_error_maps(void) {
 /* first in the list.                                                */
 /*                                                                   */
 /*********************************************************************/
-void compute_action_symbols_range(short *state_start,
-                                  short *state_stack,
-                                  short *state_list,
+void compute_action_symbols_range(const short *state_start,
+                                  const short *state_stack,
+                                  const short *state_list,
                                   short *action_symbols_range) {
   int i,
       j,
-      k,
-      state_no,
       state,
-      symbol,
-      symbol_root;
+      symbol;
 
-  BOOLEAN end_node;
-
-  short *symbol_list;
-
-  symbol_list = Allocate_short_array(num_symbols + 1);
+  short *symbol_list = Allocate_short_array(num_symbols + 1);
 
   /*********************************************************************/
   /* We now write out the range elements of the ACTION_SYMBOLS map.    */
   /* Recall that if STATE_START has a negative value, then the set in  */
   /* question is sharing elements and does not need to be processed.   */
   /*********************************************************************/
-  k = 0;
+  int k = 0;
   for ALL_SYMBOLS(j)
     symbol_list[j] = OMEGA; /* Initialize all links to OMEGA */
 
   for ALL_STATES(i) {
-    state_no = state_list[i];
+    int state_no = state_list[i];
     if (state_start[state_no] > 0) {
-      symbol_root = 0; /* Add "fence" element: 0 to list */
+      int symbol_root = 0; /* Add "fence" element: 0 to list */
       symbol_list[symbol_root] = NIL;
 
       /*************************************************************/
@@ -1273,13 +1229,10 @@ void compute_action_symbols_range(short *state_start,
       /* Continue until stack is empty...                          */
       /* Recall that the stack is represented by a circular queue. */
       /*************************************************************/
-      for (end_node = ((state = state_no) == NIL);
-           !end_node; end_node = (state == state_no)) {
-        struct shift_header_type sh;
-        struct reduce_header_type red;
-
+      for (BOOLEAN end_node = (state = state_no) == NIL;
+           !end_node; end_node = state == state_no) {
         state = state_stack[state];
-        sh = shift[statset[state].shift_number];
+        struct shift_header_type sh = shift[statset[state].shift_number];
         for (j = 1; j <= sh.size; j++) {
           symbol = SHIFT_SYMBOL(sh, j);
           if (symbol_list[symbol] == OMEGA) {
@@ -1288,7 +1241,7 @@ void compute_action_symbols_range(short *state_start,
           }
         }
 
-        red = reduce[state];
+        struct reduce_header_type red = reduce[state];
         for (j = 1; j <= red.size; j++) {
           symbol = REDUCE_SYMBOL(red, j);
           if (symbol_list[symbol] == OMEGA) {
@@ -1311,8 +1264,6 @@ void compute_action_symbols_range(short *state_start,
   }
 
   ffree(symbol_list);
-
-  return;
 }
 
 
@@ -1322,37 +1273,30 @@ void compute_action_symbols_range(short *state_start,
 /* This procedure computes the range of the NACTION_SYMBOLS map. It  */
 /* organization is analoguous to COMPUTE_ACTION_SYMBOLS_RANGE.       */
 /*********************************************************************/
-void compute_naction_symbols_range(short *state_start,
-                                   short *state_stack,
-                                   short *state_list,
+void compute_naction_symbols_range(const short *state_start,
+                                   const short *state_stack,
+                                   const short *state_list,
                                    short *naction_symbols_range) {
   int i,
       j,
-      k,
-      state_no,
       state,
-      symbol,
-      symbol_root;
+      symbol;
 
-  BOOLEAN end_node;
-
-  short *symbol_list;
-
-  symbol_list = Allocate_short_array(num_symbols + 1);
+  short *symbol_list = Allocate_short_array(num_symbols + 1);
 
   /*********************************************************************/
   /* We now write out the range elements of the NACTION_SYMBOLS map.   */
   /* Recall that if STATE_START has a negative value, then the set in  */
   /* question is sharing elements and does not need to be processed.   */
   /*********************************************************************/
-  k = 0;
+  int k = 0;
   for ALL_SYMBOLS(j)
     symbol_list[j] = OMEGA; /* Initialize all links to OMEGA */
 
   for ALL_STATES(i) {
-    state_no = state_list[i];
+    int state_no = state_list[i];
     if (state_start[state_no] > 0) {
-      symbol_root = 0; /* Add "fence" element: 0 to list */
+      int symbol_root = 0; /* Add "fence" element: 0 to list */
       symbol_list[symbol_root] = NIL;
 
       /*************************************************************/
@@ -1361,7 +1305,7 @@ void compute_naction_symbols_range(short *state_start,
       /* Continue until stack is empty...                          */
       /* Recall that the stack is represented by a circular queue. */
       /*************************************************************/
-      for (end_node = ((state = state_no) == NIL);
+      for (BOOLEAN end_node = ((state = state_no) == NIL);
            !end_node; end_node = (state == state_no)) {
         state = state_stack[state];
         for (j = gd_index[state];
@@ -1387,6 +1331,4 @@ void compute_naction_symbols_range(short *state_start,
   }
 
   ffree(symbol_list);
-
-  return;
 }

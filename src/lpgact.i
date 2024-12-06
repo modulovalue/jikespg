@@ -62,7 +62,7 @@ static void bad_first_symbol(void)
 {
     sprintf(msg_line,
             "First symbol: \"%s\" found in file is illegal. "
-            "Line %d, column %d",
+            "Line %ld, column %d",
             SYM1.name, SYM1.start_line, SYM1.start_column);
     PRNTERR(msg_line);
 
@@ -75,7 +75,7 @@ static void act10(void)
 {
     sprintf(msg_line,
             "Action block cannot be first object in file. "
-            "Line %d, column %d",
+            "Line %ld, column %d",
             SYM1.start_line, SYM1.start_column);
     PRNTERR(msg_line);
 
@@ -108,7 +108,7 @@ static void act16(void)
 {
     sprintf(msg_line,
             "Macro name \"%s\" does not start with the "
-            "escape character. Line %d, column %d",
+            "escape character. Line %ld, column %d",
             SYM1.name, SYM1.start_line, SYM1.start_column);
     PRNTWNG(msg_line);
 
@@ -121,7 +121,7 @@ static void bad_macro_name(void)
 {
     sprintf(msg_line,
             "Reserved symbol cannot be used as macro name. "
-            "Line %d, column %d",
+            "Line %ld, column %d",
             SYM1.start_line, SYM1.start_column);
     PRNTERR(msg_line);
 
@@ -134,7 +134,7 @@ static void act21(void)
 {
     sprintf(msg_line,
             "Macro name not supplied for macro definition. "
-            "Line %d, column %d",
+            "Line %ld, column %d",
             SYM1.start_line, SYM1.start_column);
     PRNTERR(msg_line);
 
@@ -146,7 +146,7 @@ static void act21(void)
 static void act22(void)
 {
     sprintf(msg_line,
-            "Macro keyword misplaced. Line %d, column %d",
+            "Macro keyword misplaced. Line %ld, column %d",
             SYM1.start_line, SYM1.start_column);
     PRNTERR(msg_line);
 
@@ -159,7 +159,7 @@ static void definition_expected(void)
 {
     sprintf(msg_line,
             "Definition block expected where symbol found. "
-            "Line %d, column %d",
+            "Line %ld, column %d",
             SYM1.start_line, SYM1.start_column);
     PRNTERR(msg_line);
 
@@ -181,7 +181,7 @@ static void bad_terminal(void)
 {
     sprintf(msg_line,
             "Keyword  has been misplaced in Terminal section."
-            "  Line %d, column %d",
+            "  Line %ld, column %d",
             SYM1.start_line, SYM1.start_column);
     PRNTERR(msg_line);
 
@@ -194,7 +194,7 @@ static void act37(void)
 {
     sprintf(msg_line,
             "Misplaced block found in TERMINALS section."
-            "  Line %d, column %d",
+            "  Line %ld, column %d",
             SYM1.start_line, SYM1.start_column);
     PRNTERR(msg_line);
 
@@ -225,7 +225,7 @@ static void act39(void)
                 restore_symbol(tok_string, kerror);
                 sprintf(msg_line,
                         "Illegal aliasing to %s prior to its "
-                        "definition.  Line %d, column %d",
+                        "definition.  Line %ld, column %d",
                         tok_string,
                         SYM3.start_line, SYM3.start_column);
                 PRNTERR(msg_line);
@@ -240,7 +240,7 @@ static void act39(void)
                 restore_symbol(tok_string, keoft);
                 sprintf(msg_line,
                         "Illegal aliasing to %s prior to its "
-                        "definition. Line %d, column %d",
+                        "definition. Line %ld, column %d",
                         tok_string,
                         SYM3.start_line, SYM3.start_column);
                 PRNTERR(msg_line);
@@ -254,7 +254,7 @@ static void act39(void)
             {
                 sprintf(msg_line,
                         "Illegal aliasing to EOL prior to its "
-                        "definition. Line %d, column %d",
+                        "definition. Line %ld, column %d",
                         SYM3.start_line, SYM3.start_column);
                 PRNTERR(msg_line);
                 exit(12);
@@ -275,7 +275,7 @@ static void act39(void)
                 restore_symbol(tok_string, SYM1.name);
                 sprintf(msg_line,
                         "Symbol %s was previously defined. "
-                        "Line %d, column %d", tok_string,
+                        "Line %ld, column %d", tok_string,
                         SYM1.start_line, SYM1.start_column);
                 PRNTERR(msg_line);
                 exit(12);
@@ -292,7 +292,7 @@ static void act39(void)
                     restore_symbol(tok_string, kerror);
                     sprintf(msg_line,
                             "Illegal alias for symbol %s. "
-                            "Line %d, column %d.",
+                            "Line %ld, column %d.",
                             tok_string,
                             SYM1.start_line, SYM1.start_column);
                     PRNTERR(msg_line);
@@ -306,7 +306,7 @@ static void act39(void)
                 restore_symbol(tok_string, kerror);
                 sprintf(msg_line,
                         "Symbol %s was previously defined. "
-                        "Line %d, column %d",
+                        "Line %ld, column %d",
                         tok_string,
                         SYM1.start_line, SYM1.start_column);
                 PRNTERR(msg_line);
@@ -323,7 +323,7 @@ static void act39(void)
                     restore_symbol(tok_string, keoft);
                     sprintf(msg_line,
                             "Illegal alias for symbol %s. "
-                            "Line %d, column %d.",
+                            "Line %ld, column %d.",
                             tok_string,
                             SYM1.start_line, SYM1.start_column);
                     PRNTERR(msg_line);
@@ -337,7 +337,7 @@ static void act39(void)
                 restore_symbol(tok_string, keoft);
                 sprintf(msg_line,
                         "Symbol %s was previously defined. "
-                        "Line %d, column %d",
+                        "Line %ld, column %d",
                         tok_string,
                         SYM1.start_line, SYM1.start_column);
                 PRNTERR(msg_line);
@@ -355,7 +355,7 @@ static void act39(void)
                 {
                     sprintf(msg_line,
                             "Illegal alias for symbol EOL. "
-                            "Line %d, column %d.",
+                            "Line %ld, column %d.",
                             SYM1.start_line, SYM1.start_column);
                     PRNTERR(msg_line);
                     exit(12);
@@ -366,7 +366,7 @@ static void act39(void)
             {
                 sprintf(msg_line,
                         "Symbol EOL was previously defined. "
-                        "Line %d, column %d",
+                        "Line %ld, column %d",
                         SYM1.start_line, SYM1.start_column);
                 PRNTERR(msg_line);
                 exit(12);
@@ -383,7 +383,7 @@ static void bad_alias_rhs(void)
 {
     sprintf(msg_line,
             "Misplaced keyword found in Alias section. "
-            "Line %d, column %d",
+            "Line %ld, column %d",
             SYM1.start_line, SYM1.start_column);
     PRNTERR(msg_line);
 
@@ -396,7 +396,7 @@ static void act57(void)
 {
     sprintf(msg_line,
             "Misplaced block found in Alias section. "
-            "Line %d, column %d",
+            "Line %ld, column %d",
             SYM1.start_line, SYM1.start_column);
     PRNTERR(msg_line);
 
@@ -409,7 +409,7 @@ static void act59(void)
 {
     sprintf(msg_line,
             "Empty symbol cannot be aliased. "
-            "Line %d, column %d",
+            "Line %ld, column %d",
             SYM1.start_line, SYM1.start_column);
     PRNTERR(msg_line);
 
@@ -422,7 +422,7 @@ static void missing_quote(void)
 {
     sprintf(msg_line,
             "Symbol must be quoted when used as a "
-            "grammar symbol. Line %d, column %d",
+            "grammar symbol. Line %ld, column %d",
             ormark,
             SYM1.start_line, SYM1.start_column);
     PRNTERR(msg_line);
@@ -462,7 +462,7 @@ static void bad_start_symbol(void)
 {
     sprintf(msg_line,
             "Symbol cannot be used as Start symbol. "
-            "Line %d, column %d",
+            "Line %ld, column %d",
             SYM1.start_line, SYM1.start_column);
     PRNTERR(msg_line);
 
@@ -475,7 +475,7 @@ static void act68(void)
 {
     sprintf(msg_line,
             "Misplaced block found in Start section. "
-            "Line %d, column %d",
+            "Line %ld, column %d",
             SYM1.start_line, SYM1.start_column);
     PRNTERR(msg_line);
 
@@ -488,7 +488,7 @@ static void misplaced_keyword_found_in_START_section(void)
 {
     sprintf(msg_line,
             "Misplaced keyword found in START section. "
-            "Line %d, column %d",
+            "Line %ld, column %d",
             SYM1.start_line, SYM1.start_column);
     PRNTERR(msg_line);
 
@@ -624,7 +624,7 @@ static void act82(void)
         restore_symbol(tok_string, kerror);
         sprintf(msg_line,
                 "%s not declared or aliased to terminal "
-                "symbol. Line %d, column %d",
+                "symbol. Line %ld, column %d",
                 tok_string,
                 SYM2.start_line, SYM2.start_column);
         PRNTERR(msg_line);
@@ -661,7 +661,7 @@ static void act83(void)
         {
             sprintf(msg_line,
                     "End-of-file symbol cannot be used "
-                    "in rule. Line %d, column %d",
+                    "in rule. Line %ld, column %d",
                     SYM2.start_line, SYM2.start_column);
             PRNTERR(msg_line);
             exit(12);
@@ -689,7 +689,7 @@ static void bad_first_symbol_in_RULES_section(void)
 {
     sprintf(msg_line,
             "First symbol in Rules section is not "
-            "a valid left-hand side.\n Line %d, column %d",
+            "a valid left-hand side.\n Line %ld, column %d",
             SYM1.start_line, SYM1.start_column);
     PRNTERR(msg_line);
 
@@ -701,7 +701,7 @@ static void bad_first_symbol_in_RULES_section(void)
 static void rule_without_left_hand_side(void)
 {
     sprintf(msg_line,
-            "Rule without left-hand-side.  Line %d, column %d",
+            "Rule without left-hand-side.  Line %ld, column %d",
             SYM3.start_line, SYM3.start_column);
     PRNTERR(msg_line);
 
@@ -714,7 +714,7 @@ static void act91(void)
 {
     sprintf(msg_line,
             "Misplaced keyword found in Rules section "
-            "Line %d, column %d",
+            "Line %ld, column %d",
             SYM2.start_line, SYM2.start_column);
     PRNTERR(msg_line);
 
@@ -747,7 +747,7 @@ static void misplaced_keyword_found_in_RULES_section(void)
 {
     sprintf(msg_line,
             "Misplaced keyword found in RULES section. "
-            "Line %d, column %d",
+            "Line %ld, column %d",
             SYM1.start_line, SYM1.start_column);
     PRNTERR(msg_line);
 
@@ -788,7 +788,7 @@ static void act100(void)
         if (symbol == OMEGA)
         {
             sprintf(msg_line,
-                    "Symbol %s is undefined. Line %d, column %d",
+                    "Symbol %s is undefined. Line %ld, column %d",
             SYM1.name, SYM1.start_line, SYM1.start_column);
             PRNTERR(msg_line);
 
@@ -799,7 +799,7 @@ static void act100(void)
         {
             sprintf(msg_line,
                     "Symbol %s has been named more than once. "
-                    "Line %d, column %d.",
+                    "Line %ld, column %d.",
             SYM1.name, SYM1.start_line, SYM1.start_column);
             PRNTERR(msg_line);
 
@@ -817,7 +817,7 @@ static void misplaced_keyword_found_in_NAMES_section(void)
 {
     sprintf(msg_line,
             "Keyword  has been misplaced in NAMES section."
-            "  Line %d, column %d",
+            "  Line %ld, column %d",
             SYM1.start_line, SYM1.start_column);
     PRNTERR(msg_line);
 
@@ -830,7 +830,7 @@ static void act116(void)
 {
     sprintf(msg_line,
             "Misplaced action block found in NAMES "
-            "section. Line %d, column %d",
+            "section. Line %ld, column %d",
             SYM1.start_line, SYM1.start_column);
     PRNTERR(msg_line);
 
@@ -843,7 +843,7 @@ static void act117(void)
 {
     sprintf(msg_line,
             "Misplaced macro name found in NAMES "
-            "section. Line %d, column %d",
+            "section. Line %ld, column %d",
             SYM1.start_line, SYM1.start_column);
     PRNTERR(msg_line);
 

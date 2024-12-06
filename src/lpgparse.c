@@ -1,3 +1,4 @@
+#include <stdlib.h>
 static char hostfile[] = __FILE__;
 
 #include <time.h>
@@ -135,9 +136,7 @@ void process_input(void) {
 /*         READ_INPUT fills the buffer from p1 to the end.          */
 /********************************************************************/
 static void read_input(void) {
-  long num_read;
-
-  num_read = input_buffer + IOBUFFER_SIZE - bufend;
+  long num_read = input_buffer + IOBUFFER_SIZE - bufend;
   if ((num_read = fread(bufend, 1, num_read, sysgrm)) == 0) {
     if (ferror(sysgrm) != 0) {
       fprintf(stderr,
@@ -270,7 +269,7 @@ static void exit_process(void) {
 /* character is a digit. If all are digits, then 1 is returned; if not, then */
 /* 0 is returned.                                                            */
 /*****************************************************************************/
-static BOOLEAN verify(char *item) {
+static BOOLEAN verify(const char *item) {
   while (IsDigit(*item))
     item++;
   return (*item == '\0');
@@ -284,9 +283,7 @@ static BOOLEAN verify(char *item) {
 /* to uppercase and returns.                                                 */
 /*****************************************************************************/
 static char *translate(char *str, int len) {
-  register int i;
-
-  for (i = 0; i < len; i++)
+  for (register int i = 0; i < len; i++)
     str[i] = TOUPPER(str[i]);
 
   return (str);
@@ -334,9 +331,8 @@ static void options(void) {
       temp[MAX_PARM_SIZE + 1],
       delim;
 
-  register int i,
-      j,
-      len;
+  register int
+      j;
 
   BOOLEAN flag;
 
@@ -350,7 +346,7 @@ static void options(void) {
   }
   *c = '\0';
 
-  i = 0;
+  register int i = 0;
 
   while ((parm[i] != '\0') && /* Clean front of string */
          ((parm[i] == ',') ||
@@ -391,7 +387,7 @@ static void options(void) {
     else
       delim = ' ';
 
-    len = strlen(token);
+    register int len = strlen(token);
     if (len > MAX_PARM_SIZE)
       token[MAX_PARM_SIZE] = '\0';
 
@@ -723,8 +719,7 @@ static void options(void) {
                 (memcmp(token, ooutputsize2, len) == 0) ||
                 (memcmp(token, ooutputsize3, len) == 0))) {
         if (verify(temp)) {
-          int tmpval;
-          tmpval = atoi(temp);
+          int tmpval = atoi(temp);
           if (tmpval > MAX_LINE_SIZE) {
             sprintf(msg_line, "OUTPUT_SIZE cannot exceed %d",
                     MAX_LINE_SIZE);
@@ -1161,7 +1156,7 @@ static void process_options_lines(void) {
             "The options %s cannot have the same value", temp);
     PRNTERR(msg_line);
     sprintf(msg_line,
-            "Input process aborted at line %d ...", line_no);
+            "Input process aborted at line %ld ...", line_no);
     PRNT(msg_line);
     exit(12);
   }
@@ -1173,7 +1168,7 @@ static void process_options_lines(void) {
             hblockb, blockb);
     PRNTERR(msg_line);
     sprintf(msg_line,
-            "Input process aborted at line %d ...", line_no);
+            "Input process aborted at line %ld ...", line_no);
     PRNT(msg_line);
     exit(12);
   }
@@ -1188,12 +1183,11 @@ static void process_options_lines(void) {
 /*    HASH takes as argument a symbol and hashes it into a location in       */
 /* HASH_TABLE.                                                               */
 /*****************************************************************************/
-static int hash(char *symb) {
-  register unsigned short k;
+static int hash(const char *symb) {
   register unsigned long hash_value = 0;
 
   for (; *symb != '\0'; symb++) {
-    k = *symb;
+    register unsigned short k = *symb;
     symb++;
     hash_value += ((k << 7) + *symb);
     if (*symb == '\0')
@@ -1211,7 +1205,7 @@ static int hash(char *symb) {
 /* a character string.  It inserts the string into the string table and sets */
 /* the value of node to the index into the string table.                     */
 /*****************************************************************************/
-static void insert_string(struct hash_type *q, char *string) {
+static void insert_string(struct hash_type *q, const char *string) {
   if (string_offset + strlen(string) >= string_size) {
     string_size += STRING_BUFFER_SIZE;
     INT_CHECK(string_size);
@@ -1248,11 +1242,10 @@ static void insert_string(struct hash_type *q, char *string) {
 /*   ASSIGN_SYMBOL_NO takes as arguments a pointer to a node and an image    */
 /* number and assigns a symbol number to the symbol pointed to by the node.  */
 /*****************************************************************************/
-static void assign_symbol_no(char *string_ptr, int image) {
-  register int i;
+static void assign_symbol_no(const char *string_ptr, int image) {
   register struct hash_type *p;
 
-  i = hash(string_ptr);
+  register int i = hash(string_ptr);
   for (p = hash_table[i]; p != NULL; p = p->link) {
     if (EQUAL_STRING(string_ptr, p)) /* Are they the same */
       return;
@@ -1284,10 +1277,8 @@ static void assign_symbol_no(char *string_ptr, int image) {
 /* symbol whose number is IMAGE. Otherwise, it invokes PROCESS_SYMBOL and    */
 /* ASSIGN SYMBOL_NO to enter stringptr into the table and then we alias it.  */
 /*****************************************************************************/
-static void alias_map(char *stringptr, int image) {
-  register struct hash_type *q;
-
-  for (q = hash_table[hash(stringptr)]; q != NULL; q = q->link) {
+static void alias_map(const char *stringptr, int image) {
+  for (register struct hash_type *q = hash_table[hash(stringptr)]; q != NULL; q = q->link) {
     if (EQUAL_STRING(stringptr, q)) {
       q->number = -image; /* Mark alias of image */
       return;
@@ -1307,10 +1298,8 @@ static void alias_map(char *stringptr, int image) {
 /* in the HASH_TABLE, and if found, it returns its image; otherwise, it      */
 /* returns OMEGA.                                                            */
 /*****************************************************************************/
-static int symbol_image(char *item) {
-  register struct hash_type *q;
-
-  for (q = hash_table[hash(item)]; q != NULL; q = q->link) {
+static int symbol_image(const char *item) {
+  for (register struct hash_type *q = hash_table[hash(item)]; q != NULL; q = q->link) {
     if (EQUAL_STRING(item, q))
       return ABS(q -> number);
   }
@@ -1327,7 +1316,7 @@ static int symbol_image(char *item) {
 /* assigned a NAME_INDEX number if it did not yet have one.  The name index  */
 /* assigned is returned.                                                     */
 /*****************************************************************************/
-static int name_map(char *symb) {
+static int name_map(const char *symb) {
   register int i;
   register struct hash_type *p;
 
@@ -1767,7 +1756,7 @@ check_symbol_length:
       if (symbol_image(tok_string) == OMEGA) {
         sprintf(msg_line,
                 "Length of Symbol \"%s\""
-                " in line %d exceeds maximum of ",
+                " in line %ld exceeds maximum of ",
                 tok_string, line_no);
         PRNTWNG(msg_line);
       }
@@ -1819,18 +1808,18 @@ static void error_action(void) {
   else if (ct == MACRO_NAME_TK) {
     sprintf(msg_line,
             "Misplaced macro name \"%s\" found "
-            "in line %d, column %d",
+            "in line %ld, column %d",
             ct_ptr, line_no, ct_start_col);
   } else if (ct == SYMBOL_TK) {
     restore_symbol(tok_string, ct_ptr);
     sprintf(msg_line,
             "Misplaced symbol \"%s\" found "
-            "in line %d, column %d",
+            "in line %ld, column %d",
             tok_string, line_no, ct_start_col);
   } else {
     sprintf(msg_line,
             "Misplaced keyword \"%s\" found "
-            "in line %d, column %d",
+            "in line %ld, column %d",
             ct_ptr, line_no, ct_start_col);
   }
 
