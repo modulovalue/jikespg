@@ -27,7 +27,7 @@
 /***************************************************************************/
 extern struct node **conflict_symbols;
 extern BOOLEAN_CELL *read_set,
-                    *la_set;
+    *la_set;
 extern int highest_level;
 extern long la_top;
 extern short *la_index;

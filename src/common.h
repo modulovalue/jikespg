@@ -461,7 +461,7 @@
 /*******************************************************************/
 /*******************************************************************/
 typedef unsigned int BOOLEAN_CELL; /* Basic unit used to represent */
-                                   /* Bit sets                     */
+/* Bit sets                     */
 typedef BOOLEAN_CELL *SET_PTR;
 
 typedef char BOOLEAN;
@@ -471,10 +471,9 @@ extern const char VERSION[];
 extern const char BLANK[];
 extern const long MAX_TABLE_SIZE;
 
-struct node
-{
-    struct node *next;
-    int          value;
+struct node {
+  struct node *next;
+  int value;
 };
 
 /*******************************************************************/
@@ -489,63 +488,54 @@ struct node
 /* The RHS vector as mentioned above is used to hold a complete    */
 /* list of allthe right-hand-side symbols specified in the grammar.*/
 /*******************************************************************/
-struct ruletab_type
-{
-    short   lhs,
-            rhs;
-    BOOLEAN sp;
+struct ruletab_type {
+  short lhs,
+      rhs;
+  BOOLEAN sp;
 };
 
-struct shift_type
-{
-    short symbol,
-          action;
+struct shift_type {
+  short symbol,
+      action;
 };
 
-struct shift_header_type
-{
-    struct shift_type *map;
-    short              size;
+struct shift_header_type {
+  struct shift_type *map;
+  short size;
 };
 
-struct reduce_type
-{
-    short symbol,
-          rule_number;
+struct reduce_type {
+  short symbol,
+      rule_number;
 };
 
-struct reduce_header_type
-{
-    struct reduce_type *map;
-    short              size;
+struct reduce_header_type {
+  struct reduce_type *map;
+  short size;
 };
 
-struct goto_type
-{
-    int   laptr;
-    short symbol,
-          action;
+struct goto_type {
+  int laptr;
+  short symbol,
+      action;
 };
 
-struct goto_header_type
-{
-    struct goto_type *map;
-    short             size;
+struct goto_header_type {
+  struct goto_type *map;
+  short size;
 };
 
-struct lastats_type
-{
-    struct reduce_header_type reduce;
-    short                     shift_number,
-                              in_state;
+struct lastats_type {
+  struct reduce_header_type reduce;
+  short shift_number,
+      in_state;
 };
 
-struct statset_type
-{
-    struct node             *kernel_items,
-                            *complete_items;
-    struct goto_header_type  go_to;
-    short                    shift_number;
+struct statset_type {
+  struct node *kernel_items,
+      *complete_items;
+  struct goto_header_type go_to;
+  short shift_number;
 };
 
 extern char *timeptr;
@@ -553,127 +543,127 @@ extern char *timeptr;
 extern long output_line_no;
 
 extern char grm_file[],
-            lis_file[],
-            act_file[],
-            hact_file[],
-            tab_file[],
-            prs_file[],
-            sym_file[],
-            def_file[],
-            dcl_file[],
-            file_prefix[],
-            prefix[],
-            suffix[],
-            parm[],
-            msg_line[];
+    lis_file[],
+    act_file[],
+    hact_file[],
+    tab_file[],
+    prs_file[],
+    sym_file[],
+    def_file[],
+    dcl_file[],
+    file_prefix[],
+    prefix[],
+    suffix[],
+    parm[],
+    msg_line[];
 
 extern FILE *syslis,
-            *sysgrm,
-            *sysact,
-            *syshact,
-            *systab,
-            *syssym,
-            *sysprs,
-            *sysdcl,
-            *sysprs,
-            *sysdef;
+    *sysgrm,
+    *sysact,
+    *syshact,
+    *systab,
+    *syssym,
+    *sysprs,
+    *sysdcl,
+    *sysprs,
+    *sysdef;
 
 
 /******************************************************/
 /*  The variables below are global counters.          */
 /******************************************************/
 extern long num_items,
-            num_states,
-            max_la_state;
+    num_states,
+    max_la_state;
 
 extern int num_symbols,
-           symno_size,  /* NUM_SYMBOLS + 1 */
-           num_names,
-           num_terminals,
-           num_non_terminals,
-           num_rules,
-           num_conflict_elements,
-           num_single_productions,
-           gotodom_size;
+    symno_size, /* NUM_SYMBOLS + 1 */
+    num_names,
+    num_terminals,
+    num_non_terminals,
+    num_rules,
+    num_conflict_elements,
+    num_single_productions,
+    gotodom_size;
 
 /******************************************************/
 /*  The variables below are used for options setting. */
 /******************************************************/
 extern BOOLEAN list_bit,
-               slr_bit,
-               verbose_bit,
-               first_bit,
-               follow_bit,
-               action_bit,
-               edit_bit,
-               states_bit,
-               xref_bit,
-               nt_check_bit,
-               conflicts_bit,
-               read_reduce_bit,
-               goto_default_bit,
-               shift_default_bit,
-               byte_bit,
-               warnings_bit,
-               single_productions_bit,
-               error_maps_bit,
-               debug_bit,
-               deferred_bit,
-               c_bit,
-               cpp_bit,
-               java_bit,
-               jikes_bit, /* undocumented hack for special jikes behavior */
-               scopes_bit;
+    slr_bit,
+    verbose_bit,
+    first_bit,
+    follow_bit,
+    action_bit,
+    edit_bit,
+    states_bit,
+    xref_bit,
+    nt_check_bit,
+    conflicts_bit,
+    read_reduce_bit,
+    goto_default_bit,
+    shift_default_bit,
+    byte_bit,
+    warnings_bit,
+    single_productions_bit,
+    error_maps_bit,
+    debug_bit,
+    deferred_bit,
+    c_bit,
+    cpp_bit,
+    java_bit,
+    jikes_bit, /* undocumented hack for special jikes behavior */
+    scopes_bit;
 
 extern int lalr_level,
-           default_opt,
-           trace_opt,
-           table_opt,
-           names_opt,
-           increment,
-           maximum_distance,
-           minimum_distance,
-           stack_size;
+    default_opt,
+    trace_opt,
+    table_opt,
+    names_opt,
+    increment,
+    maximum_distance,
+    minimum_distance,
+    stack_size;
 
 extern char escape,
-            ormark,
-            record_format;
+    ormark,
+    record_format;
 
 extern char blockb[],
-            blocke[],
-            hblockb[],
-            hblocke[],
-            errmsg[],
-            gettok[],
-            smactn[],
-            tkactn[];
+    blocke[],
+    hblockb[],
+    hblocke[],
+    errmsg[],
+    gettok[],
+    smactn[],
+    tkactn[];
 
 /*********************************************************************/
 /*   The variables below are used to hold information about special  */
 /* grammar symbols.                                                  */
 /*********************************************************************/
 extern short accept_image,
-             eoft_image,
-             eolt_image,
-             empty,
-             error_image;
+    eoft_image,
+    eolt_image,
+    empty,
+    error_image;
 
-                       /* Miscellaneous counters. */
+/* Miscellaneous counters. */
 
 extern int num_first_sets,
-           num_shift_maps,
-           page_no;
+    num_shift_maps,
+    page_no;
 
 extern long string_offset,
-            string_size,
-            num_shifts,
-            num_shift_reduces,
-            num_gotos,
-            num_goto_reduces,
-            num_reductions,
-            num_sr_conflicts,
-            num_rr_conflicts,
-            num_entries;
+    string_size,
+    num_shifts,
+    num_shift_reduces,
+    num_gotos,
+    num_goto_reduces,
+    num_reductions,
+    num_sr_conflicts,
+    num_rr_conflicts,
+    num_entries;
 
 extern char *string_table;
 
@@ -696,24 +686,22 @@ extern struct ruletab_type *rules;
 /* following the "dot symbol".                                         */
 /***********************************************************************/
 extern struct node **closure,
-                   **clitems,
-                   **adequate_item;
+    **clitems,
+    **adequate_item;
 
-extern struct itemtab
-{
-    short symbol,
-          rule_number,
-          suffix_index,
-          dot;
+extern struct itemtab {
+  short symbol,
+      rule_number,
+      suffix_index,
+      dot;
 } *item_table;
 
 /***********************************************************************/
 /* SYMNO is an array that maps symbol numbers to actual symbols.       */
 /***********************************************************************/
-extern struct symno_type
-{
-    int ptr,
-        name_index;
+extern struct symno_type {
+  int ptr,
+      name_index;
 } *symno;
 
 /***********************************************************************/
@@ -721,8 +709,8 @@ extern struct symno_type
 /* set of terminals, non-terminals and states, respectively.           */
 /***********************************************************************/
 extern int term_set_size,
-           non_term_set_size,
-           state_set_size;
+    non_term_set_size,
+    state_set_size;
 
 /***********************************************************************/
 /* NULL_NT is a boolean vector that indicates whether or not a given   */
@@ -735,8 +723,8 @@ extern BOOLEAN *null_nt;
 /* may appear immediately after the non-terminal.                      */
 /***********************************************************************/
 extern SET_PTR nt_first,
-               first,
-               follow;
+    first,
+    follow;
 
 /***********************************************************************/
 /* NAME is an array containing names to be associated with symbols.    */
@@ -749,14 +737,14 @@ extern SET_PTR nt_first,
 /* removed, a Shift map containing actions involving such productions  */
 /* cannot be shared.                                                   */
 /***********************************************************************/
-extern struct shift_header_type  *shift;
+extern struct shift_header_type *shift;
 
 extern struct reduce_header_type *reduce;
 
 extern short *gotodef,
-             *shiftdf,
-             *gd_index,
-             *gd_range;
+    *shiftdf,
+    *gd_index,
+    *gd_range;
 
 extern int *name;
 
@@ -772,21 +760,20 @@ extern struct lastats_type *lastats;
 extern struct node **in_stat;
 
 extern int num_scopes,
-           scope_rhs_size,
-           scope_state_size,
-           num_error_rules;
+    scope_rhs_size,
+    scope_state_size,
+    num_error_rules;
 
-extern struct scope_type
-{
-    short prefix,
-          suffix,
-          lhs_symbol,
-          look_ahead,
-          state_set;
+extern struct scope_type {
+  short prefix,
+      suffix,
+      lhs_symbol,
+      look_ahead,
+      state_set;
 } *scope;
 
 extern short *scope_right_side,
-             *scope_state;
+    *scope_state;
 
 /*******************************************************************/
 /*******************************************************************/
@@ -799,32 +786,32 @@ extern short *scope_right_side,
 /* output.                                                         */
 /*******************************************************************/
 extern char *output_ptr,
-            *output_buffer;
+    *output_buffer;
 
 extern short *symbol_map,
-             *ordered_state,
-             *state_list;
+    *ordered_state,
+    *state_list;
 
 extern int *next,
-           *previous,
-           *state_index;
+    *previous,
+    *state_index;
 
 extern long table_size,
-            action_size,
-            increment_size;
+    action_size,
+    increment_size;
 
 extern short last_non_terminal,
-             last_terminal;
+    last_terminal;
 
 extern int accept_act,
-           error_act,
-           first_index,
-           last_index,
-           last_symbol,
-           max_name_length;
+    error_act,
+    first_index,
+    last_index,
+    last_symbol,
+    max_name_length;
 
 extern SET_PTR naction_symbols,
-               action_symbols;
+    action_symbols;
 
 extern BOOLEAN byte_terminal_range;
 

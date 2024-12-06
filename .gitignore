@@ -1,3 +1,5 @@
 *.o
 src/jikespg
 src/jikespg.exe
+
+cmake-build-debug/
