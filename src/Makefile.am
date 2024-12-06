@@ -18,8 +18,7 @@ jikespg_SOURCES = ctabs.c \
                   tabutil.c \
                   timetab.c
 
-noinst_HEADERS = c370.h \
-                 common.h \
+noinst_HEADERS = common.h \
                  header.h \
                  lpgact.h \
                  lpgact.i \

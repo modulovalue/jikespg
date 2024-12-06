@@ -404,19 +404,7 @@ void process_tables(void) {
     nospace(__FILE__, __LINE__);
 
   if ((!c_bit) && (!cpp_bit) && (!java_bit)) {
-#if defined(C370) && !defined(CW)
-        int size;
-
-        size = PARSER_LINE_SIZE ;
-        if (record_format != 'F')
-            size += 4;
-        sprintf(msg_line, "w, recfm=%cB, lrecl=%d",
-                          record_format, size);
-
-        if((systab = fopen(tab_file, msg_line)) == NULL)
-#else
     if ((systab = fopen(tab_file, "w")) == NULL)
-#endif
     {
       fprintf(stderr,
               "***ERROR: Table file \"%s\" cannot be opened\n",

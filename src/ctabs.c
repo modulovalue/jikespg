@@ -508,21 +508,8 @@ static void terminal_shift_default_space_lalr_k(void) {
 static void init_file(FILE **file, char *file_name, char *file_tag) {
   char *p;
 
-#if defined(C370) && !defined(CW)
-    int size;
-
-    size = PARSER_LINE_SIZE;
-    if (record_format != 'F')
-        size += 4;
-    sprintf(msg_line, "w, recfm=%cB, lrecl=%d",
-                      record_format, size);
-
-    p = strchr(file_name, '.');
-    if ((*file = fopen(file_name, msg_line)) == NULL)
-#else
   p = strrchr(file_name, '.');
   if ((*file = fopen(file_name, "w")) == NULL)
-#endif
   {
     fprintf(stderr,
             "***ERROR: Symbol file \"%s\" cannot be opened\n",

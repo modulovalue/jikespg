@@ -12,33 +12,10 @@
 #define MAXIMUM_LA_LEVEL 15
 #define STRING_BUFFER_SIZE 8192
 
-#if defined(VM) || defined(CW)
-static char han[9] = "",
-            hat[9] = "INCLUDE",
-            ham[3] = "A",
-            an[9]  = "",
-            at[9]  = "ACTION",
-            am[3]  = "A",
-            pn[9]  = "",
-            pt[9]  = "H",
-            pm[3]  = "A",
-            sn[9]  = "",
-            st[9]  = "H",
-            sm[3]  = "A";
-#endif
-
 static const char *oaction = "ACTION",
     *oactfile_name = "ACTFILENAME",
     *oactfile_name2 = "ACTFILE-NAME",
     *oactfile_name3 = "ACTFILE_NAME",
-#if defined(VM) || defined(CW)
-                  *oactfile_type       = "ACTFILETYPE",
-                  *oactfile_type2      = "ACTFILE-TYPE",
-                  *oactfile_type3      = "ACTFILE_TYPE",
-                  *oactfile_mode       = "ACTFILEMODE",
-                  *oactfile_mode2      = "ACTFILE-MODE",
-                  *oactfile_mode3      = "ACTFILE_MODE",
-#endif
     *oblockb = "BLOCKB",
     *oblocke = "BLOCKE",
     *obyte = "BYTE",
@@ -47,12 +24,6 @@ static const char *oaction = "ACTION",
     *odefault = "DEFAULT",
     *odeferred = "DEFERRED",
     *oedit = "EDIT",
-    /*
-    Option no longer used ...
-                      *oerrproc3           = "ERROR-PROC",
-                      *oerrproc2           = "ERROR_PROC",
-                      *oerrproc            = "ERRORPROC",
-    */
     *oerrormaps2 = "ERROR_MAPS",
     *oerrormaps3 = "ERROR-MAPS",
     *oerrormaps = "ERRORMAPS",
@@ -73,14 +44,6 @@ static const char *oaction = "ACTION",
     *ohactfile_name = "HACTFILENAME",
     *ohactfile_name2 = "HACTFILE-NAME",
     *ohactfile_name3 = "HACTFILE_NAME",
-#if defined(VM) || defined(CW)
-                  *ohactfile_type      = "HACTFILETYPE",
-                  *ohactfile_type2     = "HACTFILE-TYPE",
-                  *ohactfile_type3     = "HACTFILE_TYPE",
-                  *ohactfile_mode      = "HACTFILEMODE",
-                  *ohactfile_mode2     = "HACTFILE-MODE",
-                  *ohactfile_mode3     = "HACTFILE_MODE",
-#endif
     *ohalfword2 = "HALF_WORD",
     *ohalfword3 = "HALF-WORD",
     *ohalfword = "HALFWORD",
@@ -110,17 +73,6 @@ static const char *oaction = "ACTION",
     *oreadreduce2 = "READ_REDUCE",
     *oreadreduce3 = "READ-REDUCE",
     *oreadreduce = "READREDUCE",
-#if defined(VM) || defined(CW)
-                  *orecordformat2      = "RECORD_FORMAT",
-                  *orecordformat3      = "RECORD-FORMAT",
-                  *orecordformat       = "RECORDFORMAT",
-#endif
-    /*
-    Option no longer used ...
-                      *ogettok             = "SCANNER_PROC",
-                      *ogettok2            = "SCANNER-PROC",
-                      *ogettok3            = "SCANNERPROC",
-    */
     *oscopes = "SCOPES",
     *oshiftdefault2 = "SHIFT-DEFAULT",
     *oshiftdefault3 = "SHIFT_DEFAULT",
@@ -129,12 +81,6 @@ static const char *oaction = "ACTION",
     *osingleproductions3 = "SINGLE_PRODUCTIONS",
     *osingleproductions = "SINGLEPRODUCTIONS",
     *oslr = "SLR",
-    /*
-    Option no longer used ...
-                      *osmactn2            = "SEMANTIC-PROC",
-                      *osmactn3            = "SEMANTIC_PROC",
-                      *osmactn             = "SEMANTICPROC",
-    */
     *ospace = "SPACE",
     *ostack_size2 = "STACK_SIZE",
     *ostack_size3 = "STACK-SIZE",
@@ -143,12 +89,6 @@ static const char *oaction = "ACTION",
     *osuffix = "SUFFIX",
     *otable = "TABLE",
     *otime = "TIME",
-    /*
-    Option no longer used ...
-                      *otkactn3            = "TERMINAL-PROC",
-                      *otkactn2            = "TERMINAL_PROC",
-                      *otkactn             = "TERMINALPROC",
-    */
     *otrace = "TRACE",
     *ovariable = "VARIABLE",
     *overbose = "VERBOSE",

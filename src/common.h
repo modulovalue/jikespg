@@ -6,13 +6,11 @@
 /* JIKES PG. OS2 is for all C compilers running under OS2. DOS is  */
 /* for all C compilers running under DOS. Note that to run under   */
 /* DOS, the compiler used must support the Huge model (32-bit ptr  */
-/* simulation). C370 is for the IBM C compiler running under CMS   */
-/* or MVS. CW is for the Waterloo C compiler running under VM/CMS. */
+/* simulation). CW is for the Waterloo C compiler running under VM/CMS. */
 /*                                                                 */
 /* This system was built to run on a vanilla Unix or AIX system.   */
 /* No switch need to be set for such an environment.  Set other    */
-/* switch(es) as needed. Note that the switch C370 should always   */
-/* be accompanied by either the switch VM or the switch MVS.       */
+/* switch(es) as needed.                                           */
 /*                                                                 */
 /*******************************************************************/
 /*
@@ -20,7 +18,6 @@
 #define OS2
 #define MVS
 #define CW
-#define C370
 #define VM
 */
 
@@ -29,7 +26,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
-#include "c370.h"
 
 /*******************************************************************/
 /*******************************************************************/

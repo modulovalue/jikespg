@@ -5,8 +5,7 @@ set(CMAKE_C_STANDARD 11)
 
 include_directories(src)
 
-add_executable(jikespg
-        src/c370.h
+add_executable(
         src/common.h
         src/ctabs.c
         src/globals.c

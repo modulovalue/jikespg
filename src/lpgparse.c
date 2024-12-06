@@ -63,9 +63,7 @@ void process_input(void) {
               "is empty, undefined, or invalid\n", grm_file);
       exit(12);
     }
-  }
-#if !defined(C370) && !defined(CW)
-  else {
+  } else {
     if (strrchr(grm_file, '.') == NULL) {
       sprintf(msg_line,
               "A file named \"%s\" with no extension "
@@ -73,7 +71,6 @@ void process_input(void) {
       PRNTWNG(msg_line);
     }
   }
-#endif
 
   /****************************************************************************/
   /*               Assign timeptr to the local time.                          */
@@ -84,11 +81,7 @@ void process_input(void) {
   /****************************************************************************/
   /*                Open listing file for output.                             */
   /****************************************************************************/
-#if defined(C370) && !defined(CW)
-    syslis = fopen(lis_file, "w, lrecl=85, recfm=VBA");
-#else
   syslis = fopen(lis_file, "w");
-#endif
   if (syslis == (FILE *) NULL) {
     fprintf(stderr,
             "***ERROR: Listing file \"%s\" cannot be openned.\n",
@@ -578,45 +571,11 @@ static void options(void) {
 
       memcpy(temp, parm+j, i - j); /* copy into TEMP */
       temp[i - j] = '\0';
-
-#if (defined(C370) || defined(CW)) && (!defined(MVS))
-            if ((strcmp(token, "AN") == 0) ||
-                 ((len >= 9) &&
-                  ((memcmp(token, oactfile_name, len) == 0) ||
-                   (memcmp(token, oactfile_name2, len) == 0) ||
-                   (memcmp(token, oactfile_name3, len) == 0))))
-            {
-                memcpy(an, temp, 8);
-                pn[MIN(strlen(temp), 8)] = '\0';
-                strupr(an);
-            }
-            else if ((strcmp(token, "AT") == 0) ||
-                      ((len >= 9) &&
-                       ((memcmp(token, oactfile_type, len) == 0) ||
-                        (memcmp(token, oactfile_type2, len) == 0) ||
-                        (memcmp(token, oactfile_type3, len) == 0))))
-            {
-                memcpy(at, temp, 8);
-                at[MIN(strlen(temp), 8)] = '\0';
-                strupr(at);
-            }
-            else if ((strcmp(token, "AM") == 0) ||
-                     ((len >= 9) &&
-                      ((memcmp(token, oactfile_mode, len) == 0) ||
-                       (memcmp(token, oactfile_mode2, len) == 0) ||
-                       (memcmp(token, oactfile_mode3, len) == 0))))
-            {
-                memcpy(am, temp, 2);
-                am[MIN(strlen(temp), 2)] = '\0';
-                strupr(am);
-            }
-#else
       if ((strcmp(token, "AN") == 0) ||
           (memcmp(token, oactfile_name, len) == 0) ||
           (memcmp(token, oactfile_name2, len) == 0) ||
           (memcmp(token, oactfile_name3, len) == 0))
         strcpy(act_file, temp);
-#endif
       else if (strcmp(token, oblockb) == 0)
         strcpy(blockb, temp);
       else if (strcmp(token, oblocke) == 0)
@@ -675,46 +634,12 @@ static void options(void) {
                   temp, token);
           PRNTERR(msg_line);
         }
-      }
-#if (defined(C370) || defined(CW)) && (!defined(MVS))
-            else if ((strcmp(token, "HN") == 0) ||
-                 ((len >= 9) &&
-                  ((memcmp(token, ohactfile_name,  len) == 0) ||
+      } else if ((strcmp(token, "HN") == 0) ||
+                 ((len >= 2) &&
+                  ((memcmp(token, ohactfile_name, len) == 0) ||
                    (memcmp(token, ohactfile_name2, len) == 0) ||
                    (memcmp(token, ohactfile_name3, len) == 0))))
-            {
-                memcpy(han, temp, 8);
-                pn[MIN(strlen(temp), 8)] = '\0';
-                strupr(han);
-            }
-            else if ((strcmp(token, "HT") == 0) ||
-                      ((len >= 9) &&
-                       ((memcmp(token, ohactfile_type,  len) == 0) ||
-                        (memcmp(token, ohactfile_type2, len) == 0) ||
-                        (memcmp(token, ohactfile_type3, len) == 0))))
-            {
-                memcpy(hat, temp, 8);
-                hat[MIN(strlen(temp), 8)] = '\0';
-                strupr(hat);
-            }
-            else if ((strcmp(token, "HM") == 0) ||
-                     ((len >= 9) &&
-                      ((memcmp(token, ohactfile_mode,  len) == 0) ||
-                       (memcmp(token, ohactfile_mode2, len) == 0) ||
-                       (memcmp(token, ohactfile_mode3, len) == 0))))
-            {
-                memcpy(ham, temp, 2);
-                ham[MIN(strlen(temp), 2)] = '\0';
-                strupr(ham);
-            }
-#else
-      else if ((strcmp(token, "HN") == 0) ||
-               ((len >= 2) &&
-                ((memcmp(token, ohactfile_name, len) == 0) ||
-                 (memcmp(token, ohactfile_name2, len) == 0) ||
-                 (memcmp(token, ohactfile_name3, len) == 0))))
         strcpy(hact_file, temp);
-#endif
       else if (len >= 2 && strcmp(token, ohblockb) == 0)
         strcpy(hblockb, temp);
       else if (len >= 2 && strcmp(token, ohblocke) == 0)
@@ -814,30 +739,6 @@ static void options(void) {
         }
       } else if (memcmp(token, oprefix, len) == 0)
         strcpy(prefix, temp);
-#if defined(C370) || defined(CW)
-            else if ((strcmp(token, "RF") == 0) ||
-                     (strcmp(token, "RECFM") == 0) ||
-                     (memcmp(token, orecordformat, len) == 0) ||
-                     (memcmp(token, orecordformat2, len) == 0) ||
-                     (memcmp(token, orecordformat3, len) == 0))
-            {
-                len = strlen(temp);
-                if (len > MAX_PARM_SIZE)
-                    temp[MAX_PARM_SIZE-1] = '\0';
-
-                if (memcmp(ofixed, translate(temp, len), len) == 0)
-                    record_format = 'F';
-                else if (memcmp(translate(temp, len), ovariable,len) == 0)
-                    record_format = 'V';
-                else
-                {
-                    sprintf(msg_line,
-                            "\"%s\" is an invalid value for %s",
-                            temp, token);
-                    PRNTERR(msg_line);
-                }
-            }
-#endif
       else if (strcmp(token, "SS") == 0 ||
                ((memcmp(token, ostack_size, len) == 0) ||
                 (memcmp(token, ostack_size2, len) == 0) ||
@@ -882,38 +783,14 @@ static void options(void) {
                   temp, token);
           PRNTERR(msg_line);
         }
-      }
-#if (defined(C370) || defined(CW)) && (!defined(MVS))
-            else if (memcmp(token, oactfile_name2, len) == 0 ||
-                     memcmp(token, oactfile_name3, len) == 0)
-            {
-                sprintf(msg_line,
-                        "Option \"%s\" is ambiguous: "
-                        "ACTFILE-NAME, ACTFILE-TYPE, ACTFILE-MODE?",
-                        token);
-                PRNTERR(msg_line);
-            }
-#endif
-      else if (strcmp(token, "BLOCK") == 0) {
+      } else if (strcmp(token, "BLOCK") == 0) {
         PRNTERR("Option \"BLOCK\" is ambiguous: BLOCKB, BLOCKE ?");
       } else if (strcmp("E", token) == 0) {
         PRNTERR("Option \"E\" is ambiguous: "
           "ERROR-PROC, ERROR-MAPS ?");
       } else if (strcmp(token, "H") == 0) {
         PRNTERR("Option \"H\" is ambiguous: HBLOCKB, HBLOCKE ?");
-      }
-#if (defined(C370) || defined(CW)) && (!defined(MVS))
-            else if (memcmp(token, ohactfile_name2, len) == 0 ||
-                     memcmp(token, ohactfile_name3, len) == 0)
-            {
-                sprintf(msg_line,
-                        "Option \"%s\" is ambiguous: "
-                        "HACTFILE-NAME, HACTFILE-TYPE, HACTFILE-MODE?",
-                        token);
-                PRNTERR(msg_line);
-            }
-#endif
-      else if (strcmp(token, "HBLOCK") == 0) {
+      } else if (strcmp(token, "HBLOCK") == 0) {
         PRNTERR("Option \"HBLOCK\" is ambiguous: HBLOCKB, HBLOCKE ?");
       } else if (strcmp("M", token) == 0 || strcmp("MD", token) == 0) {
         sprintf(msg_line,
@@ -1024,45 +901,6 @@ static void process_options_lines(void) {
   if (!error_maps_bit) /* Deferred parsing without error maps is useless*/
     deferred_bit = FALSE;
 
-#if (defined(C370) || defined(CW)) && (!defined(MVS))
-        strupr(file_prefix);
-        if (pn[0] == '\0')
-        {
-            strcpy(pn,file_prefix);
-            strcat(pn, "PRS");
-        }
-        if (sn[0] == '\0')
-        {
-            strcpy(sn,file_prefix);
-            strcat(sn, "SYM");
-        }
-        if (an[0] == '\0')
-        {
-            strcpy(an,file_prefix);
-            strcat(an, "ACT");
-        }
-        if (han[0] == '\0')
-        {
-            strcpy(han,file_prefix);
-            strcat(han, "HDR");
-        }
-        sprintf(act_file, "%s.%s.%s", an, at, am);
-        sprintf(hact_file, "%s.%s.%s", han, hat, ham);
-        sprintf(sym_file, "%s.%s.%s", sn, st, sm);
-        sprintf(def_file, "%sDEF.%s.%s", file_prefix, (java_bit ? "JAVA" : "H"), sm);
-        sprintf(prs_file, "%s.%s.%s", pn, pt, pm);
-        sprintf(dcl_file, "%sDCL.%s.%s", file_prefix, (java_bit ? "JAVA" : "H"), sm);
-#else
-#if defined(MVS)
-        if (act_file[0] == '\0')
-            sprintf(act_file, "%sACT.%s", file_prefix, (java_bit ? "JAVA" : "H"));
-        if (hact_file[0] == '\0')
-            sprintf(hact_file, "%sHDR.%s", file_prefix, (java_bit ? "JAVA" : "H"));
-        sprintf(sym_file, "%sSYM.%s", file_prefix, (java_bit ? "JAVA" : "H"));
-        sprintf(def_file, "%sDEF.%s", file_prefix, (java_bit ? "JAVA" : "H"));
-        sprintf(prs_file, "%sPRS.%s", file_prefix, (java_bit ? "JAVA" : "H"));
-        sprintf(dcl_file, "%sDCL.%s", file_prefix, (java_bit ? "JAVA" : "H"));
-#else
   if (act_file[0] == '\0')
     sprintf(act_file, "%sact.%s", file_prefix, (java_bit ? "java" : "h"));
   if (hact_file[0] == '\0')
@@ -1071,8 +909,6 @@ static void process_options_lines(void) {
   sprintf(def_file, "%sdef.%s", file_prefix, (java_bit ? "java" : "h"));
   sprintf(prs_file, "%sprs.%s", file_prefix, (java_bit ? "java" : "h"));
   sprintf(dcl_file, "%sdcl.%s", file_prefix, (java_bit ? "java" : "h"));
-#endif
-#endif
 
   if (verbose_bit) /* turn everything on */
   {
@@ -1099,13 +935,7 @@ static void process_options_lines(void) {
   else
     strcpy(opt_string[++top], "NOACTION");
 
-#if (defined(C370) || defined(CW)) && (!defined(MVS))
-    sprintf(opt_string[++top], "ACTFILE-NAME=%s",an);
-    sprintf(opt_string[++top], "ACTFILE-TYPE=%s",at);
-    sprintf(opt_string[++top], "ACTFILE-MODE=%s",am);
-#else
   sprintf(opt_string[++top], "ACTFILE-NAME=%s", act_file);
-#endif
 
   sprintf(opt_string[++top], "BLOCKB=%s", blockb);
 
@@ -1171,13 +1001,7 @@ static void process_options_lines(void) {
   else
     strcpy(opt_string[++top], "NOGOTO-DEFAULT");
 
-#if defined(C370) || defined(CW)
-    sprintf(opt_string[++top], "HACTFILE-NAME=%s", han);
-    sprintf(opt_string[++top], "HACTFILE-TYPE=%s", hat);
-    sprintf(opt_string[++top], "HACTFILE-MODE=%s", ham);
-#else
   sprintf(opt_string[++top], "HACTFILE-NAME=%s", hact_file);
-#endif
 
   if (!byte_bit)
     strcpy(opt_string[++top], "HALF-WORD");
@@ -1216,13 +1040,6 @@ static void process_options_lines(void) {
     strcpy(opt_string[++top], "READ-REDUCE");
   else
     strcpy(opt_string[++top], "NOREAD-REDUCE");
-
-#if defined(C370) || defined(CW)
-    if (record_format == 'F')
-        strcpy(opt_string[++top], "RECORD-FORMAT=F");
-    else
-        strcpy(opt_string[++top], "RECORD-FORMAT=V");
-#endif
 
   if (scopes_bit)
     strcpy(opt_string[++top], "SCOPES");
@@ -2111,17 +1928,8 @@ static void process_actions(void) {
 
   char line[MAX_LINE_SIZE + 1];
 
-#if defined(C370) && !defined(CW)
-    sprintf(msg_line, "w, recfm=%cB, lrecl=%d",
-                      record_format, output_size);
-    if (record_format != 'F')
-        output_size -= 4;
-    sysact  = fopen(act_file,  msg_line);
-    syshact = fopen(hact_file, msg_line);
-#else
   sysact = fopen(act_file, "w");
   syshact = fopen(hact_file, "w");
-#endif
 
   if (sysact == (FILE *) NULL) {
     fprintf(stderr,

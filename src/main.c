@@ -75,39 +75,6 @@ int main(int argc, char *argv[]) {
   /**********************************************************************/
   /*     If options are passed to the program, copy them into "parm".   */
   /**********************************************************************/
-#if defined(C370) || defined(CW)
-    if (argc > 1)
-    {
-        char *p;
-
-        for (i = 1; i < argc; i++)
-        {
-            /* Search for '(' which would indicate that options are listed. */
-            if ((p = strchr(argv[i], '(')) != NULL)
-                break; /* if found then exit from loop */
-        }
-        op_start = i;
-        if (i != argc)     /* if there are options */
-        {
-            if (*(p+1) != '\0') /* first option is concatenated to '(' ? */
-                strcpy(parm, p+1); /* Copy from next char till end */
-            else if (i != argc - 1)
-                strcpy(parm, argv[++i]); /* Next argument is first option */
-
-            while (i < argc - 1) /* Process remaining options */
-            {
-               strcat(parm, BLANK);
-               strcat(parm, argv[++i]);
-            }
-
-            if (p != argv[op_start]) /* is '('  concatenated to some string?*/
-            {
-                op_start++;
-                *p = '\0';
-            }
-        }
-    }
-#else
   if (argc > 2) {
     parm[0] = '\0';
     while (j < argc - 2) {
@@ -121,74 +88,15 @@ int main(int argc, char *argv[]) {
       strcat(parm, BLANK);
     }
   }
-#endif
 
 
   /****************************************************************************/
   /*               Create file names for output files                         */
   /****************************************************************************/
-#if defined(C370) || defined(CW)
-    strupr(argv[1]);
-#if defined(MVS)
-    if (argv[1][0] == '\'')
-    {
-       int n;
-
-       strcpy(grm_file, argv[1]);
-       dot = strchr(grm_file, '.');
-       j = 1+(int)(dot-grm_file);
-       n = strlen(grm_file) - 1;
-       for (i = j; i < n; i++)
-           file_prefix[i-j] = grm_file[i];
-       i = i - j;
-       file_prefix[i] = '\0';
-       sprintf(lis_file, "%s.LISTING", file_prefix);
-       sprintf(tab_file, "%s.TABLE",   file_prefix);
-       file_prefix[i] = '.';
-       file_prefix[i+1] = '\0';
-    }
-    else
-    {
-       sprintf(grm_file, "%s.GRAMMAR", argv[1]);
-       sprintf(lis_file, "%s.LISTING", argv[1]);
-       sprintf(tab_file, "%s.TABLE",   argv[1]);
-       strcpy(file_prefix, argv[1]);
-    }
-#else
-    switch(op_start - 1)
-    {
-        case 1:
-            sprintf(grm_file, "%s.GRAMMAR.*", argv[1]);
-            sprintf(lis_file, "%s.LISTING.A", argv[1]);
-            sprintf(tab_file, "%s.TABLE.A", argv[1]);
-            break;
-        case 2:
-            sprintf(grm_file, "%s.%s.*", argv[1], strupr(argv[2]));
-            sprintf(lis_file, "%s.LISTING.A", argv[1]);
-            sprintf(tab_file, "%s.TABLE.A", argv[1]);
-            break;
-        case 3:
-            strupr(argv[2]);
-            strupr(argv[3]);
-            sprintf(grm_file, "%s.%s.%s", argv[1], argv[2], argv[3]);
-            sprintf(lis_file, "%s.LISTING.%s", argv[1], argv[3]);
-            sprintf(tab_file, "%s.TABLE.%s", argv[1], argv[3]);
-            break;
-        default:
-            break;
-    }
-#endif
-
-    i = strlen(argv[1]);
-    for (i = MIN(i, 5) - 1; i >= 0; i--)
-        file_prefix[i] = argv[1][i];
-    file_prefix[i] = '\0';
-    strupr(file_prefix);
-#else
   strcpy(grm_file, argv[argc - 1]);
 
 #if defined(DOS) || defined(OS2)
-    slash = strrchr(grm_file, '\\');
+  slash = strrchr(grm_file, '\\');
 #else
   slash = strrchr(grm_file, '/');
 #endif
@@ -219,7 +127,6 @@ int main(int argc, char *argv[]) {
 
   strcat(lis_file, ".l"); /* add .l extension for listing file */
   strcat(tab_file, ".t"); /* add .t extension for table file */
-#endif
 
   process_input();
 
@@ -404,145 +311,6 @@ int main(int argc, char *argv[]) {
 /*                              PRINT_OPTS:                                 */
 /****************************************************************************/
 static void print_opts(void) {
-#if defined(C370) || defined(CW)
-#if defined(VM)
-    printf("\n%s\n\n"
-    "Usage: jikespg [filename [filetype [filemode]]] ([options]\n\n"
-    "Options                   Options                   Options\n"
-    "=======                   =======                   =======\n"
-    "action                    "
-    "actfile-name=string       "
-    "actfile-mode=string\n"
-    "actfile-type=string       "
-    "blockb=string             "
-    "blocke=string\n"
-    "byte                      "
-    "conflicts                 "
-    "default[=<0|1|2|3|4|5>]\n"
-    "edit                      "
-    "error-maps                "
-    "escape=character\n"
-    "first                     "
-    "follow                    "
-    "generate-parser[=string]\n"
-    "goto-default              "
-    "hactfile-name=string      "
-    "hactfile-mode=string\n"
-    "hactfile-type=string      "
-    "half-word                 "
-    "hblockb=string\n"
-    "hblocke=string            "
-    "lalr[=integer]            "
-    "list\n"
-    "names=<OPTIMIZED|MAX|MIN> "
-    "nt-check                  "
-    "ormark=character\n"
-    "output-size=integer       "
-    "read-reduce               "
-    "record-format=< F | V >\n"
-    "scopes                    "
-    "shift-default             "
-    "single-productions\n"
-    "slr                       "
-    "states                    "
-    "table[=<space|time>]\n"
-    "trace[=<conflicts|full>]  "
-    "verbose                   "
-    "warnings\n"
-    "xref\n\n"
-
-    "The following options are valid only if GENERATE-PARSER "
-    "and TABLE are activated:\n\n"
-
-    "debug                     "
-    "deferred                  "
-    "file-prefix=string\n"
-    "max-distance=integer      "
-    "min-distance=integer      "
-    "prefix=string\n"
-    "stack-size=integer        "
-    "suffix=string\n\n"
-
-    "Options must be separated by a space.  "
-    "Any non-ambiguous initial prefix of a\n"
-    "valid option may be used as an abbreviation "
-    "for that option.  When an option is\n"
-    "composed of two separate words, an "
-    "abbreviation may be formed by concatenating\n"
-    "the first character of each word.  Options "
-    "that are switches may benegated by\n"
-    "prefixing them with the string \"no\". "
-    "Default filetype is \"grammar\"; filemode is \"*\"\n",
-
-    HEADER_INFO);
-#else
-    printf("\n%s\n\n"
-    "Usage: jikespg [filename] [([options]]\n\n"
-    "Options                   Options                   Options\n"
-    "=======                   =======                   =======\n"
-    "action                    "
-    "actfile-name=string       "
-    "blockb=string\n"
-    "blocke=string             "
-    "byte                      "
-    "conflicts\n"
-    "default[=<0|1|2|3|4|5>]   "
-    "edit                      "
-    "error-maps\n"
-    "escape=character          "
-    "first                     "
-    "follow\n"
-    "generate-parser[=string]  "
-    "goto-default              "
-    "hactfile-name=string\n"
-    "half-word                 "
-    "hblockb=string            "
-    "hblocke=string\n"
-    "lalr[=integer]            "
-    "list                      "
-    "names=<OPTIMIZED|MAX|MIN>\n"
-    "nt-check                  "
-    "ormark=character          "
-    "output-size=integer\n"
-    "read-reduce               "
-    "record-format=< F | V >   "
-    "scopes\n"
-    "shift-default             "
-    "single-productions        "
-    "slr\n"
-    "states                    "
-    "table[=<space|time>]      "
-    "trace[=<conflicts|full>]\n"
-    "verbose                   "
-    "warnings                  "
-    "xref\n\n"
-
-    "The following options are valid only if GENERATE-PARSER "
-    "and TABLE are activated:\n\n"
-
-    "debug                     "
-    "deferred                  "
-    "file-prefix=string\n"
-    "max-distance=integer      "
-    "min-distance=integer      "
-    "prefix=string\n"
-    "stack-size=integer        "
-    "suffix=string\n\n"
-
-    "Options must be separated by a space.  "
-    "Any non-ambiguous initial prefix of a\n"
-    "valid option may be used as an abbreviation "
-    "for that option.  When an option is\n"
-    "composed of two separate words, an "
-    "abbreviation may be formed by concatenating\n"
-    "the first character of each word.  Options "
-    "that are switches may benegated by\n"
-    "prefixing them with the string \"no\". "
-    "Default filetype is \"grammar\"; filemode is \"*\"\n",
-
-    HEADER_INFO);
-#endif
-#else
   printf("\n%s"
          "\n(C) Copyright IBM Corp. 1983, 1999.\n"
          "Licensed Materials - Program Property of IBM - All Rights Reserved.\n\n"
@@ -613,7 +381,4 @@ static void print_opts(void) {
 
   printf("\nVersion %s (27 Jan 98) by Philippe Charles, IBM Research."
          "\nAddress comments and questions to charles@watson.ibm.com.\n", VERSION);
-#endif
-
-  return;
 }

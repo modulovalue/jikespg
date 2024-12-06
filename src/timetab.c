@@ -196,8 +196,6 @@ static void remap_symbols(void) {
   ffree(frequency_symbol);
   ffree(frequency_count);
   ffree(row_size);
-
-  return;
 }
 
 
@@ -221,8 +219,6 @@ static void overlap_tables(void) {
       root_symbol,
       max_indx,
       indx,
-      percentage,
-      k_bytes,
       k,
       i;
 
@@ -380,7 +376,7 @@ static void overlap_tables(void) {
           "Number of entries in Action Table: %ld", num_entries);
   PRNT(msg_line);
 
-  percentage = ((action_size - num_entries) * 1000) / num_entries;
+  int percentage = ((action_size - num_entries) * 1000) / num_entries;
   sprintf(msg_line, "Percentage of increase: %d.%d%%",
           percentage / 10, percentage % 10);
   PRNT(msg_line);
@@ -402,7 +398,7 @@ static void overlap_tables(void) {
   if (goto_default_bit)
     num_bytes += ((long) 2 * num_symbols);
 
-  k_bytes = (num_bytes / 1024) + 1;
+  int k_bytes = (num_bytes / 1024) + 1;
 
   sprintf(msg_line,
           "Storage Required for Tables: %ld Bytes, %dK",
@@ -418,8 +414,6 @@ static void overlap_tables(void) {
   sprintf(msg_line,
           "Storage Required for Rules: %ld Bytes", num_bytes);
   PRNT(msg_line);
-
-  return;
 }
 
 
@@ -612,10 +606,10 @@ static void print_tables(void) {
   /* Prepare Header with proper information, and write it out.         */
   /*********************************************************************/
   output_buffer[0] = 'T';
-  output_buffer[1] = (goto_default_bit ? '1' : '0');
-  output_buffer[2] = (nt_check_bit ? '1' : '0');
-  output_buffer[3] = (read_reduce_bit ? '1' : '0');
-  output_buffer[4] = (single_productions_bit ? '1' : '0');
+  output_buffer[1] = goto_default_bit ? '1' : '0';
+  output_buffer[2] = nt_check_bit ? '1' : '0';
+  output_buffer[3] = read_reduce_bit ? '1' : '0';
+  output_buffer[4] = single_productions_bit ? '1' : '0';
   if (default_opt == 0)
     output_buffer[5] = '0';
   else if (default_opt == 1)
@@ -628,9 +622,9 @@ static void print_tables(void) {
     output_buffer[5] = '4';
   else
     output_buffer[5] = '5';
-  output_buffer[6] = (rules[1].lhs == accept_image ? '1' : '0');
-  output_buffer[7] = (error_maps_bit ? '1' : '0');
-  output_buffer[8] = (byte_bit && last_symbol <= 255 ? '1' : '0');
+  output_buffer[6] = rules[1].lhs == accept_image ? '1' : '0';
+  output_buffer[7] = error_maps_bit ? '1' : '0';
+  output_buffer[8] = byte_bit && last_symbol <= 255 ? '1' : '0';
   output_buffer[9] = escape;
 
   output_ptr = &output_buffer[0] + 10;
@@ -874,8 +868,6 @@ static void print_tables(void) {
 
   fwrite(output_buffer, sizeof(char),
          output_ptr - &output_buffer[0], systab);
-
-  return;
 }
 
 
@@ -896,6 +888,4 @@ void cmprtim(void) {
     print_time_parser();
   else
     print_tables();
-
-  return;
 }
