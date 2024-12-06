@@ -87,3 +87,11 @@ clean:
 	rm -f spacetab.o 
 	rm -f tabutil.o
 	rm -f timetab.o
+
+veryclean: clean
+	rm -f lpgprs.h
+	rm -f lpgdcl.h
+	rm -f lpgdef.h
+	rm -f lpgact.h
+	rm -f lpgact.i
+	rm -f lpgsym.h
