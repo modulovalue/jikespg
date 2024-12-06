@@ -9,7 +9,6 @@ static void print_opts(void);
 
 void process_input(void);
 
-/*********************************************************************/
 /* Jikes PG is a parser generator capable of generating LALR(k) and  */
 /* SLR(1) tables.  It is organized as a main routine: MAIN, which    */
 /* invokes five other major subroutines which are:                   */
@@ -33,13 +32,8 @@ void process_input(void);
 /*    3) SYSACT           - Output file used for semantic actions.   */
 /*    4) SYSTAB           - Output file used for Parsing tables.     */
 /*                                                                   */
-/*********************************************************************/
 
-/****************************************************************************/
-/****************************************************************************/
 /*                          MAIN PROGRAM  MAIN:                             */
-/****************************************************************************/
-/****************************************************************************/
 int main(int argc, char *argv[]) {
   int i;
 
@@ -47,7 +41,6 @@ int main(int argc, char *argv[]) {
       *slash,
       tmpbuf[20];
 
-  /*********************************************************************/
   /* If only "jikespg" or "jikespg ?*" is typed, we display the help   */
   /* screen.                                                           */
   /*                                                                   */
@@ -55,15 +48,12 @@ int main(int argc, char *argv[]) {
   /* consecutive "?" is passed as argument to a program, the behaviour */
   /* of the system becomes unpredictable. 1/4/94                       */
   /* You may test this by invoking the "echo" program with "???".      */
-  /*********************************************************************/
   if (argc == 1 || argv[1][0] == '?') {
     print_opts();
     return 4;
   }
 
-  /**********************************************************************/
   /*     If options are passed to the program, copy them into "parm".   */
-  /**********************************************************************/
   if (argc > 2) {
     int j = 0;
     parm[0] = '\0';
@@ -80,9 +70,7 @@ int main(int argc, char *argv[]) {
   }
 
 
-  /****************************************************************************/
   /*               Create file names for output files                         */
-  /****************************************************************************/
   strcpy(grm_file, argv[argc - 1]);
 
 #if defined(DOS) || defined(OS2)
@@ -120,9 +108,7 @@ int main(int argc, char *argv[]) {
 
   process_input();
 
-  /****************************************************************************/
   /* If the user only wanted to edit his grammar, we quit the program.        */
-  /****************************************************************************/
   if (edit_bit) {
     if (first_bit || follow_bit || xref_bit)
       mkfirst();
@@ -157,9 +143,7 @@ int main(int argc, char *argv[]) {
 
   mkrdcts(); /* Build Reduce map, and detect conflicts if any */
 
-  /****************************************************************************/
   /*                  Print more relevant statistics.                         */
-  /****************************************************************************/
   PR_HEADING;
   sprintf(msg_line, "\nNumber of Terminals: %d", num_terminals - 1);
   PRNT(msg_line);
@@ -221,11 +205,9 @@ int main(int argc, char *argv[]) {
           "Number of Reduce-Reduce conflicts: %ld", num_rr_conflicts);
   PRNT(msg_line);
 
-  /**********************************************************/
   /* If the removal of single productions is requested, do  */
   /* so now.                                                */
   /* If STATE_BIT is on, we print the states.               */
-  /**********************************************************/
   if (states_bit) {
     ptstats();
     if (table_opt != 0) {
@@ -233,9 +215,7 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  /**********************************************************/
   /* If the tables are requested, we process them.          */
-  /**********************************************************/
   if (table_opt != 0) {
     if (goto_default_bit && nt_check_bit) {
       PRNTERR("The options GOTO_DEFAULT and NT_CHECK are "
@@ -247,12 +227,10 @@ int main(int argc, char *argv[]) {
                     + num_gotos + num_goto_reduces
                     + num_reductions;
 
-      /***********************************************************/
       /* We release space used by RHS_SYM, the ADEQUATE_ITEM     */
       /* map, ITEM_TABLE (if we don't have to dump error maps),  */
       /* IN_STAT, FIRST, NULL_NT and FOLLOW (if it's no longer   */
       /* needed).                                                */
-      /***********************************************************/
       ffree(rhs_sym);
       if (adequate_item != NULL) {
         int rule_no;
@@ -295,9 +273,7 @@ int main(int argc, char *argv[]) {
 }
 
 
-/****************************************************************************/
 /*                              PRINT_OPTS:                                 */
-/****************************************************************************/
 static void print_opts(void) {
   printf("\n%s"
          "\n(C) Copyright IBM Corp. 1983, 1999.\n"

@@ -626,8 +626,6 @@ static void missing_quote(void)
     start_symbol ::= SYMBOL
 /:$offset $action:/
 /.$location
-/*********************************************************************/
-/*********************************************************************/
 static void act$rule_number(void)
 {
     register struct node *q;
@@ -762,12 +760,10 @@ static void act$rule_number(void)
         num_items = 1;
     }
 
-/*********************************************************************/
 /* Since we don't know for sure how many start symbols we have, a    */
 /* "while" loop is used to increment the size of rulehdr. However,   */
 /* it is highly unlikely that this loop would ever execute more than */
 /* once if the size of RULE_INCREMENT is reasonable.                 */
-/*********************************************************************/
     while (num_rules >= (int)rulehdr_size)
     {
         rulehdr_size += RULEHDR_INCREMENT;

@@ -7,9 +7,7 @@ static char hostfile[] = __FILE__;
 
 static const char digits[] = "0123456789";
 
-/**************************************************************************/
 /*                           PRNT_SHORTS:                                 */
-/**************************************************************************/
 void prnt_shorts(const char *title, int init, int bound, int perline, const short *array) {
   mystrcpy(title);
 
@@ -39,9 +37,7 @@ void prnt_shorts(const char *title, int init, int bound, int perline, const shor
 }
 
 
-/**************************************************************************/
 /*                              PRNT_INTS:                                */
-/**************************************************************************/
 void prnt_ints(const char *title, int init, int bound, int perline, const int *array) {
   mystrcpy(title);
 
@@ -69,9 +65,7 @@ void prnt_ints(const char *title, int init, int bound, int perline, const int *a
 }
 
 
-/***************************************************************************/
 /*                               MYSTRCPY:                                 */
-/***************************************************************************/
 void mystrcpy(const char *str) {
   while (*str != '\0')
     *output_ptr++ = *str++;
@@ -81,23 +75,18 @@ void mystrcpy(const char *str) {
 }
 
 
-/***************************************************************************/
 /*                               PADLINE:                                  */
-/***************************************************************************/
 void padline(void) {
   for (register int i = 0; i < 12; i++)
     *output_ptr++ = ' ';
 }
 
 
-/***************************************************************************/
 /*                                 ITOC:                                   */
-/***************************************************************************/
 /* ITOC takes as arguments an integer NUM. NUM is an integer containing at */
 /* most 11 digits which is converted into a character string and placed in  */
 /* the iobuffer.  Leading zeros are eliminated and if the number is        */
 /* negative, a leading "-" is added.                                       */
-/***************************************************************************/
 void itoc(int num) {
   char tmp[12];
 
@@ -120,15 +109,12 @@ void itoc(int num) {
 }
 
 
-/***************************************************************************/
 /*                                 FIELD:                                  */
-/***************************************************************************/
 /* FIELD takes as arguments two integers: NUM and LEN.  NUM is an integer  */
 /* containing at most LEN digits which is converted into a character       */
 /* string and placed in the iobuffer.                                      */
 /* Leading zeros are replaced by blanks and if the number is negative,  a  */
 /* leading "-" is added.                                                   */
-/***************************************************************************/
 void field(int num, int len) {
   register int val = ABS(num);
   register char *p = output_ptr + len;
@@ -152,30 +138,24 @@ void field(int num, int len) {
 }
 
 
-/***************************************************************************/
 /*                            SORTDES:                                     */
-/***************************************************************************/
 /*  SORTDES sorts the elements of ARRAY and COUNT in the range LOW..HIGH   */
 /* based on the values of the elements of COUNT. Knowing that the maximum  */
 /* value of the elements of count cannot exceed MAX and cannot be lower    */
 /* than zero, we can use a bucket sort technique.                          */
-/***************************************************************************/
 void sortdes(short array[], short count[], int low, int high, int max) {
   register int element,
       i,
       k;
 
-  /*****************************************************************/
   /* BUCKET is used to hold the roots of lists that contain the    */
   /* elements of each bucket.  LIST is used to hold these lists.   */
-  /*****************************************************************/
   short *bucket = Allocate_short_array(max + 1);
   short *list = Allocate_short_array(high - low + 1);
 
   for (i = 0; i <= max; i++)
     bucket[i] = NIL;
 
-  /*********************************************************************/
   /* We now partition the elements to be sorted and place them in their*/
   /* respective buckets.  We iterate backward over ARRAY and COUNT to  */
   /* keep the sorting stable since elements are inserted in the buckets*/
@@ -183,7 +163,6 @@ void sortdes(short array[], short count[], int low, int high, int max) {
   /*                                                                   */
   /*   NOTE that it is known that the values of the elements of ARRAY  */
   /* also lie in the range LOW..HIGH.                                  */
-  /*********************************************************************/
   for (i = high; i >= low; i--) {
     k = count[i];
     element = array[i];
@@ -191,11 +170,9 @@ void sortdes(short array[], short count[], int low, int high, int max) {
     bucket[k] = element;
   }
 
-  /*********************************************************************/
   /* Iterate over each bucket, and place elements in ARRAY and COUNT   */
   /* in sorted order.  The iteration is done backward because we want  */
   /* the arrays sorted in descending order.                            */
-  /*********************************************************************/
   k = low;
   for (i = max; i >= 0; i--) {
     for (element = bucket[i];
@@ -209,13 +186,10 @@ void sortdes(short array[], short count[], int low, int high, int max) {
 }
 
 
-/***************************************************************************/
 /*                              REALLOCATE:                                */
-/***************************************************************************/
 /*   This procedure is invoked when the TABLE being used is not large      */
 /* enough.  A new table is allocated, the information from the old table   */
 /* is copied, and the old space is released.                               */
-/***************************************************************************/
 void reallocate(void) {
   register int
       i;
@@ -277,9 +251,7 @@ void reallocate(void) {
 }
 
 
-/*****************************************************************************/
 /*                            PROCESS_ERROR_MAPS:                            */
-/*****************************************************************************/
 /* if ERROR_MAPS are requested, we print them out in the following order:    */
 /*                                                                           */
 /*   1) The FOLLOW map (NEWFOLL)                                             */
@@ -291,7 +263,6 @@ void reallocate(void) {
 /*      possibly be reached after a transition on the symbol in              */
 /*      question: TRANSITION_STATES                                          */
 /*                                                                           */
-/*****************************************************************************/
 void process_error_maps(void) {
   short *state_start,
       *state_stack,
@@ -335,7 +306,6 @@ void process_error_maps(void) {
 
   PRNT("\nError maps storage:");
 
-  /*********************************************************************/
   /* The FOLLOW map is written out as two vectors where the first      */
   /* vector indexed by a Symbol gives the starting location in the     */
   /* second vector where the elements of the follow set of that symbol */
@@ -348,7 +318,6 @@ void process_error_maps(void) {
   /* The offset for the first symbol is 1,  and hence does not         */
   /* have to be computed.  However,  we compute an extra offset to     */
   /* indicate the extent of the last symbol.                           */
-  /*********************************************************************/
   for (symbol = 1; symbol <= non_terminal_ubound; symbol++) {
     symbol_count[symbol] = 0;
     symbol_root[symbol] = OMEGA;
@@ -384,9 +353,7 @@ void process_error_maps(void) {
     BUFFER_CHECK(systab);
   }
 
-  /***************************************************************/
   /*  We now write the elements in the range of the FOLLOW map.  */
-  /***************************************************************/
   k = 0;
   for (symbol = 1; symbol <= non_terminal_ubound; symbol++) {
     lhs_symbol = symbol_root[symbol];
@@ -409,9 +376,7 @@ void process_error_maps(void) {
     BUFFER_CHECK(systab);
   }
 
-  /*****************************************************************/
   /* Compute and list amount of space required for the Follow map. */
-  /*****************************************************************/
   if (table_opt == OPTIMIZE_TIME) {
     num_bytes = 2 * (num_symbols + offset);
     if (byte_bit) {
@@ -430,9 +395,7 @@ void process_error_maps(void) {
           num_bytes);
   PRNT(msg_line);
 
-  /**************************************************************/
   /* We now write out the states in sorted order: SORTED_STATE. */
-  /**************************************************************/
   k = 0;
   for ALL_STATES(i) {
     field(ordered_state[i], 6);
@@ -448,19 +411,15 @@ void process_error_maps(void) {
     BUFFER_CHECK(systab);
   }
 
-  /*****************************************************************/
   /* Compute and list space required for SORTED_STATE map.         */
-  /*****************************************************************/
   num_bytes = 2 * num_states;
   sprintf(msg_line,
           "    Storage required for SORTED_STATE map: %ld Bytes",
           num_bytes);
   PRNT(msg_line);
 
-  /********************************************************************/
   /* We now write a vector parallel to SORTED_STATE that gives us the */
   /* original number associated with the state: ORIGINAL_STATE.       */
-  /********************************************************************/
   k = 0;
   for (i = 1; i <= (int) num_states; i++) {
     field(state_list[i], 6);
@@ -476,26 +435,21 @@ void process_error_maps(void) {
     BUFFER_CHECK(systab);
   }
 
-  /*****************************************************************/
   /* Compute and list space required for ORIGINAL_STATE map.       */
-  /*****************************************************************/
   num_bytes = 2 * num_states;
   sprintf(msg_line,
           "    Storage required for ORIGINAL_STATE map: %ld Bytes",
           num_bytes);
   PRNT(msg_line);
 
-  /********************************************************************/
   /* We now construct a bit map for the set of terminal symbols that  */
   /* may appear in each state. Then, we invoke PARTSET to apply the   */
   /* Partition Heuristic and print it.                                */
-  /********************************************************************/
   as_size = Allocate_short_array(num_states + 1);
 
   if (table_opt == OPTIMIZE_TIME) {
     original = Allocate_short_array(num_symbols + 1);
 
-    /*************************************************************/
     /* In a compressed TIME table, the terminal and non-terminal */
     /* symbols are mixed together when they are remapped.        */
     /* We shall now recover the original number associated with  */
@@ -504,16 +458,13 @@ void process_error_maps(void) {
     /* amount of space in the bit_string representation of sets  */
     /* as well as time when operations are performed on those    */
     /* bit-strings.                                              */
-    /*************************************************************/
     for ALL_TERMINALS(symbol)
       original[symbol_map[symbol]] = symbol;
   }
 
-  /***********************************************************************/
   /* NOTE that the arrays ACTION_SYMBOLS and NACTION_SYMBOLS are global  */
   /* variables that are allocated in the procedure PROCESS_TABLES by     */
   /* calloc which automatically initializes them to 0.                   */
-  /***********************************************************************/
   for ALL_STATES(state_no) {
     struct shift_header_type sh;
     struct reduce_header_type red;
@@ -544,11 +495,9 @@ void process_error_maps(void) {
 
   ffree(action_symbols);
 
-  /*********************************************************************/
   /* We now write the starting location for each state in the domain   */
   /* of the ACTION_SYMBOL map.                                         */
   /* The starting locations are contained in the STATE_START vector.   */
-  /*********************************************************************/
   offset = state_start[num_states + 1];
   k = 0;
   for ALL_STATES(i) {
@@ -564,9 +513,7 @@ void process_error_maps(void) {
   *output_ptr++ = '\n';
   BUFFER_CHECK(systab);
 
-  /**************************************************************/
   /* Compute and write out the range of the ACTION_SYMBOLS map. */
-  /**************************************************************/
   action_symbols_range = Allocate_short_array(offset);
 
   compute_action_symbols_range(state_start, state_stack,
@@ -587,9 +534,7 @@ void process_error_maps(void) {
     BUFFER_CHECK(systab);
   }
 
-  /*************************************************************/
   /* Compute and list space required for ACTION_SYMBOLS map.   */
-  /*************************************************************/
   num_bytes = 2 * (num_states + offset);
   if (byte_bit) {
     if (offset <= 255)
@@ -605,9 +550,7 @@ void process_error_maps(void) {
 
   ffree(action_symbols_range);
 
-  /***********************************************************************/
   /* We now repeat the same process for the domain of the GOTO table.    */
-  /***********************************************************************/
   for ALL_STATES(state_no) {
     as_size[state_no] = gd_index[state_no + 1] - gd_index[state_no];
     for (i = gd_index[state_no]; i < gd_index[state_no + 1]; i++) {
@@ -630,11 +573,9 @@ void process_error_maps(void) {
       gd_range[i] = symbol_map[gd_range[i]] - num_terminals;
   }
 
-  /*****************************************************************/
   /* We now write the starting location for each state in the      */
   /* domain of the NACTION_SYMBOLS map. The starting locations are */
   /* contained in the STATE_START vector.                          */
-  /*****************************************************************/
   offset = state_start[num_states + 1];
 
   k = 0;
@@ -651,9 +592,7 @@ void process_error_maps(void) {
   *output_ptr++ = '\n';
   BUFFER_CHECK(systab);
 
-  /**************************************************************/
   /* Compute and write out the range of the NACTION_SYMBOLS map.*/
-  /**************************************************************/
   naction_symbols_range = Allocate_short_array(offset);
 
   compute_naction_symbols_range(state_start, state_stack,
@@ -674,9 +613,7 @@ void process_error_maps(void) {
     BUFFER_CHECK(systab);
   }
 
-  /*************************************************************/
   /* Compute and list space required for NACTION_SYMBOLS map.  */
-  /*************************************************************/
   num_bytes = 2 * (num_states + offset);
   if (byte_bit) {
     if (offset <= 255)
@@ -692,7 +629,6 @@ void process_error_maps(void) {
 
   ffree(naction_symbols_range);
 
-  /***********************************************************************/
   /* Compute map from each symbol to state into which that symbol can    */
   /* cause a transition: TRANSITION_STATES                               */
   /* TRANSITION_STATES is also written as two vectors like the FOLLOW    */
@@ -705,7 +641,6 @@ void process_error_maps(void) {
   /* keep count of the number of states associated with each symbol.     */
   /* For space tables, the TRANSITION_STATES map is written as two       */
   /* separate tables: SHIFT_STATES and GOTO_STATES.                      */
-  /***********************************************************************/
   for ALL_SYMBOLS(symbol) {
     symbol_root[symbol] = NIL;
     symbol_count[symbol] = 0;
@@ -728,9 +663,7 @@ void process_error_maps(void) {
     symbol_count[symbol]++;
   }
 
-  /***************************************************************************/
   /* We now compute and write the starting location for each terminal symbol */
-  /***************************************************************************/
   offset = 1; /* Offset of the first state */
   field(offset, 6);
   k = 1;
@@ -749,10 +682,8 @@ void process_error_maps(void) {
     BUFFER_CHECK(systab);
   }
 
-  /*********************************************************************/
   /* We now write out the range elements of SHIFT_STATES for space     */
   /* tables or TRANSITION_STATES for time tables.                      */
-  /*********************************************************************/
   k = 0;
   for (symbol = 1; symbol <= terminal_ubound; symbol++) {
     for (state_no = symbol_root[symbol];
@@ -771,7 +702,6 @@ void process_error_maps(void) {
     BUFFER_CHECK(systab);
   }
 
-  /*********************************************************************/
   /* If space tables are requested we compute and list space required  */
   /* for SHIFT_STATES map. The base vector contains NUM_TERMINALS+ 1   */
   /* elements,  and the vector containing the range elements has size  */
@@ -779,7 +709,6 @@ void process_error_maps(void) {
   /* requirements for TRANSITION_STATES map.  The base vector has      */
   /* NUM_SYMBOLS + 1 elements, and the range elements vector contains  */
   /* OFFSET - 1 elements.                                              */
-  /*********************************************************************/
   if (table_opt == OPTIMIZE_TIME) {
     num_bytes = 2 * (num_symbols + offset);
     sprintf(msg_line,
@@ -793,10 +722,8 @@ void process_error_maps(void) {
             num_bytes);
     PRNT(msg_line);
 
-    /************************************************************/
     /* We now compute and write the starting location for each  */
     /* non-terminal symbol...                                   */
-    /************************************************************/
     offset = 1;
     field(offset, 6); /* Offset of the first state */
     k = 1;
@@ -815,10 +742,8 @@ void process_error_maps(void) {
       BUFFER_CHECK(systab);
     }
 
-    /*********************************************************************/
     /* We now write out the range elements of GOTO_STATES whose domain   */
     /* is a non-terminal symbol.                                         */
-    /*********************************************************************/
     k = 0;
     for ALL_NON_TERMINALS(symbol) {
       for (state_no = symbol_root[symbol];
@@ -837,20 +762,16 @@ void process_error_maps(void) {
       BUFFER_CHECK(systab);
     }
 
-    /*********************************************************************/
     /* We compute and list space required for GOTO_STATES map. The       */
     /* base vector contains NUM_NON_TERMINALS+ 1 elements, and the vector*/
     /* containing the range elements has size OFFSET - 1                 */
-    /*********************************************************************/
     num_bytes = 2 * (num_non_terminals + offset);
     sprintf(msg_line, "    Storage required for GOTO_STATES map: %ld Bytes",
             num_bytes);
     PRNT(msg_line);
   }
 
-  /*********************************************************************/
   /* Write the number associated with the ERROR symbol.                */
-  /*********************************************************************/
 
   field(error_image, 4);
   field(eolt_image, 4);
@@ -863,9 +784,7 @@ void process_error_maps(void) {
   *output_ptr++ = '\n';
   BUFFER_CHECK(systab);
 
-  /*********************************************************************/
   /* We write out the names map.                                       */
-  /*********************************************************************/
   num_bytes = 0;
   max_len = 0;
   for (i = 1; i <= num_names; i++) {
@@ -904,12 +823,10 @@ void process_error_maps(void) {
     BUFFER_CHECK(systab);
   }
 
-  /*********************************************************************/
   /* We write the name_index of each terminal symbol.  The array TEMP  */
   /* is used to remap the NAME_INDEX values based on the new symbol    */
   /* numberings. If time tables are requested, the terminals and non-  */
   /* terminals are mixed together.                                     */
-  /*********************************************************************/
   temp = Allocate_short_array(num_symbols + 1);
 
   if (table_opt == OPTIMIZE_TIME) {
@@ -951,11 +868,9 @@ void process_error_maps(void) {
       BUFFER_CHECK(systab);
     }
 
-    /****************************************************************/
     /* We write the name_index of each non_terminal symbol. The     */
     /* array TEMP is used to remap the NAME_INDEX values based on   */
     /* the new symbol numberings.                                   */
-    /****************************************************************/
     for ALL_NON_TERMINALS(symbol)
       temp[symbol_map[symbol]] = symno[symbol].name_index;
 
@@ -976,9 +891,7 @@ void process_error_maps(void) {
     }
   }
 
-  /*****************************************************/
   /* Compute and list space requirements for NAME map. */
-  /*****************************************************/
   if (max_len > 255)
     offset = 2 * num_symbols;
   else
@@ -1181,9 +1094,7 @@ void process_error_maps(void) {
 }
 
 
-/*********************************************************************/
 /*                   COMPUTE_ACTION_SYMBOLS_RANGE:                   */
-/*********************************************************************/
 /*                                                                   */
 /* This procedure computes the range of the ACTION_SYMBOLS map after */
 /* Optimal Partitioning has been used to compress that map.  Its     */
@@ -1196,7 +1107,6 @@ void process_error_maps(void) {
 /* is organized as a circular list where the smallest sets appear    */
 /* first in the list.                                                */
 /*                                                                   */
-/*********************************************************************/
 void compute_action_symbols_range(const short *state_start,
                                   const short *state_stack,
                                   const short *state_list,
@@ -1208,11 +1118,9 @@ void compute_action_symbols_range(const short *state_start,
 
   short *symbol_list = Allocate_short_array(num_symbols + 1);
 
-  /*********************************************************************/
   /* We now write out the range elements of the ACTION_SYMBOLS map.    */
   /* Recall that if STATE_START has a negative value, then the set in  */
   /* question is sharing elements and does not need to be processed.   */
-  /*********************************************************************/
   int k = 0;
   for ALL_SYMBOLS(j)
     symbol_list[j] = OMEGA; /* Initialize all links to OMEGA */
@@ -1223,12 +1131,10 @@ void compute_action_symbols_range(const short *state_start,
       int symbol_root = 0; /* Add "fence" element: 0 to list */
       symbol_list[symbol_root] = NIL;
 
-      /*************************************************************/
       /* Pop a state from the stack,  and add each of its elements */
       /* that has not yet been processed into the list.            */
       /* Continue until stack is empty...                          */
       /* Recall that the stack is represented by a circular queue. */
-      /*************************************************************/
       for (BOOLEAN end_node = (state = state_no) == NIL;
            !end_node; end_node = state == state_no) {
         state = state_stack[state];
@@ -1251,9 +1157,7 @@ void compute_action_symbols_range(const short *state_start,
         }
       }
 
-      /*************************************************************/
       /* Write the list out.                                       */
-      /*************************************************************/
       for (symbol = symbol_root; symbol != NIL; symbol = symbol_root) {
         symbol_root = symbol_list[symbol];
 
@@ -1267,12 +1171,9 @@ void compute_action_symbols_range(const short *state_start,
 }
 
 
-/*********************************************************************/
 /*                   COMPUTE_NACTION_SYMBOLS_RANGE:                  */
-/*********************************************************************/
 /* This procedure computes the range of the NACTION_SYMBOLS map. It  */
 /* organization is analoguous to COMPUTE_ACTION_SYMBOLS_RANGE.       */
-/*********************************************************************/
 void compute_naction_symbols_range(const short *state_start,
                                    const short *state_stack,
                                    const short *state_list,
@@ -1284,11 +1185,9 @@ void compute_naction_symbols_range(const short *state_start,
 
   short *symbol_list = Allocate_short_array(num_symbols + 1);
 
-  /*********************************************************************/
   /* We now write out the range elements of the NACTION_SYMBOLS map.   */
   /* Recall that if STATE_START has a negative value, then the set in  */
   /* question is sharing elements and does not need to be processed.   */
-  /*********************************************************************/
   int k = 0;
   for ALL_SYMBOLS(j)
     symbol_list[j] = OMEGA; /* Initialize all links to OMEGA */
@@ -1299,12 +1198,10 @@ void compute_naction_symbols_range(const short *state_start,
       int symbol_root = 0; /* Add "fence" element: 0 to list */
       symbol_list[symbol_root] = NIL;
 
-      /*************************************************************/
       /* Pop a state from the stack,  and add each of its elements */
       /* that has not yet been processed into the list.            */
       /* Continue until stack is empty...                          */
       /* Recall that the stack is represented by a circular queue. */
-      /*************************************************************/
       for (BOOLEAN end_node = ((state = state_no) == NIL);
            !end_node; end_node = (state == state_no)) {
         state = state_stack[state];
@@ -1318,9 +1215,7 @@ void compute_naction_symbols_range(const short *state_start,
         }
       }
 
-      /**********************************************************/
       /* Write the list out.                                    */
-      /**********************************************************/
       for (symbol = symbol_root; symbol != NIL; symbol = symbol_root) {
         symbol_root = symbol_list[symbol];
 

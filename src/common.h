@@ -1,7 +1,6 @@
 #ifndef COMMON_INCLUDED
 #define COMMON_INCLUDED
 
-/*******************************************************************/
 /* One of the switches below may have to be set prior to building  */
 /* JIKES PG. OS2 is for all C compilers running under OS2. DOS is  */
 /* for all C compilers running under DOS. Note that to run under   */
@@ -12,7 +11,6 @@
 /* No switch need to be set for such an environment.  Set other    */
 /* switch(es) as needed.                                           */
 /*                                                                 */
-/*******************************************************************/
 /*
 #define DOS
 #define OS2
@@ -25,13 +23,9 @@
 #include <limits.h>
 #include <stdio.h>
 
-/*******************************************************************/
-/*******************************************************************/
 /**                                                               **/
 /**                         GLOBAL CONSTANTS                      **/
 /**                                                               **/
-/*******************************************************************/
-/*******************************************************************/
 #define PR_HEADING  \
     { \
         fprintf(syslis, "\f\n\n %-39s%s %-30.24s Page %d\n\n",\
@@ -75,19 +69,14 @@
 #define NIL            ((short) SHRT_MIN + 1)
 #define DEFAULT_SYMBOL 0
 
-/*******************************************************************/
-/*******************************************************************/
 /**                                                               **/
 /**                       ALLOCATE/FREE MACROS                    **/
 /**                                                               **/
-/*******************************************************************/
-/*******************************************************************/
 /* The following macro definitions are used to preprocess calls to */
 /* allocate routines that require locations. The FFREE macro is    */
 /* normally an invocation to the FREE routine. It is encoded as    */
 /* a macro here in case we need to do some debugging on dynamic    */
 /* storage.                                                        */
-/*******************************************************************/
 #define Allocate_node()           allocate_node(hostfile, __LINE__)
 #define Allocate_int_array(n)     allocate_int_array(n, hostfile, __LINE__)
 #define Allocate_short_array(n)   allocate_short_array(n, hostfile, __LINE__)
@@ -98,16 +87,11 @@
 
 #define ffree(x) free(x) /* { free(x); x = (void *) ULONG_MAX; } */
 
-/*******************************************************************/
-/*******************************************************************/
 /**                                                               **/
 /**                          PARSING MACROS                       **/
 /**                                                               **/
-/*******************************************************************/
-/*******************************************************************/
 /* The following macro definitions are used only in processing the */
 /* input source.                                                   */
-/*******************************************************************/
 #define EQUAL_STRING(symb, p) \
         (strcmp((symb), string_table + (p) -> st_ptr) == 0)
 
@@ -124,13 +108,9 @@
 #define IOBUFFER_SIZE 655360
 #endif
 
-/*******************************************************************/
-/*******************************************************************/
 /**                                                               **/
 /**                         BIT SET MACROS                        **/
 /**                                                               **/
-/*******************************************************************/
-/*******************************************************************/
 /* The following macros are used to define operations on sets that */
 /* are represented as bit-strings.  BOOLEAN_CELL is a type that is */
 /* used as the elemental unit used to construct the sets.  For     */
@@ -145,11 +125,9 @@
 /* parameter called "b" represents a particular element (or bit)   */
 /* within a set.                                                   */
 /*                                                                 */
-/*******************************************************************/
 #define SIZEOF_BC (sizeof(BOOLEAN_CELL) * CHAR_BIT)
 #define BC_OFFSET (SIZEOF_BC - 1)
 
-/*******************************************************************/
 /* This macro takes as argument an array of bit sets called "set", */
 /* an integer "nt" indicating the index of a particular set in the */
 /* array and an integer "t" indicating a particular element within */
@@ -166,14 +144,12 @@
 /* if the bit is on. Otherwise, the value FALSE is obtained.       */
 /* Recall that in C, one cannot shift (left or right) by 0. This   */
 /* is why the ? is used here.                                      */
-/*******************************************************************/
 #define IS_IN_SET(set, i, b)    /* is b in set[i] ? */ \
     ((set)[(i) * term_set_size + (((b) - 1) / SIZEOF_BC)] & \
           (((b) + BC_OFFSET) % SIZEOF_BC ? \
            (BOOLEAN_CELL) 1 << (((b) + BC_OFFSET) % SIZEOF_BC) : \
            (BOOLEAN_CELL) 1))
 
-/*******************************************************************/
 /* The macro SET_UNION takes as argument two arrays of sets:       */
 /* "set1" and "set2", and two integers "i" and "j" which are       */
 /* indices to be used to access particular sets in "set1" and      */
@@ -187,7 +163,6 @@
 /* Note that a macro with the variable "kji" declared in its body  */
 /* should not be invoked with a parameter of the same name.        */
 /*                                                                 */
-/*******************************************************************/
 #define SET_UNION(set1, i, set2, j)    /* set[i] union set2[j] */ \
     { \
         register int kji; \
@@ -223,11 +198,9 @@
            (BOOLEAN_CELL) 1 << (((b) + BC_OFFSET) % SIZEOF_BC): \
            (BOOLEAN_CELL) 1);
 
-/*******************************************************************/
 /* The following macros are analogous to the ones above, except    */
 /* that they deal with sets of non-terminals instead of sets of    */
 /* terminals.                                                      */
-/*******************************************************************/
 #define IS_IN_NTSET(set, i, b)    /* is b in set[i] ? */ \
     ((set)[(i) * non_term_set_size + (((b) - 1) / SIZEOF_BC)] & \
           (((b) + BC_OFFSET) % SIZEOF_BC ? \
@@ -269,11 +242,9 @@
            (BOOLEAN_CELL) 1 << (((b) + BC_OFFSET) % SIZEOF_BC): \
            (BOOLEAN_CELL) 1);
 
-/*******************************************************************/
 /* The following macros are analogous to the ones above, except    */
 /* that they deal with sets of states instead of sets of terminals */
 /* or non-terminals.                                               */
-/*******************************************************************/
 #define SET_COLLECTION_BIT(i, b) \
     collection[(i) * state_set_size + (((b) - 1) / SIZEOF_BC)] |= \
          (((b) + BC_OFFSET) % SIZEOF_BC ? \
@@ -287,10 +258,8 @@
              collection[(i) * state_set_size + kji] = 0; \
     }
 
-/*******************************************************************/
 /* The following macros can be used to check, set, or reset a bit  */
 /* in a bit-string of any length.                                  */
-/*******************************************************************/
 #define SET_BIT(set, b) \
     (set)[((b) - 1) / SIZEOF_BC] |= \
          (((b) + BC_OFFSET) % SIZEOF_BC ? \
@@ -309,15 +278,10 @@
            (BOOLEAN_CELL) 1 << (((b) + BC_OFFSET) % SIZEOF_BC) : \
            (BOOLEAN_CELL) 1))
 
-/*******************************************************************/
-/*******************************************************************/
 /**                                                               **/
 /**                         ITERATION MACROS                      **/
 /**                                                               **/
-/*******************************************************************/
-/*******************************************************************/
 /* The following macros (ALL_) are used to iterate over a sequence.*/
-/*******************************************************************/
 #define ALL_LA_STATES(indx) \
         (indx = num_states + 1; indx <= (int) max_la_state; indx++)
 
@@ -348,13 +312,9 @@
 #define RETRIEVE_STRING(indx) (&string_table[symno[indx].ptr])
 #define RETRIEVE_NAME(indx) (&string_table[name[indx]])
 
-/*******************************************************************/
-/*******************************************************************/
 /**                                                               **/
 /**                      MISCELLANEOUS MACROS                     **/
 /**                                                               **/
-/*******************************************************************/
-/*******************************************************************/
 #define TOUPPER(c) (islower(c) ? toupper(c) : c)
 #define MAX(a,b)   (((a) > (b)) ? (a) : (b))
 #define MIN(a,b)   (((a) < (b)) ? (a) : (b))
@@ -363,7 +323,6 @@
 
 #define NOT(item) (! item)
 
-/**********************************************************************/
 /* The following two macros check whether or not the value of an      */
 /* integer variable exceeds the maximum limit for a short or a long   */
 /* integer, respectively. Note that the user should declare the       */
@@ -371,7 +330,6 @@
 /* this check is meaningful only if INT and SHORT are the same size.  */
 /* Otherwise, if INT and LONG are of the same size, as is usually the */
 /* case on large systems, this check is meaningless - too late !!!    */
-/**********************************************************************/
 #define SHORT_CHECK(var) \
     if (var > SHRT_MAX) \
     { \
@@ -412,13 +370,9 @@
         ENDPAGE_CHECK; \
     }
 
-/*******************************************************************/
-/*******************************************************************/
 /**                                                               **/
 /**     MACROS FOR DEREFERENCING AUTOMATON HEADER STRUCTURES      **/
 /**                                                               **/
-/*******************************************************************/
-/*******************************************************************/
 #define SHIFT_SYMBOL(hdr, indx)   (((hdr).map)[indx].symbol)
 #define SHIFT_ACTION(hdr, indx)   (((hdr).map)[indx].action)
 
@@ -429,16 +383,11 @@
 #define REDUCE_SYMBOL(hdr, indx)  (((hdr).map)[indx].symbol)
 #define REDUCE_RULE_NO(hdr, indx) (((hdr).map)[indx].rule_number)
 
-/*******************************************************************/
-/*******************************************************************/
 /**                                                               **/
 /**                         OUTPUT MACROS                         **/
 /**                                                               **/
-/*******************************************************************/
-/*******************************************************************/
 /* The following macro definitions are used only in processing the */
 /* output.                                                         */
-/*******************************************************************/
 #define BUFFER_CHECK(file) \
     if ((IOBUFFER_SIZE - (output_ptr - &output_buffer[0])) < 73) \
     { \
@@ -447,13 +396,9 @@
         output_ptr = &output_buffer[0]; \
     }
 
-/*******************************************************************/
-/*******************************************************************/
 /**                                                               **/
 /**                      GLOBAL DECLARATIONS                      **/
 /**                                                               **/
-/*******************************************************************/
-/*******************************************************************/
 typedef unsigned int BOOLEAN_CELL; /* Basic unit used to represent */
 /* Bit sets                     */
 typedef BOOLEAN_CELL *SET_PTR;
@@ -470,7 +415,6 @@ struct node {
   int value;
 };
 
-/*******************************************************************/
 /* RULES is the structure that contain the rules of the grammar.   */
 /* Every rule of the grammar is mapped into an integer, and given  */
 /* rule, and we have access to a value RHS which is the index      */
@@ -481,7 +425,6 @@ struct node {
 /* NUM_RULES + 1 element is used as a "fence" for the last rule.   */
 /* The RHS vector as mentioned above is used to hold a complete    */
 /* list of allthe right-hand-side symbols specified in the grammar.*/
-/*******************************************************************/
 struct ruletab_type {
   short lhs,
       rhs;
@@ -563,9 +506,7 @@ extern FILE *syslis,
     *sysdef;
 
 
-/******************************************************/
 /*  The variables below are global counters.          */
-/******************************************************/
 extern long num_items,
     num_states,
     max_la_state;
@@ -580,9 +521,7 @@ extern int num_symbols,
     num_single_productions,
     gotodom_size;
 
-/******************************************************/
 /*  The variables below are used for options setting. */
-/******************************************************/
 extern BOOLEAN list_bit,
     slr_bit,
     verbose_bit,
@@ -632,10 +571,8 @@ extern char blockb[],
     smactn[],
     tkactn[];
 
-/*********************************************************************/
 /*   The variables below are used to hold information about special  */
 /* grammar symbols.                                                  */
-/*********************************************************************/
 extern short accept_image,
     eoft_image,
     eolt_image,
@@ -665,7 +602,6 @@ extern short *rhs_sym;
 
 extern struct ruletab_type *rules;
 
-/***********************************************************************/
 /* CLOSURE is a mapping from non-terminal to a set (linked-list) of    */
 /* non-terminals.  The set consists of non-terminals that are          */
 /* automatically introduced via closure when the original non-terminal */
@@ -678,7 +614,6 @@ extern struct ruletab_type *rules;
 /* number one can retrieve the rule the item belongs to, the position  */
 /* of the dot,  the symbol following the dot, and FIRST of the suffix  */
 /* following the "dot symbol".                                         */
-/***********************************************************************/
 extern struct node **closure,
     **clitems,
     **adequate_item;
@@ -690,37 +625,28 @@ extern struct itemtab {
       dot;
 } *item_table;
 
-/***********************************************************************/
 /* SYMNO is an array that maps symbol numbers to actual symbols.       */
-/***********************************************************************/
 extern struct symno_type {
   int ptr,
       name_index;
 } *symno;
 
-/***********************************************************************/
 /* These variables hold the number of BOOLEAN_CELLS required to form a */
 /* set of terminals, non-terminals and states, respectively.           */
-/***********************************************************************/
 extern int term_set_size,
     non_term_set_size,
     state_set_size;
 
-/***********************************************************************/
 /* NULL_NT is a boolean vector that indicates whether or not a given   */
 /* non-terminal is nullable.                                           */
-/***********************************************************************/
 extern BOOLEAN *null_nt;
 
-/***********************************************************************/
 /* FOLLOW is a mapping from non-terminals to a set of terminals that   */
 /* may appear immediately after the non-terminal.                      */
-/***********************************************************************/
 extern SET_PTR nt_first,
     first,
     follow;
 
-/***********************************************************************/
 /* NAME is an array containing names to be associated with symbols.    */
 /* REDUCE is a mapping from each state to reduce actions in that state.*/
 /* SHIFT is an array used to hold the complete set of all shift maps   */
@@ -730,7 +656,6 @@ extern SET_PTR nt_first,
 /* because if the user requests that certain single productions be     */
 /* removed, a Shift map containing actions involving such productions  */
 /* cannot be shared.                                                   */
-/***********************************************************************/
 extern struct shift_header_type *shift;
 
 extern struct reduce_header_type *reduce;
@@ -742,12 +667,10 @@ extern short *gotodef,
 
 extern int *name;
 
-/***********************************************************************/
 /* STATSET is a mapping from state number to state information.        */
 /* LASTATS is a similar mapping for look-ahead states.                 */
 /* IN_STAT is a mapping from each state to the set of states that have */
 /* a transition into the state in question.                            */
-/***********************************************************************/
 extern struct statset_type *statset;
 
 extern struct lastats_type *lastats;
@@ -769,16 +692,11 @@ extern struct scope_type {
 extern short *scope_right_side,
     *scope_state;
 
-/*******************************************************************/
-/*******************************************************************/
 /**                                                               **/
 /**                        OUTPUT DECLARATIONS                    **/
 /**                                                               **/
-/*******************************************************************/
-/*******************************************************************/
 /* The following external variables are used only in processing    */
 /* output.                                                         */
-/*******************************************************************/
 extern char *output_ptr,
     *output_buffer;
 

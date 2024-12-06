@@ -26,21 +26,16 @@ static char code[256] = {0};
 static int output_size = 80,
     line_no = 0;
 
-/****************************************************************************/
 /*                             PROCESS_INPUT:                               */
-/****************************************************************************/
 /* This procedures opens all relevant files and processes the input grammar.*/
-/****************************************************************************/
 void process_input(void) {
   time_t ltime;
   unsigned c;
 
-  /****************************************************************************/
   /* Open input grammar file. If the file cannot be opened and that file name */
   /* did not have an extension, then the extension ".g" is added to the file  */
   /* name and we try again. If no file can be found an error message is       */
   /* issued and the program halts.                                            */
-  /****************************************************************************/
   if ((sysgrm = fopen(grm_file, "r")) == (FILE *) NULL) {
     register int i;
 
@@ -73,15 +68,11 @@ void process_input(void) {
     }
   }
 
-  /****************************************************************************/
   /*               Assign timeptr to the local time.                          */
-  /****************************************************************************/
   time(&ltime);
   timeptr = ctime(&ltime);
 
-  /****************************************************************************/
   /*                Open listing file for output.                             */
-  /****************************************************************************/
   syslis = fopen(lis_file, "w");
   if (syslis == (FILE *) NULL) {
     fprintf(stderr,
@@ -90,10 +81,8 @@ void process_input(void) {
     exit(12);
   }
 
-  /****************************************************************************/
   /* Complete the initialization of the code array used to replace the        */
   /* builtin functions isalpha, isdigit and isspace.                          */
-  /****************************************************************************/
   for (c = 'a'; c <= 'z'; c++) {
     if (isalpha(c))
       code[c] = ALPHA_CODE;
@@ -114,9 +103,7 @@ void process_input(void) {
   code['\f'] = SPACE_CODE;
 
 
-  /****************************************************************************/
   /*          Print heading on terminal and in listing file                   */
-  /****************************************************************************/
   printf("\n %s %35.24s\n", HEADER_INFO, timeptr);
   PR_HEADING;
 
@@ -130,11 +117,8 @@ void process_input(void) {
 }
 
 
-/********************************************************************/
 /*                          READ_INPUT:                             */
-/********************************************************************/
 /*         READ_INPUT fills the buffer from p1 to the end.          */
-/********************************************************************/
 static void read_input(void) {
   long num_read = input_buffer + IOBUFFER_SIZE - bufend;
   if ((num_read = fread(bufend, 1, num_read, sysgrm)) == 0) {
@@ -151,16 +135,11 @@ static void read_input(void) {
 }
 
 
-/*****************************************************************************/
 /*                              INIT_PROCESS:                                */
-/*****************************************************************************/
 /* This routine is invoked to allocate space for the global structures       */
 /* needed to process the input grammar.                                      */
-/*****************************************************************************/
 static void init_process(void) {
-  /******************************************************************/
   /* Set up a a pool of temporary space.                            */
-  /******************************************************************/
   reset_temporary_space();
 
   terminal = (struct terminal_type *)
@@ -173,11 +152,9 @@ static void init_process(void) {
   if (hash_table == (struct hash_type **) NULL)
     nospace(__FILE__, __LINE__);
 
-  /***********************************************************************/
   /* Allocate space for input buffer and read in initial data in input   */
   /* file. Next, invoke PROCESS_OPTION_LINES to process all lines in     */
   /* input file that are options line.                                   */
-  /***********************************************************************/
   input_buffer = (char *)
       calloc(IOBUFFER_SIZE + 1 + MAX_LINE_SIZE, sizeof(char));
   if (input_buffer == (char *) NULL)
@@ -209,9 +186,7 @@ static void init_process(void) {
   hblockb_len = strlen(hblockb);
   hblocke_len = strlen(hblocke);
 
-  /*****************************************************/
   /* Keywords, Reserved symbols, and predefined macros */
-  /*****************************************************/
   kdefine[0] = escape; /*Set empty first space to the default */
   kterminals[0] = escape; /* escape symbol.                      */
   kalias[0] = escape;
@@ -236,13 +211,10 @@ static void init_process(void) {
 }
 
 
-/*****************************************************************************/
 /*                              EXIT_PROCESS:                                */
-/*****************************************************************************/
 /* This routine is invoked to free all space used to process the input that  */
 /* is no longer needed. Note that for the string_table, only the unused      */
 /* space is released.                                                        */
-/*****************************************************************************/
 static void exit_process(void) {
   if (string_offset > 0) {
     string_table = (char *)
@@ -262,13 +234,10 @@ static void exit_process(void) {
 }
 
 
-/*****************************************************************************/
 /*                                 VERIFY:                                   */
-/*****************************************************************************/
 /* VERIFY takes as argument a character string and checks whether or not each*/
 /* character is a digit. If all are digits, then 1 is returned; if not, then */
 /* 0 is returned.                                                            */
-/*****************************************************************************/
 static BOOLEAN verify(const char *item) {
   while (IsDigit(*item))
     item++;
@@ -276,12 +245,9 @@ static BOOLEAN verify(const char *item) {
 }
 
 
-/*****************************************************************************/
 /*                              TRANSLATE:                                   */
-/*****************************************************************************/
 /* TRANSLATE takes as arguments a character array, which it folds to upper   */
 /* to uppercase and returns.                                                 */
-/*****************************************************************************/
 static char *translate(char *str, int len) {
   for (register int i = 0; i < len; i++)
     str[i] = TOUPPER(str[i]);
@@ -290,9 +256,7 @@ static char *translate(char *str, int len) {
 } /* end translate */
 
 
-/**********************************************************************/
 /*                             STRXEQ:                                */
-/**********************************************************************/
 /* Compare two character strings s1 and s2 to check whether or not s2 */
 /* is a substring of s1.  The string s2 is assumed to be in lowercase */
 /* and NULL terminated. However, s1 does not have to (indeed, may not)*/
@@ -303,7 +267,6 @@ static char *translate(char *str, int len) {
 /* because tolower(ch) is sometimes implemented as (ch-'A'+'a') which */
 /* does not work when "ch" is already a lower case character.         */
 /*                                                                    */
-/**********************************************************************/
 static BOOLEAN strxeq(char *s1, char *s2) {
   for (; *s2 != '\0'; s1++, s2++) {
     if (*s1 != *s2 && *s1 != toupper(*s2))
@@ -314,9 +277,7 @@ static BOOLEAN strxeq(char *s1, char *s2) {
 }
 
 
-/*****************************************************************************/
 /*                              OPTIONS:                                     */
-/*****************************************************************************/
 /*   OPTION handles the decoding of options passed by the user and resets    */
 /* them appropriately. "options" may be called twice: when a parameter line  */
 /* is passed to the main program and when the user codes an %OPTIONS line in */
@@ -324,7 +285,6 @@ static BOOLEAN strxeq(char *s1, char *s2) {
 /*    Basically, there are two kinds of options: switches which indicate a   */
 /* certain setting just by their appearance, and valued options which are    */
 /* followed by an equal sign and the value to be assigned to them.           */
-/*****************************************************************************/
 static void options(void) {
   char *c,
       token[MAX_PARM_SIZE + 1],
@@ -336,10 +296,8 @@ static void options(void) {
 
   BOOLEAN flag;
 
-  /*******************************************************************/
   /* If we scan the comment sign, we stop processing the rest of the */
   /* parameter string.                                               */
-  /*******************************************************************/
   for (c = parm; *c != '\0'; c++) {
     if (*c == '-' && *(c + 1) == '-')
       break;
@@ -376,9 +334,7 @@ static void options(void) {
     token[i] = '\0';
     temp[i] = '\0';
 
-    /***********************************/
     /* find first non-blank after parm */
-    /***********************************/
     while (parm[i] != '\0' && parm[i] == ' ')
       i++;
 
@@ -391,7 +347,6 @@ static void options(void) {
     if (len > MAX_PARM_SIZE)
       token[MAX_PARM_SIZE] = '\0';
 
-    /*****************************************************************************/
     /*  We check whether we have a switch or a value parameter.                  */
     /* Each category is checked separately.  A match is made whenever            */
     /* a minimum unambiguous prefix of the token in question matches an          */
@@ -399,7 +354,6 @@ static void options(void) {
     /*                                                                           */
     /* At this stage, TEMP contains the value of the switch as specified         */
     /* and TOKEN contains the upper-case folded value of TEMP.                   */
-    /*****************************************************************************/
     if (delim != '=') /* if switch parameter then process */
     {
       if ((len > 2) &&
@@ -543,9 +497,7 @@ static void options(void) {
       }
     }
 
-    /****************************************/
     /* We now process the valued-parameter. */
-    /****************************************/
     else /* value parameter. pick value after "=" and process */
     {
       i++;
@@ -813,14 +765,11 @@ static void options(void) {
 }
 
 
-/****************************************************************************/
 /*                       PROCESS_OPTIONS_LINES:                             */
-/****************************************************************************/
 /*    In this function, we read the first line(s) of the input text to see  */
 /* if they are (it is an) "options" line(s).  If so, the options are        */
 /* processed.  Then, we process user-supplied options if there are any.  In */
 /* any case, the options in effect are printed.                             */
-/****************************************************************************/
 static void process_options_lines(void) {
   char old_parm[MAX_LINE_SIZE + 1],
       output_line[PRINT_LINE_SIZE + 1],
@@ -836,7 +785,7 @@ static void process_options_lines(void) {
   strcpy(old_parm, parm); /* Save new options passed to program */
   ooptions[0] = escape; /* "ooptions" always uses default escape symbol */
 
-  while (p1 != '\0') /* Until end-of-file is reached, process */
+  while (p1 != NULL) /* Until end-of-file is reached, process */
   {
     /* all comment and %options lines.       */
     while (IsSpace(*p2)) /* skip all space symbols */
@@ -850,14 +799,12 @@ static void process_options_lines(void) {
     }
     line_end = strchr(p2, '\n'); /* find end-of-line */
 
-    /*********************************************************************/
     /* First, check if line is a comment line. If so, skip it.  Next,    */
     /* check if line is an options line. If so, process it. Otherwise,   */
     /* break out of the loop.                                            */
     /* Note that no length check is necessary before checking for "--"   */
     /* or "%options" since the buffer is always extended by              */
     /* MAX_LINE_SIZE elements past its required length. (see read_input) */
-    /*********************************************************************/
     if (*p2 == '-' && *(p2 + 1) == '-')
       /* skip comment line */;
     else if (memcmp(ooptions, translate(p2, 8), 8) == 0) {
@@ -870,10 +817,8 @@ static void process_options_lines(void) {
       break;
     }
 
-    /*********************************************************************/
     /* If the line was a comment or an option line, check the following  */
     /* line.  If we are at the end of the buffer, read in more data...   */
-    /*********************************************************************/
     p1 = line_end + 1;
     if (bufend == input_buffer + IOBUFFER_SIZE) {
       i = bufend - p1;
@@ -916,15 +861,12 @@ static void process_options_lines(void) {
   }
 
 
-  /*****************************************************************************/
   /*                          PRINT OPTIONS:                                   */
-  /*****************************************************************************/
   /* Here we print all options set by the user.  As of now, only about 48      */
   /* different options and related aliases are allowed.  In case that number   */
   /* goes up, the bound of the array, opt_string, should be changed.           */
   /* BLOCKB, BLOCKE, HBLOCKB and HBLOCKE can generate the longest strings      */
   /* since their value can be up to MAX_PARM_SIZE characters long.             */
-  /*****************************************************************************/
   if (action_bit)
     strcpy(opt_string[++top], "ACTION");
   else
@@ -1115,9 +1057,7 @@ static void process_options_lines(void) {
     }
   }
 
-  /*********************************************************************/
   /* Check if there are any conflicts in the options.                  */
-  /*********************************************************************/
   temp[0] = '\0';
 
   if (minimum_distance <= 1) {
@@ -1156,7 +1096,7 @@ static void process_options_lines(void) {
             "The options %s cannot have the same value", temp);
     PRNTERR(msg_line);
     sprintf(msg_line,
-            "Input process aborted at line %ld ...", line_no);
+            "Input process aborted at line %d ...", line_no);
     PRNT(msg_line);
     exit(12);
   }
@@ -1168,7 +1108,7 @@ static void process_options_lines(void) {
             hblockb, blockb);
     PRNTERR(msg_line);
     sprintf(msg_line,
-            "Input process aborted at line %ld ...", line_no);
+            "Input process aborted at line %d ...", line_no);
     PRNT(msg_line);
     exit(12);
   }
@@ -1177,12 +1117,9 @@ static void process_options_lines(void) {
 } /* end process_options_lines */
 
 
-/*****************************************************************************/
 /*                                 HASH:                                     */
-/*****************************************************************************/
 /*    HASH takes as argument a symbol and hashes it into a location in       */
 /* HASH_TABLE.                                                               */
-/*****************************************************************************/
 static int hash(const char *symb) {
   register unsigned long hash_value = 0;
 
@@ -1198,13 +1135,10 @@ static int hash(const char *symb) {
 }
 
 
-/*****************************************************************************/
 /*                           INSERT_STRING:                                  */
-/*****************************************************************************/
 /*   INSERT_STRING takes as an argument a pointer to a ht_elemt structure and*/
 /* a character string.  It inserts the string into the string table and sets */
 /* the value of node to the index into the string table.                     */
-/*****************************************************************************/
 static void insert_string(struct hash_type *q, const char *string) {
   if (string_offset + strlen(string) >= string_size) {
     string_size += STRING_BUFFER_SIZE;
@@ -1224,9 +1158,7 @@ static void insert_string(struct hash_type *q, const char *string) {
 }
 
 
-/*****************************************************************************/
 /*                             ASSIGN_SYMBOL_NO:                             */
-/*****************************************************************************/
 /* PROCESS_SYMBOL takes as an argument a pointer to the most recent token    */
 /* which would be either a symbol or a macro name and then processes it. If  */
 /* the token is a a macro name then a check is made to see if it is a pre-   */
@@ -1238,10 +1170,8 @@ static void insert_string(struct hash_type *q, const char *string) {
 /* symbol, the value of the NUMBER field is changed to the appropriate symbol*/
 /* number. However, if the token is a macro name, its value will remain zero.*/
 /* The NAME_INDEX field is set to OMEGA and will be assigned a value later.  */
-/*****************************************************************************/
 /*   ASSIGN_SYMBOL_NO takes as arguments a pointer to a node and an image    */
 /* number and assigns a symbol number to the symbol pointed to by the node.  */
-/*****************************************************************************/
 static void assign_symbol_no(const char *string_ptr, int image) {
   register struct hash_type *p;
 
@@ -1269,14 +1199,11 @@ static void assign_symbol_no(const char *string_ptr, int image) {
 }
 
 
-/*****************************************************************************/
 /*                              ALIAS_MAP:                                   */
-/*****************************************************************************/
 /* ALIAS_MAP takes as input a symbol and an image. It searcheds the hash     */
 /* table for stringptr and if it finds it, it turns it into an alias of the  */
 /* symbol whose number is IMAGE. Otherwise, it invokes PROCESS_SYMBOL and    */
 /* ASSIGN SYMBOL_NO to enter stringptr into the table and then we alias it.  */
-/*****************************************************************************/
 static void alias_map(const char *stringptr, int image) {
   for (register struct hash_type *q = hash_table[hash(stringptr)]; q != NULL; q = q->link) {
     if (EQUAL_STRING(stringptr, q)) {
@@ -1291,13 +1218,10 @@ static void alias_map(const char *stringptr, int image) {
 }
 
 
-/*****************************************************************************/
 /*                              SYMBOL_IMAGE:                                */
-/*****************************************************************************/
 /*    SYMBOL_IMAGE takes as argument a symbol.  It searches for that symbol  */
 /* in the HASH_TABLE, and if found, it returns its image; otherwise, it      */
 /* returns OMEGA.                                                            */
-/*****************************************************************************/
 static int symbol_image(const char *item) {
   for (register struct hash_type *q = hash_table[hash(item)]; q != NULL; q = q->link) {
     if (EQUAL_STRING(item, q))
@@ -1308,14 +1232,11 @@ static int symbol_image(const char *item) {
 }
 
 
-/*****************************************************************************/
 /*                                NAME_MAP:                                  */
-/*****************************************************************************/
 /* NAME_MAP takes as input a symbol and inserts it into the HASH_TABLE if it */
 /* is not yet in the table. If it was already in the table then it is        */
 /* assigned a NAME_INDEX number if it did not yet have one.  The name index  */
 /* assigned is returned.                                                     */
-/*****************************************************************************/
 static int name_map(const char *symb) {
   register int i;
   register struct hash_type *p;
@@ -1348,13 +1269,10 @@ static int name_map(const char *symb) {
 }
 
 
-/*****************************************************************************/
 /*                            PROCESS_GRAMMAR:                               */
-/*****************************************************************************/
 /*    PROCESS_GRAMMAR is invoked to process the source input. It uses an     */
 /* LALR(1) parser table generated by LPG to recognize the grammar which it   */
 /* places in the rulehdr structure.                                          */
-/*****************************************************************************/
 #include "lpgact.i"
 #include "lpgact.h"
 #include "lpgprs.h"
@@ -1367,10 +1285,8 @@ static void process_grammar(void) {
   act = START_STATE;
 
 process_terminal:
-  /******************************************************************/
   /* Note that this driver assumes that the tables are LPG SPACE    */
   /* tables with no GOTO-DEFAULTS.                                  */
-  /******************************************************************/
   state_stack[++stack_top] = act;
   act = t_action(act, ct, ?);
 
@@ -1402,11 +1318,8 @@ process_non_terminal:
 }
 
 
-/*****************************************************************************/
 /*                                SCANNER:                                   */
-/*****************************************************************************/
 /* SCANNER scans the input stream and returns the next input token.          */
-/*****************************************************************************/
 static void scanner(void) {
   register int i;
   register char *p3;
@@ -1414,9 +1327,7 @@ static void scanner(void) {
   char tok_string[SYMBOL_SIZE + 1];
 
 scan_token:
-  /*****************************************************************/
   /* Skip "blank" spaces.                                          */
-  /*****************************************************************/
   p1 = p2;
   while (IsSpace(*p1)) {
     if (*(p1++) == '\n') {
@@ -1525,9 +1436,7 @@ scan_token:
     return;
   }
 
-  /*********************************************************************/
   /* Scan the next token.                                              */
-  /*********************************************************************/
   ct_ptr = p1;
   ct_start_line = line_no;
   ct_start_col = p1 - linestart;
@@ -1756,7 +1665,7 @@ check_symbol_length:
       if (symbol_image(tok_string) == OMEGA) {
         sprintf(msg_line,
                 "Length of Symbol \"%s\""
-                " in line %ld exceeds maximum of ",
+                " in line %d exceeds maximum of ",
                 tok_string, line_no);
         PRNTWNG(msg_line);
       }
@@ -1767,14 +1676,11 @@ check_symbol_length:
 }
 
 
-/****************************************************************************/
 /*                             TOKEN_ACTION:                                */
-/****************************************************************************/
 /*    This function, TOKEN_ACTION, pushes the current token onto the        */
 /* parse stack called TERMINAL. Note that in case of a BLOCK_, the name of  */
 /* the token is not copied since blocks are processed separately on a       */
 /* second pass.                                                             */
-/****************************************************************************/
 static void token_action(void) {
   register int top = stack_top + 1;
 
@@ -1793,11 +1699,8 @@ static void token_action(void) {
   return;
 }
 
-/****************************************************************************/
 /*                              ERROR_ACTION:                               */
-/****************************************************************************/
 /*  Error messages to be printed if an error is encountered during parsing. */
-/****************************************************************************/
 static void error_action(void) {
   char tok_string[SYMBOL_SIZE + 1];
 
@@ -1808,18 +1711,18 @@ static void error_action(void) {
   else if (ct == MACRO_NAME_TK) {
     sprintf(msg_line,
             "Misplaced macro name \"%s\" found "
-            "in line %ld, column %d",
+            "in line %d, column %d",
             ct_ptr, line_no, ct_start_col);
   } else if (ct == SYMBOL_TK) {
     restore_symbol(tok_string, ct_ptr);
     sprintf(msg_line,
             "Misplaced symbol \"%s\" found "
-            "in line %ld, column %d",
+            "in line %d, column %d",
             tok_string, line_no, ct_start_col);
   } else {
     sprintf(msg_line,
             "Misplaced keyword \"%s\" found "
-            "in line %ld, column %d",
+            "in line %d, column %d",
             ct_ptr, line_no, ct_start_col);
   }
 
@@ -1829,11 +1732,8 @@ static void error_action(void) {
 }
 
 
-/****************************************************************************/
 /*                            ACCEPT_ACTION:                                */
-/****************************************************************************/
 /*          Actions to be taken if grammar is successfully parsed.          */
-/****************************************************************************/
 static void accept_action(void) {
   if (rulehdr == NULL) {
     printf("Informative: Empty grammar read in. "
@@ -1866,12 +1766,9 @@ static void accept_action(void) {
 }
 
 
-/*****************************************************************************/
 /*                             BUILD_SYMNO:                                  */
-/*****************************************************************************/
 /* BUILD_SYMNO constructs the SYMNO table which is a mapping from each       */
 /* symbol number into that symbol.                                           */
-/*****************************************************************************/
 static void build_symno(void) {
   register int i,
       symbol;
@@ -1884,10 +1781,8 @@ static void build_symno(void) {
   if (symno == (struct symno_type *) NULL)
     nospace(__FILE__, __LINE__);
 
-  /***********************************************************************/
   /* Go thru entire hash table. For each non_empty bucket, go through    */
   /* linked list in that bucket.                                         */
-  /***********************************************************************/
   for (i = 0; i < HT_SIZE; ++i) {
     for (p = hash_table[i]; p != NULL; p = p->link) {
       symbol = p->number;
@@ -1903,11 +1798,8 @@ static void build_symno(void) {
 }
 
 
-/****************************************************************************/
 /*                              PROCESS_ACTIONS:                            */
-/****************************************************************************/
 /*     Process all semantic actions and generate action file.               */
-/****************************************************************************/
 static void process_actions(void) {
   register int i,
       j,
@@ -1953,9 +1845,7 @@ static void process_actions(void) {
   p1 = p2;
   line_no = 1;
 
-  /***********************************************************************/
   /* Read in all the macro definitions and insert them into macro_table. */
-  /***********************************************************************/
   for (i = 0; i < num_defs; i++) {
     defelmt[i].macro = (char *)
         calloc(defelmt[i].length + 2, sizeof(char));
@@ -2006,15 +1896,11 @@ static void process_actions(void) {
     mapmacro(i);
   }
 
-  /****************************************************************************/
   /* If LISTING was requested, invoke listing procedure.                      */
-  /****************************************************************************/
   if (list_bit)
     display_input();
 
-  /****************************************************************************/
   /* Read in all the action blocks and process them.                          */
-  /****************************************************************************/
   for (i = 0; i < num_acts; i++) {
     for (; line_no < actelmt[i].start_line; line_no++) {
       while (*p1 != '\n')
@@ -2114,12 +2000,9 @@ static void process_actions(void) {
 }
 
 
-/************************************************************************/
 /*                          MAKE_NAMES_MAP:                             */
-/************************************************************************/
 /*  Construct the NAME map, and update the elements of SYMNO with their */
 /* names.                                                               */
-/************************************************************************/
 static void make_names_map(void) {
   register int i,
       symbol;
@@ -2147,9 +2030,7 @@ static void make_names_map(void) {
     }
   }
 
-  /************************/
   /* Allocate NAME table. */
-  /************************/
   name = (int *) calloc(num_names + 1, sizeof(int));
   if (name == (int *) NULL)
     nospace(__FILE__, __LINE__);
@@ -2165,15 +2046,12 @@ static void make_names_map(void) {
 }
 
 
-/*****************************************************************************/
 /*                             MAKE_RULES_MAP:                               */
-/*****************************************************************************/
 /*   Construct the rule table.  At this stage, NUM_ITEMS is equal to the sum */
 /* of the right-hand side lists of symbols.  It is used in the declaration of*/
 /* RULE_TAB.  After RULE_TAB is allocated, we increase NUM_ITEMS to its      */
 /* correct value.  Recall that the first rule is numbered 0; therefore we    */
 /* increase the number of items by 1 to reflect this numbering.              */
-/*****************************************************************************/
 static void make_rules_map(void) {
   register struct node *ptr, *q;
 
@@ -2192,9 +2070,7 @@ static void make_rules_map(void) {
   num_items += (num_rules + 1);
   SHORT_CHECK(num_items);
 
-  /*****************************************************************************/
   /* Put starting rules from start symbol linked list in rule and rhs table    */
-  /*****************************************************************************/
   if (start_symbol_root != NULL) {
     /* Turn circular list into linear */
     q = start_symbol_root;
@@ -2212,11 +2088,9 @@ static void make_rules_map(void) {
     free_nodes(start_symbol_root, q);
   }
 
-  /*****************************************************************************/
   /*   In this loop, the grammar is placed in the rule table structure and the */
   /* right-hand sides are placed in the RHS table.  A check is made to prevent */
   /* terminals from being used as left hand sides.                             */
-  /*****************************************************************************/
   for (i = i; i <= num_rules; i++) {
     rules[i].rhs = rhs_ct;
     ptr = rulehdr[i].rhs_root;
@@ -2255,12 +2129,9 @@ static void make_rules_map(void) {
 }
 
 
-/****************************************************************************/
 /*                             ALLOC_LINE:                                  */
-/****************************************************************************/
 /*  This function allocates a line_elemt structure and returns a pointer    */
 /* to it.                                                                   */
-/****************************************************************************/
 static struct line_elemt *alloc_line(void) {
   register struct line_elemt *p;
 
@@ -2277,12 +2148,9 @@ static struct line_elemt *alloc_line(void) {
 }
 
 
-/****************************************************************************/
 /*                              FREE_LINE:                                  */
-/****************************************************************************/
 /*  This function frees a line_elemt structure which is returned to a free  */
 /* pool.                                                                    */
-/****************************************************************************/
 static void free_line(struct line_elemt *p) {
   p->link = line_pool_root;
   line_pool_root = p;
@@ -2291,16 +2159,13 @@ static void free_line(struct line_elemt *p) {
 }
 
 
-/*****************************************************************************/
 /*                            PROCESS_ACTION_LINE:                           */
-/*****************************************************************************/
 /* PROCESS_ACTION_LINE takes as arguments a line of text from an action      */
 /* block and the rule number with which thwe block is associated.            */
 /* It first scans the text for predefined macro names and then for           */
 /* user defined macro names. If one is found, the macro definition is sub-   */
 /* stituted for the name. The modified action text is then printed out in    */
 /* the action file.                                                          */
-/*****************************************************************************/
 static void process_action_line(FILE *sysout, char *text,
                                 int line_no, int rule_no) {
   register int j,
@@ -2474,10 +2339,8 @@ next_line:
         }
       }
 
-      /*****************************************************************************/
       /* Macro in question is not one of the predefined macros. Try user-defined   */
       /* macro list.                                                               */
-      /*****************************************************************************/
       /* find next delimeter */
       for (j = k + 1; j < text_len && !IsSpace(text[j]); ++j);
 
@@ -2501,13 +2364,11 @@ next_line:
         q = root;
         root = root->link;
         if (suffix[0] != '\0') {
-          /**********************************************/
           /* If there is room to add the suffix to the  */
           /* last macro line then do it. Or else        */
           /* allocate a new line_elemt, copy the suffix */
           /* into it and add it to the list of lines to */
           /* be processed.                              */
-          /**********************************************/
           if (strlen(q->line) + strlen(suffix) < output_size) {
             strcat(q -> line, suffix);
             tail = q;
@@ -2520,10 +2381,8 @@ next_line:
           tail = q;
         tail->link = NULL; /* make circular list linear */
 
-        /****************************************************/
         /* If there is space for the first macro line to be */
         /* added to the prefix then do it.                  */
-        /****************************************************/
         if (strlen(text) + strlen(root->line) < output_size) {
           strcat(text, root -> line);
           q = root;
@@ -2531,10 +2390,8 @@ next_line:
           free_line(q);
         }
 
-        /*********************************************/
         /* if there are more macro lines to process, */
         /* add list to list headed by INPUT_LINE_ROOT*/
-        /*********************************************/
         if (root != NULL) {
           tail->link = input_line_root;
           input_line_root = root;
@@ -2554,10 +2411,8 @@ next_line:
     ++k;
   }
 
-  /*****************************************************************************/
   /* If text is greater than output size, print error message and truncate     */
   /* line.                                                                     */
-  /*****************************************************************************/
   if (strlen(text) > output_size) {
     for (j = strlen(text) - 1; j >= output_size; j--) {
       if (text[j] != ' ') {
@@ -2587,13 +2442,10 @@ next_line:
 }
 
 
-/****************************************************************************/
 /*                                MAPMACRO:                                 */
-/****************************************************************************/
 /* This procedure takes as argument a macro definition.  If the name of the */
 /* macro is one of the predefined names, it issues an error.  Otherwise, it */
 /* inserts the macro definition into the table headed by MACRO_TABLE.       */
-/****************************************************************************/
 static void mapmacro(int def_index) {
   register int i,
       j;
@@ -2620,8 +2472,7 @@ static void mapmacro(int def_index) {
   for (j = macro_table[i]; j != NIL; j = defelmt[j].next) {
     if (strcmp(defelmt[j].name, defelmt[def_index].name) == 0) {
       if (warnings_bit) {
-        sprintf(msg_line, "Redefinition of macro \"%s\""
-                " in line %ld",
+        sprintf(msg_line, "Redefinition of macro \"%s\" in line %ld",
                 defelmt[def_index].name,
                 defelmt[def_index].start_line);
         PRNTWNG(msg_line);
@@ -2637,15 +2488,12 @@ static void mapmacro(int def_index) {
 }
 
 
-/*****************************************************************************/
 /*                                FIND_MACRO:                                */
-/*****************************************************************************/
 /* FIND_MACRO takes as argument a pointer to a macro name. It searches for   */
 /* the macro name in the hash table based on MACRO_TABLE. If the macro name  */
 /* is found then the macro definition associated with it is returned.        */
 /* If the name is not found, then a message is printed, a new definition is  */
 /* entered so as to avoid more messages and NULL is returned.                */
-/*****************************************************************************/
 static struct line_elemt *find_macro(char *name) {
   register int i,
       j;
@@ -2691,10 +2539,8 @@ static struct line_elemt *find_macro(char *name) {
     }
   }
 
-  /**********************************************************/
   /* Make phony definition for macro so as to avoid future  */
   /* errors.                                                */
-  /**********************************************************/
   if (num_defs >= (int) defelmt_size) {
     defelmt_size += DEFELMT_INCREMENT;
     defelmt = (struct defelmt_type *)
@@ -2717,13 +2563,10 @@ static struct line_elemt *find_macro(char *name) {
 }
 
 
-/*************************************************************************/
 /*                            PROCESS_ALIASES:                           */
-/*************************************************************************/
 /* Aliases are placed in a separate linked list.  NOTE!! After execution */
 /* of this loop the hash_table is destroyed because the LINK field of    */
 /* alias symbols is used to construct a list of the alias symbols.       */
-/*************************************************************************/
 static void process_aliases(void) {
   register int i;
   register struct hash_type *p,
@@ -2745,9 +2588,7 @@ static void process_aliases(void) {
 }
 
 
-/*****************************************************************************/
 /*                             DISPLAY_INPUT:                                */
-/*****************************************************************************/
 /*   If a listing is requested, this prints all the macros(if any), followed */
 /* by the aliases(if any), followed by the terminal symbols, followed by the */
 /* rules.                                                                    */
@@ -2758,7 +2599,6 @@ static void process_aliases(void) {
 /* print_line, whichever is smaller.  If a symbol cannot fit on a line       */
 /* beginning at the proper offset, it is laid out on successive lines,       */
 /* beginning at the proper offset.                                           */
-/*****************************************************************************/
 static void display_input(void) {
   register int j,
       len,
@@ -2768,9 +2608,7 @@ static void display_input(void) {
   char line[PRINT_LINE_SIZE + 1],
       temp[SYMBOL_SIZE + 1];
 
-  /******************************************/
   /* Print the Macro definitions, if any.   */
-  /******************************************/
   if (num_defs > 0) {
     PR_HEADING;
     fprintf(syslis, "\nDefined Symbols:\n\n");
@@ -2799,9 +2637,7 @@ static void display_input(void) {
   }
 
 
-  /**********************************/
   /*   Print the Aliases, if any.   */
-  /**********************************/
   if (alias_root != NULL) {
     struct hash_type *p;
 
@@ -2835,12 +2671,10 @@ static void display_input(void) {
     }
   }
 
-  /***************************************************************************/
   /*   Print the terminals.                                                  */
   /*   The first symbol (#1) represents the empty string.  The last terminal */
   /* declared by the user is followed by EOFT which may be followed by the   */
   /* ERROR symbol.  See LPG GRAMMAR for more details.                        */
-  /***************************************************************************/
   PR_HEADING;
   fprintf(syslis, "\nTerminals:\n\n");
   output_line_no += 3;
@@ -2864,9 +2698,7 @@ static void display_input(void) {
   fprintf(syslis, "\n%s", line);
   ENDPAGE_CHECK;
 
-  /**************************/
   /*    Print the Rules     */
-  /**************************/
   PR_HEADING;
   fprintf(syslis, "\nRules:\n\n");
   output_line_no += 3;

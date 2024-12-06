@@ -8,14 +8,12 @@ static void mklr0(void);
 
 static struct state_element *lr0_state_map(struct node *kernel);
 
-/****************************************************************************/
 /* STATE_ELEMENT is used to represent states. Each state is mapped into a   */
 /* unique number. The components QUEUE and LINK are auxiliary:              */
 /*   QUEUE is used to form a sequential linked-list of the states ordered   */
 /* STATE_NUMBER and identified by the variable STATE_ROOT.                  */
 /*   LINK is used to resolve collisions in hashing the states.              */
 /* NEXT_SHIFT is used to resolve collisions in hashing SHIFT maps.          */
-/****************************************************************************/
 struct state_element {
   struct state_element *link,
       *queue,
@@ -38,11 +36,8 @@ static short *shift_action;
 static struct goto_header_type no_gotos_ptr;
 static struct shift_header_type no_shifts_ptr;
 
-/*****************************************************************************/
 /*                              MKSTATS:                                     */
-/*****************************************************************************/
 /* In this procedure, we first construct the LR(0) automaton.                */
-/*****************************************************************************/
 void mkstats(void) {
   int j;
 
@@ -58,9 +53,7 @@ void mkstats(void) {
       (table_opt == OPTIMIZE_TIME || table_opt == OPTIMIZE_SPACE))
     produce();
 
-  /**********************************************************************/
   /* Free space trapped by the CLOSURE and CLITEMS maps.                */
-  /**********************************************************************/
   for ALL_NON_TERMINALS(j) {
     struct node *p;
 
@@ -84,13 +77,9 @@ void mkstats(void) {
 }
 
 
-/*****************************************************************************/
 /*                               MKLR0:                                      */
-/*****************************************************************************/
 /* This procedure constructs an LR(0) automaton.                             */
-/*****************************************************************************/
 static void mklr0(void) {
-  /*****************************************************************/
   /* STATE_TABLE is the array used to hash the states. States are  */
   /* identified by their Kernel set of items. Hash locations are   */
   /* computed for the states. As states are inserted in the table, */
@@ -107,7 +96,6 @@ static void mklr0(void) {
   /* actions are defined.                                          */
   /*   NT_LIST and NT_ROOT are used to build temporary lists of    */
   /* non-terminals.                                                */
-  /*****************************************************************/
 
   struct node *p,
       *q,
@@ -141,9 +129,7 @@ static void mklr0(void) {
       *nt_list,
       *list;
 
-  /******************************************************************/
   /* Set up a a pool of temporary space.                            */
-  /******************************************************************/
   reset_temporary_space();
 
   list = Allocate_short_array(num_symbols + 1);
@@ -181,10 +167,8 @@ static void mklr0(void) {
 
   /* END OF INITIALIZATION ----------------------------------------------------*/
 
-  /*****************************************************************/
   /* Kernel of the first state consists of the first items in each */
   /* rule produced by Accept non-terminal.                         */
-  /*****************************************************************/
   q = NULL;
   for (end_node = (p = clitems[accept_image]) == NULL;
        !end_node; /* Loop over circular list */
@@ -197,19 +181,15 @@ static void mklr0(void) {
     q = new_item;
   }
 
-  /*****************************************************************/
   /* Insert first state in STATE_TABLE and keep constructing states*/
   /* until we no longer can.                                       */
-  /*****************************************************************/
 
   for (state = lr0_state_map(q); /* insert initial state */
        state != NULL; /* and process next state until no more */
        state = state->queue) {
-    /******************************************************************/
     /* Now we construct a list of all non-terminals that can be       */
     /* introduced in this state through closure.  The CLOSURE of each */
     /* non-terminal has been previously computed in MKFIRST.          */
-    /******************************************************************/
     for (q = state->kernel_items;
          q != NULL; /* iterate over kernel set of items */
          q = q->next) {
@@ -237,13 +217,11 @@ static void mklr0(void) {
       }
     }
 
-    /*******************************************************************/
     /*   We now construct lists of all start items that the closure    */
     /* non-terminals produce.  A map from each non-terminal to its set */
     /* start items has previously been computed in MKFIRST. (CLITEMS)  */
     /* Empty items are placed directly in the state, whereas non_empty */
     /* items are placed in a temporary list rooted at CLOSURE_ROOT.    */
-    /*******************************************************************/
     closure_root = NULL; /* used to construct list of closure items */
     for (symbol = nt_root; symbol != NIL;
          nt_list[symbol] = OMEGA, symbol = nt_root) {
@@ -282,13 +260,11 @@ static void mklr0(void) {
     } else /* else just consider kernel items */
       item_ptr = state->kernel_items;
 
-    /*******************************************************************/
     /*   In this loop, the PARTITION map is constructed. At this point,*/
     /* ITEM_PTR points to all the non_complete items in the closure of */
     /* the state, plus all the kernel items.  We note that the kernel  */
     /* items may still contain complete-items, and if any is found, the*/
     /* COMPLETE_ITEMS list is updated.                                 */
-    /*******************************************************************/
     root = NIL;
     for (; item_ptr != NULL; item_ptr = item_ptr->next) {
       item_no = item_ptr->value;
@@ -332,11 +308,9 @@ static void mklr0(void) {
     if (closure_root != NULL)
       free_nodes(closure_root, closure_tail);
 
-    /*******************************************************************/
     /* We now iterate over the set of partitions and update the state  */
     /* automaton and the transition maps: SHIFT and GOTO. Each         */
     /* partition represents the kernel of a state.                     */
-    /*******************************************************************/
     if (goto_size > 0) {
       go_to = Allocate_goto_map(goto_size);
       state->lr0_goto = go_to;
@@ -349,14 +323,12 @@ static void mklr0(void) {
          symbol = list[symbol]) {
       short action = OMEGA;
 
-      /*****************************************************************/
       /* If the partition contains only one item, and it is adequate   */
       /* (i.e. the dot immediately follows the last symbol), and       */
       /* READ-REDUCE is requested, a new state is not created, and the */
       /* action is marked as a Shift-reduce or a Goto-reduce. Otherwise*/
       /* if a state with that kernel set does not yet exist, we create */
       /* it.                                                           */
-      /*****************************************************************/
       q = partition[symbol]; /* kernel of a new state */
       if (read_reduce_bit && q->next == NULL) {
         item_no = q->value;
@@ -375,14 +347,11 @@ static void mklr0(void) {
         action = new_state->state_number;
       }
 
-      /****************************************************************/
       /* At this stage, the partition list has been freed (for an old */
       /* state or an ADEQUATE item), or used (for a new state).  The  */
       /* PARTITION field involved should be reset.                    */
-      /****************************************************************/
       partition[symbol] = NULL; /* To be reused */
 
-      /*****************************************************************/
       /* At this point, ACTION contains the value of the state to Shift*/
       /* to, or rule to Read-Reduce on. If the symbol involved is a    */
       /* terminal, we update the Shift map; else, it is a non-terminal */
@@ -393,7 +362,6 @@ static void mklr0(void) {
       /* Since the lookahead set computation is based on the GOTO maps,*/
       /* all these maps and their element maps should be kept as       */
       /* separate entities.                                            */
-      /*****************************************************************/
       if (symbol IS_A_TERMINAL) /* terminal? add to SHIFT map */
       {
         shift_action[symbol] = action;
@@ -405,11 +373,9 @@ static void mklr0(void) {
           num_shift_reduces++;
       }
 
-      /*****************************************************************/
       /* NOTE that for Goto's we update the field LA_PTR of GOTO. This */
       /* field will be used later in the routine MKRDCTS to point to a */
       /* look-ahead set.                                               */
-      /*****************************************************************/
       else {
         GOTO_SYMBOL(go_to, goto_size) = symbol; /* symbol field */
         GOTO_ACTION(go_to, goto_size) = action; /* state field  */
@@ -422,7 +388,6 @@ static void mklr0(void) {
       }
     }
 
-    /*******************************************************************/
     /* We are now going to update the set of Shift-maps. Ths idea is   */
     /* to do a look-up in a hash table based on SHIFT_TABLE to see if  */
     /* the Shift map associated with the current state has already been*/
@@ -441,7 +406,6 @@ static void mklr0(void) {
     /* creating the SHIFT map later. However, this would have          */
     /* increased the storage requirement, and would probably have saved*/
     /* (at most) a totally insignificant amount of time.               */
-    /*******************************************************************/
   update_shift_maps: {
       unsigned long hash_address;
 
@@ -508,7 +472,6 @@ static void mklr0(void) {
   leave_update_shift_maps:;
   }
 
-  /*********************************************************************/
   /* Construct STATSET, a "compact" and final representation of        */
   /* State table, and SHIFT which is a set of all shift maps needed.   */
   /* NOTE that assignments to elements of SHIFT may occur more than    */
@@ -517,15 +480,12 @@ static void mklr0(void) {
   /* may in fact cost more.  Look at it this way: it is only a pointer */
   /* assignment, namely a Load and a Store.                            */
   /* Release all NODEs used by  the maps CLITEMS and CLOSURE.          */
-  /*********************************************************************/
   {
     int state_no;
     struct state_element *p;
 
-    /*********************************************************************/
     /* If the grammar is LALR(k), k > 1, more states may be added and    */
     /* the size of the shift map increased.                              */
-    /*********************************************************************/
     shift = (struct shift_header_type *)
         calloc(num_states + 1, sizeof(struct shift_header_type));
     if (shift == NULL)
@@ -557,29 +517,22 @@ static void mklr0(void) {
 }
 
 
-/*****************************************************************************/
 /*                            LR0_STATE_MAP:                                 */
-/*****************************************************************************/
 /* LR0_STATE_MAP takes as an argument a pointer to a kernel set of items. If */
 /* no state based on that kernel set already exists, then a new one is       */
 /* created and added to STATE_TABLE. In any case, a pointer to the STATE of  */
 /* the KERNEL is returned.                                                   */
-/*****************************************************************************/
 static struct state_element *lr0_state_map(struct node *kernel) {
   unsigned long hash_address = 0;
   struct node *p;
 
-  /*********************************************/
   /*       Compute the hash address.           */
-  /*********************************************/
   for (p = kernel; p != NULL; p = p->next) {
     hash_address += p->value;
   }
   hash_address %= STATE_TABLE_SIZE;
 
-  /*************************************************************************/
   /* Check whether a state is already defined by the KERNEL set.           */
-  /*************************************************************************/
   for (struct state_element *state_ptr = state_table[hash_address];
        state_ptr != NULL; state_ptr = state_ptr->link) {
     struct node *q,
@@ -600,9 +553,7 @@ static struct state_element *lr0_state_map(struct node *kernel) {
   }
 
 
-  /*******************************************************************/
   /* Add a new state based on the KERNEL set.                        */
-  /*******************************************************************/
   struct state_element *ptr = (struct state_element *) talloc(sizeof(struct state_element));
   if (ptr == (struct state_element *) NULL)
     nospace(__FILE__, __LINE__);

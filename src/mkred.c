@@ -5,7 +5,6 @@ static char hostfile[] = __FILE__;
 #include "reduce.h"
 #include "header.h"
 
-/***********************************************************************/
 /* STACK_ROOT is used in la_traverse to construct a stack of symbols.  */
 /* The boolean vector SINGLE_COMPLETE_ITEM identifies states whose     */
 /* kernel consists of a single final item and other conditions allows  */
@@ -13,26 +12,20 @@ static char hostfile[] = __FILE__;
 /* The vector LA_BASE is used in COMPUTE_READ and TRACE_LALR_PATH to   */
 /* identify states whose read sets can be completely computed from     */
 /* their kernel items.                                                 */
-/***********************************************************************/
 static struct node *stack_root = NULL;
 static BOOLEAN *single_complete_item;
 static int *la_base;
 
-/*****************************************************************************/
 /*                                 LPGACCESS:                                */
-/*****************************************************************************/
 /* Given a STATE_NO and an ITEM_NO, ACCESS computes the set of states where  */
 /* the rule from which ITEM_NO is derived was introduced through closure.    */
-/*****************************************************************************/
 struct node *lpgaccess(int state_no, int item_no) {
   struct node
       *tail,
       *s;
 
-  /****************************************************************/
   /* Build a list pointed to by ACCESS_ROOT originally consisting */
   /* only of STATE_NO.                                            */
-  /****************************************************************/
   struct node *access_root = Allocate_node();
   access_root->value = state_no;
   access_root->next = NULL;
@@ -42,9 +35,7 @@ struct node *lpgaccess(int state_no, int item_no) {
     struct node *head = access_root; /* Save old ACCESS_ROOT */
     access_root = NULL; /* Initialize ACCESS_ROOT for new list */
     for (struct node *p = head; p != NULL; tail = p, p = p->next) {
-      /***********************************************************/
       /* Compute set of states with transition into p->value.    */
-      /***********************************************************/
       for (BOOLEAN end_node = (s = in_stat[p->value]) == NULL;
            !end_node;
            end_node = s == in_stat[p->value]) {
@@ -64,23 +55,19 @@ struct node *lpgaccess(int state_no, int item_no) {
 }
 
 
-/*****************************************************************************/
 /*                              TRACE_LALR_PATH:                             */
-/*****************************************************************************/
 /* Given an item of the form: [x .A y], where x and y are arbitrary strings, */
 /* and A is a non-terminal, we pretrace the path(s) in the automaton  that   */
 /* will be followed in computing the look-ahead set for that item in         */
 /* STATE_NO.  A number is assigned to all pairs (S, B), where S is a state,  */
 /* and B is a non-terminal, involved in the paths. GOTO_INDX points to the   */
 /* GOTO_ELEMENT of (STATE_NO, A).                                            */
-/*****************************************************************************/
 static void trace_lalr_path(int state_no, int goto_indx) {
   int i;
 
   struct node *p,
       *r;
 
-  /*********************************************************************/
   /*  If STATE is a state number we first check to see if its base     */
   /* look-ahead set is a special one that does not contain EMPTY and   */
   /* has already been assigned a slot that can be reused.              */
@@ -90,7 +77,6 @@ static void trace_lalr_path(int state_no, int goto_indx) {
   /* removed. If either (or both) of these conditions is true, we need */
   /* to have a unique slot assigned to each pair [S, A] (where S is a  */
   /* state, and A is a non-terminal) in the automaton.                 */
-  /*********************************************************************/
   struct goto_header_type go_to = statset[state_no].go_to;
   int state = GOTO_ACTION(go_to, goto_indx);
   if (state > 0) {
@@ -103,13 +89,11 @@ static void trace_lalr_path(int state_no, int goto_indx) {
   } else
     r = adequate_item[-state];
 
-  /***********************************************************************/
   /* At this point, R points to a list of items which are the successors */
   /* of the items needed to initialize the Look-ahead follow sets.  If   */
   /* anyone of these items contains EMPTY, we trace the Digraph for other*/
   /* look-ahead follow sets that may be needed, and signal this fact     */
   /* using the variable CONTAINS_EMPTY.                                  */
-  /***********************************************************************/
   la_top++; /* allocate new slot */
   INT_CHECK(la_top);
   GOTO_LAPTR(go_to, goto_indx) = la_top;
@@ -134,21 +118,17 @@ static void trace_lalr_path(int state_no, int goto_indx) {
     }
   }
 
-  /********************************************************************/
   /* If the look-ahead follow set involved does not contain EMPTY, we */
   /* mark the state involved (STATE) so that other look-ahead follow  */
   /* sets which may need this set may reuse the same one.             */
   /* NOTE that if CONTAINS_EMPTY is false, then STATE has to denote a */
   /* state number (positive value) and not a rule number (negative).  */
-  /********************************************************************/
   if (!contains_empty)
     la_base[state] = GOTO_LAPTR(go_to, goto_indx);
 }
 
 
-/*****************************************************************************/
 /*                               COMPUTE_READ:                               */
-/*****************************************************************************/
 /* COMPUTE_READ computes the number of intermediate look-ahead sets that     */
 /* will be needed (in LA_TOP), allocates space for the sets(LA_SET), and    */
 /* initializes them.                                                         */
@@ -156,7 +136,6 @@ static void trace_lalr_path(int state_no, int goto_indx) {
 /* follow a non-terminal in a given state.                                   */
 /*  These sets are initialized to the set of terminals that can immediately  */
 /* follow the non-terminal in the state to which it can shift (READ set).    */
-/*****************************************************************************/
 static void compute_read(void) {
   int state_no,
       item_no,
@@ -177,7 +156,6 @@ static void compute_read(void) {
       nospace(__FILE__, __LINE__);
   }
 
-  /************************************************************************/
   /*  We traverse all the states and for all complete items that requires */
   /* a look-ahead set, we retrace the state digraph (with the help of the */
   /* routine TRACE_LALR_PATH) and assign a unique number to all look-ahead*/
@@ -195,7 +173,6 @@ static void compute_read(void) {
   /* EMPTY is marked with the help of the array LA_BASE, and if the       */
   /* highest level of look-ahead allowed is 1, then only one such set is  */
   /* allocated, and shared for all pairs (S, B) whose follow set is F.    */
-  /************************************************************************/
   la_top = 0;
   la_base = (int *) calloc(num_states + 1, sizeof(int));
   if (la_base == NULL)
@@ -226,7 +203,6 @@ static void compute_read(void) {
       }
     }
 
-    /***********************************************************************/
     /*  If the look-ahead level is greater than 1 or single productions    */
     /* actions are to be removed when possible, then we have to compute    */
     /* a Follow-set for all pairs [S, A] in the state automaton. Therefore,*/
@@ -238,7 +214,6 @@ static void compute_read(void) {
     /* rule that either ends up in a reduction, a shift-reduce, or another */
     /* goto-reduce. It will therefore be taken care of automatically by    */
     /* transitive closure.                                                 */
-    /***********************************************************************/
     if (lalr_level > 1 || single_productions_bit) {
       struct shift_header_type sh = shift[statset[state_no].shift_number];
       for (int j = 1; j <= sh.size; j++) {
@@ -258,10 +233,8 @@ static void compute_read(void) {
         }
       }
 
-      /*******************************************************************/
       /* We also need to compute the set of terminal symbols that can be */
       /* read in a state entered via a terminal transition.              */
-      /*******************************************************************/
       if (lalr_level > 1 && state_no != 1) {
         q = statset[state_no].kernel_items;
         item_no = q->value - 1;
@@ -279,13 +252,11 @@ static void compute_read(void) {
   }
 
 
-  /*********************************************************************/
   /*   We now allocate space for LA_INDEX and LA_SET, and initialize   */
   /* all its elements as indicated in reduce.h. The array LA_BASE is   */
   /* used to keep track of Follow sets that have been initialized. If  */
   /* another set needs to be initialized with a value that has been    */
   /* already computed, LA_BASE is used to retrieve the value.          */
-  /*********************************************************************/
   for ALL_STATES(i)
     la_base[i] = OMEGA;
 
@@ -344,9 +315,7 @@ static void compute_read(void) {
 }
 
 
-/*****************************************************************************/
 /*                                LA_TRAVERSE:                               */
-/*****************************************************************************/
 /* LA_TRAVERSE takes two major arguments: STATE_NO, and an index (GOTO_INDX) */
 /* that points to the GOTO_ELEMENT array in STATE_NO for the non-terminal    */
 /* left hand side of an item for which look-ahead is to be computed. The     */
@@ -358,7 +327,6 @@ static void compute_read(void) {
 /*                                                                           */
 /* The same digraph algorithm used in MKFIRST is used for this computation.  */
 /*                                                                           */
-/*****************************************************************************/
 void la_traverse(int state_no, int goto_indx, int *stack_top) {
   int
       i;
@@ -376,11 +344,9 @@ void la_traverse(int state_no, int goto_indx, int *stack_top) {
   int indx = ++(*stack_top); /* one element was pushed into the stack */
   la_index[la_ptr] = indx;
 
-  /**********************************************************************/
   /* Compute STATE, action to perform on Goto symbol in question. If    */
   /* STATE is positive, it denotes a state to which to shift. If it is  */
   /* negative, it is a rule on which to perform a Goto-Reduce.          */
-  /**********************************************************************/
   int state = GOTO_ACTION(go_to, goto_indx);
   if (state > 0) /* Not a Goto-Reduce action */
     r = statset[state].kernel_items;
@@ -395,11 +361,9 @@ void la_traverse(int state_no, int goto_indx, int *stack_top) {
       struct node *w = lpgaccess(state_no, item); /* states where RULE was  */
       /* introduced through closure   */
       for (struct node *t = w; t != NULL; s = t, t = t->next) {
-        /**********************************************************/
         /* Search for GOTO action in access-state after reducing  */
         /* RULE to its left hand side (SYMBOL). Q points to the   */
         /* GOTO_ELEMENT in question.                              */
-        /**********************************************************/
         struct goto_header_type go_to = statset[t->value].go_to;
         for (i = 1; GOTO_SYMBOL(go_to, i) != symbol; i++);
         if (la_index[GOTO_LAPTR(go_to, i)] == OMEGA)
@@ -433,14 +397,11 @@ void la_traverse(int state_no, int goto_indx, int *stack_top) {
   }
 }
 
-/*****************************************************************************/
 /*                               COMPUTE_LA:                                 */
-/*****************************************************************************/
 /* COMPUTE_LA takes as argument a state number (STATE_NO), an item number    */
 /* (ITEM_NO), and a set (LOOK_AHEAD).  It computes the look-ahead set of     */
 /* terminals for the given item in the given state and places the answer in  */
 /* the set LOOK_AHEAD.                                                       */
-/*****************************************************************************/
 void compute_la(int state_no, int item_no, SET_PTR look_ahead) {
   int
       i;
@@ -459,17 +420,12 @@ void compute_la(int state_no, int item_no, SET_PTR look_ahead) {
 
   struct node *v = lpgaccess(state_no, item_no);
   for (struct node *s = v; s != NULL; r = s, s = s->next) {
-    /*****************************************************************/
     /* Search for GOTO action in Access-State after reducing rule to */
     /* its left hand side(LHS_SYMBOL). Q points to the state.        */
-    /*****************************************************************/
     struct goto_header_type go_to = statset[s->value].go_to;
     for (i = 1; GOTO_SYMBOL(go_to, i) != lhs_symbol; i++);
-
-    /***********************************************************/
     /* If look-ahead after left hand side is not yet computed, */
     /* LA_TRAVERSE the graph to compute it.                    */
-    /***********************************************************/
     if (la_index[GOTO_LAPTR(go_to, i)] == OMEGA) {
       int stack_top = 0;
       la_traverse(s->value, i, &stack_top);
@@ -482,15 +438,12 @@ void compute_la(int state_no, int item_no, SET_PTR look_ahead) {
 }
 
 
-/**********************************************************************/
 /*                            BUILD_IN_STAT:                          */
-/**********************************************************************/
 /* We construct the IN_STAT map which is the inverse of the transition*/
 /* map formed by GOTO and SHIFT maps.                                 */
 /* This map is implemented as a table of pointers that can be indexed */
 /* by the states to a circular list of integers representing other    */
 /* states that contain transitions to the state in question.          */
-/**********************************************************************/
 static void build_in_stat(void) {
   struct node *q;
   int state_no,
@@ -535,9 +488,7 @@ static void build_in_stat(void) {
 }
 
 
-/*****************************************************************************/
 /*                                MKRDCTS:                                   */
-/*****************************************************************************/
 /* MKRDCTS constructs the REDUCE map and detects conflicts in the grammar.   */
 /* When constructing an LALR parser, the subroutine COMPUTE_LA is invoked to */
 /* compute the lalr look-ahead sets.  For an SLR parser, the FOLLOW map      */
@@ -545,7 +496,6 @@ static void build_in_stat(void) {
 /*                                                                           */
 /* For a complete description of the lookahead algorithm used in this        */
 /* program, see Charles, PhD thesis, NYU 1991.                               */
-/*****************************************************************************/
 void mkrdcts(void) {
   int
       state_no,
@@ -558,17 +508,13 @@ void mkrdcts(void) {
   struct node
       *q,
       *item_ptr;
-
-  /**********************************************************************/
   /* Set up a pool of temporary space. If LALR(k), k > 1 is requested,  */
   /* INIT_LALRK_PROCESS sets up the necessary environment for the       */
   /* computation of multiple lookahead.                                 */
-  /**********************************************************************/
   reset_temporary_space();
 
   init_lalrk_process();
 
-  /**********************************************************************/
   /* IN_STAT is used to construct a reverse transition map. See         */
   /* BUILD_IN_STAT for more detail.                                     */
   /*                                                                    */
@@ -592,7 +538,6 @@ void mkrdcts(void) {
   /* on that symbol in a given state.                                   */
   /*                                                                    */
   /* LOOK_AHEAD is used to compute lookahead sets.                      */
-  /**********************************************************************/
   in_stat = (struct node **)
       calloc(num_states + 1, sizeof(struct node *));
   if (in_stat == NULL)
@@ -613,14 +558,12 @@ void mkrdcts(void) {
   if (look_ahead == NULL)
     nospace(__FILE__, __LINE__);
 
-  /****************************************************************/
   /* If we will be removing single productions, we need to keep   */
   /* track of all (state, symbol) pairs on which a conflict is    */
   /* detected. The structure conflict_symbols is used as a base   */
   /* to construct that map. See ADD_CONFLICT_SYMBOL in resolve.c. */
   /* NOTE that this allocation automatically initialized all      */
   /* elements of the conflict_symbols array to NULL.              */
-  /****************************************************************/
   if (single_productions_bit) {
     conflict_symbols = (struct node **)
         calloc(num_states + 1, sizeof(struct node *));
@@ -628,7 +571,6 @@ void mkrdcts(void) {
       nospace(__FILE__, __LINE__);
   }
 
-  /**********************************************************************/
   /* First, construct the IN_STAT map. Next, iterate over the states to */
   /* construct two boolean vectors.  One indicates whether there is a   */
   /* shift action on the ERROR symbol when the DEFAULT_OPT is 5.  The   */
@@ -637,7 +579,6 @@ void mkrdcts(void) {
   /*                                                                    */
   /* We also check whether the grammar is LR(0). I.e., whether it needs */
   /* any look-ahead at all.                                             */
-  /**********************************************************************/
   build_in_stat();
 
   for ALL_STATES(state_no) {
@@ -652,13 +593,11 @@ void mkrdcts(void) {
       }
     }
 
-    /**********************************************************************/
     /*   Compute whether this state is a final state.  I.e., a state that */
     /* contains only a single complete item. If so, mark it as a default  */
     /* state. Note that if the READ-REDUCE option is used, the automaton  */
     /* will not contain such states. Also, states are marked only when    */
     /* default actions are requested.                                     */
-    /**********************************************************************/
     item_ptr = statset[state_no].kernel_items;
     item_no = item_ptr->value;
     single_complete_item[state_no] =
@@ -670,11 +609,9 @@ void mkrdcts(void) {
         item_ptr->next == NULL &&
         item_table[item_no].symbol == empty;
 
-    /**********************************************************************/
     /* If a state has a complete item, and more than one kernel item      */
     /* which is different from the complete item, then this state         */
     /* requires look-ahead for the complete item.                         */
-    /**********************************************************************/
     if (highest_level == 0) {
       struct node *r = statset[state_no].complete_items;
       if (r != NULL) {
@@ -685,20 +622,16 @@ void mkrdcts(void) {
     }
   }
 
-  /****************************************************************/
   /* We call COMPUTE_READ to perform the following tasks:         */
   /* 1) Count how many elements are needed in LA_ELEMENT: LA_TOP  */
   /* 2) Allocate space for and initialize LA_SET and LA_INDEX     */
-  /****************************************************************/
   if (!slr_bit)
     compute_read();
 
-  /****************************************************************/
   /* Allocate space for REDUCE which will be used to map each     */
   /* into its reduce map. We also initialize RULE_COUNT which     */
   /* will be used to count the number of reduce actions on each   */
   /* rule with in a given state.                                  */
-  /****************************************************************/
   reduce = (struct reduce_header_type *)
       calloc(num_states + 1, sizeof(struct reduce_header_type));
   if (reduce == NULL)
@@ -707,27 +640,22 @@ void mkrdcts(void) {
   for ALL_RULES(i)
     rule_count[i] = 0;
 
-  /****************************************************************/
   /* We are now ready to construct the reduce map. First, we      */
   /* initialize MAX_LA_STATE to NUM_STATES. If no lookahead       */
   /* state is added (the grammar is LALR(1)) this value will not  */
   /* change. Otherwise, MAX_LA_STATE is incremented by 1 for each */
   /* lookahead state added.                                       */
-  /****************************************************************/
   max_la_state = num_states;
 
-  /****************************************************************/
   /* We iterate over the states, compute the lookahead sets,      */
   /* resolve conflicts (if multiple lookahead is requested) and/or*/
   /* report the conflicts if requested...                         */
-  /****************************************************************/
   for ALL_STATES(state_no) {
     int default_rule = OMEGA;
     int symbol_root = NIL;
 
     item_ptr = statset[state_no].complete_items;
     if (item_ptr != NULL) {
-      /**********************************************************************/
       /* Check if it is possible to take default reduction. The DEFAULT_OPT */
       /* parameter indicates what kind of default options are requested.    */
       /* The various values it can have are:                                */
@@ -751,8 +679,6 @@ void mkrdcts(void) {
       /*  In the code below, we first check for category 3.  If it is not   */
       /* satisfied, then we check for the others. Note that in any case,    */
       /* default reductions are never taken on the ACCEPT rule.             */
-      /*                                                                    */
-      /**********************************************************************/
       item_no = item_ptr->value;
       rule_no = item_table[item_no].rule_number;
       symbol = rules[rule_no].lhs;
@@ -761,10 +687,8 @@ void mkrdcts(void) {
         item_ptr = NULL; /* No need to check for conflicts */
       }
 
-      /******************************************************************/
       /* Iterate over all complete items in the state, build action     */
       /* map, and check for conflicts.                                  */
-      /******************************************************************/
       for (; item_ptr != NULL; item_ptr = item_ptr->next) {
         /* for all complete items */
         item_no = item_ptr->value;
@@ -786,10 +710,8 @@ void mkrdcts(void) {
               symbol_list[symbol] = symbol_root;
               symbol_root = symbol;
             } else {
-              /**********************************************/
               /* Always place the rule with the largest     */
               /* right-hand side first in the list.         */
-              /**********************************************/
               n = item_table[action[symbol]
                 ->value].rule_number;
               if (RHS_SIZE(n) >= RHS_SIZE(rule_no)) {
@@ -804,7 +726,6 @@ void mkrdcts(void) {
         }
       }
 
-      /******************************************************************/
       /* At this stage, we have constructed the ACTION map for STATE_NO.*/
       /* ACTION is a map from each symbol into a set of final items.    */
       /* The rules associated with these items are the rules by which   */
@@ -819,7 +740,6 @@ void mkrdcts(void) {
       /* shift-reduce conflicts, the shift is given precedence) or 1    */
       /* element (if the conflicts were reduce-reduce conflicts, only   */
       /* the first element in the ACTION(t) list is returned).          */
-      /******************************************************************/
       if (symbol_root != NIL) {
         resolve_conflicts(state_no, action,
                           symbol_list, symbol_root);
@@ -834,7 +754,6 @@ void mkrdcts(void) {
       }
     }
 
-    /*********************************************************************/
     /* We are now ready to compute the size of the reduce map for        */
     /* STATE_NO (reduce_size) and the default rule.                      */
     /* If the state being processed contains only a single complete item */
@@ -844,14 +763,11 @@ void mkrdcts(void) {
     /* those that have no reductions at all. This will facilitate the    */
     /* Table Compression routines, for they can assume that such an      */
     /* object exists, and can be used for Default values.                */
-    /*********************************************************************/
     int reduce_size = 0;
     if (symbol_root != NIL) {
-      /******************************************************************/
       /* Compute REDUCE_SIZE, the number of reductions in the state and */
       /* DEFAULT_RULE: the rule with the highest number of reductions   */
       /* to it.                                                         */
-      /******************************************************************/
       n = 0;
       for (q = statset[state_no].complete_items;
            q != NULL; q = q->next) {
@@ -867,13 +783,11 @@ void mkrdcts(void) {
         }
       }
 
-      /*********************************************************/
       /*   If the removal of single productions is requested   */
       /* and/or parsing tables will not be output, figure out  */
       /* if the level of the default option requested permits  */
       /* default actions, and compute how many reduce actions  */
       /* can be eliminated as a result.                        */
-      /*********************************************************/
       if (default_opt == 0)
         default_rule = OMEGA;
       else if (table_opt != OPTIMIZE_TIME &&
@@ -894,12 +808,10 @@ void mkrdcts(void) {
       num_reductions += reduce_size;
     }
 
-    /**************************************************************/
     /*   NOTE that the default fields are set for all states,     */
     /* whether or not DEFAULT actions are requested. This is      */
     /* all right since one can always check whether (DEFAULT > 0) */
     /* before using these fields.                                 */
-    /**************************************************************/
     struct reduce_header_type red = Allocate_reduce_map(reduce_size);
     reduce[state_no] = red;
 
@@ -923,49 +835,39 @@ void mkrdcts(void) {
       }
     }
 
-    /************************************************************/
     /* Reset RULE_COUNT elements used in this state.            */
-    /************************************************************/
     for (q = statset[state_no].complete_items;
          q != NULL; q = q->next) {
       rule_no = item_table[q->value].rule_number;
       rule_count[rule_no] = 0;
     }
-  } /* end for ALL_STATES*/
+  }
 
   printf("\n");
   fprintf(syslis, "\n\n");
 
-  /****************************************************************/
   /* If the automaton required multiple lookahead, construct the  */
   /* permanent lookahead states.                                  */
-  /****************************************************************/
   if (max_la_state > num_states)
     create_lastats();
 
-  /****************************************************************/
   /* We are now finished with the LALR(k) construction of the     */
   /* automaton. Clear all temporary space that was used in that   */
   /* process and calculate the maximum lookahead level that was   */
   /* needed.                                                      */
-  /****************************************************************/
   exit_lalrk_process();
   free_conflict_space();
 
   lalr_level = highest_level;
 
-  /****************************************************************/
   /* If the removal of single productions is requested, do that.  */
-  /****************************************************************/
   if (single_productions_bit)
     remove_single_productions();
 
-  /****************************************************************/
   /* If either more than one lookahead was needed or the removal  */
   /* of single productions was requested, the automaton was       */
   /* transformed with the addition of new states and new          */
   /* transitions. In such a case, we reconstruct the IN_STAT map. */
-  /****************************************************************/
   if (lalr_level > 1 || single_productions_bit) {
     for ALL_STATES(state_no) {
       /* First, clear out the previous map */
@@ -979,10 +881,8 @@ void mkrdcts(void) {
     build_in_stat(); /* rebuild in_stat map */
   }
 
-  /******************************************************************/
   /* Print informational messages and free all temporary space that */
   /* was used to compute lookahead information.                     */
-  /******************************************************************/
   if (not_lrk) {
     printf("This grammar is not LR(K).\n");
     fprintf(syslis, "This grammar is not LR(K).\n");

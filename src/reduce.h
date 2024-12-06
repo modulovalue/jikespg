@@ -1,7 +1,6 @@
 #ifndef REDUCE_INCLUDED
 #define REDUCE_INCLUDED
 
-/***************************************************************************/
 /* CONFLICT_SYMBOLS is a mapping from each state into a set of terminal    */
 /* symbols on which an LALR(1) conflict was detected in the state in       */
 /* question.                                                               */
@@ -24,7 +23,6 @@
 /* lookahead that was necessary to resolve all conflicts for a given       */
 /* grammar. If we can detect that the grammar is not LALR(k), we set       */
 /* HIGHEST_LEVEL to INFINITY.                                              */
-/***************************************************************************/
 extern struct node **conflict_symbols;
 extern BOOLEAN_CELL *read_set,
     *la_set;

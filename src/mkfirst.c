@@ -58,7 +58,6 @@ static struct f_element_type {
 static struct node **direct_produces;
 static SET_PTR produces;
 
-/****************************************************************************/
 /* TOP, STACK, and INDEX_OF are used for the linear graph algorithm in      */
 /* constructing the FIRST, FOLLOW and CLOSURE maps.                         */
 /*                                                                          */
@@ -81,7 +80,6 @@ static SET_PTR produces;
 /* Since these sets are simply partitions of the set of items, they are kept*/
 /* all in a sequential list in the array NEXT_ITEM.  The roots of the lists */
 /* are placed in the arrats T_ITEMS and NT_ITEMS.                           */
-/****************************************************************************/
 static short *stack,
     *index_of,
 
@@ -97,12 +95,9 @@ static short *stack,
 
 static int top;
 
-/*****************************************************************************/
 /*                               MKFIRST:                                    */
-/*****************************************************************************/
 /*    MKFIRST constructs the FIRST and FOLLOW maps, the CLOSURE map,         */
 /* ADEQUATE_ITEM and ITEM_TABLE maps and all other basic maps.               */
-/*****************************************************************************/
 void mkfirst(void) {
   int symbol,
       nt,
@@ -130,11 +125,9 @@ void mkfirst(void) {
   index_of = Allocate_short_array(num_non_terminals);
   index_of -= (num_terminals + 1);
 
-  /*********************************************************************/
   /* NT_FIRST is used to construct a mapping from non-terminals to the */
   /* set of terminals taht may appear first in a string derived from   */
   /* the non-terminal.                                                 */
-  /*********************************************************************/
   nt_first = (SET_PTR)
       calloc(num_non_terminals,
              term_set_size * sizeof(BOOLEAN_CELL));
@@ -164,10 +157,8 @@ void mkfirst(void) {
   for ALL_NON_TERMINALS(i) /* Initialize LHS_RULE to NIL */
     lhs_rule[i] = NIL;
 
-  /**************************************************************/
   /* In this loop, we construct the LHS_RULE map which maps     */
   /* each non-terminal symbol into the set of rules it produces */
-  /**************************************************************/
   for ALL_RULES(rule_no) {
     symbol = rules[rule_no].lhs;
     if (lhs_rule[symbol] == NIL)
@@ -179,16 +170,12 @@ void mkfirst(void) {
     lhs_rule[symbol] = rule_no;
   }
 
-  /*************************************************************/
   /* Check if there are any non-terminals that do not produce  */
   /* any rules.                                                */
-  /*************************************************************/
 
   no_rules_produced();
 
-  /*************************************************************/
   /* Construct the CLOSURE map of non-terminals.               */
-  /*************************************************************/
   closure = (struct node **)
       calloc(num_non_terminals, sizeof(struct node *));
   if (closure == NULL)
@@ -204,21 +191,17 @@ void mkfirst(void) {
       compute_closure(nt);
   }
 
-  /*************************************************************/
   /* Construct the NULL_NT map for non-terminals.              */
   /* A non-terminal B is said to be nullable if either:        */
   /*    B -> %empty  or  B -> B1 B2 B3 ... Bk  where Bi is     */
   /*                         nullable for 1 <= i <= k          */
-  /*************************************************************/
   null_nt = Allocate_boolean_array(num_non_terminals);
   null_nt -= (num_terminals + 1);
 
   nullables_computation();
 
-  /*************************************************************/
   /* Construct the FIRST map for non-terminals and also a list */
   /* of non-terminals whose first set is empty.                */
-  /*************************************************************/
   for ALL_NON_TERMINALS(i) /* Initialize INDEX_OF to OMEGA */
     index_of[i] = OMEGA;
   top = 0;
@@ -227,27 +210,21 @@ void mkfirst(void) {
       compute_first(nt);
   }
 
-  /*************************************************************/
   /*  Since every input source will be followed by the EOFT    */
   /*  symbol, FIRST[accept_image] cannot contain empty but     */
   /*  instead must contain the EOFT symbol.                    */
-  /*************************************************************/
   if (null_nt[accept_image]) {
     null_nt[accept_image] = FALSE;
     RESET_BIT_IN(nt_first, accept_image, empty);
     SET_BIT_IN(nt_first, accept_image, eoft_image);
   }
 
-  /***************************************************************/
   /* Check whether there are any non-terminals that do not       */
   /* generate any terminal strings. If so, signal error and stop.*/
-  /***************************************************************/
 
   check_non_terminals();
 
-  /***************************************************************/
   /* Construct the ITEM_TABLE, FIRST_ITEM_OF, and NT_ITEMS maps. */
-  /***************************************************************/
 
   first_table = Allocate_short_array(num_symbols + 1);
 
@@ -306,7 +283,6 @@ void mkfirst(void) {
   }
 
 
-  /***************************************************************/
   /* We now compute the first set for all suffixes that were     */
   /* inserted in the FIRST_TABLE map. There are TOP such suffixes*/
   /* Extra space is also allocated to compute the first set for  */
@@ -316,7 +292,6 @@ void mkfirst(void) {
   /* are placed in the FIRST table in the range 1..NUM_FIRST_SETS*/
   /* The first element in the FIRST table contains the first sets*/
   /* for the empty sequence.                                     */
-  /***************************************************************/
   num_first_sets = top;
 
   for (end_node = (rule_no = lhs_rule[accept_image]) == NIL;
@@ -344,14 +319,12 @@ void mkfirst(void) {
     SET_BIT_IN(first, i, eoft_image);
   }
 
-  /***************************************************************/
   /* If the READ/REDUCE option is on, we precalculate the kernel */
   /* of the final states which simply consists of the last item  */
   /* in  the corresponding rule.  Rules with the ACCEPT          */
   /* non-terminal as their left-hand side are not considered so  */
   /* as to let the Accpet action remain as a Reduce action       */
   /* instead of a Goto/Reduce action.                            */
-  /***************************************************************/
   adequate_item = (struct node **)
       calloc(num_rules + 1, sizeof(struct node *));
   if (adequate_item == NULL)
@@ -376,10 +349,8 @@ void mkfirst(void) {
   }
 
 
-  /***************************************************************/
   /* Construct the CLITEMS map. Each element of CLITEMS points   */
   /* to a circular linked list of items.                         */
-  /***************************************************************/
   clitems = (struct node **)
       calloc(num_non_terminals, sizeof(struct node *));
   if (clitems == NULL)
@@ -407,13 +378,11 @@ void mkfirst(void) {
     }
   }
 
-  /***************************************************************/
   /* If LALR_LEVEL > 1, we need to calculate RMPSELF, a set that */
   /* identifies the nonterminals that can right-most produce     */
   /* themselves. In order to compute RMPSELF, the map PRODUCES   */
   /* must be constructed which identifies for each nonterminal   */
   /* the set of nonterminals that it can right-most produce.     */
-  /***************************************************************/
   if (lalr_level > 1) {
     produces = (SET_PTR)
         calloc(num_non_terminals,
@@ -453,10 +422,8 @@ void mkfirst(void) {
       }
     }
 
-    /************************************************************/
     /* Complete the construction of the RIGHT_MOST_PRODUCES map */
     /* for non-terminals using the digraph algorithm.           */
-    /************************************************************/
     for ALL_NON_TERMINALS(nt)
       index_of[nt] = OMEGA;
 
@@ -474,13 +441,11 @@ void mkfirst(void) {
     ffree(direct_produces);
   }
 
-  /***************************************************************/
   /* Construct the FOLLOW map if                                 */
   /*   1) an SLR table is requested                              */
   /*   2) if we have to print the FOLLOW map                     */
   /*   3) Error-maps are requested                               */
   /*   4) There are more than one starting symbol.               */
-  /***************************************************************/
   if (slr_bit || follow_bit || error_maps_bit ||
       next_rule[lhs_rule[accept_image]] != lhs_rule[accept_image]) {
     follow = (SET_PTR)
@@ -503,11 +468,9 @@ void mkfirst(void) {
         compute_follow(nt);
     }
 
-    /***************************************************************/
     /*  Initialize FIRST for suffixes that can follow each starting*/
     /* non-terminal ( except the main symbol) with the FOLLOW set */
     /* of the non-terminal in question.                            */
-    /***************************************************************/
     rule_no = lhs_rule[accept_image];
     if (next_rule[rule_no] != rule_no) {
       rule_no = next_rule[rule_no]; /* first rule */
@@ -523,37 +486,27 @@ void mkfirst(void) {
     }
   }
 
-  /***************************************************************/
   /* If WARNINGS option is turned on, the unreachable symbols in */
   /* the grammar are printed.                                    */
-  /***************************************************************/
   if (warnings_bit)
     print_unreachables();
 
-  /***************************************************************/
   /* If a Cross_Reference listing is requested, it is generated  */
   /* here.                                                       */
-  /***************************************************************/
   if (xref_bit)
     print_xref();
 
-  /***************************************************************/
   /* If a listing of the FIRST map is requested, it is generated */
   /* here.                                                       */
-  /***************************************************************/
   if (first_bit)
     print_nt_first();
 
-  /****************************************************************/
   /* If a listing of the FOLLOW map is requested, it is generated */
   /* here.                                                        */
-  /***************************************************************/
   if (follow_bit)
     print_follow_map();
 
-  /***************************************************************/
   /* Free allocated arrays.                                      */
-  /***************************************************************/
   nt_first += ((num_terminals + 1) * term_set_size);
   ffree(nt_first);
   nt_list += (num_terminals + 1);
@@ -573,18 +526,14 @@ void mkfirst(void) {
 }
 
 
-/*****************************************************************************/
 /*                           NO_RULES_PRODUCED:                              */
-/*****************************************************************************/
 static void no_rules_produced(void) {
   int
       nt_last,
       symbol;
 
-  /*************************************************************/
   /* Build a list of all non-terminals that do not produce any */
   /* rules.                                                    */
-  /*************************************************************/
   int nt_root = NIL;
   for ALL_NON_TERMINALS(symbol) {
     if (lhs_rule[symbol] == NIL) {
@@ -596,11 +545,8 @@ static void no_rules_produced(void) {
     }
   }
 
-  /*************************************************************/
   /* If the list of non-terminals that do not produce any rules*/
   /* is not empty, signal error and stop.                      */
-  /*************************************************************/
-
   if (nt_root != NIL) {
     char line[PRINT_LINE_SIZE + 1];
     PR_HEADING;
@@ -628,15 +574,12 @@ static void no_rules_produced(void) {
 }
 
 
-/*****************************************************************************/
 /*                            COMPUTE_CLOSURE:                               */
-/*****************************************************************************/
 /*  This function computes the closure of a non-terminal LHS_SYMBOL passed   */
 /* to it as an argument using the digraph algorithm.                         */
 /*  The closure of a non-terminal A is the set of all non-terminals Bi that  */
 /* can directly or indirectly start a string generated by A.                 */
 /* I.e., A *::= Bi X where X is an arbitrary string.                         */
-/*****************************************************************************/
 static void compute_closure(int lhs_symbol) {
   int symbol,
       rule_no,
@@ -746,9 +689,7 @@ static void compute_closure(int lhs_symbol) {
 }
 
 
-/*****************************************************************************/
 /*                           NULLABLES_COMPUTATION:                          */
-/*****************************************************************************/
 /*   This procedure computes the set of non-terminal symbols that can        */
 /* generate the empty string.  Such non-terminals are said to be nullable.   */
 /*                                                                           */
@@ -756,7 +697,6 @@ static void compute_closure(int lhs_symbol) {
 /* a rule:                                                                   */
 /*          A ::= B1 B2 ... Bn     n >= 0,  1 <= i <= n                      */
 /* and Bi, for all i, is a nullable non-terminal.                            */
-/*****************************************************************************/
 static void nullables_computation(void) {
   int rule_no,
       nt;
@@ -765,19 +705,16 @@ static void nullables_computation(void) {
 
   short *rhs_start = Allocate_short_array(NEXT_RULE_SIZE);
 
-  /******************************************************************/
   /* First, mark all non-terminals as non-nullable.  Then initialize*/
   /* RHS_START. RHS_START is a mapping from each rule in the grammar*/
   /* into the next symbol in its right-hand side that has not yet   */
   /* proven to be nullable.                                         */
-  /******************************************************************/
   for ALL_NON_TERMINALS(nt)
     null_nt[nt] = FALSE;
 
   for ALL_RULES(rule_no)
     rhs_start[rule_no] = rules[rule_no].rhs;
 
-  /******************************************************************/
   /* We now iterate over the rules and try to advance the RHS_START */
   /* pointer thru each right-hand side as far as we can.  If one or */
   /* more non-terminals are found to be nullable, they are marked   */
@@ -791,7 +728,6 @@ static void nullables_computation(void) {
   /* as soon as a non-terminal is found to be nullable, the         */
   /* remaining rules associated with it are not considered.  I.e.,  */
   /* we quit the inner loop.                                        */
-  /******************************************************************/
   while (changed) {
     changed = FALSE;
 
@@ -812,15 +748,12 @@ static void nullables_computation(void) {
 }
 
 
-/*****************************************************************************/
 /*                            IS_NULLABLE_RHS:                               */
-/*****************************************************************************/
 /*   This procedure tries to advance the RHS_START pointer.  If the current  */
 /* symbol identified by the RHS_START element is a terminal it returns FALSE */
 /* to indicate that it cannot go any further.  If it encounters a  non-null- */
 /* lable non-terminal, it also returns FALSE. Otherwise, the whole right-hand*/
 /* side is consumed, and it returns the value TRUE.                          */
-/*****************************************************************************/
 static BOOLEAN is_nullable_rhs(short *rhs_start, int rule_no) {
   for (rhs_start[rule_no] = rhs_start[rule_no];
        rhs_start[rule_no] <= rules[rule_no + 1].rhs - 1;
@@ -836,14 +769,11 @@ static BOOLEAN is_nullable_rhs(short *rhs_start, int rule_no) {
 }
 
 
-/*****************************************************************************/
 /*                             COMPUTE_FIRST:                                */
-/*****************************************************************************/
 /* This subroutine computes FIRST(NT) for some non-terminal NT using the     */
 /* digraph algorithm.                                                        */
 /* FIRST(NT) is the set of all terminals Ti that may start a string generated*/
 /* by NT. That is, NT *::= Ti X where X is an arbitrary string.              */
-/*****************************************************************************/
 static void compute_first(int nt) {
   int i,
       symbol,
@@ -858,7 +788,6 @@ static void compute_first(int nt) {
   int indx = top;
   index_of[nt] = indx;
 
-  /**************************************************************/
   /* Iterate over all rules generated by non-terminal NT...     */
   /* In this application of the transitive closure algorithm,   */
   /*                                                            */
@@ -869,7 +798,6 @@ static void compute_first(int nt) {
   /*    R(A, B) iff A ::= B1 B2 ... Bk B X                      */
   /*                                                            */
   /* where Bi is nullable for 1 <= i <= k                       */
-  /**************************************************************/
 
   for (BOOLEAN end_node = (rule_no = lhs_rule[nt]) == NIL;
        !end_node; /* Iterate over all rules produced by NT */
@@ -914,9 +842,7 @@ static void compute_first(int nt) {
 }
 
 
-/*****************************************************************************/
 /*                            CHECK_NON_TERMINALS:                           */
-/*****************************************************************************/
 /* This procedure checks whether or not any non-terminal symbols can fail to */
 /* generate a string of terminals.                                           */
 /*                                                                           */
@@ -928,7 +854,6 @@ static void compute_first(int nt) {
 /* and Xi, for all i, is a terminal or a non-terminal that can generate a    */
 /* string of terminals.                                                      */
 /* This routine is structurally identical to COMPUTE_NULLABLES.              */
-/*****************************************************************************/
 static void check_non_terminals(void) {
   int rule_no,
       nt_last,
@@ -940,12 +865,10 @@ static void check_non_terminals(void) {
   BOOLEAN *produces_terminals = Allocate_boolean_array(num_non_terminals);
   produces_terminals -= (num_terminals + 1);
 
-  /******************************************************************/
   /* First, mark all non-terminals as not producing terminals. Then */
   /* initialize RHS_START. RHS_START is a mapping from each rule in */
   /* the grammar into the next symbol in its right-hand side that   */
   /* has not yet proven to be a symbol that generates terminals.    */
-  /******************************************************************/
   for ALL_NON_TERMINALS(nt)
     produces_terminals[nt] = FALSE;
 
@@ -954,7 +877,6 @@ static void check_non_terminals(void) {
   for ALL_RULES(rule_no)
     rhs_start[rule_no] = rules[rule_no].rhs;
 
-  /******************************************************************/
   /* We now iterate over the rules and try to advance the RHS_START */
   /* pointer to each right-hand side as far as we can.  If one or   */
   /* more non-terminals are found to be "all right", they are       */
@@ -968,7 +890,6 @@ static void check_non_terminals(void) {
   /* as soon as a non-terminal is found to be "all right", the      */
   /* remaining rules associated with it are not considered. I.e.,   */
   /* we quit the inner loop.                                        */
-  /******************************************************************/
   while (changed) {
     changed = FALSE;
 
@@ -985,10 +906,8 @@ static void check_non_terminals(void) {
     }
   }
 
-  /*************************************************************/
   /* Construct a list of all non-terminals that do not generate*/
   /* terminal strings.                                         */
-  /*************************************************************/
   int nt_root = NIL;
   for ALL_NON_TERMINALS(nt) {
     if (!produces_terminals[nt]) {
@@ -1000,10 +919,8 @@ static void check_non_terminals(void) {
     }
   }
 
-  /*************************************************************/
   /* If there are non-terminal symbols that do not generate    */
   /* terminal strings, print them out and stop the program.    */
-  /*************************************************************/
   if (nt_root != NIL) {
     char line[PRINT_LINE_SIZE + 1];
     nt_list[nt_last] = NIL; /* mark end of list */
@@ -1036,14 +953,11 @@ static void check_non_terminals(void) {
 }
 
 
-/*****************************************************************************/
 /*                          IS_TERMINAL_RHS:                                 */
-/*****************************************************************************/
 /*   This procedure tries to advance the RHS_START pointer.  If the current  */
 /* symbol identified by the RHS_START element is a bad non-terminal it       */
 /* returns FALSE.  Otherwise, the whole right-hand side is traversed, and it */
 /* returns the value TRUE.                                                   */
-/*****************************************************************************/
 static BOOLEAN is_terminal_rhs(short *rhs_start,
                                const BOOLEAN *produces_terminals, int rule_no) {
   for (rhs_start[rule_no] = rhs_start[rule_no];
@@ -1060,9 +974,7 @@ static BOOLEAN is_terminal_rhs(short *rhs_start,
 }
 
 
-/*****************************************************************************/
 /*                             FIRST_MAP:                                    */
-/*****************************************************************************/
 /*  FIRST_MAP takes as arguments two pointers, ROOT and TAIL, to a sequence  */
 /* of symbols in RHS which it inserts in FIRST_TABLE.  The vector FIRST_TABLE*/
 /* is used as the base for a hashed table where collisions are resolved by   */
@@ -1071,7 +983,6 @@ static BOOLEAN is_terminal_rhs(short *rhs_start,
 /* last element in FIRST_ELEMENT that was allocated.                         */
 /* NOTE: The suffix indentified by ROOT and TAIL is presumed not to be empty.*/
 /*       That is, ROOT <= TAIL !!!                                           */
-/*****************************************************************************/
 static short first_map(int root, int tail) {
   int
       j,
@@ -1098,14 +1009,11 @@ static short first_map(int root, int tail) {
 }
 
 
-/*****************************************************************************/
 /*                              S_FIRST:                                     */
-/*****************************************************************************/
 /* S_FIRST takes as argument, two pointers: ROOT and TAIL to a sequence of   */
 /* symbols in the vector RHS, and INDEX which is the index of a first set.   */
 /* It computes the set of all terminals that can appear as the first symbol  */
 /* in the sequence and places the result in the FIRST set indexable by INDEX.*/
-/*****************************************************************************/
 static void s_first(int root, int tail, int index) {
   int symbol = (root > tail ? empty : rhs_sym[root]);
 
@@ -1128,12 +1036,9 @@ static void s_first(int root, int tail, int index) {
 }
 
 
-/******************************************************************/
 /*                     COMPUTE_PRODUCES:                          */
-/******************************************************************/
 /* For a given symbol, complete the computation of                */
 /* PRODUCES[symbol].                                              */
-/******************************************************************/
 static void compute_produces(int symbol) {
   int new_symbol;
 
@@ -1168,15 +1073,12 @@ static void compute_produces(int symbol) {
 }
 
 
-/*****************************************************************************/
 /*                          COMPUTE_FOLLOW:                                  */
-/*****************************************************************************/
 /* COMPUTE_FOLLOW computes FOLLOW[nt] for some non-terminal NT using the     */
 /* digraph algorithm.  FOLLOW[NT] is the set of all terminals Ti that        */
 /* may immediately follow a string X generated by NT. I.e., if NT *::= X     */
 /* then X Ti is a valid substring of a class of strings that may be          */
 /* recognized by the language.                                               */
-/*****************************************************************************/
 static void compute_follow(int nt) {
   int
       lhs_symbol;
@@ -1185,9 +1087,7 @@ static void compute_follow(int nt) {
   if (temp_set == NULL)
     nospace(__FILE__, __LINE__);
 
-  /**************************************************************/
   /* FOLLOW[NT] was initialized to 0 for all non-terminals.     */
-  /**************************************************************/
 
   stack[++top] = nt;
   int indx = top;
@@ -1221,9 +1121,7 @@ static void compute_follow(int nt) {
 }
 
 
-/*****************************************************************************/
 /*                           PRINT_UNREACHABLES:                             */
-/*****************************************************************************/
 static void print_unreachables(void) {
   int
       rule_no,
@@ -1233,12 +1131,10 @@ static void print_unreachables(void) {
   char line[PRINT_LINE_SIZE + 1],
       tok[SYMBOL_SIZE + 1];
 
-  /***************************************************************/
   /* SYMBOL_LIST is used for two purposes:                       */
   /*  1) to mark symbols that are reachable from the Accepting   */
   /*        non-terminal.                                        */
   /*  2) to construct lists of symbols that are not reachable.   */
-  /***************************************************************/
 
   short *symbol_list = Allocate_short_array(num_symbols + 1);
   for ALL_SYMBOLS(i)
@@ -1248,7 +1144,6 @@ static void print_unreachables(void) {
   if (error_maps_bit)
     symbol_list[error_image] = NIL;
 
-  /*********************************************************************/
   /* Initialize a list consisting only of the Accept non-terminal.     */
   /* This list is a work pile of non-terminals to process as follows:  */
   /* Each non-terminal in the front of the list is removed in turn and */
@@ -1256,7 +1151,6 @@ static void print_unreachables(void) {
   /*     marked reachable.                                             */
   /* 2) All non-terminals in one of its right-hand sides are placed    */
   /*     in the the work pile of it had not been processed previously  */
-  /*********************************************************************/
   int nt_root = accept_image;
   symbol_list[nt_root] = NIL;
 
@@ -1279,12 +1173,10 @@ static void print_unreachables(void) {
     }
   }
 
-  /***************************************************************/
   /* We now iterate (backwards to keep things in order) over the */
   /* terminal symbols, and place each unreachable terminal in a  */
   /* list. If the list is not empty, we signal that these symbols*/
   /* are unused.                                                 */
-  /***************************************************************/
   int t_root = NIL;
   for ALL_TERMINALS_BACKWARDS(symbol) {
     if (symbol_list[symbol] == OMEGA) {
@@ -1317,12 +1209,10 @@ static void print_unreachables(void) {
   }
 
 
-  /***************************************************************/
   /* We now iterate (backward to keep things in order) over the  */
   /* non-terminals, and place each unreachable non-terminal in a */
   /* list.  If the list is not empty, we signal that these       */
   /* symbols are unused.                                         */
-  /***************************************************************/
   nt_root = NIL;
   for ALL_NON_TERMINALS_BACKWARDS(symbol) {
     if (symbol_list[symbol] == OMEGA) {
@@ -1356,25 +1246,20 @@ static void print_unreachables(void) {
 }
 
 
-/*****************************************************************************/
 /*                               PRINT_XREF:                                 */
-/*****************************************************************************/
 /* PRINT_XREF prints out the Cross-reference map. We build a map from each   */
 /* terminal into the set of items whose Dot-symbol (symbol immediately       */
 /* following the dot ) is the terminal in question.  Note that we iterate    */
 /* backwards over the rules to keep the rules associated with the items      */
 /* sorted, since they are inserted in STACK fashion in the lists:  Last-in,  */
 /* First out.                                                                */
-/*****************************************************************************/
 static void print_xref(void) {
   int i,
       rule_no,
       item_no,
       symbol;
 
-  /*********************************************************************/
   /* SORT_SYM is used to sort the symbols for cross_reference listing. */
-  /*********************************************************************/
   short *sort_sym = Allocate_short_array(num_symbols + 1);
   short *t_items = Allocate_short_array(num_terminals + 1);
 
@@ -1459,18 +1344,13 @@ static void print_xref(void) {
 }
 
 
-/*****************************************************************************/
 /*                              QUICK_SYM:                                   */
-/*****************************************************************************/
 /* QUICK_SYM takes as arguments an array of pointers whose elements point to */
 /* nodes and two integer arguments: L, H. L and H indicate respectively the  */
 /* lower and upper bound of a section in the array.                          */
-/*****************************************************************************/
 static void quick_sym(short array[], int l, int h) {
-  /**************************************************************/
   /* Since no more than 2**15-1 symbols are allowed, the stack  */
   /* not grow past 14.                                          */
-  /**************************************************************/
 
   int lostack[14],
       histack[14];
@@ -1484,10 +1364,8 @@ static void quick_sym(short array[], int l, int h) {
     int upper = histack[top--];
 
     while (upper > lower) {
-      /********************************************************/
       /* Split the array section indicated by LOWER and UPPER */
       /* using ARRAY[LOWER] as the pivot.                     */
-      /********************************************************/
       int i = lower;
       short pivot = array[lower];
       for (int j = lower + 1; j <= upper; j++) {
@@ -1517,11 +1395,8 @@ static void quick_sym(short array[], int l, int h) {
 }
 
 
-/*****************************************************************************/
 /*                             PRINT_NT_FIRST:                               */
-/*****************************************************************************/
 /* PRINT_NT_FIRST prints the first set for each non-terminal.                */
-/*****************************************************************************/
 static void print_nt_first(void) {
   int nt,
       t;
@@ -1555,11 +1430,8 @@ static void print_nt_first(void) {
 }
 
 
-/*****************************************************************************/
 /*                           PRINT_FOLLOW_MAP:                               */
-/*****************************************************************************/
 /* PRINT_FOLLOW_MAP prints the follow map.                                   */
-/*****************************************************************************/
 static void print_follow_map(void) {
   int nt,
       t;

@@ -1,14 +1,10 @@
 #ifndef HEADER_INCLUDED
 #define HEADER_INCLUDED
 
-/***********************************************************************/
-/***********************************************************************/
 /**                                                                   **/
 /**   The following declarations are specifications for all global    **/
 /**   procedures and functions used in the program.                   **/
 /**                                                                   **/
-/***********************************************************************/
-/***********************************************************************/
 long temporary_space_allocated(void);
 
 long temporary_space_used(void);

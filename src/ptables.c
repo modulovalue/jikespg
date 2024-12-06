@@ -10,15 +10,12 @@ struct action_element {
       action;
 };
 
-/****************************************************************************/
 /*                            PROCESS_SHIFT_ACTIONS:                        */
-/****************************************************************************/
 /* The array ACTION_COUNT is used to construct a map from each terminal     */
 /* into the set (list) of actions defined on that terminal. A count of the  */
 /* number of occurences of each action in the automaton is kept.            */
 /* This procedure is invoked with a specific shift map which it processes   */
 /* and updates the ACTION_COUNT map accordingly.                            */
-/****************************************************************************/
 static void process_shift_actions(struct action_element **action_count,
                                   int shift_no) {
   struct action_element *q;
@@ -48,22 +45,17 @@ static void process_shift_actions(struct action_element **action_count,
 }
 
 
-/****************************************************************************/
 /*                            COMPUTE_SHIFT_DEFAULT:                        */
-/****************************************************************************/
 /* This procedure updates the vector SHIFTDF, indexable by the terminals in */
 /* the grammar. Its task is to assign to each element of SHIFTDF, the action*/
 /* most frequently defined on the symbol in question.                       */
-/****************************************************************************/
 static void compute_shift_default(void) {
   int state_no,
       symbol,
       shift_count = 0,
       shift_reduce_count = 0;
 
-  /******************************************************************/
   /* Set up a pool of temporary space.                            */
-  /******************************************************************/
   reset_temporary_space();
 
   shiftdf = Allocate_short_array(num_terminals + 1);
@@ -72,10 +64,8 @@ static void compute_shift_default(void) {
   if (action_count == NULL)
     nospace(__FILE__, __LINE__);
 
-  /*******************************************************************/
   /* For each state, invoke PROCESS_SHIFT_ACTIONS to process the     */
   /* shift map associated with that state.                           */
-  /*******************************************************************/
   for ALL_STATES(state_no) {
     process_shift_actions(action_count,
                           statset[state_no].shift_number);
@@ -86,11 +76,9 @@ static void compute_shift_default(void) {
                           lastats[state_no].shift_number);
   }
 
-  /*********************************************************************/
   /* We now iterate over the ACTION_COUNT mapping, and for each        */
   /* terminal t, initialize SHIFTDF[t] to the action that is most      */
   /* frequently defined on t.                                          */
-  /*********************************************************************/
   for ALL_TERMINALS(symbol) {
     int max_count = 0;
     int default_action = 0;
@@ -127,14 +115,11 @@ static void compute_shift_default(void) {
 }
 
 
-/*****************************************************************************/
 /*                             COMPUTE_GOTO_DEFAULT:                         */
-/*****************************************************************************/
 /*   COMPUTE_GOTO_DEFAULT constructs the vector GOTODEF, which is indexed by */
 /* the non-terminals in the grammar. Its task is to assign to each element   */
 /* of the array the Action which is most frequently defined on the symbol in */
 /* question, and remove all such actions from the state automaton.           */
-/*****************************************************************************/
 static void compute_goto_default(void) {
   struct goto_header_type go_to;
 
@@ -147,9 +132,7 @@ static void compute_goto_default(void) {
       goto_count = 0,
       goto_reduce_count = 0;
 
-  /******************************************************************/
   /* Set up a a pool of temporary space.                            */
-  /******************************************************************/
   reset_temporary_space();
 
   gotodef = Allocate_short_array(num_non_terminals);
@@ -162,13 +145,11 @@ static void compute_goto_default(void) {
   if (action_count == NULL)
     nospace(__FILE__, __LINE__);
 
-  /*******************************************************************/
   /* The array ACTION_COUNT is used to construct a map from each     */
   /* non-terminal into the set (list) of actions defined on that     */
   /* non-terminal. A count of how many occurences of each action     */
   /* is also kept.                                                   */
   /* This loop is analoguous to the loop in PROCESS_SHIFT_ACTIONS.   */
-  /*******************************************************************/
   for ALL_STATES(state_no) {
     go_to = statset[state_no].go_to;
     for (i = 1; i <= go_to.size; i++) {
@@ -194,11 +175,9 @@ static void compute_goto_default(void) {
     }
   }
 
-  /*******************************************************************/
   /* We now iterate over the mapping created above and for each      */
   /* non-terminal A, initialize GOTODEF(A) to the action that is     */
   /* most frequently defined on A.                                   */
-  /*******************************************************************/
   for ALL_NON_TERMINALS(symbol) {
     int max_count = 0;
     int default_action = 0;
@@ -217,10 +196,8 @@ static void compute_goto_default(void) {
       goto_reduce_count += max_count;
   }
 
-  /***********************************************************************/
   /*   We now iterate over the automaton and eliminate all GOTO actions  */
   /* for which there is a DEFAULT.                                       */
-  /***********************************************************************/
   for ALL_STATES(state_no) {
     int k = 0;
     go_to = statset[state_no].go_to;
@@ -252,12 +229,9 @@ static void compute_goto_default(void) {
 }
 
 
-/***********************************************************************/
 /*                        PROCESS_TABLES:                              */
-/***********************************************************************/
 /* Remap symbols, apply transition default actions  and call           */
 /* appropriate table compression routine.                              */
-/***********************************************************************/
 void process_tables(void) {
   int i,
       state_no,
@@ -266,12 +240,10 @@ void process_tables(void) {
 
   struct reduce_header_type red;
 
-  /*******************************************************************/
   /*        First, we decrease by 1 the constants NUM_SYMBOLS        */
   /* and NUM_TERMINALS, remove the EMPTY symbol(1) and remap the     */
   /* other symbols beginning at 1.  If default reduction is          */
   /* requested, we assume a special DEFAULT_SYMBOL with number zero. */
-  /*******************************************************************/
   eoft_image--;
   accept_image--;
   if (error_maps_bit) {
@@ -281,12 +253,10 @@ void process_tables(void) {
   num_terminals--;
   num_symbols--;
 
-  /***************************************************************/
   /* Remap all the symbols used in GOTO and REDUCE actions.      */
   /* Remap all the symbols used in GD_RANGE.                     */
   /* Remap all the symbols used in the range of SCOPE.           */
   /* Release space trapped by the maps IN_STAT and FIRST.        */
-  /***************************************************************/
   for ALL_STATES(state_no) {
     struct goto_header_type go_to = statset[state_no].go_to;
     for (i = 1; i <= go_to.size; i++)
@@ -314,54 +284,40 @@ void process_tables(void) {
       scope_right_side[i]--;
   }
 
-  /*******************************************************************/
   /* Remap all symbols in the domain of the Shift maps.              */
-  /*******************************************************************/
   for (i = 1; i <= num_shift_maps; i++) {
     struct shift_header_type sh = shift[i];
     for (int j = 1; j <= sh.size; j++)
       SHIFT_SYMBOL(sh, j)--;
   }
 
-  /*******************************************************************/
   /* Remap the left-hand side of all the rules.                      */
-  /*******************************************************************/
   for ALL_RULES(rule_no)
     rules[rule_no].lhs--;
 
-  /*******************************************************************/
   /* Remap the dot symbols in ITEM_TABLE.                            */
-  /*******************************************************************/
   if (error_maps_bit) {
     for ALL_ITEMS(i)
       item_table[i].symbol--;
   }
 
-  /*******************************************************************/
   /* We update the SYMNO map.                                        */
-  /*******************************************************************/
   for ALL_SYMBOLS(symbol)
     symno[symbol] = symno[symbol + 1];
 
-  /*******************************************************************/
   /* If Goto Default and/or Shift Default were requested, process    */
   /* appropriately.                                                  */
-  /*******************************************************************/
   if (shift_default_bit)
     compute_shift_default();
 
   if (goto_default_bit)
     compute_goto_default();
 
-  /******************************************************************/
   /* Release the pool of temporary space.                           */
-  /******************************************************************/
   free_temporary_space();
 
-  /*****************************************************************/
   /* We allocate the necessary structures, open the appropriate    */
   /* output file and call the appropriate compression routine.     */
-  /*****************************************************************/
   if (error_maps_bit) {
     naction_symbols = (SET_PTR)
         calloc(num_states + 1,
@@ -397,10 +353,8 @@ void process_tables(void) {
   if ((!c_bit) && (!cpp_bit) && (!java_bit))
     fclose(systab);
 
-  /*********************************************************************/
   /* If printing of the states was requested,  print the new mapping   */
   /* of the states.                                                    */
-  /*********************************************************************/
   if (states_bit) {
     PR_HEADING;
     fprintf(syslis,

@@ -13,9 +13,7 @@ static char dcl_tag[SYMBOL_SIZE],
 
 static int byte_check_bit = 1;
 
-/*********************************************************************/
 /*                         NON_TERMINAL_TIME_ACTION:                 */
-/*********************************************************************/
 static void non_terminal_time_action(void) {
   if (c_bit)
     fprintf(sysprs,
@@ -39,13 +37,10 @@ static void non_terminal_time_action(void) {
             "                                    ? action[state + sym]\n"
             "                                    : default_goto[sym];\n"
             "    }\n\n");
-  return;
 }
 
 
-/*********************************************************************/
 /*            NON_TERMINAL_NO_GOTO_DEFAULT_TIME_ACTION:              */
-/*********************************************************************/
 static void non_terminal_no_goto_default_time_action(void) {
   if (c_bit)
     fprintf(sysprs,
@@ -58,13 +53,10 @@ static void non_terminal_no_goto_default_time_action(void) {
     fprintf(sysprs,
             "    public final static int nt_action(int state, int sym)\n"
             "    {\n        return action[state + sym];\n    }\n\n");
-  return;
 }
 
 
-/*********************************************************************/
 /*                        NON_TERMINAL_SPACE_ACTION:                 */
-/*********************************************************************/
 static void non_terminal_space_action(void) {
   if (c_bit)
     fprintf(sysprs,
@@ -88,13 +80,10 @@ static void non_terminal_space_action(void) {
             "                             ? base_action[state + sym]\n"
             "                             : default_goto[sym];\n"
             "    }\n\n");
-  return;
 }
 
 
-/*********************************************************************/
 /*              NON_TERMINAL_NO_GOTO_DEFAULT_SPACE_ACTION:           */
-/*********************************************************************/
 static void non_terminal_no_goto_default_space_action(void) {
   if (c_bit)
     fprintf(sysprs,
@@ -108,13 +97,10 @@ static void non_terminal_no_goto_default_space_action(void) {
     fprintf(sysprs,
             "    public final static int nt_action(int state, int sym)\n"
             "    {\n        return base_action[state + sym];\n    }\n\n");
-  return;
 }
 
 
-/*********************************************************************/
 /*                          TERMINAL_TIME_ACTION:                    */
-/*********************************************************************/
 static void terminal_time_action(void) {
   if (c_bit)
     fprintf(sysprs,
@@ -135,14 +121,10 @@ static void terminal_time_action(void) {
             "        return action[check(state + sym) == sym"
             " ? state + sym : state];\n"
             "    }\n");
-
-  return;
 }
 
 
-/*********************************************************************/
 /*                          TERMINAL_SPACE_ACTION:                   */
-/*********************************************************************/
 static void terminal_space_action(void) {
   if (c_bit)
     fprintf(sysprs,
@@ -167,14 +149,10 @@ static void terminal_space_action(void) {
             "                               ? base_action[state] + sym\n"
             "                               : base_action[state]];\n"
             "    }\n");
-
-  return;
 }
 
 
-/*********************************************************************/
 /*               TERMINAL_SHIFT_DEFAULT_SPACE_ACTION:                */
-/*********************************************************************/
 static void terminal_shift_default_space_action(void) {
   if (c_bit)
     fprintf(sysprs,
@@ -216,14 +194,10 @@ static void terminal_shift_default_space_action(void) {
             "        return ((shift_check[shift_state[i] + sym] == sym) ?\n"
             "                      default_shift[sym] : default_reduce[i]);\n"
             "    }\n");
-
-  return;
 }
 
 
-/*********************************************************************/
 /*                          TERMINAL_TIME_LALR_K:                    */
-/*********************************************************************/
 static void terminal_time_lalr_k(void) {
   if (c_bit)
     fprintf(sysprs,
@@ -290,14 +264,10 @@ static void terminal_time_lalr_k(void) {
             "        }\n\n"
             "        return act;\n"
             "    }\n\n");
-
-  return;
 }
 
 
-/*********************************************************************/
 /*                       TERMINAL_SPACE_LALR_K:                      */
-/*********************************************************************/
 static void terminal_space_lalr_k(void) {
   if (c_bit)
     fprintf(sysprs,
@@ -367,14 +337,10 @@ static void terminal_space_lalr_k(void) {
             "        }\n\n"
             "        return act;\n"
             "    }\n");
-
-  return;
 }
 
 
-/*********************************************************************/
 /*                TERMINAL_SHIFT_DEFAULT_SPACE_LALR_K:               */
-/*********************************************************************/
 static void terminal_shift_default_space_lalr_k(void) {
   if (c_bit)
     fprintf(sysprs,
@@ -498,14 +464,10 @@ static void terminal_shift_default_space_lalr_k(void) {
             "        }\n\n"
             "        return act;\n"
             "    }\n");
-
-  return;
 }
 
 
-/*********************************************************************/
 /*                            INIT_FILE:                             */
-/*********************************************************************/
 static void init_file(FILE **file, char *file_name, char *file_tag) {
   char *p = strrchr(file_name, '.');
   if ((*file = fopen(file_name, "w")) == NULL)
@@ -543,9 +505,7 @@ static void init_file(FILE **file, char *file_name, char *file_tag) {
 }
 
 
-/*********************************************************************/
 /*                        INIT_PARSER_FILES:                         */
-/*********************************************************************/
 static void init_parser_files(void) {
   init_file(&sysdcl, dcl_file, dcl_tag);
   init_file(&syssym, sym_file, sym_tag);
@@ -554,9 +514,7 @@ static void init_parser_files(void) {
 }
 
 
-/*********************************************************************/
 /*                            EXIT_FILE:                             */
-/*********************************************************************/
 static void exit_file(FILE **file, char *file_tag) {
   if (jikes_bit)
     fprintf(*file, "\n#ifdef HAVE_JIKES_NAMESPACE\n"
@@ -570,9 +528,7 @@ static void exit_file(FILE **file, char *file_tag) {
 }
 
 
-/*********************************************************************/
 /*                            EXIT_PRS_FILE:                         */
-/*********************************************************************/
 static void exit_parser_files(void) {
   exit_file(&sysdcl, dcl_tag);
   exit_file(&syssym, sym_tag);
@@ -581,9 +537,7 @@ static void exit_parser_files(void) {
 }
 
 
-/**************************************************************************/
 /*                              PRINT_C_NAMES:                            */
-/**************************************************************************/
 static void print_c_names(void) {
   short *name_len = Allocate_short_array(num_names + 1);
   long num_bytes = 0;
@@ -629,17 +583,13 @@ static void print_c_names(void) {
     mystrcpy("    };\n");
   else mystrcpy("                          };\n");
 
-  /*****************************************************************/
   /* Compute and list space required for STRING_BUFFER map.        */
-  /*****************************************************************/
   sprintf(msg_line,
           "    Storage required for STRING_BUFFER map: %ld Bytes",
           num_bytes);
   PRNT(msg_line);
 
-  /******************************/
   /* Write out NAME_START array */
-  /******************************/
   mystrcpy("\nconst unsigned short CLASS_HEADER name_start[] = {0,\n");
 
   padline();
@@ -666,37 +616,27 @@ static void print_c_names(void) {
     mystrcpy("    };\n");
   else mystrcpy("                          };\n");
 
-  /*****************************************************************/
   /* Compute and list space required for NAME_START map.           */
-  /*****************************************************************/
   sprintf(msg_line,
           "    Storage required for NAME_START map: %d Bytes",
           (2 * num_names));
   PRNT(msg_line);
 
-  /*******************************/
   /* Write out NAME_LENGTH array */
-  /*******************************/
   prnt_shorts("\nconst unsigned char  CLASS_HEADER name_length[] = {0,\n",
               1, num_names, 10, name_len);
 
-  /*****************************************************************/
   /* Compute and list space required for NAME_LENGTH map.          */
-  /*****************************************************************/
   sprintf(msg_line,
           "    Storage required for NAME_LENGTH map: %d Bytes",
           num_names);
   PRNT(msg_line);
 
   ffree(name_len);
-
-  return;
 }
 
 
-/**************************************************************************/
 /*                             PRINT_JAVA_NAMES:                          */
-/**************************************************************************/
 static void print_java_names(void) {
   long num_bytes = 0;
 
@@ -743,21 +683,15 @@ static void print_java_names(void) {
     mystrcpy("    };\n");
   else mystrcpy("                          };\n");
 
-  /*****************************************************************/
   /* Compute and list space required for STRING_BUFFER map.        */
-  /*****************************************************************/
   sprintf(msg_line,
           "    Storage required for STRING_BUFFER map: %ld Bytes",
           num_bytes);
   PRNT(msg_line);
-
-  return;
 }
 
 
-/**************************************************************************/
 /*                          PRINT_ERROR_MAPS:                             */
-/**************************************************************************/
 static void print_error_maps(void) {
   short *state_start,
       *state_stack,
@@ -783,17 +717,14 @@ static void print_error_maps(void) {
 
   PRNT("\nError maps storage:");
 
-  /********************************************************************/
   /* We now construct a bit map for the set of terminal symbols that  */
   /* may appear in each state. Then, we invoke PARTSET to apply the   */
   /* Partition Heuristic and print it.                                */
-  /********************************************************************/
   as_size = Allocate_short_array(num_states + 1);
 
   if (table_opt == OPTIMIZE_TIME) {
     original = Allocate_short_array(num_symbols + 1);
 
-    /*************************************************************/
     /* In a compressed TIME table, the terminal and non-terminal */
     /* symbols are mixed together when they are remapped.        */
     /* We shall now recover the original number associated with  */
@@ -802,7 +733,6 @@ static void print_error_maps(void) {
     /* amount of space in the bit_string representation of sets  */
     /* as well as time when operations are performed on those    */
     /* bit-strings.                                              */
-    /*************************************************************/
 
     for ALL_TERMINALS(symbol)
       original[symbol_map[symbol]] = symbol;
@@ -838,9 +768,7 @@ static void print_error_maps(void) {
 
   ffree(action_symbols);
 
-  /*************************************************************/
   /* Compute and write out the base of the ACTION_SYMBOLS map. */
-  /*************************************************************/
   action_symbols_base = Allocate_short_array(num_states + 1);
 
   for ALL_STATES(i)
@@ -856,9 +784,7 @@ static void print_error_maps(void) {
 
   ffree(action_symbols_base);
 
-  /**************************************************************/
   /* Compute and write out the range of the ACTION_SYMBOLS map. */
-  /**************************************************************/
   offset = state_start[num_states + 1];
   action_symbols_range = Allocate_short_array(offset);
 
@@ -910,9 +836,7 @@ static void print_error_maps(void) {
 
   ffree(action_symbols_range);
 
-  /***********************************************************************/
   /* We now repeat the same process for the domain of the GOTO table.    */
-  /***********************************************************************/
   for ALL_STATES(state_no) {
     as_size[state_no] = gd_index[state_no + 1] - gd_index[state_no];
 
@@ -936,9 +860,7 @@ static void print_error_maps(void) {
       gd_range[i] = symbol_map[gd_range[i]];
   }
 
-  /*************************************************************/
   /* Compute and write out the base of the NACTION_SYMBOLS map.*/
-  /*************************************************************/
   naction_symbols_base = Allocate_short_array(num_states + 1);
 
   for ALL_STATES(i)
@@ -955,9 +877,7 @@ static void print_error_maps(void) {
 
   ffree(naction_symbols_base);
 
-  /**************************************************************/
   /* Compute and write out the range of the NACTION_SYMBOLS map.*/
-  /**************************************************************/
   offset = state_start[num_states + 1];
   naction_symbols_range = Allocate_short_array(offset);
 
@@ -985,12 +905,10 @@ static void print_error_maps(void) {
 
   ffree(naction_symbols_range);
 
-  /*********************************************************************/
   /* We write the name_index of each terminal symbol.  The array TEMP  */
   /* is used to remap the NAME_INDEX values based on the new symbol    */
   /* numberings. If time tables are requested, the terminals and non-  */
   /* terminals are mixed together.                                     */
-  /*********************************************************************/
   temp = Allocate_short_array(num_symbols + 1);
 
   if (table_opt == OPTIMIZE_SPACE) {
@@ -1020,19 +938,15 @@ static void print_error_maps(void) {
       }
       num_bytes = 2 * num_terminals;
     }
-    /*****************************************************************/
     /* Compute and list space required for TERMINAL_INDEX map.       */
-    /*****************************************************************/
     sprintf(msg_line,
             "    Storage required for TERMINAL_INDEX map: %ld Bytes",
             num_bytes);
     PRNT(msg_line);
 
-    /******************************************************************/
     /* We write the name_index of each non_terminal symbol. The array */
     /* TEMP is used to remap the NAME_INDEX values based on the new   */
     /* symbol numberings.                                             */
-    /******************************************************************/
     for ALL_NON_TERMINALS(symbol)
       temp[symbol_map[symbol]] = symno[symbol].name_index;
 
@@ -1063,9 +977,7 @@ static void print_error_maps(void) {
       }
       num_bytes = 2 * num_non_terminals;
     }
-    /*****************************************************************/
     /* Compute and list space required for NON_TERMINAL_INDEX map.   */
-    /*****************************************************************/
     sprintf(msg_line,
             "    Storage required for NON_TERMINAL_INDEX map: %ld Bytes",
             num_bytes);
@@ -1112,9 +1024,7 @@ static void print_error_maps(void) {
       }
       num_bytes = 2 * num_symbols;
     }
-    /*****************************************************************/
     /* Compute and list space required for SYMBOL_INDEX map.         */
-    /*****************************************************************/
     sprintf(msg_line,
             "    Storage required for SYMBOL_INDEX map: %ld Bytes",
             num_bytes);
@@ -1139,9 +1049,7 @@ static void print_error_maps(void) {
       else
         scope[i].lhs_symbol = symbol_map[scope[i].lhs_symbol];
     }
-    /****************************************/
     /* Mark all elements of prefix strings. */
-    /****************************************/
     for (i = 1; i <= scope_rhs_size; i++)
       list[i] = -1;
 
@@ -1414,14 +1322,10 @@ static void print_error_maps(void) {
       mystrcpy("    };\n");
     else mystrcpy("                          };\n");
   }
-
-  return;
 }
 
 
-/****************************************************************************/
 /*                               PRINT_SYMBOLS:                             */
-/****************************************************************************/
 static void print_symbols(void) {
   int symbol;
   char line[SYMBOL_SIZE + /* max length of a token symbol  */
@@ -1435,9 +1339,7 @@ static void print_symbols(void) {
   } else
     strcpy(line, "enum {\n");
 
-  /*********************************************************/
   /* We write the terminal symbols map.                    */
-  /*********************************************************/
   for ALL_TERMINALS(symbol) {
     char *tok = RETRIEVE_STRING(symbol);
 
@@ -1467,14 +1369,10 @@ static void print_symbols(void) {
 
   line[strlen(line) - 2] = '\0'; /* remove the string ",\n" from last line */
   fprintf(syssym, "%s%s", line, (java_bit ? ";\n}\n" : "\n     };\n"));
-
-  return;
 }
 
 
-/****************************************************************************/
 /*                            PRINT_DEFINITIONS:                            */
-/****************************************************************************/
 static void print_definitions(void) {
   if (java_bit)
     fprintf(sysdef, "interface %s\n{\n    public final static int\n\n",
@@ -1600,14 +1498,10 @@ static void print_definitions(void) {
             eolt_image,
             accept_act,
             error_act);
-
-  return;
 }
 
 
-/****************************************************************************/
 /*                               PRINT_EXTERNS:                             */
-/****************************************************************************/
 static void print_externs(void) {
   if (c_bit || cpp_bit) {
     fprintf(sysprs,
@@ -1842,14 +1736,10 @@ static void print_externs(void) {
     fprintf(sysprs, "};\n");
   else if (java_bit)
     fprintf(sysprs, "}\n");
-
-  return;
 }
 
 
-/**************************************************************************/
 /*                           PRINT_SPACE_TABLES:                          */
-/**************************************************************************/
 static void print_space_tables(void) {
   int *check,
       *action;
@@ -1880,9 +1770,7 @@ static void print_space_tables(void) {
 
   output_ptr = &output_buffer[0];
 
-  /******************************************************************/
   /* Prepare header card with proper information, and write it out. */
-  /******************************************************************/
   offset = error_act;
 
   if (lalr_level > 1) {
@@ -1905,22 +1793,18 @@ static void print_space_tables(void) {
   for (i = 1; i <= (int) action_size; i++)
     action[i] = error_act;
 
-  /********************************************************************/
   /*    Update the default non-terminal action of each state with the */
   /* appropriate corresponding terminal state starting index.         */
-  /********************************************************************/
   for (i = 1; i <= num_terminal_states; i++) {
     indx = term_state_index[i];
     state_no = new_state_element[i].image;
 
-    /*********************************************************************/
     /*   Update the action link between the non-terminal and terminal    */
     /* tables.  If error-maps are requested, an indirect linking is made */
     /* as follows:                                                       */
     /*  Each non-terminal row identifies its original state number, and  */
     /* a new vector START_TERMINAL_STATE indexable by state numbers      */
     /* identifies the starting point of each state in the terminal table.*/
-    /*********************************************************************/
     if (state_no <= (int) num_states) {
       for (; state_no != NIL; state_no = state_list[state_no])
         action[state_index[state_no]] = indx;
@@ -1932,9 +1816,7 @@ static void print_space_tables(void) {
     }
   }
 
-  /*********************************************************************/
   /*  Now update the non-terminal tables with the non-terminal actions.*/
-  /*********************************************************************/
   for ALL_STATES(state_no) {
     struct goto_header_type go_to;
 
@@ -1985,9 +1867,7 @@ static void print_space_tables(void) {
     mystrcpy("\n{\n");
   }
 
-  /*********************************************************************/
   /* Write size of right hand side of rules followed by CHECK table.   */
-  /*********************************************************************/
   if (java_bit)
     mystrcpy("    public final static byte rhs[] = {0,\n");
   else mystrcpy("const unsigned char  CLASS_HEADER rhs[] = {0,\n");
@@ -2064,9 +1944,7 @@ static void print_space_tables(void) {
     *output_ptr++ = '\n';
   }
 
-  /*********************************************************************/
   /* Write left hand side symbol of rules followed by ACTION table.    */
-  /*********************************************************************/
   if (java_bit)
     mystrcpy("    public final static char lhs[] = {0,\n");
   else mystrcpy("const unsigned short CLASS_HEADER lhs[] = {0,\n");
@@ -2138,9 +2016,7 @@ static void print_space_tables(void) {
   else mystrcpy("const unsigned short *CLASS_HEADER base_action = lhs;\n");
   *output_ptr++ = '\n';
 
-  /********************************************************************/
   /* Initialize the terminal tables,and update with terminal actions. */
-  /********************************************************************/
   for (i = 1; i <= term_check_size; i++)
     check[i] = DEFAULT_SYMBOL;
 
@@ -2229,9 +2105,7 @@ static void print_space_tables(void) {
   sprintf(msg_line, "     Number of Defaults: %d", default_count);
   PRNT(msg_line);
 
-  /********************************************************************/
   /* Write Terminal Check Table.                                      */
-  /********************************************************************/
   if (num_terminals <= (java_bit ? 127 : 255)) {
     if (java_bit)
       prnt_ints("\n    public final static byte term_check[] = {0,\n",
@@ -2248,9 +2122,7 @@ static void print_space_tables(void) {
                 1, term_check_size, 15, check);
   }
 
-  /********************************************************************/
   /* Write Terminal Action Table.                                      */
-  /********************************************************************/
   if (java_bit)
     prnt_ints("\n    public final static char term_action[] = {0,\n",
               1, term_action_size, 10, action);
@@ -2258,9 +2130,7 @@ static void print_space_tables(void) {
     prnt_ints("\nconst unsigned short CLASS_HEADER term_action[] = {0,\n",
               1, term_action_size, 10, action);
 
-  /********************************************************************/
   /* If GOTO_DEFAULT is requested, we print out the GOTODEF vector.   */
-  /********************************************************************/
   if (goto_default_bit) {
     if (java_bit)
       mystrcpy("\n    public final static char default_goto[] = {0,\n");
@@ -2474,14 +2344,10 @@ static void print_space_tables(void) {
 
   fwrite(output_buffer, sizeof(char),
          output_ptr - &output_buffer[0], sysdcl);
-
-  return;
 }
 
 
-/**************************************************************************/
 /*                         PRINT_TIME_TABLES:                             */
-/**************************************************************************/
 static void print_time_tables(void) {
   int *action,
       *check;
@@ -2531,10 +2397,8 @@ static void print_time_tables(void) {
     exit(12);
   }
 
-  /*********************************************************************/
   /* Initialize all unfilled slots with default values.                */
   /* RECALL that the vector "check" is aliased to the vector "next".   */
-  /*********************************************************************/
   indx = first_index;
   for (i = indx; (i != NIL) && (i <= (int) action_size); i = indx) {
     indx = next[i];
@@ -2545,9 +2409,7 @@ static void print_time_tables(void) {
   for (i = (int) action_size + 1; i <= (int) table_size; i++)
     check[i] = DEFAULT_SYMBOL;
 
-  /*********************************************************************/
   /* We set the rest of the table with the proper table entries.       */
-  /*********************************************************************/
   for (state_no = 1; state_no <= (int) max_la_state; state_no++) {
     struct shift_header_type sh;
     struct reduce_header_type red;
@@ -2605,10 +2467,8 @@ static void print_time_tables(void) {
       action[i] = result_act;
     }
 
-    /*********************************************************************/
     /*   We now initialize the elements reserved for reduce actions in   */
     /* the current state.                                                */
-    /*********************************************************************/
     default_rule = REDUCE_RULE_NO(red, 0);
     for (j = 1; j <= red.size; j++) {
       if (REDUCE_RULE_NO(red, j) != default_rule) {
@@ -2624,13 +2484,11 @@ static void print_time_tables(void) {
       }
     }
 
-    /*********************************************************************/
     /*   We now initialize the element reserved for the DEFAULT reduce   */
     /* action of the current state.  If error maps are requested,  the   */
     /* default slot is initialized to the original state number, and the */
     /* corresponding element of the DEFAULT_REDUCE array is initialized. */
     /* Otherwise it is initialized to the rule number in question.       */
-    /*********************************************************************/
     i = indx + DEFAULT_SYMBOL;
     check[i] = DEFAULT_SYMBOL;
     act = REDUCE_RULE_NO(red, 0);
@@ -2694,9 +2552,7 @@ static void print_time_tables(void) {
     mystrcpy("\n{\n");
   }
 
-  /*********************************************************************/
   /* Write size of right hand side of rules followed by CHECK table.   */
-  /*********************************************************************/
   if (java_bit)
     mystrcpy("    public final static byte rhs[] = {0,\n");
   else mystrcpy("const unsigned char  CLASS_HEADER rhs[] = {0,\n");
@@ -2722,9 +2578,7 @@ static void print_time_tables(void) {
   else mystrcpy("                 };\n");
   *output_ptr++ = '\n';
 
-  /*****************************************************************/
   /* Write CHECK table.                                            */
-  /*****************************************************************/
   if (byte_check_bit && (!error_maps_bit)) {
     if (java_bit)
       mystrcpy("    public final static byte check_table[] = {\n");
@@ -2774,9 +2628,7 @@ static void print_time_tables(void) {
   }
   *output_ptr++ = '\n';
 
-  /*********************************************************************/
   /* Write left hand side symbol of rules followed by ACTION table.    */
-  /*********************************************************************/
   if (java_bit)
     mystrcpy("    public final static char lhs[] = {0,\n");
   else mystrcpy("const unsigned short CLASS_HEADER lhs[] = {0,\n");
@@ -2803,10 +2655,8 @@ static void print_time_tables(void) {
   if (error_maps_bit) {
     int max_indx;
 
-    /*************************************************************/
     /* Construct a map from new state numbers into original      */
     /*   state numbers using the array check[]                   */
-    /*************************************************************/
     max_indx = accept_act - num_rules - 1;
     for (i = 1; i <= max_indx; i++)
       check[i] = OMEGA;
@@ -2849,9 +2699,7 @@ static void print_time_tables(void) {
   else mystrcpy("const unsigned short *CLASS_HEADER action = lhs;\n");
   *output_ptr++ = '\n';
 
-  /********************************************************************/
   /* If GOTO_DEFAULT is requested, we print out the GOTODEF vector.   */
-  /********************************************************************/
   if (goto_default_bit) {
     short *default_map;
 
@@ -2927,14 +2775,10 @@ static void print_time_tables(void) {
 
   fwrite(output_buffer, sizeof(char),
          output_ptr - &output_buffer[0], sysdcl);
-
-  return;
 }
 
 
-/*********************************************************************/
 /*                         PRINT_SPACE_PARSER:                       */
-/*********************************************************************/
 void print_space_parser(void) {
   init_parser_files();
 
@@ -2944,14 +2788,10 @@ void print_space_parser(void) {
   print_externs();
 
   exit_parser_files();
-
-  return;
 }
 
 
-/*********************************************************************/
 /*                         PRINT_TIME_PARSER:                        */
-/*********************************************************************/
 void print_time_parser(void) {
   init_parser_files();
 
@@ -2961,6 +2801,4 @@ void print_time_parser(void) {
   print_externs();
 
   exit_parser_files();
-
-  return;
 }

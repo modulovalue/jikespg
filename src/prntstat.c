@@ -4,11 +4,8 @@ static char hostfile[] = __FILE__;
 #include "common.h"
 #include "header.h"
 
-/*****************************************************************************/
 /*                                 PTSTATS:                                  */
-/*****************************************************************************/
 /*          PT_STATS prints all the states of the parser.                    */
-/*****************************************************************************/
 void ptstats(void) {
   int max_size,
       state_no,
@@ -31,11 +28,9 @@ void ptstats(void) {
 
     max_size = 0;
 
-    /****************************************************************/
     /* Compute the size of the largest symbol.  The MAX_SIZE cannot */
     /* be larger than PRINT_LINE_SIZE - 17 to allow for printing of */
     /* headers for actions to be taken on the symbols.              */
-    /****************************************************************/
     sh = shift[statset[state_no].shift_number];
     for (i = 1; i <= sh.size; i++) {
       symbol = SHIFT_SYMBOL(sh, i);
@@ -59,12 +54,10 @@ void ptstats(void) {
 
     max_size = MIN(max_size, PRINT_LINE_SIZE - 17);
 
-    /**************************************************************/
     /* 1) Print all Shift actions.                                */
     /* 2) Print all Goto actions.                                 */
     /* 3) Print all reduce actions.                               */
     /* 4) If there is a default then print it.                    */
-    /**************************************************************/
     if (sh.size > 0) {
       fprintf(syslis, "\n");
       ENDPAGE_CHECK;
@@ -160,9 +153,7 @@ void ptstats(void) {
     output_line_no += 2;
     ENDPAGE_CHECK;
 
-    /**************************************************************/
     /* Print the set of states that have transitions to STATE_NO. */
-    /**************************************************************/
     if (lastats[state_no].in_state == state_no) {
       fprintf(syslis, "\n(Unreachable State)\n");
       output_line_no++;
@@ -174,12 +165,10 @@ void ptstats(void) {
 
       max_size = 0;
 
-      /*********************************************************/
       /* Compute the size of the largest symbol.  The MAX_SIZE */
       /* cannot be larger than PRINT_LINE_SIZE - 17 to allow   */
       /* for printing of headers for actions to be taken on    */
       /* the symbols.                                          */
-      /*********************************************************/
       sh = shift[lastats[state_no].shift_number];
       for (i = 1; i <= sh.size; i++) {
         symbol = SHIFT_SYMBOL(sh, i);
@@ -196,12 +185,10 @@ void ptstats(void) {
 
       max_size = MIN(max_size, PRINT_LINE_SIZE - 17);
 
-      /**********************************************************/
       /* 1) Print all Shift actions.                            */
       /* 2) Print all Goto actions.                             */
       /* 3) Print all reduce actions.                           */
       /* 4) If there is a default then print it.                */
-      /**********************************************************/
       fprintf(syslis, "\n");
       ENDPAGE_CHECK;
       for (i = 1; i <= sh.size; i++) {

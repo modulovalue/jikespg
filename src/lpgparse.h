@@ -1,13 +1,8 @@
-/*******************************************************************/
-/*******************************************************************/
 /**                                                               **/
 /**                        OPTIONS DECLARATIONS                   **/
 /**                                                               **/
-/*******************************************************************/
-/*******************************************************************/
 /* The following static variables are used only in processing the  */
 /* options.                                                        */
-/*******************************************************************/
 #define OUTPUT_PARM_SIZE MAX_PARM_SIZE + 7
 #define MAXIMUM_LA_LEVEL 15
 #define STRING_BUFFER_SIZE 8192
@@ -96,27 +91,20 @@ static const char *oaction = "ACTION",
     *oxref = "XREF";
 
 
-/*******************************************************************/
-/*******************************************************************/
 /**                                                               **/
 /**                        PARSING DECLARATIONS                   **/
 /**                                                               **/
-/*******************************************************************/
-/*******************************************************************/
 /* The following static variables are used only in processing the  */
 /* the input source.                                               */
-/*******************************************************************/
 #define CTL_Z '\x1a'
 #undef  min
 #define min(x, y) ((x) < (y) ? (x) : (y))
 
-/*******************************************************************/
 /*                                                                 */
 /*                             IO variables                        */
 /*                                                                 */
 /* The two character pointer variables, P1 and P2, are used in     */
 /* processing the io buffer, INPUT_BUFFER.                         */
-/*******************************************************************/
 static char *p1,
     *p2,
     *input_buffer;
@@ -196,10 +184,8 @@ static struct node *start_symbol_root;
 static struct hash_type **hash_table;
 static struct terminal_type *terminal;
 
-/******************************************/
 /* The following variables hold the names */
 /*  of keywords and predefined macros.    */
-/******************************************/
 static char kdefine[8] = " define",
     kterminals[11] = " terminals",
     kalias[7] = " alias",
@@ -218,7 +204,6 @@ static char kdefine[8] = " define",
     kcurrent_line[14] = " current_line",
     knext_line[11] = " next_line",
 
-    /*****************************************************************/
     /* Note that the next four keywords start with \n instead of     */
     /* the escape character.  This is to prevent the user from       */
     /* declaring a grammar symbol with the same name.  The           */
@@ -227,7 +212,6 @@ static char kdefine[8] = " define",
     /* marking the end of an input line.  When printing such a       */
     /* keyword, the \n is properly replaced by the escape character. */
     /* See RESTORE_SYMBOL in the file LPGUTIL.C.                     */
-    /*****************************************************************/
     kempty[7] = "\nempty",
     kerror[7] = "\nerror",
     keoft[5] = "\neof",

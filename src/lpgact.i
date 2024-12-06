@@ -423,7 +423,6 @@ static void missing_quote(void)
     sprintf(msg_line,
             "Symbol must be quoted when used as a "
             "grammar symbol. Line %ld, column %d",
-            ormark,
             SYM1.start_line, SYM1.start_column);
     PRNTERR(msg_line);
 
@@ -432,8 +431,6 @@ static void missing_quote(void)
 
 /* start_symbol ::= SYMBOL */
 #line 630 "jikespg.g"
-/*********************************************************************/
-/*********************************************************************/
 static void act63(void)
 {
     register struct node *q;
@@ -543,12 +540,10 @@ static void act77(void)
         num_items = 1;
     }
 
-/*********************************************************************/
 /* Since we don't know for sure how many start symbols we have, a    */
 /* "while" loop is used to increment the size of rulehdr. However,   */
 /* it is highly unlikely that this loop would ever execute more than */
 /* once if the size of RULE_INCREMENT is reasonable.                 */
-/*********************************************************************/
     while (num_rules >= (int)rulehdr_size)
     {
         rulehdr_size += RULEHDR_INCREMENT;

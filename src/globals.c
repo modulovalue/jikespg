@@ -3,11 +3,7 @@ static char hostfile[] = __FILE__;
 #include "common.h"
 #include "space.h"
 
-/*******************************************************************/
-/*******************************************************************/
 /**    The following are global variables declared in COMMON.H    **/
-/*******************************************************************/
-/*******************************************************************/
 const char HEADER_INFO[] = "IBM Research Jikes Parser Generator";
 const char VERSION[] = "1.2";
 const char BLANK[] = " ";
@@ -42,9 +38,7 @@ FILE *sysgrm,
     *sysdcl,
     *sysdef;
 
-/******************************************************/
 /*  The variables below are global counters.          */
-/******************************************************/
 long num_items = 0,
     num_states = 0,
     max_la_state;
@@ -59,10 +53,8 @@ int num_symbols = 0,
     num_single_productions = 0,
     gotodom_size = 0;
 
-/*********************************************************************/
 /*   The variables below are used to hold information about special  */
 /* grammar symbols.                                                  */
-/*********************************************************************/
 short accept_image,
     eoft_image,
     eolt_image,

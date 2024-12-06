@@ -10,12 +10,9 @@ static short default_rule;
 
 static BOOLEAN *is_terminal;
 
-/*********************************************************************/
 /*                            REMAP_SYMBOLS:                         */
-/*********************************************************************/
 /* We now remap the symbols in the unified Table based on frequency. */
 /* We also remap the states based on frequency.                      */
-/*********************************************************************/
 static void remap_symbols(void) {
   struct goto_header_type go_to;
   struct shift_header_type sh;
@@ -34,14 +31,12 @@ static void remap_symbols(void) {
 
   fprintf(syslis, "\n");
 
-  /*********************************************************************/
   /*     The variable FREQUENCY_SYMBOL is used to hold the symbols     */
   /* in the grammar,  and the variable FREQUENCY_COUNT is used         */
   /* correspondingly to hold the number of actions defined on each     */
   /* symbol.                                                           */
   /* ORDERED_STATE and ROW_SIZE are used in a similar fashion for      */
   /* states.                                                           */
-  /*********************************************************************/
   for (i = 1; i <= num_symbols; i++) {
     frequency_symbol[i] = i;
     frequency_count[i] = 0;
@@ -99,12 +94,10 @@ static void remap_symbols(void) {
     }
   }
 
-  /*********************************************************************/
   /*     The non-terminals are sorted in descending order based on the */
   /* number of actions defined on them.                                */
   /*     The terminals are sorted in descending order based on the     */
   /* number of actions defined on them.                                */
-  /*********************************************************************/
   sortdes(frequency_symbol, frequency_count,
           1, num_terminals, max_la_state);
 
@@ -115,7 +108,6 @@ static void remap_symbols(void) {
     if (frequency_count[last_symbol] != 0)
       break;
 
-  /*********************************************************************/
   /* We now merge the two sorted arrays of symbols giving precedence to*/
   /* the terminals.  Note that we can guarantee that the terminal array*/
   /* will be depleted first since it has precedence, and we know that  */
@@ -124,7 +116,6 @@ static void remap_symbols(void) {
   /* As we merge the symbols, we keep track of which ones are terminals*/
   /* and which ones are non-terminals.  We also keep track of the new  */
   /* mapping for the symbols in SYMBOL_MAP.                            */
-  /*********************************************************************/
   i = 1;
   int j = num_terminals + 1;
   int k = 0;
@@ -143,9 +134,7 @@ static void remap_symbols(void) {
   }
   symbol_map[DEFAULT_SYMBOL] = DEFAULT_SYMBOL;
 
-  /*********************************************************************/
   /* Process the remaining non-terminal and useless terminal symbols.  */
-  /*********************************************************************/
   for (; j <= num_symbols; j++) {
     k++;
     symbol = frequency_symbol[j];
@@ -159,12 +148,10 @@ static void remap_symbols(void) {
     eolt_image = symbol_map[eolt_image];
   }
 
-  /*********************************************************************/
   /*    All symbol entries in the state automaton are updated based on */
   /* the new mapping of the symbols.                                   */
   /* The states are sorted in descending order based on the number of  */
   /* actions defined on them.                                          */
-  /*********************************************************************/
   for ALL_STATES(state_no) {
     go_to = statset[state_no].go_to;
     for (i = 1; i <= go_to.size; i++) /* Remap Goto map */
@@ -194,14 +181,11 @@ static void remap_symbols(void) {
 }
 
 
-/*********************************************************************/
 /*                          OVERLAP_TABLES:                          */
-/*********************************************************************/
 /* We now overlap the State automaton table, or more precisely,  we  */
 /* compute the starting position in a vector where each of its rows  */
 /* may be placed without clobbering elements in another row.         */
 /* The starting positions are stored in the vector STATE_INDEX.      */
-/*********************************************************************/
 static void overlap_tables(void) {
   struct shift_header_type sh;
   struct reduce_header_type red;
@@ -220,14 +204,12 @@ static void overlap_tables(void) {
   increment_size = MAX((num_entries*increment/100), (num_symbols + 1));
   table_size = MIN((num_entries + increment_size), MAX_TABLE_SIZE);
 
-  /*********************************************************************/
   /* Allocate space for table, and initialize the AVAIL_POOL list.     */
   /* The variable FIRST_INDEX keeps track of the first element in the  */
   /* doubly-linked list, and LAST_ELEMENT keeps track of the last      */
   /* element in the list.                                              */
   /* The variable MAX_INDX is used to keep track of the maximum        */
   /* starting position for a row that has been used.                   */
-  /*********************************************************************/
   next = Allocate_int_array(table_size + 1);
   previous = Allocate_int_array(table_size + 1);
 
@@ -244,18 +226,14 @@ static void overlap_tables(void) {
 
   int max_indx = first_index;
 
-  /*********************************************************************/
   /* We now iterate over all the states in their new sorted order as   */
   /* indicated by the variable STATE_NO, and deternime an "overlap"    */
   /* position for them.                                                */
-  /*********************************************************************/
   for (int k = 1; k <= (int) max_la_state; k++) {
     int state_no = ordered_state[k];
 
-    /*********************************************************************/
     /* First, we iterate over all actions defined in STATE_NO, and       */
     /* create a set with all the symbols involved.                       */
-    /*********************************************************************/
     int root_symbol = NIL;
     if (state_no > (int) num_states) {
       sh = shift[lastats[state_no].shift_number];
@@ -288,12 +266,10 @@ static void overlap_tables(void) {
       }
     }
 
-    /*********************************************************************/
     /* INDX is set to the beginning of the list of available slots and   */
     /* we try to determine if it might be a valid starting position. If  */
     /* not, INDX is moved to the next element, and we repeat the process */
     /* until a valid position is found.                                  */
-    /*********************************************************************/
     indx = first_index;
 
   look_for_match_in_table:
@@ -310,13 +286,11 @@ static void overlap_tables(void) {
       }
     }
 
-    /*********************************************************************/
     /* At this stage, a position(INDX), was found to overlay the row in  */
     /* question.  Remove elements associated with all positions that     */
     /* will be taken by row from the doubly-linked list.                 */
     /* NOTE that since SYMBOLs start at 1, the first index can never be  */
     /* a candidate (==> I = INDX + SYMBOL) in this loop.                 */
-    /*********************************************************************/
     if (indx > max_indx)
       max_indx = indx;
 
@@ -341,10 +315,8 @@ static void overlap_tables(void) {
     }
   }
 
-  /*********************************************************************/
   /* Update all global counters, and compute ACCEPT_ACTION and         */
   /* ERROR_ACTION.                                                     */
-  /*********************************************************************/
   table_size = max_indx + num_symbols;
   accept_act = max_indx + num_rules + 1;
   error_act = accept_act + 1;
@@ -405,11 +377,8 @@ static void overlap_tables(void) {
 }
 
 
-/*********************************************************************/
 /*                         PRINT_TABLES:                             */
-/*********************************************************************/
 /* We now write out the tables to the SYSTAB file.                   */
-/*********************************************************************/
 static void print_tables(void) {
   int *action,
       *check;
@@ -457,9 +426,7 @@ static void print_tables(void) {
     exit(12);
   }
 
-  /*********************************************************************/
   /* Initialize all unfilled slots with default values.                */
-  /*********************************************************************/
   indx = first_index;
   for (i = indx; (i != NIL) && (i <= (int) action_size); i = indx) {
     indx = next[i];
@@ -470,9 +437,7 @@ static void print_tables(void) {
   for (i = (int) action_size + 1; i <= (int) table_size; i++)
     check[i] = DEFAULT_SYMBOL;
 
-  /*********************************************************************/
   /* We set the rest of the table with the proper table entries.       */
-  /*********************************************************************/
   for (state_no = 1; state_no <= (int) max_la_state; state_no++) {
     indx = state_index[state_no];
     if (state_no > (int) num_states) {
@@ -527,10 +492,8 @@ static void print_tables(void) {
       action[i] = result_act;
     }
 
-    /*********************************************************************/
     /*   We now initialize the elements reserved for reduce actions in   */
     /* the current state.                                                */
-    /*********************************************************************/
     default_rule = REDUCE_RULE_NO(red, 0);
     for (j = 1; j <= red.size; j++) {
       if (REDUCE_RULE_NO(red, j) != default_rule) {
@@ -546,13 +509,11 @@ static void print_tables(void) {
       }
     }
 
-    /*********************************************************************/
     /*   We now initialize the element reserved for the DEFAULT reduce   */
     /* action of the current state.  If error maps are requested,  the   */
     /* default slot is initialized to the original state number, and the */
     /* corresponding element of the DEFAULT_REDUCE array is initialized. */
     /* Otherwise it is initialized to the rule number in question.       */
-    /*********************************************************************/
     i = indx + DEFAULT_SYMBOL;
     check[i] = DEFAULT_SYMBOL;
     act = REDUCE_RULE_NO(red, 0);
@@ -590,9 +551,7 @@ static void print_tables(void) {
   sprintf(msg_line, "     Number of Defaults: %d", default_count);
   PRNT(msg_line);
 
-  /*********************************************************************/
   /* Prepare Header with proper information, and write it out.         */
-  /*********************************************************************/
   output_buffer[0] = 'T';
   output_buffer[1] = goto_default_bit ? '1' : '0';
   output_buffer[2] = nt_check_bit ? '1' : '0';
@@ -630,9 +589,7 @@ static void print_tables(void) {
   field(lalr_level, 5);
   *output_ptr++ = '\n';
 
-  /*********************************************************/
   /* We write the terminal symbols map.                    */
-  /*********************************************************/
   for (symbol = 1; symbol <= num_symbols; symbol++) {
     if (is_terminal[symbol_map[symbol]]) {
       int len;
@@ -669,9 +626,7 @@ static void print_tables(void) {
     }
   }
 
-  /*********************************************************/
   /* We write the non-terminal symbols map.                */
-  /*********************************************************/
   for (symbol = 1; symbol <= num_symbols; symbol++) {
     if (!is_terminal[symbol_map[symbol]]) {
       int len;
@@ -707,9 +662,7 @@ static void print_tables(void) {
     }
   }
 
-  /*********************************************************************/
   /* Write size of right hand side of rules followed by CHECK table.   */
-  /*********************************************************************/
   k = 0;
   for (i = 1; i <= num_rules; i++) {
     field(RHS_SIZE(i), 4);
@@ -736,9 +689,7 @@ static void print_tables(void) {
     BUFFER_CHECK(systab);
   }
 
-  /*********************************************************************/
   /* Write left hand side symbol of rules followed by ACTION table.    */
-  /*********************************************************************/
   k = 0;
   for (i = 1; i <= num_rules; i++) {
     field(symbol_map[rules[i].lhs], 6);
@@ -765,11 +716,9 @@ static void print_tables(void) {
     BUFFER_CHECK(systab);
   }
 
-  /******************************************************************/
   /* If GOTO_DEFAULT is requested, we print out the GOTODEF vector  */
   /* after rearranging its elements based on the new ordering of the*/
   /* symbols.  The array TEMP is used to hold the GOTODEF values.   */
-  /******************************************************************/
   if (goto_default_bit) {
     short *default_map;
 
@@ -806,14 +755,12 @@ static void print_tables(void) {
     }
   }
 
-  /*********************************************************************/
   /* We first sort the new state numbers.  A bucket sort technique     */
   /* is used using the ACTION vector as a base to simulate the         */
   /* buckets.  NOTE: the iteration over the buckets is done backward   */
   /* because we also construct a list of the original state numbers    */
   /* that reflects the permutation of the new state numbers.           */
   /* During the backward iteration,  we construct the list as a stack. */
-  /*********************************************************************/
   if (error_maps_bit || states_bit) {
     int max_indx;
 
@@ -837,7 +784,6 @@ static void print_tables(void) {
   ffree(next);
   ffree(previous);
 
-  /*********************************************************************/
   /* If ERROR_MAPS are requested, we print them out in the following   */
   /* order:                                                            */
   /*                                                                   */
@@ -850,7 +796,6 @@ static void print_tables(void) {
   /*       possibly be reached after a transition on the symbol in     */
   /*       question: TRANSITION_STATES                                 */
   /*                                                                   */
-  /*********************************************************************/
   if (error_maps_bit)
     process_error_maps();
 
@@ -859,16 +804,13 @@ static void print_tables(void) {
 }
 
 
-/*********************************************************************/
 /*                            CMPRTIM:                               */
-/*********************************************************************/
 /* In this routine we compress the State tables and write them out   */
 /* to a file.  The emphasis here is in generating tables that allow  */
 /* fast access. The terminal and non-terminal tables are compressed  */
 /* together, so as to achieve maximum speed efficiency.              */
 /* Otherwise, the compression technique used in this table is        */
 /* analoguous to the technique used in the routine CMPRSPA.          */
-/*********************************************************************/
 void cmprtim(void) {
   remap_symbols();
   overlap_tables();
