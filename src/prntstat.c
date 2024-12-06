@@ -2,7 +2,6 @@ static char hostfile[] = __FILE__;
 
 #include <string.h>
 #include "common.h"
-#include "header.h"
 
 /*                                 PTSTATS:                                  */
 /*          PT_STATS prints all the states of the parser.                    */
@@ -19,7 +18,7 @@ void ptstats(void) {
   char temp[SYMBOL_SIZE + 1],
       line[MAX_LINE_SIZE + 1];
 
-  PR_HEADING;
+  PR_HEADING();
   fprintf(syslis, "Shift STATES: ");
 
   for ALL_STATES(state_no) /* iterate over the states */
@@ -139,7 +138,7 @@ void ptstats(void) {
   }
 
   if (max_la_state > num_states) {
-    PR_HEADING;
+    PR_HEADING();
     fprintf(syslis, "Look-Ahead STATES:");
   }
   for ALL_LA_STATES(state_no) {

@@ -1,3 +1,4 @@
+#pragma once
 #include <stdbool.h>
 
 #ifndef COMMON_INCLUDED
@@ -12,78 +13,43 @@
 /* This system was built to run on a vanilla Unix or AIX system.   */
 /* No switch need to be set for such an environment.  Set other    */
 /* switch(es) as needed.                                           */
-/*                                                                 */
-/*
-#define DOS
-#define OS2
-#define MVS
-#define CW
-#define VM
-*/
 
 #include <assert.h>
 #include <limits.h>
 #include <stdio.h>
 
-/**                                                               **/
-/**                         GLOBAL CONSTANTS                      **/
-/**                                                               **/
-#define PR_HEADING  \
-    { \
-        fprintf(syslis, "\f\n\n %-39s%s %-30.24s Page %d\n\n",\
-                        HEADER_INFO, VERSION, timeptr, ++page_no);\
-                        output_line_no = 4;\
-    }
-#define MAX_PARM_SIZE      22
-#define SYMBOL_SIZE        256
-#define MAX_MSG_SIZE       (256 + SYMBOL_SIZE)
-#define PRINT_LINE_SIZE    80
-#define PARSER_LINE_SIZE   80
-#define MAX_LINE_SIZE      256
+static const int MAX_PARM_SIZE = 22;
+static const int SYMBOL_SIZE = 256;
+static const int MAX_MSG_SIZE = 256 + SYMBOL_SIZE;
+static const int PRINT_LINE_SIZE = 80;
+static const int PARSER_LINE_SIZE = 80;
+static const int MAX_LINE_SIZE = 256;
 
 #undef  PAGE_SIZE
-#define PAGE_SIZE          55
-#define OPTIMIZE_TIME      1
-#define OPTIMIZE_SPACE     2
-#define MINIMUM_NAMES      1
-#define MAXIMUM_NAMES      2
-#define OPTIMIZE_PHRASES   3
-#define NOTRACE            0
-#define TRACE_CONFLICTS    1
-#define TRACE_FULL         2
-#define STATE_TABLE_UBOUND 1020
-#define STATE_TABLE_SIZE   (STATE_TABLE_UBOUND + 1) /* 1021 is a prime */
-#define SHIFT_TABLE_UBOUND 400
-#define SHIFT_TABLE_SIZE   (SHIFT_TABLE_UBOUND + 1) /* 401 is a prime */
-#define SCOPE_UBOUND       100
-#define SCOPE_SIZE         (SCOPE_UBOUND + 1)   /* 101 is prime */
+static const int PAGE_SIZE = 55;
+static const int OPTIMIZE_TIME = 1;
+static const int OPTIMIZE_SPACE = 2;
+static const int MINIMUM_NAMES = 1;
+static const int MAXIMUM_NAMES = 2;
+static const int OPTIMIZE_PHRASES = 3;
+static const int NOTRACE = 0;
+static const int TRACE_CONFLICTS = 1;
+static const int TRACE_FULL = 2;
+static const int STATE_TABLE_UBOUND = 1020;
+static const int STATE_TABLE_SIZE = STATE_TABLE_UBOUND + 1; /* 1021 is a prime */
+static const int SHIFT_TABLE_UBOUND = 400;
+static const int SHIFT_TABLE_SIZE = SHIFT_TABLE_UBOUND + 1; /* 401 is a prime */
+static const int SCOPE_UBOUND = 100;
+static const int SCOPE_SIZE = SCOPE_UBOUND + 1; /* 101 is prime */
 #define IS_A_TERMINAL      <= num_terminals
 #define IS_A_NON_TERMINAL  > num_terminals
 
-#define SPACE          ' '
-#define COMMA          ','
-#define INFINITY       ((short) SHRT_MAX)
-#define OMEGA          ((short) SHRT_MIN)
-#define NIL            ((short) SHRT_MIN + 1)
-#define DEFAULT_SYMBOL 0
-
-/**                                                               **/
-/**                       ALLOCATE/FREE MACROS                    **/
-/**                                                               **/
-/* The following macro definitions are used to preprocess calls to */
-/* allocate routines that require locations. The FFREE macro is    */
-/* normally an invocation to the FREE routine. It is encoded as    */
-/* a macro here in case we need to do some debugging on dynamic    */
-/* storage.                                                        */
-#define Allocate_node()           allocate_node(hostfile, __LINE__)
-#define Allocate_int_array(n)     allocate_int_array(n, hostfile, __LINE__)
-#define Allocate_short_array(n)   allocate_short_array(n, hostfile, __LINE__)
-#define Allocate_boolean_array(n) allocate_boolean_array(n, hostfile, __LINE__)
-#define Allocate_goto_map(n)      allocate_goto_map(n, hostfile, __LINE__)
-#define Allocate_shift_map(n)     allocate_shift_map(n, hostfile, __LINE__)
-#define Allocate_reduce_map(n)    allocate_reduce_map(n, hostfile, __LINE__)
-
-#define ffree(x) free(x) /* { free(x); x = (void *) ULONG_MAX; } */
+static const char SPACE = ' ';
+static const char COMMA = ',';
+static const int INFINITY = (short) SHRT_MAX;
+static const int OMEGA = (short) SHRT_MIN;
+static const int NIL = (short) SHRT_MIN + 1;
+static const int DEFAULT_SYMBOL = 0;
 
 /**                                                               **/
 /**                          PARSING MACROS                       **/
@@ -95,10 +61,10 @@
 
 #define EXTRACT_STRING(indx) (&string_table[indx])
 
-#define HT_SIZE           701     /* 701 is a prime */
-#define RULEHDR_INCREMENT 1024
-#define ACTELMT_INCREMENT 1024
-#define DEFELMT_INCREMENT 16
+static const int HT_SIZE = 701;     /* 701 is a prime */
+static const int RULEHDR_INCREMENT = 1024;
+static const int ACTELMT_INCREMENT = 1024;
+static const int DEFELMT_INCREMENT = 16;
 
 #ifdef DOS
 #define IOBUFFER_SIZE 8192
@@ -345,7 +311,7 @@
     }
 
 #define ENDPAGE_CHECK if (++output_line_no >= PAGE_SIZE) \
-                          PR_HEADING
+                          PR_HEADING()
 
 #define PRNT(msg) \
     { \
@@ -722,5 +688,173 @@ extern SET_PTR naction_symbols,
     action_symbols;
 
 extern bool byte_terminal_range;
+
+/**   The following declarations are specifications for all global    **/
+/**   procedures and functions used in the program.                   **/
+long temporary_space_allocated(void);
+
+long temporary_space_used(void);
+
+long global_space_allocated(void);
+
+long global_space_used(void);
+
+void reset_temporary_space(void);
+
+void free_temporary_space(void);
+
+void *talloc(long size);
+
+struct node *allocate_node(char *file, long line);
+
+bool *allocate_boolean_array(long size, char *file, long line);
+
+int *allocate_int_array(long size, char *file, long line);
+
+short *allocate_short_array(long size, char *file, long line);
+
+struct goto_header_type allocate_goto_map(int size, char *file, long line);
+
+struct shift_header_type allocate_shift_map(int size, char *file, long line);
+
+struct reduce_header_type allocate_reduce_map(int size, char *file, long line);
+
+void cmprspa(void);
+
+void cmprtim(void);
+
+void compute_la(int state_no, int item_no, SET_PTR look_ahead);
+
+void create_lastats(void);
+
+void dump_tables(void);
+
+void exit_lalrk_process(void);
+
+void init_lalrk_process(void);
+
+void init_rmpself(SET_PTR produces);
+
+void itoc(int num);
+
+void field(int num, int len);
+
+void fill_in(char string[], int amount, char character);
+
+void free_conflict_space(void);
+
+void free_nodes(struct node *head, struct node *tail);
+
+struct node *lpgaccess(int state_no, int item_no);
+
+void mkfirst(void);
+
+void mkrdcts(void);
+
+void la_traverse(int state_no, int goto_indx, int *stack_top);
+
+void remove_single_productions(void);
+
+void mkstats(void);
+
+void mystrcpy(const char *str);
+
+void padline(void);
+
+void nospace(char *, long);
+
+int number_len(int state_no);
+
+void partset(SET_PTR collection, const short *element_size, const short *list,
+             short *start, short *stack, int set_size, int from_process_scopes);
+
+void print_item(int item_no);
+
+void print_large_token(char *line, char *token, const char *indent, int len);
+
+void print_state(int state_no);
+
+void compute_action_symbols_range(const short *state_start,
+                                  const short *state_stack,
+                                  const short *state_list,
+                                  short *action_symbols_range);
+
+void compute_naction_symbols_range(const short *state_start,
+                                   const short *state_stack,
+                                   const short *state_list,
+                                   short *naction_symbols_range);
+
+void produce(void);
+
+void process_error_maps(void);
+
+void prnt_shorts(const char *title, int init, int bound, int perline, const short *array);
+
+void prnt_ints(const char *title, int init, int bound, int perline, const int *array);
+
+void print_space_parser(void);
+
+void print_time_parser(void);
+
+void process_tables(void);
+
+void ptstats(void);
+
+void remvsp(void);
+
+void sortdes(short array[], short count[], int low, int high, int max);
+
+void reallocate(void);
+
+void resolve_conflicts(int state_no, struct node **action,
+                       const short *reduce_list, int reduce_root);
+
+void restore_symbol(char *out, const char *in);
+
+char *strlwr(char *string);
+
+char *strupr(char *string);
+
+/**                                                               **/
+/**                       ALLOCATE/FREE MACROS                    **/
+/**                                                               **/
+/* The following macro definitions are used to preprocess calls to */
+/* allocate routines that require locations. The FFREE macro is    */
+/* normally an invocation to the FREE routine. It is encoded as    */
+/* a macro here in case we need to do some debugging on dynamic    */
+/* storage.                                                        */
+static inline struct node *Allocate_node() {
+  return allocate_node(hostfile, __LINE__);
+}
+
+static inline int *Allocate_int_array(long n) {
+  return allocate_int_array(n, hostfile, __LINE__);
+}
+
+static inline short *Allocate_short_array(long n) {
+  return allocate_short_array(n, hostfile, __LINE__);
+}
+
+static inline bool *Allocate_boolean_array(long n) {
+  return allocate_boolean_array(n, hostfile, __LINE__);
+}
+
+static inline struct goto_header_type Allocate_goto_map(long n) {
+  return allocate_goto_map(n, hostfile, __LINE__);
+}
+
+static inline struct shift_header_type Allocate_shift_map(long n) {
+  return allocate_shift_map(n, hostfile, __LINE__);
+}
+
+static inline struct reduce_header_type Allocate_reduce_map(long n) {
+  return allocate_reduce_map(n, hostfile, __LINE__);
+}
+
+static inline void PR_HEADING() {
+    fprintf(syslis, "\f\n\n %-39s%s %-30.24s Page %d\n\n", HEADER_INFO, VERSION, timeptr, ++page_no);
+    output_line_no = 4;
+}
+#define ffree(x) free(x) /* { free(x); x = (void *) ULONG_MAX; } */
 
 #endif /* COMMON_INCLUDED */

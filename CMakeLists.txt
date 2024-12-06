@@ -9,7 +9,6 @@ add_executable(
         src/common.h
         src/ctabs.c
         src/globals.c
-        src/header.h
         src/lpgact.h
         src/lpgact.i
         src/lpgdcl.h

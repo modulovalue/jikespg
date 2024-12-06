@@ -4,7 +4,6 @@ static char hostfile[] = __FILE__;
 #include <string.h>
 #include "common.h"
 #include "space.h"
-#include "header.h"
 
 static char dcl_tag[SYMBOL_SIZE],
     sym_tag[SYMBOL_SIZE],

@@ -3,7 +3,6 @@ static char hostfile[] = __FILE__;
 
 #include <string.h>
 #include "common.h"
-#include "header.h"
 
 static void print_opts(void);
 
@@ -112,7 +111,7 @@ int main(int argc, char *argv[]) {
   if (edit_bit) {
     if (first_bit || follow_bit || xref_bit)
       mkfirst();
-    PR_HEADING;
+    PR_HEADING();
     sprintf(msg_line, "\nNumber of Terminals: %d",
             num_terminals - 1); /*-1 for %empty */
     PRNT(msg_line);
@@ -144,7 +143,7 @@ int main(int argc, char *argv[]) {
   mkrdcts(); /* Build Reduce map, and detect conflicts if any */
 
   /*                  Print more relevant statistics.                         */
-  PR_HEADING;
+  PR_HEADING();
   sprintf(msg_line, "\nNumber of Terminals: %d", num_terminals - 1);
   PRNT(msg_line);
 
@@ -211,7 +210,7 @@ int main(int argc, char *argv[]) {
   if (states_bit) {
     ptstats();
     if (table_opt != 0) {
-      PR_HEADING;
+      PR_HEADING();
     }
   }
 

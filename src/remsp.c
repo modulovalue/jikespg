@@ -3,7 +3,6 @@ static char hostfile[] = __FILE__;
 
 #include "common.h"
 #include "reduce.h"
-#include "header.h"
 
 #define IS_SP_RHS(symbol)   (sp_rules[symbol] != NIL)
 #define IS_SP_RULE(rule_no) (rule_list[rule_no] != OMEGA)

@@ -2,7 +2,6 @@
 static char hostfile[] = __FILE__;
 
 #include "common.h"
-#include "header.h"
 
 static void mklr0(void);
 

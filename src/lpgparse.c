@@ -8,20 +8,28 @@ static char hostfile[] = __FILE__;
 #undef scope_state
 #undef SCOPE_UBOUND
 #undef SCOPE_SIZE
-#include "header.h"
 #include "lpgsym.h"
 #include "lpgdef.h"
 #include "lpgdcl.h"
 #include "lpgparse.h"
 
-#define SPACE_CODE  1
-#define DIGIT_CODE  2
-#define ALPHA_CODE  3
-#define IsSpace(c)  (code[c] == SPACE_CODE)
-#define IsDigit(c)  (code[c] == DIGIT_CODE)
-#define IsAlpha(c)  (code[c] == ALPHA_CODE)
+static const int SPACE_CODE = 1;
+static const int DIGIT_CODE = 2;
+static const int ALPHA_CODE = 3;
 
 static char code[256] = {0};
+
+static bool IsSpace(const int c) {
+  return code[c] == SPACE_CODE;
+}
+
+static bool IsDigit(const int c) {
+  return code[c] == DIGIT_CODE;
+}
+
+static bool IsAlpha(const int c) {
+  return code[c] == ALPHA_CODE;
+}
 
 static int output_size = 80,
     line_no = 0;
@@ -105,7 +113,7 @@ void process_input(void) {
 
   /*          Print heading on terminal and in listing file                   */
   printf("\n %s %35.24s\n", HEADER_INFO, timeptr);
-  PR_HEADING;
+  PR_HEADING();
 
   init_process();
 
@@ -2610,7 +2618,7 @@ static void display_input(void) {
 
   /* Print the Macro definitions, if any.   */
   if (num_defs > 0) {
-    PR_HEADING;
+    PR_HEADING();
     fprintf(syslis, "\nDefined Symbols:\n\n");
     output_line_no += 3;
     for (j = 0; j < num_defs; j++) {
@@ -2641,7 +2649,7 @@ static void display_input(void) {
   if (alias_root != NULL) {
     struct hash_type *p;
 
-    PR_HEADING;
+    PR_HEADING();
     if (alias_root->link == NULL) {
       fprintf(syslis, "\nAlias:\n\n");
       output_line_no += 3;
@@ -2675,7 +2683,7 @@ static void display_input(void) {
   /*   The first symbol (#1) represents the empty string.  The last terminal */
   /* declared by the user is followed by EOFT which may be followed by the   */
   /* ERROR symbol.  See LPG GRAMMAR for more details.                        */
-  PR_HEADING;
+  PR_HEADING();
   fprintf(syslis, "\nTerminals:\n\n");
   output_line_no += 3;
   strcpy(line, "        "); /* 8 spaces */
@@ -2699,7 +2707,7 @@ static void display_input(void) {
   ENDPAGE_CHECK;
 
   /*    Print the Rules     */
-  PR_HEADING;
+  PR_HEADING();
   fprintf(syslis, "\nRules:\n\n");
   output_line_no += 3;
   for (rule_no = 0; rule_no <= num_rules; rule_no++) {

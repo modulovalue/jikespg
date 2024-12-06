@@ -2,7 +2,6 @@
 static char hostfile[] = __FILE__;
 
 #include "common.h"
-#include "header.h"
 
 struct action_element {
   struct action_element *next;
@@ -356,7 +355,7 @@ void process_tables(void) {
   /* If printing of the states was requested,  print the new mapping   */
   /* of the states.                                                    */
   if (states_bit) {
-    PR_HEADING;
+    PR_HEADING();
     fprintf(syslis,
             "\nMapping of new state numbers into "
             "original numbers:\n");

@@ -3,7 +3,6 @@ static char hostfile[] = __FILE__;
 
 #include <string.h>
 #include "common.h"
-#include "header.h"
 
 static int default_saves = 0;
 static short default_rule;

@@ -3,7 +3,6 @@ static char hostfile[] = __FILE__;
 
 #include <string.h>
 #include "common.h"
-#include "header.h"
 
 static const char digits[] = "0123456789";
 

@@ -19,7 +19,6 @@ jikespg_SOURCES = ctabs.c \
                   timetab.c
 
 noinst_HEADERS = common.h \
-                 header.h \
                  lpgact.h \
                  lpgact.i \
                  lpgdcl.h \

@@ -4,7 +4,6 @@ static char hostfile[] = __FILE__;
 #include <string.h>
 #include <ctype.h>
 #include "common.h"
-#include "header.h"
 
 /* The following are global variables and constants used to manage a  */
 /* pool of temporary space. Externally, the user invokes the function */
@@ -82,8 +81,6 @@ static bool allocate_more_space(cell ***base, long *size, long *base_size) {
 void reset_temporary_space(void) {
   temp_top = 0; /* index of next usable elemt */
   temp_size = 0;
-
-  return;
 }
 
 
@@ -103,8 +100,6 @@ void free_temporary_space(void) {
   temp_base_size = 0;
   temp_top = 0;
   temp_size = 0;
-
-  return;
 }
 
 
@@ -229,8 +224,6 @@ struct node *allocate_node(char *file, long line) {
 void free_nodes(struct node *head, struct node *tail) {
   tail->next = node_pool;
   node_pool = head;
-
-  return;
 }
 
 
@@ -357,8 +350,6 @@ void fill_in(char string[], int amount, char character) {
   for (i = 0; i <= amount; i++)
     string[i] = character;
   string[i] = '\0';
-
-  return;
 }
 
 
@@ -402,8 +393,6 @@ static void qcksrt(short array[], int l, int h) {
       }
     }
   }
-
-  return;
 }
 
 
@@ -454,8 +443,6 @@ void restore_symbol(char *out, const char *in) {
 
   if (out[0] == '\n') /* one of the special grammar symbols? */
     out[0] = escape;
-
-  return;
 }
 
 
@@ -491,8 +478,6 @@ void print_large_token(char *line, char *token, const char *indent, int len) {
     strcpy(line, indent);
     strcat(line, token);
   }
-
-  return;
 }
 
 
@@ -570,8 +555,6 @@ void print_item(int item_no) {
   }
   fprintf(syslis, "\n%s", line);
   ENDPAGE_CHECK;
-
-  return;
 }
 
 

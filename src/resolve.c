@@ -3,7 +3,6 @@ static char hostfile[] = __FILE__;
 
 #include "common.h"
 #include "reduce.h"
-#include "header.h"
 
 /* VISITED is a structure used to mark state-symbol pairs that have    */
 /* been visited in the process of computing follow-sources for a       */
@@ -701,7 +700,7 @@ static void conflicts_initialization(void) {
   item_list = Allocate_short_array(num_items + 1);
 
   int i = (PRINT_LINE_SIZE - 11) / 2 - 1;
-  PR_HEADING;
+  PR_HEADING();
   fill_in(msg_line, i, '-');
   fprintf(syslis, "\n%s CONFLICTS %s\n", msg_line, msg_line);
   output_line_no += 2;

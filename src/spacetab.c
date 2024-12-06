@@ -4,7 +4,6 @@ static char hostfile[] = __FILE__;
 #include <string.h>
 #include "common.h"
 #include "space.h"
-#include "header.h"
 
 static struct node **new_state_element_reduce_nodes;
 

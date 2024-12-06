@@ -2,7 +2,6 @@
 static char hostfile[] = __FILE__;
 
 #include "common.h"
-#include "header.h"
 
 #define B_ASSIGN_SET(s1, dest, s2, source, bound) \
     {   int j; \

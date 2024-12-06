@@ -3,7 +3,6 @@ static char hostfile[] = __FILE__;
 
 #include <string.h>
 #include "common.h"
-#include "header.h"
 
 static short *stack,
     *index_of,
@@ -182,7 +181,7 @@ void produce(void) {
   /* If WARNINGS_BIT is on and some error rules are in the wrong,      */
   /* format, report them.                                              */
   if (warnings_bit && item_root != NIL) {
-    PR_HEADING;
+    PR_HEADING();
     if (item_list[item_root] == NIL)
       fprintf(syslis,
               "*** This error rule is not in manual format:\n\n");
@@ -326,7 +325,7 @@ void produce(void) {
 
   /* If the option LIST_BIT is ON, print the name map.                */
   if (list_bit) {
-    PR_HEADING;
+    PR_HEADING();
     fprintf(syslis, "\nName map:\n");
     output_line_no += 2;
 
@@ -1176,7 +1175,7 @@ static bool is_suffix_equal(int item_no1, int item_no2) {
 /*                         PRINT_SCOPES:                          */
 /* This procedure is similar to the global procedure PTITEM.      */
 static void print_scopes(void) {
-  PR_HEADING;
+  PR_HEADING();
   fprintf(syslis, "\nScopes:\n");
   output_line_no += 2;
 

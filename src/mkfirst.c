@@ -3,18 +3,17 @@ static char hostfile[] = __FILE__;
 
 #include <string.h>
 #include "common.h"
-#include "header.h"
 
 #define LEN (PRINT_LINE_SIZE - 4)
 #define NEXT_RULE_SIZE (num_rules + 1)
 #define LAST_RHS_INDEX(rule_no) rules[rule_no + 1].rhs - 1
 
-#define INIT_FIRST(nt) \
-        { \
-            register int k; \
-            for (k = 0; k < term_set_size; k++)\
-                 first[nt * term_set_size + k] = 0;\
-        }
+static inline void INIT_FIRST(int nt) {
+  register int k;
+  for (k = 0; k < term_set_size; k++) {
+    first[nt * term_set_size + k] = 0;
+  }
+}
 
 static bool is_terminal_rhs(short *rhs_start,
                                const bool *produces_terminals, int rule_no);
@@ -549,7 +548,7 @@ static void no_rules_produced(void) {
   /* is not empty, signal error and stop.                      */
   if (nt_root != NIL) {
     char line[PRINT_LINE_SIZE + 1];
-    PR_HEADING;
+    PR_HEADING();
     nt_list[nt_last] = NIL;
     if (nt_list[nt_root] == NIL) {
       PRNTERR("The following Non-terminal does not produce any rules: ");
@@ -924,7 +923,7 @@ static void check_non_terminals(void) {
   if (nt_root != NIL) {
     char line[PRINT_LINE_SIZE + 1];
     nt_list[nt_last] = NIL; /* mark end of list */
-    PR_HEADING;
+    PR_HEADING();
     strcpy(line, "*** ERROR: The following Non-terminal");
     if (nt_list[nt_root] == NIL)
       strcat(line, " does not generate any terminal strings: ");
@@ -1186,7 +1185,7 @@ static void print_unreachables(void) {
   }
 
   if (t_root != NIL) {
-    PR_HEADING;
+    PR_HEADING();
     if (symbol_list[t_root] != NIL) {
       PRNT("*** The following Terminals are useless: ");
       fprintf(syslis, "\n\n");
@@ -1222,7 +1221,7 @@ static void print_unreachables(void) {
   }
 
   if (nt_root != NIL) {
-    PR_HEADING;
+    PR_HEADING();
     if (symbol_list[nt_root] != NIL) {
       PRNT("*** The following Non-Terminals are useless: ");
       fprintf(syslis, "\n\n");
@@ -1281,7 +1280,7 @@ static void print_xref(void) {
     sort_sym[i] = i;
   quick_sym(sort_sym, 1, num_symbols);
 
-  PR_HEADING;
+  PR_HEADING();
   fprintf(syslis, "\n\nCross-reference table:\n");
   output_line_no += 3;
   for ALL_SYMBOLS(i) {
@@ -1401,7 +1400,7 @@ static void print_nt_first(void) {
   int nt,
       t;
 
-  PR_HEADING;
+  PR_HEADING();
   fprintf(syslis, "\nFirst map for non-terminals:\n\n");
   output_line_no += 3;
 
@@ -1436,7 +1435,7 @@ static void print_follow_map(void) {
   int nt,
       t;
 
-  PR_HEADING;
+  PR_HEADING();
   fprintf(syslis, "\nFollow Map:\n\n");
   output_line_no += 3;
 
