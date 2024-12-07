@@ -47,23 +47,23 @@ static void remap_symbols(void) {
     sh = shift[statset[state_no].shift_number];
     for (int i = 1; i <= sh.size; i++) {
       row_size[state_no]++;
-      symbol = SHIFT_SYMBOL(sh, i);
+      symbol = sh.map[i].symbol;
       frequency_count[symbol]++;
     }
 
     go_to = statset[state_no].go_to;
     for (int i = 1; i <= go_to.size; i++) {
       row_size[state_no]++;
-      symbol = GOTO_SYMBOL(go_to, i);
+      symbol = go_to.map[i].symbol;
       frequency_count[symbol]++;
     }
 
     red = reduce[state_no];
-    default_rule = REDUCE_RULE_NO(red, 0);
+    default_rule = red.map[0].rule_number;
     for (int i = 1; i <= red.size; i++) {
-      if (REDUCE_RULE_NO(red, i) != default_rule) {
+      if (red.map[i].rule_number != default_rule) {
         row_size[state_no]++;
-        symbol = REDUCE_SYMBOL(red, i);
+        symbol = red.map[i].symbol;
         frequency_count[symbol]++;
       } else
         default_saves++;
@@ -79,15 +79,15 @@ static void remap_symbols(void) {
     sh = shift[lastats[state_no].shift_number];
     for (int i = 1; i <= sh.size; i++) {
       row_size[state_no]++;
-      symbol = SHIFT_SYMBOL(sh, i);
+      symbol = sh.map[i].symbol;
       frequency_count[symbol]++;
     }
     red = lastats[state_no].reduce;
-    default_rule = REDUCE_RULE_NO(red, 0);
+    default_rule = red.map[0].rule_number;
     for (int i = 1; i <= red.size; i++) {
-      if (REDUCE_RULE_NO(red, i) != default_rule) {
+      if (red.map[i].rule_number != default_rule) {
         row_size[state_no]++;
-        symbol = REDUCE_SYMBOL(red, i);
+        symbol = red.map[i].symbol;
         frequency_count[symbol]++;
       } else
         default_saves++;
@@ -155,22 +155,22 @@ static void remap_symbols(void) {
   for ALL_STATES(state_no) {
     go_to = statset[state_no].go_to;
     for (int i = 1; i <= go_to.size; i++) /* Remap Goto map */
-      GOTO_SYMBOL(go_to, i) = symbol_map[GOTO_SYMBOL(go_to, i)];
+      go_to.map[i].symbol = symbol_map[go_to.map[i].symbol];
     red = reduce[state_no];
     for (int i = 1; i <= red.size; i++)
-      REDUCE_SYMBOL(red, i) = symbol_map[REDUCE_SYMBOL(red, i)];
+      red.map[i].symbol = symbol_map[red.map[i].symbol];
   }
 
   for ALL_LA_STATES(state_no) {
     red = lastats[state_no].reduce;
     for (int i = 1; i <= red.size; i++)
-      REDUCE_SYMBOL(red, i) = symbol_map[REDUCE_SYMBOL(red, i)];
+      red.map[i].symbol = symbol_map[red.map[i].symbol];
   }
 
   for (int i = 1; i <= num_shift_maps; i++) {
     sh = shift[i];
     for (j = 1; j <= sh.size; j++)
-      SHIFT_SYMBOL(sh, j) = symbol_map[SHIFT_SYMBOL(sh, j)];
+      sh.map[j].symbol = symbol_map[sh.map[j].symbol];
   }
 
   sortdes(ordered_state, row_size, 1, max_la_state, num_symbols);
@@ -241,7 +241,7 @@ static void overlap_tables(void) {
     } else {
       struct goto_header_type go_to = statset[state_no].go_to;
       for (int i = 1; i <= go_to.size; i++) {
-        symbol = GOTO_SYMBOL(go_to, i);
+        symbol = go_to.map[i].symbol;
         symbol_list[symbol] = root_symbol;
         root_symbol = symbol;
       }
@@ -250,17 +250,17 @@ static void overlap_tables(void) {
     }
 
     for (int i = 1; i <= sh.size; i++) {
-      symbol = SHIFT_SYMBOL(sh, i);
+      symbol = sh.map[i].symbol;
       symbol_list[symbol] = root_symbol;
       root_symbol = symbol;
     }
     symbol_list[0] = root_symbol;
     root_symbol = 0;
 
-    default_rule = REDUCE_RULE_NO(red, 0);
+    default_rule = red.map[0].rule_number;
     for (int i = 1; i <= red.size; i++) {
-      if (REDUCE_RULE_NO(red, i) != default_rule) {
-        symbol = REDUCE_SYMBOL(red, i);
+      if (red.map[i].rule_number != default_rule) {
+        symbol = red.map[i].symbol;
         symbol_list[symbol] = root_symbol;
         root_symbol = symbol;
       }
@@ -446,13 +446,14 @@ static void print_tables(void) {
     } else {
       go_to = statset[state_no].go_to;
       for (j = 1; j <= go_to.size; j++) {
-        symbol = GOTO_SYMBOL(go_to, j);
+        symbol = go_to.map[j].symbol;
         i = indx + symbol;
-        if (goto_default_bit || nt_check_bit)
+        if (goto_default_bit || nt_check_bit) {
           check[i] = symbol;
-        else
+        } else {
           check[i] = DEFAULT_SYMBOL;
-        act = GOTO_ACTION(go_to, j);
+        }
+        act = go_to.map[j].action;
         if (act > 0) {
           action[i] = state_index[act] + num_rules;
           goto_count++;
@@ -466,10 +467,10 @@ static void print_tables(void) {
     }
 
     for (j = 1; j <= sh.size; j++) {
-      symbol = SHIFT_SYMBOL(sh, j);
+      symbol = sh.map[j].symbol;
       i = indx + symbol;
       check[i] = symbol;
-      act = SHIFT_ACTION(sh, j);
+      act = sh.map[j].action;
       if (act > (int) num_states) {
         result_act = la_state_offset + state_index[act];
         la_shift_count++;
@@ -494,13 +495,13 @@ static void print_tables(void) {
 
     /*   We now initialize the elements reserved for reduce actions in   */
     /* the current state.                                                */
-    default_rule = REDUCE_RULE_NO(red, 0);
+    default_rule = red.map[0].rule_number;
     for (j = 1; j <= red.size; j++) {
-      if (REDUCE_RULE_NO(red, j) != default_rule) {
-        symbol = REDUCE_SYMBOL(red, j);
+      if (red.map[j].rule_number != default_rule) {
+        symbol = red.map[j].symbol;
         i = indx + symbol;
         check[i] = symbol;
-        act = REDUCE_RULE_NO(red, j);
+        act = red.map[j].rule_number;
         if (rules[act].lhs == accept_image)
           action[i] = accept_act;
         else
@@ -516,7 +517,7 @@ static void print_tables(void) {
     /* Otherwise it is initialized to the rule number in question.       */
     i = indx + DEFAULT_SYMBOL;
     check[i] = DEFAULT_SYMBOL;
-    act = REDUCE_RULE_NO(red, 0);
+    act = red.map[0].rule_number;
     if (act == OMEGA)
       action[i] = error_act;
     else {

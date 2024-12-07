@@ -21,8 +21,8 @@ static void process_shift_actions(struct action_element **action_count,
 
   struct shift_header_type sh = shift[shift_no];
   for (int i = 1; i <= sh.size; i++) {
-    int symbol = SHIFT_SYMBOL(sh, i);
-    int act = SHIFT_ACTION(sh, i);
+    int symbol = sh.map[i].symbol;
+    int act = sh.map[i].action;
     for (q = action_count[symbol]; q != NULL; q = q->next) {
       if (q->action == act)
         break;
@@ -152,8 +152,8 @@ static void compute_goto_default(void) {
   for ALL_STATES(state_no) {
     go_to = statset[state_no].go_to;
     for (i = 1; i <= go_to.size; i++) {
-      symbol = GOTO_SYMBOL(go_to, i);
-      int act = GOTO_ACTION(go_to, i);
+      symbol = go_to.map[i].symbol;
+      const int act = go_to.map[i].action;
       for (q = action_count[symbol]; q != NULL; q = q->next) {
         if (q->action == act)
           break;
@@ -201,10 +201,10 @@ static void compute_goto_default(void) {
     int k = 0;
     go_to = statset[state_no].go_to;
     for (i = 1; i <= go_to.size; i++) {
-      if (gotodef[GOTO_SYMBOL(go_to, i)] != GOTO_ACTION(go_to, i)) {
+      if (gotodef[go_to.map[i].symbol] != go_to.map[i].action) {
         k++;
-        GOTO_SYMBOL(go_to, k) = GOTO_SYMBOL(go_to, i);
-        GOTO_ACTION(go_to, k) = GOTO_ACTION(go_to, i);
+        go_to.map[k].symbol = go_to.map[i].symbol;
+        go_to.map[k].action = go_to.map[i].action;
       }
     }
     statset[state_no].go_to.size = k; /* Readjust size */
@@ -258,17 +258,17 @@ void process_tables(void) {
   /* Release space trapped by the maps IN_STAT and FIRST.        */
   for ALL_STATES(state_no) {
     struct goto_header_type go_to = statset[state_no].go_to;
-    for (i = 1; i <= go_to.size; i++)
-      GOTO_SYMBOL(go_to, i)--;
-
+    for (i = 1; i <= go_to.size; i++) {
+      go_to.map[i].symbol--;
+    }
     red = reduce[state_no];
     for (i = 1; i <= red.size; i++)
-      REDUCE_SYMBOL(red, i)--;
+      red.map[i].symbol--;
   }
   for ALL_LA_STATES(state_no) {
     red = lastats[state_no].reduce;
     for (i = 1; i <= red.size; i++)
-      REDUCE_SYMBOL(red, i)--;
+      red.map[i].symbol--;
   }
 
   for (i = 1; i <= gotodom_size; i++)
@@ -287,7 +287,7 @@ void process_tables(void) {
   for (i = 1; i <= num_shift_maps; i++) {
     struct shift_header_type sh = shift[i];
     for (int j = 1; j <= sh.size; j++)
-      SHIFT_SYMBOL(sh, j)--;
+      sh.map[j].symbol--;
   }
 
   /* Remap the left-hand side of all the rules.                      */

@@ -747,9 +747,9 @@ static void print_error_maps(void) {
     as_size[state_no] = sh.size;
     for (i = 1; i <= sh.size; i++) {
       if (table_opt == OPTIMIZE_TIME)
-        symbol = original[SHIFT_SYMBOL(sh, i)];
+        symbol = original[sh.map[i].symbol];
       else
-        symbol = SHIFT_SYMBOL(sh, i);
+        symbol = sh.map[i].symbol;
       SET_BIT_IN(action_symbols, state_no, symbol);
     }
 
@@ -757,9 +757,9 @@ static void print_error_maps(void) {
     as_size[state_no] += red.size;
     for (i = 1; i <= red.size; i++) {
       if (table_opt == OPTIMIZE_TIME)
-        symbol = original[REDUCE_SYMBOL(red, i)];
+        symbol = original[red.map[i].symbol];
       else
-        symbol = REDUCE_SYMBOL(red, i);
+        symbol = red.map[i].symbol;
       SET_BIT_IN(action_symbols, state_no, symbol);
     }
   }
@@ -1824,11 +1824,11 @@ static void print_space_tables(void) {
     indx = state_index[state_no];
     go_to = statset[state_no].go_to;
     for (j = 1; j <= go_to.size; j++) {
-      symbol = GOTO_SYMBOL(go_to, j);
+      symbol = go_to.map[j].symbol;
       i = indx + symbol;
       if (goto_default_bit || nt_check_bit)
         check[i] = symbol;
-      act = GOTO_ACTION(go_to, j);
+      act = go_to.map[j].action;
       if (act > 0) {
         action[i] = state_index[act] + num_rules;
         goto_count++;
@@ -2031,9 +2031,9 @@ static void print_space_tables(void) {
     indx = term_state_index[state_no];
     sh = shift[new_state_element[state_no].shift_number];
     for (j = 1; j <= sh.size; j++) {
-      symbol = SHIFT_SYMBOL(sh, j);
-      act = SHIFT_ACTION(sh, j);
-      if ((!shift_default_bit) || (act != shiftdf[symbol])) {
+      symbol = sh.map[j].symbol;
+      act = sh.map[j].symbol;
+      if (!shift_default_bit || (act != shiftdf[symbol])) {
         i = indx + symbol;
         check[i] = symbol;
 
@@ -2062,15 +2062,15 @@ static void print_space_tables(void) {
 
     red = new_state_element[state_no].reduce;
     for (j = 1; j <= red.size; j++) {
-      symbol = REDUCE_SYMBOL(red, j);
-      rule_no = REDUCE_RULE_NO(red, j);
+      symbol = red.map[j].symbol;
+      rule_no = red.map[j].rule_number;
       i = indx + symbol;
       check[i] = symbol;
       action[i] = rule_no;
       reduce_count++;
     }
 
-    rule_no = REDUCE_RULE_NO(red, 0);
+    rule_no = red.map[0].rule_number;
     if (rule_no != error_act)
       default_count++;
     check[indx] = DEFAULT_SYMBOL;
@@ -2180,7 +2180,7 @@ static void print_space_tables(void) {
       struct reduce_header_type red;
 
       red = new_state_element[i].reduce;
-      itoc(REDUCE_RULE_NO(red, 0));
+      itoc(red.map[0].rule_number);
       *output_ptr++ = COMMA;
       k++;
       if (k == 10 && i != num_terminal_states) {
@@ -2234,7 +2234,7 @@ static void print_space_tables(void) {
       indx = shift_check_index[i];
       sh = shift[real_shift_number[i]];
       for (j = 1; j <= sh.size; j++) {
-        symbol = SHIFT_SYMBOL(sh, j);
+        symbol = sh.map[j].symbol;
         check[indx + symbol] = symbol;
       }
     }
@@ -2422,13 +2422,13 @@ static void print_time_tables(void) {
     } else {
       struct goto_header_type go_to = statset[state_no].go_to;
       for (j = 1; j <= go_to.size; j++) {
-        symbol = GOTO_SYMBOL(go_to, j);
+        symbol = go_to.map[j].symbol;
         i = indx + symbol;
         if (goto_default_bit || nt_check_bit)
           check[i] = symbol;
         else
           check[i] = DEFAULT_SYMBOL;
-        act = GOTO_ACTION(go_to, j);
+        act = go_to.map[j].action;
         if (act > 0) {
           action[i] = state_index[act] + num_rules;
           goto_count++;
@@ -2442,10 +2442,10 @@ static void print_time_tables(void) {
     }
 
     for (j = 1; j <= sh.size; j++) {
-      symbol = SHIFT_SYMBOL(sh, j);
+      symbol = sh.map[j].symbol;
       i = indx + symbol;
       check[i] = symbol;
-      act = SHIFT_ACTION(sh, j);
+      act = sh.map[j].action;
       if (act > (int) num_states) {
         result_act = la_state_offset + state_index[act];
         la_shift_count++;
@@ -2470,13 +2470,13 @@ static void print_time_tables(void) {
 
     /*   We now initialize the elements reserved for reduce actions in   */
     /* the current state.                                                */
-    default_rule = REDUCE_RULE_NO(red, 0);
+    default_rule = red.map[0].rule_number;
     for (j = 1; j <= red.size; j++) {
-      if (REDUCE_RULE_NO(red, j) != default_rule) {
-        symbol = REDUCE_SYMBOL(red, j);
+      if (red.map[j].rule_number != default_rule) {
+        symbol = red.map[j].symbol;
         i = indx + symbol;
         check[i] = symbol;
-        act = REDUCE_RULE_NO(red, j);
+        act = red.map[j].rule_number;
         if (rules[act].lhs == accept_image)
           action[i] = accept_act;
         else
@@ -2492,7 +2492,7 @@ static void print_time_tables(void) {
     /* Otherwise it is initialized to the rule number in question.       */
     i = indx + DEFAULT_SYMBOL;
     check[i] = DEFAULT_SYMBOL;
-    act = REDUCE_RULE_NO(red, 0);
+    act = red.map[0].rule_number;
     if (act == OMEGA)
       action[i] = error_act;
     else {
@@ -2531,17 +2531,19 @@ static void print_time_tables(void) {
   PRNT(msg_line);
 
   if (error_maps_bit || debug_bit) {
-    for ALL_STATES(state_no)
+    for ALL_STATES(state_no) {
       check[state_index[state_no]] = -state_no;
+    }
   }
   for (i = 1; i <= (int) table_size; i++) {
-    if (check[i] < 0 || check[i] > (java_bit ? 127 : 255))
+    if (check[i] < 0 || check[i] > (java_bit ? 127 : 255)) {
       byte_check_bit = 0;
+    }
   }
 
-  if (c_bit)
+  if (c_bit) {
     mystrcpy("\n#define CLASS_HEADER\n\n");
-  else if (cpp_bit) {
+  } else if (cpp_bit) {
     mystrcpy("\n#define CLASS_HEADER ");
     mystrcpy(prs_tag);
     mystrcpy("_table::\n\n");
@@ -2554,9 +2556,11 @@ static void print_time_tables(void) {
   }
 
   /* Write size of right hand side of rules followed by CHECK table.   */
-  if (java_bit)
+  if (java_bit) {
     mystrcpy("    public final static byte rhs[] = {0,\n");
-  else mystrcpy("const unsigned char  CLASS_HEADER rhs[] = {0,\n");
+  } else {
+    mystrcpy("const unsigned char  CLASS_HEADER rhs[] = {0,\n");
+  }
 
   padline();
   k = 0;
@@ -2574,20 +2578,26 @@ static void print_time_tables(void) {
   *(output_ptr - 1) = '\n';
   BUFFER_CHECK(sysdcl);
 
-  if (java_bit)
+  if (java_bit) {
     mystrcpy("    };\n");
-  else mystrcpy("                 };\n");
+  } else {
+    mystrcpy("                 };\n");
+  }
   *output_ptr++ = '\n';
 
   /* Write CHECK table.                                            */
   if (byte_check_bit && !error_maps_bit) {
-    if (java_bit)
+    if (java_bit) {
       mystrcpy("    public final static byte check_table[] = {\n");
-    else mystrcpy("const unsigned char  CLASS_HEADER check_table[] = {\n");
+    } else {
+      mystrcpy("const unsigned char  CLASS_HEADER check_table[] = {\n");
+    }
   } else {
-    if (java_bit)
+    if (java_bit) {
       mystrcpy("     public final static short check_table[] = {\n");
-    else mystrcpy("const   signed short CLASS_HEADER check_table[] = {\n");
+    } else {
+      mystrcpy("const   signed short CLASS_HEADER check_table[] = {\n");
+    }
   }
 
   padline();

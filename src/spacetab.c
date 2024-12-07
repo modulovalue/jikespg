@@ -53,7 +53,7 @@ static void remap_non_terminals(void) {
     go_to = statset[state_no].go_to;
     for (i = 1; i <= go_to.size; i++) {
       row_size[state_no]++;
-      symbol = GOTO_SYMBOL(go_to, i);
+      symbol = go_to.map[i].symbol;
       frequency_count[symbol]++;
     }
   }
@@ -74,8 +74,7 @@ static void remap_non_terminals(void) {
   for ALL_STATES(state_no) {
     go_to = statset[state_no].go_to;
     for (i = 1; i <= go_to.size; i++)
-      GOTO_SYMBOL(go_to, i) =
-          symbol_map[GOTO_SYMBOL(go_to, i)] - num_terminals;
+      go_to.map[i].symbol = symbol_map[go_to.map[i].symbol] - num_terminals;
   }
 
   /* If Goto-Default was requested, we find out how many non-terminals  */
@@ -178,7 +177,7 @@ static void overlap_nt_rows(void) {
     if (indx + last_symbol > table_size)
       reallocate();
     for (i = 1; i <= go_to.size; i++) {
-      if (next[indx + GOTO_SYMBOL(go_to, i)] == OMEGA) {
+      if (next[indx + go_to.map[i].symbol] == OMEGA) {
         indx = next[indx];
         goto look_for_match_in_base_table;
       }
@@ -190,7 +189,7 @@ static void overlap_nt_rows(void) {
     /* NOTE tha since SYMBOLs start at 1, the first index can never  */
     /* be a candidate (==> I = INDX + SYMBOL) in this loop.          */
     for (int j = 1; j <= go_to.size; j++) {
-      int symbol = GOTO_SYMBOL(go_to, j);
+      int symbol = go_to.map[j].symbol;
       i = indx + symbol;
       if (i == last_index) {
         last_index = previous[last_index];
@@ -326,8 +325,7 @@ static void merge_similar_t_rows(void) {
       red = reduce[state_no];
 
     for (i = 1; i <= red.size; i++) {
-      int rule_no = REDUCE_RULE_NO(red, i);
-
+      const int rule_no = red.map[i].rule_number;
       for (q = reduce_root; q != NULL; tail = q, q = q->next) {
         /* Is it or not in REDUCE_ROOT list? */
         if (q->value == rule_no)
@@ -356,10 +354,8 @@ static void merge_similar_t_rows(void) {
     else {
       if (default_opt == 5) {
         struct shift_header_type sh = shift[statset[state_no].shift_number];
-        for (int j = 1; (j <= sh.size) &&
-                        (!shift_on_error_symbol[state_no]); j++)
-          shift_on_error_symbol[state_no] =
-              (SHIFT_SYMBOL(sh, j) == error_image);
+        for (int j = 1; j <= sh.size && !shift_on_error_symbol[state_no]; j++)
+          shift_on_error_symbol[state_no] = sh.map[j].symbol == error_image;
       }
       hash_address = statset[state_no].shift_number;
     }
@@ -518,7 +514,7 @@ static void merge_shift_domains(void) {
     shift_size = sh.size;
     hash_address = shift_size;
     for (i = 1; i <= shift_size; i++) {
-      symbol = SHIFT_SYMBOL(sh, i);
+      symbol = sh.map[i].symbol;
       hash_address += symbol;
       shift_symbols[symbol] = true;
     }
@@ -530,7 +526,7 @@ static void merge_shift_domains(void) {
       sh = shift[new_state_element[i].shift_number];
       if (sh.size == shift_size) {
         for (j = 1; j <= shift_size; j++)
-          if (!shift_symbols[SHIFT_SYMBOL(sh, j)])
+          if (!shift_symbols[sh.map[j].symbol])
             break;
         if (j > shift_size) {
           shift_image[state_no] = shift_image[i];
@@ -563,7 +559,7 @@ static void merge_shift_domains(void) {
     shift_no = real_shift_number[i];
     sh = shift[shift_no];
     for (j = 1; j <= sh.size; j++) {
-      symbol = SHIFT_SYMBOL(sh, j);
+      symbol = sh.map[j].symbol;
       frequency_count[symbol]++;
     }
   }
@@ -584,13 +580,13 @@ static void merge_shift_domains(void) {
   for (i = 1; i <= num_shift_maps; i++) {
     sh = shift[i];
     for (j = 1; j <= sh.size; j++)
-      SHIFT_SYMBOL(sh, j) = symbol_map[SHIFT_SYMBOL(sh, j)];
+      sh.map[j].symbol = symbol_map[sh.map[j].symbol];
   }
 
   for (state_no = 1; state_no <= num_terminal_states; state_no++) {
     red = new_state_element[state_no].reduce;
     for (i = 1; i <= red.size; i++)
-      REDUCE_SYMBOL(red, i) = symbol_map[REDUCE_SYMBOL(red, i)];
+      red.map[i].symbol = symbol_map[red.map[i].symbol];
   }
 
   /* If ERROR_MAPS are requested, we also have to remap the original   */
@@ -599,7 +595,7 @@ static void merge_shift_domains(void) {
     for ALL_STATES(state_no) {
       red = reduce[state_no];
       for (i = 1; i <= red.size; i++)
-        REDUCE_SYMBOL(red, i) = symbol_map[REDUCE_SYMBOL(red, i)];
+        red.map[i].symbol = symbol_map[red.map[i].symbol];
     }
   }
 
@@ -651,7 +647,7 @@ static void merge_shift_domains(void) {
     if (indx + num_terminals > (int) table_size)
       reallocate();
     for (i = 1; i <= sh.size; i++) {
-      symbol = SHIFT_SYMBOL(sh, i);
+      symbol = sh.map[i].symbol;
       if (next[indx + symbol] == OMEGA) {
         indx = next[indx];
         goto look_for_match_in_sh_chk_tab;
@@ -664,7 +660,7 @@ static void merge_shift_domains(void) {
     /* of a Shift row that was previously processed, and that element    */
     /* has already been removed from the list of available positions.    */
     for (j = 1; j <= sh.size; j++) {
-      symbol = SHIFT_SYMBOL(sh, j);
+      symbol = sh.map[j].symbol;
       i = indx + symbol;
       if (next[i] != 0) {
         if (i == last_index) {
@@ -813,8 +809,8 @@ static void overlay_sim_t_rows(void) {
     for ALL_TERMINALS(j)
       reduce_action[j] = OMEGA;
     for (j = 1; j <= red.size; j++) {
-      rule_no = REDUCE_RULE_NO(red, j);
-      reduce_action[REDUCE_SYMBOL(red, j)] = rule_no;
+      rule_no = red.map[j].rule_number;
+      reduce_action[red.map[j].symbol] = rule_no;
       rule_count[rule_no]++;
     }
 
@@ -836,15 +832,15 @@ static void overlay_sim_t_rows(void) {
       /* We traverse the reduce map of the state taken out from the group  */
       /* and check to see if it is compatible with the subset being        */
       /* constructed so far.                                               */
-      if (state_no > (int) num_states)
+      if (state_no > (int) num_states) {
         red = lastats[state_no].reduce;
-      else
+      } else {
         red = reduce[state_no];
+      }
       for (j = 1; j <= red.size; j++) {
-        symbol = REDUCE_SYMBOL(red, j);
-        if (reduce_action[symbol] != OMEGA) {
-          if (reduce_action[symbol] != REDUCE_RULE_NO(red, j))
-            break;
+        symbol = red.map[j].symbol;
+        if (reduce_action[symbol] != OMEGA && reduce_action[symbol] != red.map[j].rule_number) {
+          break;
         }
       }
 
@@ -858,9 +854,9 @@ static void overlay_sim_t_rows(void) {
         state_list[state_no] = state_subset_root;
         state_subset_root = state_no;
         for (j = 1; j <= red.size; j++) {
-          symbol = REDUCE_SYMBOL(red, j);
+          symbol = red.map[j].symbol;
           if (reduce_action[symbol] == OMEGA) {
-            rule_no = REDUCE_RULE_NO(red, j);
+            rule_no = red.map[j].rule_number;
             if (rules[rule_no].lhs == accept_image)
               rule_no = 0;
             reduce_action[symbol] = rule_no;
@@ -917,18 +913,18 @@ static void overlay_sim_t_rows(void) {
     /* We may assume that SYMBOL field of defaults is already set to     */
     /* the DEFAULT_SYMBOL value.                                         */
     new_red = Allocate_reduce_map(reduce_size);
-
-    REDUCE_SYMBOL(new_red, 0) = DEFAULT_SYMBOL;
-    REDUCE_RULE_NO(new_red, 0) = default_rule;
+    new_red.map[0].symbol = DEFAULT_SYMBOL;
+    new_red.map[0].rule_number = default_rule;
     for ALL_TERMINALS(symbol) {
       if (reduce_action[symbol] != OMEGA) {
         if (reduce_action[symbol] != default_rule) {
-          REDUCE_SYMBOL(new_red, reduce_size) = symbol;
-          if (reduce_action[symbol] == 0)
-            REDUCE_RULE_NO(new_red, reduce_size) = accept_act;
-          else
-            REDUCE_RULE_NO(new_red, reduce_size) =
+          new_red.map[reduce_size].symbol = symbol;
+          if (reduce_action[symbol] == 0) {
+            new_red.map[reduce_size].rule_number = accept_act;
+          } else {
+            new_red.map[reduce_size].rule_number =
                 reduce_action[symbol];
+          }
           reduce_size--;
         }
       }
@@ -951,27 +947,25 @@ static void overlay_sim_t_rows(void) {
     if (rules[rule_no].lhs == accept_image) {
       red = reduce[state_no];
       reduce_size = red.size;
-
       new_red = Allocate_reduce_map(reduce_size);
-
-      REDUCE_SYMBOL(new_red, 0) = DEFAULT_SYMBOL;
-      REDUCE_RULE_NO(new_red, 0) = error_act;
-
+      new_red.map[0].symbol = DEFAULT_SYMBOL;
+      new_red.map[0].rule_number = error_act;
       for (j = 1; j <= reduce_size; j++) {
-        REDUCE_SYMBOL(new_red, j) = REDUCE_SYMBOL(red, j);
-        REDUCE_RULE_NO(new_red, j) = accept_act;
+        new_red.map[j].symbol = red.map[j].symbol;
+        new_red.map[j].rule_number = accept_act;
       }
     } else {
-      for ALL_TERMINALS(j)
+      for ALL_TERMINALS(j) {
         reduce_action[j] = OMEGA;
-
+      }
       for (; state_no != NIL; state_no = state_list[state_no]) {
-        if (state_no > (int) num_states)
+        if (state_no > (int) num_states) {
           red = lastats[state_no].reduce;
-        else
+        } else {
           red = reduce[state_no];
+        }
         for (j = 1; j <= red.size; j++) {
-          symbol = REDUCE_SYMBOL(red, j);
+          symbol = red.map[j].symbol;
           if (reduce_action[symbol] == OMEGA) {
             reduce_action[symbol] = rule_no;
             default_saves++;
@@ -979,11 +973,9 @@ static void overlay_sim_t_rows(void) {
             num_reductions_saved++;
         }
       }
-
       new_red = Allocate_reduce_map(0);
-
-      REDUCE_SYMBOL(new_red, 0) = DEFAULT_SYMBOL;
-      REDUCE_RULE_NO(new_red, 0) = rule_no;
+      new_red.map[0].symbol = DEFAULT_SYMBOL;
+      new_red.map[0].rule_number = rule_no;
     }
     new_state_element[i].reduce = new_red;
   }
@@ -992,12 +984,13 @@ static void overlay_sim_t_rows(void) {
   /* Their default is ERROR_ACTION.                                    */
   for (i = empty_root; i != NIL; i = new_state_element[i].thread) {
     state_no = new_state_element[i].image;
-    if (state_no > (int) num_states)
+    if (state_no > (int) num_states) {
       red = lastats[state_no].reduce;
-    else
+    } else {
       red = reduce[state_no];
-    REDUCE_SYMBOL(red, 0) = DEFAULT_SYMBOL;
-    REDUCE_RULE_NO(red, 0) = error_act;
+    }
+    red.map[0].symbol = DEFAULT_SYMBOL;
+    red.map[0].rule_number = error_act;
     new_state_element[i].reduce = red;
   }
 
@@ -1023,9 +1016,9 @@ static void overlay_sim_t_rows(void) {
     row_size[i] = 0;
     sh = shift[new_state_element[i].shift_number];
     for (j = 1; j <= sh.size; j++) {
-      symbol = SHIFT_SYMBOL(sh, j);
-      if ((!shift_default_bit) ||
-          (SHIFT_ACTION(sh, j) != shiftdf[symbol])) {
+      symbol = sh.map[j].symbol;
+      if (!shift_default_bit ||
+          sh.map[j].action != shiftdf[symbol]) {
         row_size[i]++;
         frequency_count[symbol]++;
       }
@@ -1039,7 +1032,7 @@ static void overlay_sim_t_rows(void) {
     /* Note that the Default action is skipped !!! */
     red = new_state_element[i].reduce;
     for (j = 1; j <= red.size; j++) {
-      symbol = REDUCE_SYMBOL(red, j);
+      symbol = red.map[j].symbol;
       row_size[i]++;
       frequency_count[symbol]++;
     }
@@ -1075,13 +1068,13 @@ static void overlay_sim_t_rows(void) {
     for (i = 1; i <= num_shift_maps; i++) {
       sh = shift[i];
       for (j = 1; j <= sh.size; j++)
-        SHIFT_SYMBOL(sh, j) = symbol_map[SHIFT_SYMBOL(sh, j)];
+        sh.map[j].symbol = symbol_map[sh.map[j].symbol];
     }
 
     for (state_no = 1; state_no <= num_terminal_states; state_no++) {
       red = new_state_element[state_no].reduce;
       for (i = 1; i <= red.size; i++)
-        REDUCE_SYMBOL(red, i) = symbol_map[REDUCE_SYMBOL(red, i)];
+        red.map[i].symbol = symbol_map[red.map[i].symbol];
     }
 
     /* If ERROR_MAPS are requested, we also have to remap the original   */
@@ -1090,7 +1083,7 @@ static void overlay_sim_t_rows(void) {
       for ALL_STATES(state_no) {
         red = reduce[state_no];
         for (i = 1; i <= red.size; i++)
-          REDUCE_SYMBOL(red, i) = symbol_map[REDUCE_SYMBOL(red, i)];
+          red.map[i].symbol = symbol_map[red.map[i].symbol];
       }
     }
   }
@@ -1159,9 +1152,9 @@ static void overlap_t_rows(void) {
     int root_symbol = NIL;
     struct shift_header_type sh = shift[new_state_element[state_no].shift_number];
     for (i = 1; i <= sh.size; i++) {
-      symbol = SHIFT_SYMBOL(sh, i);
+      symbol = sh.map[i].symbol;
       if (!shift_default_bit ||
-          (SHIFT_ACTION(sh, i) != shiftdf[symbol])) {
+          sh.map[i].action != shiftdf[symbol]) {
         terminal_list[symbol] = root_symbol;
         root_symbol = symbol;
       }
@@ -1169,8 +1162,8 @@ static void overlap_t_rows(void) {
 
     struct reduce_header_type red = new_state_element[state_no].reduce;
     for (i = 1; i <= red.size; i++) {
-      terminal_list[REDUCE_SYMBOL(red, i)] = root_symbol;
-      root_symbol = REDUCE_SYMBOL(red, i);
+      terminal_list[red.map[i].symbol] = root_symbol;
+      root_symbol = red.map[i].symbol;
     }
 
     /* Look for a suitable index where to overlay the state.             */
@@ -1472,11 +1465,11 @@ static void print_tables(void) {
     indx = state_index[state_no];
     go_to = statset[state_no].go_to;
     for (j = 1; j <= go_to.size; j++) {
-      symbol = GOTO_SYMBOL(go_to, j);
+      symbol = go_to.map[j].symbol;
       i = indx + symbol;
       if (goto_default_bit || nt_check_bit)
         check[i] = symbol;
-      act = GOTO_ACTION(go_to, j);
+      act = go_to.map[j].action;
       if (act > 0) {
         action[i] = state_index[act] + num_rules;
         goto_count++;
@@ -1555,8 +1548,8 @@ static void print_tables(void) {
     indx = term_state_index[state_no];
     sh = shift[new_state_element[state_no].shift_number];
     for (j = 1; j <= sh.size; j++) {
-      symbol = SHIFT_SYMBOL(sh, j);
-      act = SHIFT_ACTION(sh, j);
+      symbol = sh.map[j].symbol;
+      act = sh.map[j].action;
       if ((!shift_default_bit) || (act != shiftdf[symbol])) {
         i = indx + symbol;
         check[i] = symbol;
@@ -1586,18 +1579,16 @@ static void print_tables(void) {
 
     red = new_state_element[state_no].reduce;
     for (j = 1; j <= red.size; j++) {
-      symbol = REDUCE_SYMBOL(red, j);
-      rule_no = REDUCE_RULE_NO(red, j);
+      symbol = red.map[j].symbol;
+      rule_no = red.map[j].rule_number;
       i = indx + symbol;
       check[i] = symbol;
       action[i] = rule_no;
       reduce_count++;
     }
-
-    rule_no = REDUCE_RULE_NO(red, 0);
+    rule_no = red.map[0].rule_number;
     if (rule_no != error_act)
       default_count++;
-
     check[indx] = DEFAULT_SYMBOL;
     if (shift_default_bit)
       action[indx] = state_no;
@@ -1704,9 +1695,8 @@ static void print_tables(void) {
     k = 0;
     for (state_no = 1; state_no <= num_terminal_states; state_no++) {
       struct reduce_header_type red;
-
       red = new_state_element[state_no].reduce;
-      field(REDUCE_RULE_NO(red, 0), 4);
+      field(red.map[0].rule_number, 4);
       k++;
       if (k == 18) {
         *output_ptr++ = '\n';
@@ -1753,7 +1743,7 @@ static void print_tables(void) {
       indx = shift_check_index[i];
       sh = shift[real_shift_number[i]];
       for (j = 1; j <= sh.size; j++) {
-        symbol = SHIFT_SYMBOL(sh, j);
+        symbol = sh.map[j].symbol;
         check[indx + symbol] = symbol;
       }
     }

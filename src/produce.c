@@ -81,35 +81,24 @@ void produce(void) {
   /*                                                               */
 
   int state_no,
-      state,
-      nt_root,
       item_no,
-      item_root,
       rule_no,
       symbol,
       nt,
-      i,
-      n;
+      i;
 
-  short *names_map;
-
-  struct node **goto_domain,
+  struct node
       *p,
       *q;
 
-  bool *name_used,
-      end_node;
-
-  SET_PTR set;
-
   stack = Allocate_short_array(num_symbols + 1);
   index_of = Allocate_short_array(num_symbols + 1);
-  names_map = Allocate_short_array(num_names + 1);
-  name_used = Allocate_boolean_array(num_names + 1);
+  short *names_map = Allocate_short_array(num_names + 1);
+  bool *name_used = Allocate_boolean_array(num_names + 1);
   item_list = Allocate_short_array(num_items + 1);
   nt_list = Allocate_short_array(num_non_terminals + 1);
   nt_list -= (num_terminals + 1);
-  set = (SET_PTR)
+  SET_PTR set = (SET_PTR)
       calloc(1, non_term_set_size * sizeof(BOOLEAN_CELL));
   if (set == NULL)
     nospace(__FILE__, __LINE__);
@@ -127,7 +116,7 @@ void produce(void) {
     nospace(__FILE__, __LINE__);
   direct_produces -= (num_terminals + 1);
 
-  goto_domain = (struct node **)
+  struct node **goto_domain = (struct node **)
       calloc(num_states + 1, sizeof(struct node *));
   if (goto_domain == NULL)
     nospace(__FILE__, __LINE__);
@@ -140,14 +129,14 @@ void produce(void) {
   /* Next, PRODUCES is initialized to compute RIGHT_MOST_PRODUCES.     */
   /* Also, we count the number of error rules and verify that they are */
   /* in the right format.                                              */
-  item_root = NIL;
+  int item_root = NIL;
   for ALL_NON_TERMINALS(nt) {
-    for (end_node = (p = clitems[nt]) == NULL;
+    for (bool end_node = (p = clitems[nt]) == NULL;
          !end_node; end_node = p == clitems[nt]) {
       p = p->next;
       item_no = p->value;
       symbol = item_table[item_no].symbol;
-      if (symbol IS_A_NON_TERMINAL) {
+      if (IS_A_NON_TERMINAL(symbol)) {
         i = item_table[item_no].suffix_index;
         if (IS_IN_SET(first, i, empty) &&
             (!IS_IN_NTSET(produces, symbol, nt - num_terminals))) {
@@ -166,7 +155,7 @@ void produce(void) {
       item_no += i;
       symbol = item_table[item_no].symbol;
       if (symbol == error_image) {
-        if (item_table[item_no + 1].symbol IS_A_NON_TERMINAL && i > 0) {
+        if (IS_A_NON_TERMINAL(item_table[item_no + 1].symbol) && i > 0) {
           symbol = item_table[item_no + 2].symbol;
           if (symbol == empty)
             num_error_rules++;
@@ -231,15 +220,13 @@ void produce(void) {
   nt_list[accept_image] = NIL;
 
   for ALL_STATES(state_no) {
-    struct goto_header_type go_to;
-
-    go_to = statset[state_no].go_to;
-    nt_root = NIL;
+    struct goto_header_type go_to = statset[state_no].go_to;
+    int nt_root = NIL;
     INIT_NTSET(set);
 
     for (i = 1; i <= go_to.size; i++) {
-      symbol = GOTO_SYMBOL(go_to, i);
-      state = GOTO_ACTION(go_to, i);
+      symbol = go_to.map[i].symbol;
+      int state = go_to.map[i].action;
       if (state < 0)
         rule_no = -state;
       else {
@@ -271,7 +258,7 @@ void produce(void) {
 
   /* Allocate and construct the permanent goto domain structure:      */
   /*   GD_INDEX and GD_RANGE.                                         */
-  n = 0;
+  int n = 0;
   gd_index = Allocate_short_array(num_states + 2);
   gd_range = Allocate_short_array(gotodom_size + 1);
 
@@ -508,7 +495,7 @@ static void process_scopes(void) {
          !end_node; end_node = (p == clitems[nt])) {
       p = p->next;
       for (item_no = p->value;
-           item_table[item_no].symbol IS_A_NON_TERMINAL;
+           IS_A_NON_TERMINAL(item_table[item_no].symbol);
            item_no++) {
         symbol = item_table[item_no].symbol;
         if (!IS_IN_NTSET(produces, nt, symbol - num_terminals)) {
@@ -558,7 +545,7 @@ static void process_scopes(void) {
       for (item_no = p->value;
            item_table[item_no].symbol != empty; item_no++) {
         symbol = item_table[item_no].symbol;
-        if (symbol IS_A_NON_TERMINAL) {
+        if (IS_A_NON_TERMINAL(symbol)) {
           if (!IS_IN_NTSET(produces, nt, symbol - num_terminals)) {
             NTSET_BIT_IN(produces, nt, symbol - num_terminals);
             q = Allocate_node();
@@ -588,7 +575,7 @@ static void process_scopes(void) {
 
   for ALL_ITEMS(item_no) {
     dot_symbol = item_table[item_no].symbol;
-    if (dot_symbol IS_A_NON_TERMINAL) {
+    if (IS_A_NON_TERMINAL(dot_symbol)) {
       next_item[item_no] = item_of[dot_symbol];
       item_of[dot_symbol] = item_no;
     }
@@ -621,7 +608,7 @@ static void process_scopes(void) {
                                   item_table[item_no].dot);
         }
       }
-    } else if (dot_symbol IS_A_NON_TERMINAL) {
+    } else if (IS_A_NON_TERMINAL(dot_symbol)) {
       symbol = rules[item_table[item_no].rule_number].lhs;
       if (!IS_IN_SET(first, item_table[item_no].suffix_index,
                      empty) &&
@@ -629,12 +616,12 @@ static void process_scopes(void) {
         if (is_scope(item_no)) {
           for (i = item_no + 1; ; i++) {
             symbol = item_table[i].symbol;
-            if (symbol IS_A_TERMINAL)
+            if (IS_A_TERMINAL(symbol))
               break;
             if (!null_nt[symbol])
               break;
           }
-          if (symbol IS_A_NON_TERMINAL) {
+          if (IS_A_NON_TERMINAL(symbol)) {
             for ALL_NON_TERMINALS(nt)
               symbol_seen[nt] = false;
             symbol = get_shift_symbol(symbol);
@@ -686,7 +673,7 @@ static void process_scopes(void) {
 
     go_to = statset[state_no].go_to;
     for (i = 1; i <= go_to.size; i++) {
-      symbol = GOTO_SYMBOL(go_to, i);
+      symbol = go_to.map[i].symbol;
       if (symbol_seen[symbol]) {
         if (states_of[symbol] == NULL) {
           nt_list[symbol] = nt_root;
@@ -751,7 +738,7 @@ process_scope_states: {
       element_size[i] = 0;
       for (p = states_of[symbol]; p != NULL; p = p->next) {
         element_size[i]++;
-        SET_COLLECTION_BIT(collection, i, p -> value);
+        SET_COLLECTION_BIT(collection, i, p->value);
       }
     }
 
@@ -870,7 +857,7 @@ process_scope_states: {
     rule_no = item_table[item_no].rule_number;
     scope[i].lhs_symbol = rules[rule_no].lhs;
     symbol = rhs_sym[rules[rule_no].rhs + item_table[item_no].dot];
-    if (symbol IS_A_TERMINAL)
+    if (IS_A_TERMINAL(symbol))
       scope[i].look_ahead = symbol;
     else {
       for ALL_NON_TERMINALS(j)
@@ -898,7 +885,7 @@ process_scope_states: {
            k < rules[rule_no + 1].rhs; /* symbols after dot */
            k++) {
         symbol = rhs_sym[k];
-        if (symbol IS_A_NON_TERMINAL) {
+        if (IS_A_NON_TERMINAL(symbol)) {
           if (!null_nt[symbol])
             scope_right_side[n++] = rhs_sym[k];
         } else if (symbol != error_image)
@@ -944,7 +931,7 @@ static bool is_scope(int item_no) {
 
   for (int i = item_no - item_table[item_no].dot; i < item_no; i++) {
     int symbol = item_table[i].symbol;
-    if (symbol IS_A_TERMINAL)
+    if (IS_A_TERMINAL(symbol))
       return true;
     if (!null_nt[symbol])
       return true;
@@ -1081,7 +1068,7 @@ static int insert_suffix(int item_no) {
   for (i = rules[rule_no].rhs + item_table[item_no].dot;
        i < rules[rule_no + 1].rhs; /* symbols after dot */
        i++) {
-    if (rhs_sym[i] IS_A_NON_TERMINAL) {
+    if (IS_A_NON_TERMINAL(rhs_sym[i])) {
       if (!null_nt[rhs_sym[i]]) {
         hash_address += rhs_sym[i];
         num_elements++;
@@ -1127,7 +1114,7 @@ static bool is_suffix_equal(int item_no1, int item_no2) {
 
   while (i <= dot1 && j <= dot2) /* non-nullable syms before dot */
   {
-    if (rhs_sym[i] IS_A_NON_TERMINAL) {
+    if (IS_A_NON_TERMINAL(rhs_sym[i])) {
       if (null_nt[rhs_sym[i]]) {
         i++;
         continue;
@@ -1137,7 +1124,7 @@ static bool is_suffix_equal(int item_no1, int item_no2) {
       continue;
     }
 
-    if (rhs_sym[j] IS_A_NON_TERMINAL) {
+    if (IS_A_NON_TERMINAL(rhs_sym[j])) {
       if (null_nt[rhs_sym[j]]) {
         j++;
         continue;
@@ -1155,7 +1142,7 @@ static bool is_suffix_equal(int item_no1, int item_no2) {
   }
 
   for (; i <= dot1; i++) {
-    if (rhs_sym[i] IS_A_NON_TERMINAL) {
+    if (IS_A_NON_TERMINAL(rhs_sym[i])) {
       if (!null_nt[rhs_sym[i]])
         return false;
     } else if (rhs_sym[i] != error_image)
@@ -1163,7 +1150,7 @@ static bool is_suffix_equal(int item_no1, int item_no2) {
   }
 
   for (; j <= dot2; j++) {
-    if (rhs_sym[j] IS_A_NON_TERMINAL) {
+    if (IS_A_NON_TERMINAL(rhs_sym[j])) {
       if (!null_nt[rhs_sym[j]])
         return false;
     } else if (rhs_sym[j] != error_image)
@@ -1251,12 +1238,13 @@ static int get_shift_symbol(int lhs_symbol) {
       int rule_no = item_table[item_no].rule_number;
       if (RHS_SIZE(rule_no) > 0) {
         int symbol = rhs_sym[rules[rule_no].rhs];
-        if (symbol IS_A_TERMINAL)
-          return (symbol);
-        else {
+        if (IS_A_TERMINAL(symbol)) {
+          return symbol;
+        } else {
           symbol = get_shift_symbol(symbol);
-          if (symbol != empty)
-            return (symbol);
+          if (symbol != empty) {
+            return symbol;
+          }
         }
       }
     }

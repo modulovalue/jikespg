@@ -77,11 +77,10 @@ static void trace_lalr_path(int state_no, int goto_indx) {
   /* to have a unique slot assigned to each pair [S, A] (where S is a  */
   /* state, and A is a non-terminal) in the automaton.                 */
   struct goto_header_type go_to = statset[state_no].go_to;
-  int state = GOTO_ACTION(go_to, goto_indx);
+  int state = go_to.map[goto_indx].action;
   if (state > 0) {
-    if (la_base[state] != OMEGA &&
-        lalr_level == 1 && (!single_productions_bit)) {
-      GOTO_LAPTR(go_to, goto_indx) = la_base[state];
+    if (la_base[state] != OMEGA && lalr_level == 1 && !single_productions_bit) {
+      go_to.map[goto_indx].laptr = la_base[state];
       return;
     }
     r = statset[state].kernel_items;
@@ -95,7 +94,7 @@ static void trace_lalr_path(int state_no, int goto_indx) {
   /* using the variable CONTAINS_EMPTY.                                  */
   la_top++; /* allocate new slot */
   INT_CHECK(la_top);
-  GOTO_LAPTR(go_to, goto_indx) = la_top;
+  go_to.map[goto_indx].laptr = la_top;
   bool contains_empty = false;
 
   for (; r != NULL; r = r->next) {
@@ -106,8 +105,8 @@ static void trace_lalr_path(int state_no, int goto_indx) {
       struct node *w = lpgaccess(state_no, item);
       for (struct node *t = w; t != NULL; p = t, t = t->next) {
         struct goto_header_type go_to = statset[t->value].go_to;
-        for (i = 1; GOTO_SYMBOL(go_to, i) != symbol; i++) {}
-        if (GOTO_LAPTR(go_to, i) == OMEGA)
+        for (i = 1; go_to.map[i].symbol != symbol; i++) {}
+        if (go_to.map[i].laptr == OMEGA)
           trace_lalr_path(t->value, i);
       }
 
@@ -121,7 +120,7 @@ static void trace_lalr_path(int state_no, int goto_indx) {
   /* NOTE that if CONTAINS_EMPTY is false, then STATE has to denote a */
   /* state number (positive value) and not a rule number (negative).  */
   if (!contains_empty)
-    la_base[state] = GOTO_LAPTR(go_to, goto_indx);
+    la_base[state] = go_to.map[goto_indx].laptr;
 }
 
 
@@ -190,10 +189,10 @@ static void compute_read(void) {
         v = lpgaccess(state_no, item_no);
         for (s = v; s != NULL; q = s, s = s->next) {
           struct goto_header_type go_to = statset[s->value].go_to;
-          for (i = 1; GOTO_SYMBOL(go_to, i) != lhs_symbol; i++) {}
-
-          if (GOTO_LAPTR(go_to, i) == OMEGA)
+          for (i = 1; go_to.map[i].symbol != lhs_symbol; i++) {}
+          if (go_to.map[i].laptr == OMEGA) {
             trace_lalr_path(s->value, i);
+          }
         }
 
         free_nodes(v, q);
@@ -214,15 +213,15 @@ static void compute_read(void) {
     if (lalr_level > 1 || single_productions_bit) {
       struct shift_header_type sh = shift[statset[state_no].shift_number];
       for (int j = 1; j <= sh.size; j++) {
-        if (SHIFT_ACTION(sh, j) < 0) {
-          rule_no = -SHIFT_ACTION(sh, j);
+        if (sh.map[j].action < 0) {
+          rule_no = -sh.map[j].action;
           lhs_symbol = rules[rule_no].lhs;
           item_no = adequate_item[rule_no]->value - 1;
           v = lpgaccess(state_no, item_no);
           for (s = v; s != NULL; q = s, s = s->next) {
             struct goto_header_type go_to = statset[s->value].go_to;
-            for (i = 1; GOTO_SYMBOL(go_to, i) != lhs_symbol; i++) {}
-            if (GOTO_LAPTR(go_to, i) == OMEGA)
+            for (i = 1; go_to.map[i].symbol != lhs_symbol; i++) {}
+            if (go_to.map[i].laptr == OMEGA)
               trace_lalr_path(s->value, i);
           }
 
@@ -235,7 +234,7 @@ static void compute_read(void) {
       if (lalr_level > 1 && state_no != 1) {
         q = statset[state_no].kernel_items;
         item_no = q->value - 1;
-        if (item_table[item_no].symbol IS_A_TERMINAL) {
+        if (IS_A_TERMINAL(item_table[item_no].symbol)) {
           ASSIGN_SET(read_set, state_no, first,
                      item_table[item_no].suffix_index);
           for (q = q->next; q != NULL; q = q->next) {
@@ -267,10 +266,10 @@ static void compute_read(void) {
   for ALL_STATES(state_no) {
     struct goto_header_type go_to = statset[state_no].go_to;
     for (i = 1; i <= go_to.size; i++) {
-      int la_ptr = GOTO_LAPTR(go_to, i);
+      int la_ptr = go_to.map[i].laptr;
       if (la_ptr != OMEGA) /* Follow Look-ahead needed */
       {
-        int state = GOTO_ACTION(go_to, i);
+        int state = go_to.map[i].action;
         if (state > 0) {
           if (la_base[state] != OMEGA) /* already computed */
           {
@@ -331,7 +330,7 @@ void la_traverse(int state_no, int goto_indx, int *stack_top) {
   struct node *r;
 
   struct goto_header_type go_to = statset[state_no].go_to;
-  int la_ptr = GOTO_LAPTR(go_to, goto_indx);
+  int la_ptr = go_to.map[goto_indx].laptr;
 
   struct node *s = Allocate_node(); /* Push LA_PTR down the stack */
   s->value = la_ptr;
@@ -344,7 +343,7 @@ void la_traverse(int state_no, int goto_indx, int *stack_top) {
   /* Compute STATE, action to perform on Goto symbol in question. If    */
   /* STATE is positive, it denotes a state to which to shift. If it is  */
   /* negative, it is a rule on which to perform a Goto-Reduce.          */
-  int state = GOTO_ACTION(go_to, goto_indx);
+  int state = go_to.map[goto_indx].action;
   if (state > 0) /* Not a Goto-Reduce action */
     r = statset[state].kernel_items;
   else
@@ -362,13 +361,14 @@ void la_traverse(int state_no, int goto_indx, int *stack_top) {
         /* RULE to its left hand side (SYMBOL). Q points to the   */
         /* GOTO_ELEMENT in question.                              */
         struct goto_header_type go_to = statset[t->value].go_to;
-        for (i = 1; GOTO_SYMBOL(go_to, i) != symbol; i++) {}
-        if (la_index[GOTO_LAPTR(go_to, i)] == OMEGA)
+        for (i = 1; go_to.map[i].symbol != symbol; i++) {}
+        if (la_index[go_to.map[i].laptr] == OMEGA) {
           la_traverse(t->value, i, stack_top);
+        }
         SET_UNION(la_set, la_ptr,
-                  la_set, GOTO_LAPTR(go_to, i));
+                  la_set, go_to.map[i].laptr);
         la_index[la_ptr] = MIN(la_index[la_ptr],
-                               la_index[GOTO_LAPTR(go_to, i)]);
+                               la_index[go_to.map[i].laptr]);
       }
 
       free_nodes(w, s);
@@ -420,14 +420,14 @@ void compute_la(int state_no, int item_no, SET_PTR look_ahead) {
     /* Search for GOTO action in Access-State after reducing rule to */
     /* its left hand side(LHS_SYMBOL). Q points to the state.        */
     struct goto_header_type go_to = statset[s->value].go_to;
-    for (i = 1; GOTO_SYMBOL(go_to, i) != lhs_symbol; i++) {}
+    for (i = 1; go_to.map[i].symbol != lhs_symbol; i++) {}
     /* If look-ahead after left hand side is not yet computed, */
     /* LA_TRAVERSE the graph to compute it.                    */
-    if (la_index[GOTO_LAPTR(go_to, i)] == OMEGA) {
+    if (la_index[go_to.map[i].laptr] == OMEGA) {
       int stack_top = 0;
       la_traverse(s->value, i, &stack_top);
     }
-    SET_UNION(look_ahead, 0, la_set, GOTO_LAPTR(go_to, i));
+    SET_UNION(look_ahead, 0, la_set, go_to.map[i].laptr);
   }
 
   RESET_BIT(look_ahead, empty); /* empty not valid look-ahead */
@@ -450,7 +450,7 @@ static void build_in_stat(void) {
     int n = statset[state_no].shift_number;
     struct shift_header_type sh = shift[n];
     for (i = 1; i <= sh.size; ++i) {
-      n = SHIFT_ACTION(sh, i);
+      n = sh.map[i].action;
       if (n > 0 && n <= num_states) /* A shift action? */
       {
         q = Allocate_node();
@@ -467,7 +467,7 @@ static void build_in_stat(void) {
 
     struct goto_header_type go_to = statset[state_no].go_to;
     for (i = 1; i <= go_to.size; i++) {
-      n = GOTO_ACTION(go_to, i);
+      n = go_to.map[i].action;
       if (n > 0) /* A goto action */
       {
         q = Allocate_node();
@@ -584,7 +584,7 @@ void mkrdcts(void) {
       n = statset[state_no].shift_number;
       struct shift_header_type sh = shift[n];
       for (i = 1; i <= sh.size; ++i) {
-        if (SHIFT_SYMBOL(sh, i) == error_image)
+        if (sh.map[i].symbol == error_image)
           no_shift_on_error_sym[state_no] = false;
       }
     }
@@ -811,8 +811,8 @@ void mkrdcts(void) {
     struct reduce_header_type red = Allocate_reduce_map(reduce_size);
     reduce[state_no] = red;
 
-    REDUCE_SYMBOL(red, 0) = DEFAULT_SYMBOL;
-    REDUCE_RULE_NO(red, 0) = default_rule;
+    red.map[0].symbol = DEFAULT_SYMBOL;
+    red.map[0].rule_number = default_rule;
     for (symbol = symbol_root;
          symbol != NIL; symbol = symbol_list[symbol]) {
       if (action[symbol] != NULL) {
@@ -821,8 +821,8 @@ void mkrdcts(void) {
             table_opt == OPTIMIZE_SPACE ||
             table_opt == OPTIMIZE_TIME ||
             single_productions_bit) {
-          REDUCE_SYMBOL(red, reduce_size) = symbol;
-          REDUCE_RULE_NO(red, reduce_size) = rule_no;
+          red.map[reduce_size].symbol = symbol;
+          red.map[reduce_size].rule_number = rule_no;
           reduce_size--;
         }
 

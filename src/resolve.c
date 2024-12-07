@@ -474,8 +474,8 @@ static void compute_cyclic(short state_no) {
 
   struct goto_header_type go_to = statset[state_no].go_to;
   for (int i = 1; i <= go_to.size; i++) {
-    int symbol = GOTO_SYMBOL(go_to, i);
-    act = GOTO_ACTION(go_to, i);
+    int symbol = go_to.map[i].symbol;
+    act = go_to.map[i].action;
     if (act > 0 && null_nt[symbol]) {
       /* We have a transition on a nullable nonterminal? */
       if (index_of[act] == OMEGA)
@@ -555,8 +555,8 @@ static void print_root_path(int item_no) {
 /* found, all items along the path are printed and SUCCESS is returned.*/
 /*  Otherwise, FAILURE is returned.                                    */
 static bool lalr_path_retraced(int state_no,
-                                  int goto_indx,
-                                  int conflict_symbol) {
+                               int goto_indx,
+                               int conflict_symbol) {
   int
       item,
       i;
@@ -566,11 +566,11 @@ static bool lalr_path_retraced(int state_no,
       *tail;
 
   struct goto_header_type go_to = statset[state_no].go_to;
-  lalr_visited[GOTO_LAPTR(go_to, goto_indx)] = true;
+  lalr_visited[go_to.map[goto_indx].laptr] = true;
 
   bool found = false;
 
-  int state = GOTO_ACTION(go_to, goto_indx);
+  int state = go_to.map[goto_indx].action;
   for (struct node *p = (state > 0
                            ? statset[state].kernel_items
                            : adequate_item[-state]);
@@ -586,9 +586,8 @@ static bool lalr_path_retraced(int state_no,
       struct node *w = lpgaccess(state_no, item);
       for (q = w; q != NULL; tail = q, q = q->next) {
         go_to = statset[q->value].go_to;
-        for (i = 1; GOTO_SYMBOL(go_to, i) != symbol; i++);
-
-        if (!lalr_visited[GOTO_LAPTR(go_to, i)]) {
+        for (i = 1; go_to.map[i].symbol != symbol; i++) {}
+        if (!lalr_visited[go_to.map[i].laptr]) {
           if (lalr_path_retraced(q->value, i, conflict_symbol)) {
             found = true;
             break;
@@ -630,8 +629,7 @@ static void print_relevant_lalr_items(int state_no,
   struct node *v = lpgaccess(state_no, item_no);
   for (p = v; p != NULL; tail = p, p = p->next) {
     struct goto_header_type go_to = statset[p->value].go_to;
-    for (i = 1; GOTO_SYMBOL(go_to, i) != lhs_symbol; i++);
-
+    for (i = 1; go_to.map[i].symbol != lhs_symbol; i++);
     if (lalr_path_retraced(p->value, i, conflict_symbol))
       break;
   }
@@ -685,7 +683,8 @@ static void print_relevant_slr_items(int item_no, int conflict_symbol) {
   slr_visited = Allocate_boolean_array(num_non_terminals);
   slr_visited -= (num_terminals + 1);
 
-  if (slr_trace(rules[item_table[item_no].rule_number].lhs, conflict_symbol)) {}
+  if (slr_trace(rules[item_table[item_no].rule_number].lhs, conflict_symbol)) {
+  }
   slr_visited += (num_terminals + 1);
   ffree(slr_visited);
 }
@@ -724,7 +723,7 @@ static void conflicts_initialization(void) {
     nt_items[i] = NIL;
 
   for ALL_ITEMS(i) {
-    if (item_table[i].symbol IS_A_NON_TERMINAL) {
+    if (IS_A_NON_TERMINAL(item_table[i].symbol)) {
       item_list[i] = nt_items[item_table[i].symbol];
       nt_items[item_table[i].symbol] = i;
     }
@@ -870,22 +869,22 @@ static struct stack_element *follow_sources(struct stack_element *stack,
   /* lookahead symbol (LA_SYMBOL) cannot possibly follow the         */
   /* nonterminal in question in this context, we simply abandon the  */
   /* search and return the NULL set.                                 */
-  if (symbol IS_A_NON_TERMINAL) {
+  if (IS_A_NON_TERMINAL(symbol)) {
     go_to = statset[state_no].go_to;
-    for (i = 1; GOTO_SYMBOL(go_to, i) != symbol; i++);
-    if (la_index[GOTO_LAPTR(go_to, i)] == OMEGA) {
+    for (i = 1; go_to.map[i].symbol != symbol; i++);
+    if (la_index[go_to.map[i].laptr] == OMEGA) {
       int stack_top = 0;
       la_traverse(state_no, i, &stack_top);
     }
 
-    if (!IS_IN_SET(la_set, GOTO_LAPTR(go_to, i), la_symbol))
+    if (!IS_IN_SET(la_set, go_to.map[i].laptr, la_symbol))
       return configs;
 
-    act = GOTO_ACTION(go_to, i);
+    act = go_to.map[i].action;
   } else {
     sh = shift[statset[state_no].shift_number];
-    for (i = 1; SHIFT_SYMBOL(sh, i) != symbol; i++);
-    act = SHIFT_ACTION(sh, i);
+    for (i = 1; sh.map[i].symbol != symbol; i++);
+    act = sh.map[i].action;
   }
 
   /* If the ACTion on the symbol is a shift or a goto, ...           */
@@ -897,7 +896,7 @@ static struct stack_element *follow_sources(struct stack_element *stack,
     /* configurations...                                           */
     sh = shift[statset[act].shift_number];
     for (i = 1; i <= sh.size; i++) {
-      if (SHIFT_SYMBOL(sh, i) == la_symbol)
+      if (sh.map[i].symbol == la_symbol)
         break;
     }
     if (i <= sh.size) /* there is a transition on la_symbol in act */
@@ -920,7 +919,7 @@ static struct stack_element *follow_sources(struct stack_element *stack,
     if (!cyclic[act]) {
       go_to = statset[act].go_to;
       for (i = 1; i <= go_to.size; i++) {
-        symbol = GOTO_SYMBOL(go_to, i);
+        symbol = go_to.map[i].symbol;
         if (null_nt[symbol]) {
           q = allocate_stack_element();
           q->state_number = act;
@@ -1040,14 +1039,15 @@ static void next_la(struct stack_element *stack,
   int state_no = stack->state_number;
 
   /* Find the transition defined on the symbol...                    */
-  if (symbol IS_A_NON_TERMINAL) {
+  if (IS_A_NON_TERMINAL(symbol)) {
     go_to = statset[state_no].go_to;
-    for (i = 1; GOTO_SYMBOL(go_to, i) != symbol; i++);
-    act = GOTO_ACTION(go_to, i);
+    for (i = 1; go_to.map[i].symbol != symbol; i++);
+    act = go_to.map[i].action;
   } else {
     struct shift_header_type sh = shift[statset[state_no].shift_number];
-    for (i = 1; SHIFT_SYMBOL(sh, i) != symbol; i++);
-    act = SHIFT_ACTION(sh, i);
+    for (i = 1; sh.map[i].symbol != symbol; i++) {
+    }
+    act = sh.map[i].action;
   }
 
   /* If the ACTion on the symbol is a shift or a goto, then all      */
@@ -1102,17 +1102,17 @@ static void next_la(struct stack_element *stack,
           struct node *v = lpgaccess(q->state_number, item_no);
           for (struct node *p = v; p != NULL; tail = p, p = p->next) {
             go_to = statset[p->value].go_to;
-            for (i = 1; GOTO_SYMBOL(go_to, i) != lhs_symbol; i++);
+            for (i = 1; go_to.map[i].symbol != lhs_symbol; i++);
 
             /* If look-ahead after left hand side is not   */
             /* yet computed,call LA_TRAVERSE to compute it.*/
-            if (la_index[GOTO_LAPTR(go_to, i)] == OMEGA) {
+            if (la_index[go_to.map[i].laptr] == OMEGA) {
               int stack_top = 0;
               la_traverse(p->value, i, &stack_top);
             }
 
             SET_UNION(look_ahead, 0,
-                      la_set, GOTO_LAPTR(go_to, i));
+                      la_set, go_to.map[i].laptr);
           }
 
           free_nodes(v, tail);
@@ -1131,7 +1131,7 @@ static void next_la(struct stack_element *stack,
 /* the stack in question. If yes, it returns TRUE. Otherwise, it       */
 /* inserts the stack into the table and returns FALSE.                 */
 static bool stack_was_seen(struct stack_element **stack_seen,
-                              struct stack_element *stack) {
+                           struct stack_element *stack) {
   struct stack_element *p;
   struct stack_element *q;
   struct stack_element *r;
@@ -1440,8 +1440,7 @@ static struct state_element *state_to_resolve_conflicts
       if (sh.size == num_shift_actions) {
         for (i = 1; i <= num_shift_actions; i++) {
           /* compare shift maps */
-          if (SHIFT_ACTION(sh, i) !=
-              action[SHIFT_SYMBOL(sh, i)]->value)
+          if (sh.map[i].action != action[sh.map[i].symbol]->value)
             break;
         }
 
@@ -1468,8 +1467,8 @@ static struct state_element *state_to_resolve_conflicts
 
       for (symbol = shift_root, i = 1;
            symbol != NIL; symbol = action_list[symbol], i++) {
-        SHIFT_SYMBOL(sh, i) = symbol;
-        SHIFT_ACTION(sh, i) = action[symbol]->value;
+        sh.map[i].symbol = symbol;
+        sh.map[i].action = action[symbol]->value;
       }
     }
   } else {
@@ -1500,18 +1499,19 @@ Build_reduce_map: {
           action[symbol]->value != default_rule ||
           table_opt == OPTIMIZE_TIME ||
           table_opt == OPTIMIZE_SPACE) {
-        REDUCE_SYMBOL(red, i) = symbol;
-        REDUCE_RULE_NO(red, i) = action[symbol]->value;
+        red.map[i].symbol = symbol;
+        red.map[i].rule_number = action[symbol]->value;
 
         i++;
       }
     }
 
-    REDUCE_SYMBOL(red, 0) = DEFAULT_SYMBOL;
-    if (default_opt > 0)
-      REDUCE_RULE_NO(red, 0) = default_rule;
-    else
-      REDUCE_RULE_NO(red, 0) = OMEGA;
+    red.map[0].symbol = DEFAULT_SYMBOL;
+    if (default_opt > 0) {
+      red.map[0].rule_number = default_rule;
+    } else {
+      red.map[0].rule_number = OMEGA;
+    }
   }
 
 
@@ -1670,7 +1670,7 @@ void resolve_conflicts(int state_no, struct node **action,
 
   struct shift_header_type sh = shift[statset[state_no].shift_number];
   for (int i = 1; i <= sh.size; i++) {
-    symbol = SHIFT_SYMBOL(sh, i);
+    symbol = sh.map[i].symbol;
 
     if (single_productions_bit && action[symbol] != NULL)
       add_conflict_symbol(state_no, symbol);
@@ -1684,7 +1684,7 @@ void resolve_conflicts(int state_no, struct node **action,
       q->previous = NULL;
       q->next = NULL;
 
-      act = SHIFT_ACTION(sh, i);
+      act = sh.map[i].action;
       if (act > 0)
         sources = add_configs(sources, act + num_rules, q);
       else
@@ -1738,7 +1738,7 @@ void resolve_conflicts(int state_no, struct node **action,
     /*  add them to the list of conflicts so they can be reported  */
     /* (if the CONFLICT option is on) and count them.              */
     if (action[symbol] != NULL) {
-      act = SHIFT_ACTION(sh, i);
+      act = sh.map[i].action;
 
       for (p = action[symbol]; p != NULL; tail = p, p = p->next) {
         if (conflicts_bit) {
@@ -1946,9 +1946,8 @@ void create_lastats(void) {
     struct shift_header_type sh = shift[shift_no];
     int shift_root = NIL;
     for (i = 1; i <= sh.size; i++) {
-      symbol = SHIFT_SYMBOL(sh, i);
-      shift_action[symbol] = SHIFT_ACTION(sh, i);
-
+      symbol = sh.map[i].symbol;
+      shift_action[symbol] = sh.map[i].action;
       shift_list[symbol] = shift_root;
       shift_root = symbol;
     }
@@ -1990,8 +1989,8 @@ void create_lastats(void) {
     for (symbol = shift_root, i = 1;
          symbol != NIL;
          shift_action[symbol] = OMEGA, symbol = shift_list[symbol], i++) {
-      SHIFT_SYMBOL(sh, i) = symbol;
-      SHIFT_ACTION(sh, i) = shift_action[symbol];
+      sh.map[i].symbol = symbol;
+      sh.map[i].action = shift_action[symbol];
     }
   }
 

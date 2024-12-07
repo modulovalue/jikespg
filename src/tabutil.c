@@ -474,9 +474,9 @@ void process_error_maps(void) {
     as_size[state_no] = sh.size;
     for (i = 1; i <= sh.size; i++) {
       if (table_opt == OPTIMIZE_TIME)
-        symbol = original[SHIFT_SYMBOL(sh, i)];
+        symbol = original[sh.map[i].symbol];
       else
-        symbol = SHIFT_SYMBOL(sh, i);
+        symbol = sh.map[i].symbol;
       SET_BIT_IN(action_symbols, state_no, symbol);
     }
 
@@ -484,9 +484,9 @@ void process_error_maps(void) {
     as_size[state_no] += red.size;
     for (i = 1; i <= red.size; i++) {
       if (table_opt == OPTIMIZE_TIME)
-        symbol = original[REDUCE_SYMBOL(red, i)];
+        symbol = original[red.map[i].symbol];
       else
-        symbol = REDUCE_SYMBOL(red, i);
+        symbol = red.map[i].symbol;
       SET_BIT_IN(action_symbols, state_no, symbol);
     }
   }
@@ -1139,18 +1139,18 @@ void compute_action_symbols_range(const short *state_start,
       for (bool end_node = (state = state_no) == NIL;
            !end_node; end_node = state == state_no) {
         state = state_stack[state];
-        struct shift_header_type sh = shift[statset[state].shift_number];
+        const struct shift_header_type sh = shift[statset[state].shift_number];
         for (j = 1; j <= sh.size; j++) {
-          symbol = SHIFT_SYMBOL(sh, j);
+          symbol = sh.map[j].symbol;
           if (symbol_list[symbol] == OMEGA) {
             symbol_list[symbol] = symbol_root;
             symbol_root = symbol;
           }
         }
 
-        struct reduce_header_type red = reduce[state];
+        const struct reduce_header_type red = reduce[state];
         for (j = 1; j <= red.size; j++) {
-          symbol = REDUCE_SYMBOL(red, j);
+          symbol = red.map[j].symbol;
           if (symbol_list[symbol] == OMEGA) {
             symbol_list[symbol] = symbol_root;
             symbol_root = symbol;

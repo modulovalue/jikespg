@@ -33,21 +33,21 @@ void ptstats(void) {
     /* headers for actions to be taken on the symbols.              */
     sh = shift[statset[state_no].shift_number];
     for (i = 1; i <= sh.size; i++) {
-      symbol = SHIFT_SYMBOL(sh, i);
+      symbol = sh.map[i].symbol;
       restore_symbol(temp, RETRIEVE_STRING(symbol));
       max_size = MAX(max_size, strlen(temp));
     }
 
     struct goto_header_type go_to = statset[state_no].go_to;
     for (i = 1; i <= go_to.size; i++) {
-      symbol = GOTO_SYMBOL(go_to, i);
+      symbol = go_to.map[i].symbol;
       restore_symbol(temp, RETRIEVE_STRING(symbol));
       max_size = MAX(max_size, strlen(temp));
     }
 
     red = reduce[state_no];
     for (i = 1; i <= red.size; i++) {
-      symbol = REDUCE_SYMBOL(red, i);
+      symbol = red.map[i].symbol;
       restore_symbol(temp, RETRIEVE_STRING(symbol));
       max_size = MAX(max_size, strlen(temp));
     }
@@ -62,16 +62,16 @@ void ptstats(void) {
       fprintf(syslis, "\n");
       ENDPAGE_CHECK;
       for (i = 1; i <= sh.size; i++) {
-        symbol = SHIFT_SYMBOL(sh, i);
+        symbol = sh.map[i].symbol;
         restore_symbol(temp, RETRIEVE_STRING(symbol));
         print_large_token(line, temp, "", max_size);
-        number = ABS(SHIFT_ACTION(sh, i));
-        if (SHIFT_ACTION(sh, i) > (short) num_states) {
+        number = ABS(sh.map[i].action);
+        if (sh.map[i].action > (short) num_states) {
           fprintf(syslis,
                   "\n%-*s    La/Sh  %d",
                   max_size, line, number);
           ENDPAGE_CHECK;
-        } else if (SHIFT_ACTION(sh, i) > 0) {
+        } else if (sh.map[i].action > 0) {
           fprintf(syslis,
                   "\n%-*s    Shift  %d",
                   max_size, line, number);
@@ -89,11 +89,11 @@ void ptstats(void) {
       fprintf(syslis, "\n");
       ENDPAGE_CHECK;
       for (i = 1; i <= go_to.size; i++) {
-        symbol = GOTO_SYMBOL(go_to, i);
+        symbol = go_to.map[i].symbol;
         restore_symbol(temp, RETRIEVE_STRING(symbol));
         print_large_token(line, temp, "", max_size);
-        number = ABS(GOTO_ACTION(go_to, i));
-        if (GOTO_ACTION(go_to, i) > 0) {
+        number = ABS(go_to.map[i].action);
+        if (go_to.map[i].action > 0) {
           fprintf(syslis,
                   "\n%-*s    Goto   %d",
                   max_size, line, number);
@@ -111,10 +111,10 @@ void ptstats(void) {
       fprintf(syslis, "\n");
       ENDPAGE_CHECK;
       for (i = 1; i <= red.size; i++) {
-        symbol = REDUCE_SYMBOL(red, i);
+        symbol = red.map[i].symbol;
         restore_symbol(temp, RETRIEVE_STRING(symbol));
         print_large_token(line, temp, "", max_size);
-        number = REDUCE_RULE_NO(red, i);
+        number = red.map[i].rule_number;
         if (rules[number].lhs != accept_image) {
           fprintf(syslis,
                   "\n%-*s    Reduce %d",
@@ -127,14 +127,12 @@ void ptstats(void) {
       }
     }
 
-    if (default_opt > 0) {
-      if (REDUCE_RULE_NO(red, 0) != OMEGA) {
-        fprintf(syslis,
-                "\n\nDefault reduction to rule  %d",
-                REDUCE_RULE_NO(red, 0));
-        output_line_no++;
-        ENDPAGE_CHECK;
-      }
+    if (default_opt > 0 && red.map[0].rule_number != OMEGA) {
+      fprintf(syslis,
+              "\n\nDefault reduction to rule  %d",
+              red.map[0].rule_number);
+      output_line_no++;
+      ENDPAGE_CHECK;
     }
   }
 
@@ -171,14 +169,14 @@ void ptstats(void) {
       /* the symbols.                                          */
       sh = shift[lastats[state_no].shift_number];
       for (i = 1; i <= sh.size; i++) {
-        symbol = SHIFT_SYMBOL(sh, i);
+        symbol = sh.map[i].symbol;
         restore_symbol(temp, RETRIEVE_STRING(symbol));
         max_size = MAX(max_size, strlen(temp));
       }
 
       red = lastats[state_no].reduce;
       for (i = 1; i <= red.size; i++) {
-        symbol = REDUCE_SYMBOL(red, i);
+        symbol = red.map[i].symbol;
         restore_symbol(temp, RETRIEVE_STRING(symbol));
         max_size = MAX(max_size, strlen(temp));
       }
@@ -192,16 +190,16 @@ void ptstats(void) {
       fprintf(syslis, "\n");
       ENDPAGE_CHECK;
       for (i = 1; i <= sh.size; i++) {
-        symbol = SHIFT_SYMBOL(sh, i);
+        symbol = sh.map[i].symbol;
         restore_symbol(temp, RETRIEVE_STRING(symbol));
         print_large_token(line, temp, "", max_size);
-        number = ABS(SHIFT_ACTION(sh, i));
-        if (SHIFT_ACTION(sh, i) > (short) num_states) {
+        number = ABS(sh.map[i].action);
+        if (sh.map[i].action > (short) num_states) {
           fprintf(syslis,
                   "\n%-*s    La/Sh  %d",
                   max_size, line, number);
           ENDPAGE_CHECK;
-        } else if (SHIFT_ACTION(sh, i) > 0) {
+        } else if (sh.map[i].action > 0) {
           fprintf(syslis,
                   "\n%-*s    Shift  %d",
                   max_size, line, number);
@@ -217,19 +215,19 @@ void ptstats(void) {
       fprintf(syslis, "\n");
       ENDPAGE_CHECK;
       for (i = 1; i <= red.size; i++) {
-        symbol = REDUCE_SYMBOL(red, i);
+        symbol = red.map[i].symbol;
         restore_symbol(temp, RETRIEVE_STRING(symbol));
         print_large_token(line, temp, "", max_size);
-        number = REDUCE_RULE_NO(red, i);
+        number = red.map[i].rule_number;
         fprintf(syslis,
                 "\n%-*s    Reduce %d", max_size, line, number);
         ENDPAGE_CHECK;
       }
 
-      if (default_opt > 0 && REDUCE_RULE_NO(red, 0) != OMEGA) {
+      if (default_opt > 0 && red.map[0].rule_number != OMEGA) {
         fprintf(syslis,
                 "\n\nDefault reduction to rule  %d",
-                REDUCE_RULE_NO(red, 0));
+                red.map[0].rule_number);
         output_line_no++;
         ENDPAGE_CHECK;
       }

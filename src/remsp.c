@@ -194,7 +194,7 @@ static void compute_sp_action(short state_no, short symbol, short action) {
           ASSIGN_SET(look_ahead, 0, follow, lhs_symbol);
         } else {
           i = index_of[lhs_symbol];
-          k = GOTO_LAPTR(go_to, i);
+          k = go_to.map[i].laptr;
           if (la_index[k] == OMEGA) {
             int stack_top = 0;
             la_traverse(state_no, i, &stack_top);
@@ -227,7 +227,7 @@ static void compute_sp_action(short state_no, short symbol, short action) {
         ASSIGN_SET(look_ahead, 0, follow, lhs_symbol);
       } else {
         i = index_of[lhs_symbol];
-        k = GOTO_LAPTR(go_to, i);
+        k = go_to.map[i].laptr;
         if (la_index[k] == OMEGA) {
           int stack_top = 0;
           la_traverse(state_no, i, &stack_top);
@@ -259,9 +259,9 @@ static short sp_default_action(short state_no, short rule_no) {
   /* While the rule we have at hand is a single production, ...         */
   while (IS_SP_RULE(rule_no)) {
     int lhs_symbol = rules[rule_no].lhs;
-    for (i = 1; GOTO_SYMBOL(go_to, i) != lhs_symbol; i++);
-
-    int action = GOTO_ACTION(go_to, i);
+    for (i = 1; go_to.map[i].symbol != lhs_symbol; i++) {
+    }
+    int action = go_to.map[i].action;
     if (action < 0) /* goto-reduce action? */
     {
       action = -action;
@@ -276,7 +276,7 @@ static short sp_default_action(short state_no, short rule_no) {
       /* or some rule with right-hand size 1.                       */
       struct reduce_header_type red = reduce[action];
       for (i = 1; i <= red.size; i++) {
-        action = REDUCE_RULE_NO(red, i);
+        action = red.map[i].rule_number;
         if (IS_SP_RULE(action)) {
           best_rule = action;
           break;
@@ -303,21 +303,19 @@ static short sp_default_action(short state_no, short rule_no) {
 /* action that follows the transition if an action on la_symbol is    */
 /* found, otherwise it returns the most suitable default action.      */
 static short sp_nt_action(short state_no, short lhs_symbol, short la_symbol) {
-  int
-      i;
-
+  int i;
   struct goto_header_type go_to = statset[state_no].go_to;
-  for (i = 1; GOTO_SYMBOL(go_to, i) != lhs_symbol; i++);
-
-  int action = GOTO_ACTION(go_to, i);
-  if (action < 0)
+  for (i = 1; go_to.map[i].symbol != lhs_symbol; i++) {
+  }
+  int action = go_to.map[i].action;
+  if (action < 0) {
     action = -action;
-  else {
+  } else {
     struct reduce_header_type red = reduce[action];
     action = OMEGA;
     for (i = 1; i <= red.size; i++) {
-      int rule_no = REDUCE_RULE_NO(red, i);
-      if (REDUCE_SYMBOL(red, i) == la_symbol) {
+      int rule_no = red.map[i].rule_number;
+      if (red.map[i].symbol == la_symbol) {
         action = rule_no;
         break;
       } else if (action == OMEGA && IS_SP_RULE(rule_no))
@@ -370,19 +368,19 @@ static void compute_update_actions(short source_state,
                                    short state_no, short symbol) {
   struct update_action_element *p;
 
-  struct reduce_header_type red = reduce[state_no];
+  const struct reduce_header_type red = reduce[state_no];
 
   for (int i = 1; i <= red.size; i++) {
-    if (IS_SP_RULE(REDUCE_RULE_NO(red, i))) {
-      int rule_no = sp_action[symbol][REDUCE_SYMBOL(red, i)];
+    if (IS_SP_RULE(red.map[i].rule_number)) {
+      int rule_no = sp_action[symbol][red.map[i].symbol];
       if (rule_no == OMEGA)
         rule_no = sp_default_action(source_state,
-                                    REDUCE_RULE_NO(red, i));
+                                    red.map[i].rule_number);
 
       /* Lookup the update map to see if a previous update was made */
       /* in STATE_NO on SYMBOL...                                   */
       for (p = update_action[state_no]; p != NULL; p = p->next) {
-        if (p->symbol == REDUCE_SYMBOL(red, i))
+        if (p->symbol == red.map[i].symbol)
           break;
       }
 
@@ -398,13 +396,13 @@ static void compute_update_actions(short source_state,
         p->next = update_action[state_no];
         update_action[state_no] = p;
 
-        p->symbol = REDUCE_SYMBOL(red, i);
+        p->symbol = red.map[i].symbol;
         p->action = rule_no;
         p->state = source_state;
       } else if ((rule_no != p->action) &&
-                 (p->action != REDUCE_RULE_NO(red, i))) {
-        p->action = greatest_common_ancestor(REDUCE_RULE_NO(red, i),
-                                             REDUCE_SYMBOL(red, i),
+                 (p->action != red.map[i].rule_number)) {
+        p->action = greatest_common_ancestor(red.map[i].rule_number,
+                                             red.map[i].symbol,
                                              source_state, rule_no,
                                              p->state,
                                              p->action);
@@ -791,8 +789,9 @@ void remove_single_productions(void) {
       /* before we process the next loop, because index_of is   */
       /* a global variable that is used in the routine          */
       /* compute_sp_action.                                     */
-      for (i = 1; i <= go_to.size; i++)
-        index_of[GOTO_SYMBOL(go_to, i)] = i;
+      for (i = 1; i <= go_to.size; i++) {
+        index_of[go_to.map[i].symbol] = i;
+      }
 
       /* Traverse first the goto map, then the shift map and    */
       /* for each symbol that is the right-hand side of a single*/
@@ -800,21 +799,19 @@ void remove_single_productions(void) {
       /* lookahead set that can follow this transition and add  */
       /* the symbol to the set of candidates (in symbol_list).  */
       for (i = 1; i <= go_to.size; i++) {
-        symbol = GOTO_SYMBOL(go_to, i);
+        symbol = go_to.map[i].symbol;
         if (IS_SP_RHS(symbol)) {
-          compute_sp_action(state_no, symbol,
-                            GOTO_ACTION(go_to, i));
+          compute_sp_action(state_no, symbol, go_to.map[i].action);
           symbol_list[symbol] = symbol_root;
           symbol_root = symbol;
         }
       }
 
       for (i = 1; i <= sh.size; i++) {
-        symbol = SHIFT_SYMBOL(sh, i);
+        symbol = sh.map[i].symbol;
         index_of[symbol] = i;
         if (IS_SP_RHS(symbol)) {
-          compute_sp_action(state_no, symbol,
-                            SHIFT_ACTION(sh, i));
+          compute_sp_action(state_no, symbol, sh.map[i].action);
           symbol_list[symbol] = symbol_root;
           symbol_root = symbol;
         }
@@ -831,8 +828,7 @@ void remove_single_productions(void) {
           lhs_symbol = rules[rule_no].lhs;
           if (index_of[lhs_symbol] != OMEGA) {
             if (symbol_list[lhs_symbol] == OMEGA) {
-              compute_sp_action(state_no, lhs_symbol,
-                                GOTO_ACTION(go_to, index_of[lhs_symbol]));
+              compute_sp_action(state_no, lhs_symbol, go_to.map[index_of[lhs_symbol]].action);
               symbol_list[lhs_symbol] = symbol_root;
               symbol_root = lhs_symbol;
             }
@@ -876,9 +872,9 @@ void remove_single_productions(void) {
         symbol_root = symbol_list[symbol];
 
         if (IS_SP_RHS(symbol)) {
-          if (symbol IS_A_TERMINAL)
-            action = SHIFT_ACTION(sh, index_of[symbol]);
-          else action = GOTO_ACTION(go_to, index_of[symbol]);
+          if (IS_A_TERMINAL(symbol))
+            action = sh.map[index_of[symbol]].action;
+          else action = go_to.map[index_of[symbol]].action;
 
           /* If the transition is a lookahead shift, do nothing.*/
           /* If the action is a goto- or shift-reduce, compute  */
@@ -943,8 +939,7 @@ void remove_single_productions(void) {
 
               if (sp_rule_count == 1 && IS_SP_RULE(rule_head)) {
                 lhs_symbol = rules[rule_head].lhs;
-                action = GOTO_ACTION(go_to,
-                                     index_of[lhs_symbol]);
+                action = go_to.map[index_of[lhs_symbol]].action;
               } else {
                 action = sp_state_map(rule_head,
                                       item_no,
@@ -952,11 +947,9 @@ void remove_single_productions(void) {
                                       sp_action_count,
                                       symbol);
               }
-
               p = allocate_action_element();
               p->symbol = symbol;
               p->action = action;
-
               p->next = new_action[state_no];
               new_action[state_no] = p;
             }
@@ -1013,8 +1006,8 @@ void remove_single_productions(void) {
   for (j = 1; j <= num_shift_maps; j++) {
     sh = shift[j];
     for (i = 1; i <= sh.size; i++) {
-      if (SHIFT_ACTION(sh, i) > num_states)
-        SHIFT_ACTION(sh, i) += (max_sp_state - num_states);
+      if (sh.map[i].action > num_states)
+        sh.map[i].action += max_sp_state - num_states;
     }
   }
 
@@ -1073,13 +1066,13 @@ void remove_single_productions(void) {
 
     red = Allocate_reduce_map(reduce_size);
     reduce[state_no] = red;
-    REDUCE_SYMBOL(red, 0) = DEFAULT_SYMBOL;
-    REDUCE_RULE_NO(red, 0) = default_rule;
+    red.map[0].symbol = DEFAULT_SYMBOL;
+    red.map[0].rule_number = default_rule;
 
     for (actionp = state->action_root;
          actionp != NULL; actionp = actionp->next) {
-      REDUCE_SYMBOL(red, reduce_size) = actionp->symbol;
-      REDUCE_RULE_NO(red, reduce_size) = actionp->action;
+      red.map[reduce_size].symbol = actionp->symbol;
+      red.map[reduce_size].rule_number = actionp->action;
       reduce_size--;
     }
   }
@@ -1113,10 +1106,10 @@ void remove_single_productions(void) {
 
       red = reduce[state_no];
       for (i = 1; i <= red.size; i++)
-        index_of[REDUCE_SYMBOL(red, i)] = i;
+        index_of[red.map[i].symbol] = i;
 
       for (p = update_action[state_no]; p != NULL; p = p->next)
-        REDUCE_RULE_NO(red, index_of[p -> symbol]) = p->action;
+        red.map[index_of[p -> symbol]].rule_number = p->action;
     }
 
     /* Update initial automaton with transitions into new SP      */
@@ -1129,13 +1122,14 @@ void remove_single_productions(void) {
       /* transition and copy the shift map into the vector      */
       /* shift_transition.                                      */
       go_to = statset[state_no].go_to;
-      for (i = 1; i <= go_to.size; i++)
-        index_of[GOTO_SYMBOL(go_to, i)] = i;
+      for (i = 1; i <= go_to.size; i++) {
+        index_of[go_to.map[i].symbol] = i;
+      }
 
       sh = shift[statset[state_no].shift_number];
       for (i = 1; i <= sh.size; i++) {
-        index_of[SHIFT_SYMBOL(sh, i)] = i;
-        shift_transition[SHIFT_SYMBOL(sh, i)] = SHIFT_ACTION(sh, i);
+        index_of[sh.map[i].symbol] = i;
+        shift_transition[sh.map[i].symbol] = sh.map[i].action;
       }
 
       /* Iterate over the new action and update the goto map    */
@@ -1145,15 +1139,15 @@ void remove_single_productions(void) {
       any_shift_action = false;
 
       for (p = new_action[state_no]; p != NULL; p = p->next) {
-        if (p->symbol IS_A_NON_TERMINAL) {
-          if (GOTO_ACTION(go_to, index_of[p -> symbol]) < 0 &&
+        if (IS_A_NON_TERMINAL(p->symbol)) {
+          if (go_to.map[index_of[p->symbol]].action < 0 &&
               p->action > 0) {
             num_goto_reduces--;
             num_gotos++;
           }
-          GOTO_ACTION(go_to, index_of[p -> symbol]) = p->action;
+          go_to.map[index_of[p->symbol]].action = p->action;
         } else {
-          if (SHIFT_ACTION(sh, index_of[p -> symbol]) < 0 &&
+          if (sh.map[index_of[p->symbol]].action < 0 &&
               p->action > 0) {
             num_shift_reduces--;
             num_shifts++;
@@ -1172,7 +1166,7 @@ void remove_single_productions(void) {
 
         hash_address = sh.size;
         for (i = 1; i <= sh.size; i++) /* Compute Hash location */
-          hash_address += SHIFT_SYMBOL(sh, i);
+          hash_address += sh.map[i].symbol;
         hash_address %= SHIFT_TABLE_SIZE;
 
         /* Search HASH_ADDRESS location for shift map that matches    */
@@ -1185,8 +1179,7 @@ void remove_single_productions(void) {
           sh2 = shift[new_shift[j].shift_number];
           if (sh.size == sh2.size) {
             for (i = 1; i <= sh.size; i++)
-              if (SHIFT_ACTION(sh2, i) !=
-                  shift_transition[SHIFT_SYMBOL(sh2, i)])
+              if (sh2.map[i].action != shift_transition[sh2.map[i].symbol])
                 break;
             if (i > sh.size)
               break; /* for (j = shift_table[ ... */
@@ -1200,9 +1193,9 @@ void remove_single_productions(void) {
         if (j == NIL) {
           sh2 = Allocate_shift_map(sh.size);
           for (i = 1; i <= sh.size; i++) {
-            symbol = SHIFT_SYMBOL(sh, i);
-            SHIFT_SYMBOL(sh2, i) = symbol;
-            SHIFT_ACTION(sh2, i) = shift_transition[symbol];
+            symbol = sh.map[i].symbol;
+            sh2.map[i].symbol = symbol;
+            sh2.map[i].action = shift_transition[symbol];
           }
           num_shift_maps++;
           shift[num_shift_maps] = sh2;

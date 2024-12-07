@@ -50,7 +50,7 @@
     <setting file="file://$PROJECT_DIR$/src/timetab.c" root0="FORCE_HIGHLIGHTING" />
   </component>
   <component name="ProblemsViewState">
-    <option name="selectedTabId" value="ProjectErrors" />
+    <option name="selectedTabId" value="CurrentFile" />
   </component>
   <component name="ProjectApplicationVersion">
     <option name="ide" value="CLion" />
@@ -114,7 +114,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1733492983409</updated>
-      <workItem from="1733492984507" duration="19344000" />
+      <workItem from="1733492984507" duration="22080000" />
     </task>
     <servers />
   </component>

@@ -664,11 +664,11 @@ void print_state(int state_no) {
   /* state from one of those shift actions.                            */
   struct shift_header_type sh = shift[statset[state_no].shift_number];
   for (i = 1; i <= sh.size; i++) {
-    int next_state = SHIFT_ACTION(sh, i);
+    int next_state = sh.map[i].action;
     while (next_state > (int) num_states) {
       struct shift_header_type next_sh = shift[lastats[next_state].shift_number];
       if (next_sh.size > 0)
-        next_state = SHIFT_ACTION(next_sh, 1);
+        next_state = next_sh.map[1].action;
       else
         next_state = 0;
     }
@@ -694,12 +694,12 @@ void print_state(int state_no) {
   /* GOTOS and GOTO-REDUCES are analogous to SHIFTS and SHIFT-REDUCES. */
   struct goto_header_type go_to = statset[state_no].go_to;
   for (i = 1; i <= go_to.size; i++) {
-    if (GOTO_ACTION(go_to, i) > 0) {
-      q = statset[GOTO_ACTION(go_to, i)].kernel_items;
+    if (go_to.map[i].action > 0) {
+      q = statset[go_to.map[i].action].kernel_items;
       if (q == NULL) /* single production state? */
-        q = statset[GOTO_ACTION(go_to, i)].complete_items;
+        q = statset[go_to.map[i].action].complete_items;
     } else
-      q = adequate_item[-GOTO_ACTION(go_to, i)];
+      q = adequate_item[-go_to.map[i].action];
 
     for (; q != NULL; q = q->next) {
       item_no = q->value - 1;

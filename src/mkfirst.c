@@ -261,7 +261,7 @@ void mkfirst(void) {
       item_table[item_no].dot = j;
 
       if (lalr_level > 1 ||
-          symbol IS_A_NON_TERMINAL ||
+          IS_A_NON_TERMINAL(symbol) ||
           symbol == error_image) {
         if (i == k)
           item_table[item_no].suffix_index = first_of_empty;
@@ -270,7 +270,7 @@ void mkfirst(void) {
       } else
         item_table[item_no].suffix_index = NIL;
 
-      if (symbol IS_A_NON_TERMINAL) {
+      if (IS_A_NON_TERMINAL(symbol)) {
         next_item[item_no] = nt_items[symbol];
         nt_items[symbol] = item_no;
       }
@@ -404,7 +404,7 @@ void mkfirst(void) {
         p = p->next;
         item_no = p->value;
         symbol = item_table[item_no].symbol;
-        if (symbol IS_A_NON_TERMINAL) {
+        if (IS_A_NON_TERMINAL(symbol)) {
           i = item_table[item_no].suffix_index;
           if (IS_IN_SET(first, i, empty) && !IS_IN_NTSET(produces, nt, symbol - num_terminals)) {
             NTSET_BIT_IN(produces, nt, symbol - num_terminals);
@@ -474,7 +474,7 @@ void mkfirst(void) {
         rule_no = next_rule[rule_no];
         item_no = first_item_of[rule_no];
         symbol = item_table[item_no].symbol;
-        if (symbol IS_A_NON_TERMINAL) {
+        if (IS_A_NON_TERMINAL(symbol)) {
           ASSIGN_SET(first, i, follow, symbol);
         }
       }
@@ -608,7 +608,7 @@ static void compute_closure(int lhs_symbol) {
                 ? empty
                 : rhs_sym[rules[rule_no].rhs]);
 
-    if (symbol IS_A_NON_TERMINAL) {
+    if (IS_A_NON_TERMINAL(symbol)) {
       if (nont_list[symbol] == OMEGA) {
         if (index_of[symbol] == OMEGA) /* if first time seen */
           compute_closure(symbol);
@@ -754,7 +754,7 @@ static bool is_nullable_rhs(short *rhs_start, int rule_no) {
        rhs_start[rule_no] <= rules[rule_no + 1].rhs - 1;
        rhs_start[rule_no]++) {
     int symbol = rhs_sym[rhs_start[rule_no]];
-    if (symbol IS_A_TERMINAL)
+    if (IS_A_TERMINAL(symbol))
       return false;
     else if (!null_nt[symbol]) /* symbol is a non-terminal */
       return false;
@@ -802,7 +802,7 @@ static void compute_first(int nt) {
 
     for ENTIRE_RHS(i, rule_no) {
       symbol = rhs_sym[i];
-      if (symbol IS_A_NON_TERMINAL) {
+      if (IS_A_NON_TERMINAL(symbol)) {
         if (index_of[symbol] == OMEGA)
           compute_first(symbol);
         index_of[nt] = MIN(index_of[nt], index_of[symbol]);
@@ -810,7 +810,7 @@ static void compute_first(int nt) {
         ASSIGN_SET(temp_set, 0, nt_first, symbol);
         RESET_BIT(temp_set, empty);
         SET_UNION(nt_first, nt, temp_set, 0);
-        blocked = NOT(null_nt[symbol]);
+        blocked = !null_nt[symbol];
       } else {
         SET_BIT_IN(nt_first, nt, symbol);
         blocked = true;
@@ -959,7 +959,7 @@ static bool is_terminal_rhs(short *rhs_start,
        rhs_start[rule_no] <= rules[rule_no + 1].rhs - 1;
        rhs_start[rule_no]++) {
     int symbol = rhs_sym[rhs_start[rule_no]];
-    if (symbol IS_A_NON_TERMINAL) {
+    if (IS_A_NON_TERMINAL(symbol)) {
       if (!produces_terminals[symbol])
         return false;
     }
@@ -1012,7 +1012,7 @@ static short first_map(int root, int tail) {
 static void s_first(int root, int tail, int index) {
   int symbol = (root > tail ? empty : rhs_sym[root]);
 
-  if (symbol IS_A_TERMINAL) {
+  if (IS_A_TERMINAL(symbol)) {
     INIT_FIRST(index);
     SET_BIT_IN(first, index, symbol); /* add it to set */
   } else {
@@ -1022,7 +1022,7 @@ static void s_first(int root, int tail, int index) {
   for (int i = root + 1; i <= tail && IS_IN_SET(first, index, empty); i++) {
     symbol = rhs_sym[i];
     RESET_BIT_IN(first, index, empty); /* remove EMPTY */
-    if (symbol IS_A_TERMINAL) {
+    if (IS_A_TERMINAL(symbol)) {
       SET_BIT_IN(first, index, symbol); /* add it to set */
     } else {
       SET_UNION(first, index, nt_first, symbol);
@@ -1036,10 +1036,7 @@ static void s_first(int root, int tail, int index) {
 /* PRODUCES[symbol].                                              */
 static void compute_produces(int symbol) {
   int new_symbol;
-
-  struct node
-      *q;
-
+  struct node *q;
   stack[++top] = symbol;
   int indx = top;
   index_of[symbol] = indx;
@@ -1158,7 +1155,7 @@ static void print_unreachables(void) {
       rule_no = next_rule[rule_no];
       for ENTIRE_RHS(i, rule_no) {
         symbol = rhs_sym[i];
-        if (symbol IS_A_TERMINAL)
+        if (IS_A_TERMINAL(symbol))
           symbol_list[symbol] = NIL;
         else if (symbol_list[symbol] == OMEGA) {
           symbol_list[symbol] = nt_root;
@@ -1265,7 +1262,7 @@ static void print_xref(void) {
     item_no = first_item_of[rule_no];
     for ENTIRE_RHS(i, rule_no) {
       symbol = rhs_sym[i];
-      if (symbol IS_A_TERMINAL) {
+      if (IS_A_TERMINAL(symbol)) {
         next_item[item_no] = t_items[symbol];
         t_items[symbol] = item_no;
       }
@@ -1291,7 +1288,7 @@ static void print_xref(void) {
       print_large_token(line, tok, "", PRINT_LINE_SIZE - 7);
       strcat(line, "  ==>> ");
       const int offset = strlen(line) - 1;
-      if (symbol IS_A_NON_TERMINAL) {
+      if (IS_A_NON_TERMINAL(symbol)) {
         for (bool end_node = (rule_no = lhs_rule[symbol]) == NIL;
              !end_node;
              end_node = rule_no == lhs_rule[symbol]) {

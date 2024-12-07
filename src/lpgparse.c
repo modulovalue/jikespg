@@ -420,12 +420,12 @@ static void options(void) {
                (memcmp(ohalfword, token, len) == 0) ||
                (memcmp(ohalfword2, token, len) == 0) ||
                (memcmp(ohalfword3, token, len) == 0))
-        byte_bit = NOT(flag);
+        byte_bit = !flag;
       else if ((strcmp(token, "JI") == 0) ||
                (memcmp(ojikes, token, len) == 0))
         jikes_bit = 1;
       else if (len >= 2 && memcmp(olalr, token, len) == 0) {
-        slr_bit = NOT(flag);
+        slr_bit = !flag;
         lalr_level = 1;
       } else if (len >= 2 && memcmp(olist, token, len) == 0)
         list_bit = flag;
@@ -2120,7 +2120,7 @@ static void make_rules_map(void) {
       if (list_bit) /* Proper LHS will be updated after printing */
         rules[i].lhs = OMEGA;
       else rules[i].lhs = rules[i - 1].lhs;
-    } else if (rulehdr[i].lhs IS_A_TERMINAL) {
+    } else if (IS_A_TERMINAL(rulehdr[i].lhs)) {
       restore_symbol(temp, RETRIEVE_STRING(rulehdr[i].lhs));
       sprintf(msg_line,
               "In rule %d: terminal \"%s\" used as left hand side",
@@ -2132,8 +2132,6 @@ static void make_rules_map(void) {
   }
 
   rules[num_rules + 1].rhs = rhs_ct; /* Fence !! */
-
-  return;
 }
 
 
@@ -2162,8 +2160,6 @@ static struct line_elemt *alloc_line(void) {
 static void free_line(struct line_elemt *p) {
   p->link = line_pool_root;
   line_pool_root = p;
-
-  return;
 }
 
 

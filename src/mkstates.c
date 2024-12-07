@@ -194,7 +194,7 @@ static void mklr0(void) {
          q = q->next) {
       item_no = q->value;
       symbol = item_table[item_no].symbol; /* symbol after dot */
-      if (symbol IS_A_NON_TERMINAL) /* Dot symbol */
+      if (IS_A_NON_TERMINAL(symbol)) /* Dot symbol */
       {
         if (nt_list[symbol] == OMEGA) /* not yet seen */
         {
@@ -276,7 +276,7 @@ static void mklr0(void) {
           /* PARTITION not defined on symbol */
           list[symbol] = root; /* add to list */
           root = symbol;
-          if (symbol IS_A_TERMINAL) /* Update transition count */
+          if (IS_A_TERMINAL(symbol)) /* Update transition count */
             shift_size++;
           else
             goto_size++;
@@ -361,7 +361,7 @@ static void mklr0(void) {
       /* Since the lookahead set computation is based on the GOTO maps,*/
       /* all these maps and their element maps should be kept as       */
       /* separate entities.                                            */
-      if (symbol IS_A_TERMINAL) /* terminal? add to SHIFT map */
+      if (IS_A_TERMINAL(symbol)) /* terminal? add to SHIFT map */
       {
         shift_action[symbol] = action;
         shift_list[symbol] = shift_root;
@@ -376,9 +376,9 @@ static void mklr0(void) {
       /* field will be used later in the routine MKRDCTS to point to a */
       /* look-ahead set.                                               */
       else {
-        GOTO_SYMBOL(go_to, goto_size) = symbol; /* symbol field */
-        GOTO_ACTION(go_to, goto_size) = action; /* state field  */
-        GOTO_LAPTR(go_to, goto_size) = OMEGA; /* la_ptr field */
+        go_to.map[goto_size].symbol = symbol; /* symbol field */
+        go_to.map[goto_size].action = action; /* state field  */
+        go_to.map[goto_size].laptr = OMEGA; /* la_ptr field */
         goto_size--;
         if (action > 0)
           num_gotos++;
@@ -426,9 +426,9 @@ static void mklr0(void) {
         if (sh.size == shift_size) {
           for (i = 1; i <= shift_size; i++) /* Compare shift maps */
           {
-            if (SHIFT_ACTION(sh, i) !=
-                shift_action[SHIFT_SYMBOL(sh, i)])
+            if (sh.map[i].action != shift_action[sh.map[i].symbol]) {
               break;
+            }
           }
 
           if (i > shift_size) /* Are they equal ? */
@@ -459,10 +459,9 @@ static void mklr0(void) {
       state->next_shift = shift_table[hash_address];
       shift_table[hash_address] = state;
 
-      for (symbol = shift_root;
-           symbol != NIL; symbol = shift_list[symbol]) {
-        SHIFT_SYMBOL(sh, shift_size) = symbol;
-        SHIFT_ACTION(sh, shift_size) = shift_action[symbol];
+      for (symbol = shift_root; symbol != NIL; symbol = shift_list[symbol]) {
+        sh.map[shift_size].symbol = symbol;
+        sh.map[shift_size].action = shift_action[symbol];
         shift_action[symbol] = OMEGA;
         shift_size--;
       }

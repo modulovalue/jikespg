@@ -219,7 +219,6 @@ static const int PRINT_LINE_SIZE = 80;
 static const int PARSER_LINE_SIZE = 80;
 static const int MAX_LINE_SIZE = 256;
 
-#undef  PAGE_SIZE
 static const int PAGE_SIZE = 55;
 static const int OPTIMIZE_TIME = 1;
 static const int OPTIMIZE_SPACE = 2;
@@ -235,8 +234,6 @@ static const int SHIFT_TABLE_UBOUND = 400;
 static const int SHIFT_TABLE_SIZE = SHIFT_TABLE_UBOUND + 1; /* 401 is a prime */
 static const int SCOPE_UBOUND = 100;
 static const int SCOPE_SIZE = SCOPE_UBOUND + 1; /* 101 is prime */
-#define IS_A_TERMINAL      <= num_terminals
-#define IS_A_NON_TERMINAL  > num_terminals
 
 static const char SPACE = ' ';
 static const char COMMA = ',';
@@ -258,48 +255,39 @@ static const int DEFELMT_INCREMENT = 16;
 
 static const int IOBUFFER_SIZE = 655360;
 
-/**                                                               **/
 /**                         ITERATION MACROS                      **/
-/**                                                               **/
 /* The following macros (ALL_) are used to iterate over a sequence.*/
-#define ALL_LA_STATES(indx) \
-        (indx = num_states + 1; indx <= (int) max_la_state; indx++)
+#define ALL_LA_STATES(indx) (indx = num_states + 1; indx <= max_la_state; indx++)
 
-#define ALL_TERMINALS(indx) \
-        (indx = 1; indx <= num_terminals; indx++)
-#define ALL_TERMINALS_BACKWARDS(indx) \
-        (indx = num_terminals; indx >= 1; indx--)
+#define ALL_TERMINALS(indx) (indx = 1; indx <= num_terminals; indx++)
 
-#define ALL_NON_TERMINALS(indx) \
-        (indx = num_terminals + 1; indx <= num_symbols; indx++)
-#define ALL_NON_TERMINALS_BACKWARDS(indx) \
-        (indx = num_symbols; indx >= num_terminals + 1; indx--)
+#define ALL_TERMINALS_BACKWARDS(indx) (indx = num_terminals; indx >= 1; indx--)
+
+#define ALL_NON_TERMINALS(indx) (indx = num_terminals + 1; indx <= num_symbols; indx++)
+
+#define ALL_NON_TERMINALS_BACKWARDS(indx) (indx = num_symbols; indx >= num_terminals + 1; indx--)
 
 #define ALL_SYMBOLS(indx) (indx = 1; indx <= num_symbols; indx++)
 
-#define ALL_ITEMS(indx) (indx = 1; indx <= (int) num_items; indx++)
+#define ALL_ITEMS(indx) (indx = 1; indx <= num_items; indx++)
 
-#define ALL_STATES(indx) (indx = 1; indx <= (int) num_states; indx++)
+#define ALL_STATES(indx) (indx = 1; indx <= num_states; indx++)
 
 #define ALL_RULES(indx) (indx = 0; indx <= num_rules; indx++)
-#define ALL_RULES_BACKWARDS(indx) \
-        (indx = num_rules; indx >= 0; indx--)
 
-#define ENTIRE_RHS(indx, rule_no) (indx = rules[rule_no].rhs;\
-                                   indx < rules[(rule_no) + 1].rhs;\
-                                   indx++)
-#define RHS_SIZE(rule_no) (rules[(rule_no) + 1].rhs - rules[rule_no].rhs)
+#define ALL_RULES_BACKWARDS(indx) (indx = num_rules; indx >= 0; indx--)
 
-/**                                                               **/
+#define ENTIRE_RHS(indx, rule_no) (indx = rules[rule_no].rhs; indx < rules[(rule_no) + 1].rhs; indx++)
+
+
 /**                      MISCELLANEOUS MACROS                     **/
-/**                                                               **/
 #define TOUPPER(c) (islower(c) ? toupper(c) : c)
-#define MAX(a,b)   (((a) > (b)) ? (a) : (b))
-#define MIN(a,b)   (((a) < (b)) ? (a) : (b))
+
+#define MAX(a,b) (((a) > (b)) ? (a) : (b))
+
+#define MIN(a,b) (((a) < (b)) ? (a) : (b))
 
 #define ABS(x) (((x) < 0) ? -(x) : (x))
-
-#define NOT(item) (! item)
 
 /* The following two macros check whether the value of an      */
 /* integer variable exceeds the maximum limit for a short or a long   */
@@ -309,16 +297,14 @@ static const int IOBUFFER_SIZE = 655360;
 /* Otherwise, if INT and LONG are of the same size, as is usually the */
 /* case on large systems, this check is meaningless - too late !!!    */
 #define SHORT_CHECK(var) \
-    if (var > SHRT_MAX) \
-    { \
+    if (var > SHRT_MAX) { \
         PRNTERR("The limit of a short int value" \
                 " has been exceeded by " #var); \
         exit(12); \
     }
 
 #define INT_CHECK(var) \
-    if (var > INT_MAX) \
-    { \
+    if (var > INT_MAX) { \
         PRNTERR("The limit of an int value" \
                 " has been exceeded by " #var); \
         exit(12); \
@@ -347,19 +333,6 @@ static const int IOBUFFER_SIZE = 655360;
         fprintf(syslis,"***ERROR: %s\n",msg);\
         ENDPAGE_CHECK; \
     }
-
-/**                                                               **/
-/**     MACROS FOR DEREFERENCING AUTOMATON HEADER STRUCTURES      **/
-/**                                                               **/
-#define SHIFT_SYMBOL(hdr, indx)   (((hdr).map)[indx].symbol)
-#define SHIFT_ACTION(hdr, indx)   (((hdr).map)[indx].action)
-
-#define GOTO_SYMBOL(hdr, indx)    (((hdr).map)[indx].symbol)
-#define GOTO_ACTION(hdr, indx)    (((hdr).map)[indx].action)
-#define GOTO_LAPTR(hdr, indx)     (((hdr).map)[indx].laptr)
-
-#define REDUCE_SYMBOL(hdr, indx)  (((hdr).map)[indx].symbol)
-#define REDUCE_RULE_NO(hdr, indx) (((hdr).map)[indx].rule_number)
 
 /**                                                               **/
 /**                         OUTPUT MACROS                         **/
@@ -401,8 +374,8 @@ struct ruletab_type {
 };
 
 struct shift_type {
-  short symbol,
-      action;
+  short symbol;
+  short action;
 };
 
 struct shift_header_type {
@@ -411,8 +384,8 @@ struct shift_header_type {
 };
 
 struct reduce_type {
-  short symbol,
-      rule_number;
+  short symbol;
+  short rule_number;
 };
 
 struct reduce_header_type {
@@ -422,8 +395,8 @@ struct reduce_header_type {
 
 struct goto_type {
   int laptr;
-  short symbol,
-      action;
+  short symbol;
+  short action;
 };
 
 struct goto_header_type {
@@ -433,13 +406,13 @@ struct goto_header_type {
 
 struct lastats_type {
   struct reduce_header_type reduce;
-  short shift_number,
-      in_state;
+  short shift_number;
+  short in_state;
 };
 
 struct statset_type {
-  struct node *kernel_items,
-      *complete_items;
+  struct node *kernel_items;
+  struct node *complete_items;
   struct goto_header_type go_to;
   short shift_number;
 };
@@ -476,9 +449,9 @@ extern FILE *syslis,
 
 
 /*  The variables below are global counters.          */
-extern long num_items,
-    num_states,
-    max_la_state;
+extern long num_items;
+extern long num_states;
+extern long max_la_state;
 
 extern int num_symbols,
     symno_size, /* NUM_SYMBOLS + 1 */
@@ -489,6 +462,14 @@ extern int num_symbols,
     num_conflict_elements,
     num_single_productions,
     gotodom_size;
+
+static bool IS_A_TERMINAL(int i) {
+  return i <= num_terminals;
+}
+
+static bool IS_A_NON_TERMINAL(int i) {
+  return i > num_terminals;
+}
 
 /*  The variables below are used for options setting. */
 extern bool list_bit,
@@ -569,6 +550,9 @@ extern short *rhs_sym;
 
 extern struct ruletab_type *rules;
 
+static int RHS_SIZE(int rule_no) {
+  return rules[rule_no + 1].rhs - rules[rule_no].rhs;
+}
 /* CLOSURE is a mapping from non-terminal to a set (linked-list) of    */
 /* non-terminals.  The set consists of non-terminals that are          */
 /* automatically introduced via closure when the original non-terminal */
