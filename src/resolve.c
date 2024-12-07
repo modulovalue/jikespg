@@ -58,10 +58,10 @@ static struct visited_element {
 /* See routines ALLOCATE_STACK_ELEMENT, FREE_STACK_ELEMENT,            */
 /*              ADD_DANGLING_STACK, FREE_DANGLING_STACK.               */
 static struct sources_element {
-  struct stack_element **configs,
-      **stack_seen;
-  short *list,
-      root;
+  struct stack_element **configs;
+  struct stack_element **stack_seen;
+  short *list;
+  short root;
 } sources;
 
 struct stack_element {
@@ -279,7 +279,8 @@ static struct sources_element allocate_sources(void) {
 static struct sources_element clear_sources(struct sources_element sources) {
   struct stack_element *tail;
   for (int act = sources.root; act != NIL; act = sources.list[act]) {
-    for (struct stack_element *p = sources.configs[act]; p != NULL; tail = p, p = p->next) {}
+    for (struct stack_element *p = sources.configs[act]; p != NULL; tail = p, p = p->next) {
+    }
     free_stack_elements(sources.configs[act], tail);
     sources.configs[act] = NULL;
   }
@@ -339,19 +340,17 @@ static struct stack_element *union_config_sets(struct stack_element *root1,
     /*    3. List 2 stack is either a prefix of list 1 stack, or   */
     /*       it is smaller!                                        */
     /*       Remove list 2 stack and add it to new list.           */
-    if (p1 == p2) /* are both p1 and p2 NULL? */
-    {
+    if (p1 == p2) {
+      /* are both p1 and p2 NULL? */
       p2 = root2;
       root2 = root2->next;
       add_dangling_stack_element(p2);
-    } else if ((p1 == NULL) ||
-               ((p2 != NULL) && (p1->state_number < p2->state_number))) {
+    } else if (p1 == NULL || (p2 != NULL && p1->state_number < p2->state_number)) {
       p1 = root1;
       root1 = root1->next;
-
-      if (root == NULL)
+      if (root == NULL) {
         p1->next = p1;
-      else {
+      } else {
         p1->next = root->next;
         root->next = p1;
       }
@@ -360,9 +359,9 @@ static struct stack_element *union_config_sets(struct stack_element *root1,
       p2 = root2;
       root2 = root2->next;
 
-      if (root == NULL)
+      if (root == NULL) {
         p2->next = p2;
-      else {
+      } else {
         p2->next = root->next;
         root->next = p2;
       }
@@ -378,9 +377,10 @@ static struct stack_element *union_config_sets(struct stack_element *root1,
   if (root != NULL) {
     struct stack_element *tail = root;
     root = root->next;
-    tail->next = (root1 == NULL ? root2 : root1);
-  } else root = (root1 == NULL ? root2 : root1);
-
+    tail->next = root1 == NULL ? root2 : root1;
+  } else {
+    root = root1 == NULL ? root2 : root1;
+  }
   return root;
 }
 
@@ -393,18 +393,14 @@ static struct stack_element *union_config_sets(struct stack_element *root1,
 static struct sources_element add_configs(struct sources_element sources,
                                           const int action,
                                           struct stack_element *config_root) {
-  if (config_root == NULL) /* The new set is empty? Do nothing */
-    return sources;
-
-  if (sources.configs[action] == NULL) /* The previous was empty? */
-  {
-    sources.list[action] = sources.root;
-    sources.root = action;
+  if (config_root != NULL) {
+    if (sources.configs[action] == NULL) {
+      /* The previous was empty? */
+      sources.list[action] = sources.root;
+      sources.root = action;
+    }
+    sources.configs[action] = union_config_sets(sources.configs[action], config_root);
   }
-
-  sources.configs[action] = union_config_sets(sources.configs[action],
-                                              config_root);
-
   return sources;
 }
 
@@ -416,7 +412,8 @@ static void clear_visited(void) {
   struct node *tail;
 
   for (int state_no = visited.root; state_no != NIL; state_no = visited.list[state_no]) {
-    for (struct node *p = visited.map[state_no]; p != NULL; tail = p, p = p->next) {}
+    for (struct node *p = visited.map[state_no]; p != NULL; tail = p, p = p->next) {
+    }
     free_nodes(visited.map[state_no], tail);
     visited.map[state_no] = NULL;
   }
@@ -528,14 +525,14 @@ static bool trace_root(const int lhs_symbol) {
 /* item to a given item (ITEM_NO) passed to it as argument.            */
 static void print_root_path(const int item_no) {
   symbol_seen = Allocate_boolean_array(num_non_terminals);
-  symbol_seen -= (num_terminals + 1);
+  symbol_seen -= num_terminals + 1;
 
   if (trace_root(rules[item_table[item_no].rule_number].lhs)) {
     fprintf(syslis, "\n"); /* Leave one blank line after root trace. */
     ENDPAGE_CHECK();
   }
 
-  symbol_seen += (num_terminals + 1);
+  symbol_seen += num_terminals + 1;
   ffree(symbol_seen);
 }
 
@@ -565,10 +562,10 @@ static bool lalr_path_retraced(const int state_no,
   bool found = false;
 
   const int state = go_to.map[goto_indx].action;
-  for (const struct node *p = (state > 0
-                           ? statset[state].kernel_items
-                           : adequate_item[-state]);
-       (p != NULL) && (!found); p = p->next) {
+  for (const struct node *p = state > 0
+                                ? statset[state].kernel_items
+                                : adequate_item[-state];
+       p != NULL && !found; p = p->next) {
     item = p->value - 1;
     if (IS_IN_SET(first, item_table[item].suffix_index, conflict_symbol)) {
       /* Conflict_symbol can be read in state? */
@@ -580,7 +577,8 @@ static bool lalr_path_retraced(const int state_no,
       struct node *w = lpgaccess(state_no, item);
       for (q = w; q != NULL; tail = q, q = q->next) {
         go_to = statset[q->value].go_to;
-        for (i = 1; go_to.map[i].symbol != symbol; i++) {}
+        for (i = 1; go_to.map[i].symbol != symbol; i++) {
+        }
         if (!lalr_visited[go_to.map[i].laptr]) {
           if (lalr_path_retraced(q->value, i, conflict_symbol)) {
             found = true;
@@ -588,15 +586,15 @@ static bool lalr_path_retraced(const int state_no,
           }
         }
       }
-      for (; q != NULL; tail = q, q = q->next) {}
+      for (; q != NULL; tail = q, q = q->next) {
+      }
       free_nodes(w, tail);
     }
   }
-
-  if (found)
+  if (found) {
     print_item(item);
-
-  return (found);
+  }
+  return found;
 }
 
 
@@ -622,12 +620,14 @@ static void print_relevant_lalr_items(const int state_no,
   struct node *v = lpgaccess(state_no, item_no);
   for (p = v; p != NULL; tail = p, p = p->next) {
     const struct goto_header_type go_to = statset[p->value].go_to;
-    for (i = 1; go_to.map[i].symbol != lhs_symbol; i++) {}
+    for (i = 1; go_to.map[i].symbol != lhs_symbol; i++) {
+    }
     if (lalr_path_retraced(p->value, i, conflict_symbol))
       break;
   }
 
-  for (; p != NULL; tail = p, p = p->next) {}
+  for (; p != NULL; tail = p, p = p->next) {
+  }
 
   free_nodes(v, tail);
 
@@ -674,11 +674,11 @@ static bool slr_trace(const int lhs_symbol, const int conflict_symbol) {
 /* to the conflict symbol.                                             */
 static void print_relevant_slr_items(const int item_no, const int conflict_symbol) {
   slr_visited = Allocate_boolean_array(num_non_terminals);
-  slr_visited -= (num_terminals + 1);
+  slr_visited -= num_terminals + 1;
 
   if (slr_trace(rules[item_table[item_no].rule_number].lhs, conflict_symbol)) {
   }
-  slr_visited += (num_terminals + 1);
+  slr_visited += num_terminals + 1;
   ffree(slr_visited);
 }
 
@@ -690,7 +690,7 @@ static void conflicts_initialization(void) {
   /* in recreating paths from the Start item. See the routines       */
   /* PRINT_RELEVANT_SLR_ITEMS and PRINT_ROOT_PATH.                   */
   nt_items = Allocate_short_array(num_non_terminals);
-  nt_items -= (num_terminals + 1);
+  nt_items -= num_terminals + 1;
   item_list = Allocate_short_array(num_items + 1);
 
   int i = (PRINT_LINE_SIZE - 11) / 2 - 1;
@@ -864,7 +864,8 @@ static struct stack_element *follow_sources(struct stack_element *stack,
   /* search and return the NULL set.                                 */
   if (IS_A_NON_TERMINAL(symbol)) {
     go_to = statset[state_no].go_to;
-    for (i = 1; go_to.map[i].symbol != symbol; i++) {}
+    for (i = 1; go_to.map[i].symbol != symbol; i++) {
+    }
     if (la_index[go_to.map[i].laptr] == OMEGA) {
       int stack_top = 0;
       la_traverse(state_no, i, &stack_top);
@@ -876,7 +877,8 @@ static struct stack_element *follow_sources(struct stack_element *stack,
     act = go_to.map[i].action;
   } else {
     sh = shift[statset[state_no].shift_number];
-    for (i = 1; sh.map[i].symbol != symbol; i++) {}
+    for (i = 1; sh.map[i].symbol != symbol; i++) {
+    }
     act = sh.map[i].action;
   }
 
@@ -934,9 +936,9 @@ static struct stack_element *follow_sources(struct stack_element *stack,
 
   /* We now iterate over the kernel set of items associated with the */
   /* ACTion defined on SYMBOL...                                     */
-  for (const struct node *item_ptr = (act > 0
-                                  ? statset[act].kernel_items
-                                  : adequate_item[-act]);
+  for (const struct node *item_ptr = act > 0
+                                       ? statset[act].kernel_items
+                                       : adequate_item[-act];
        item_ptr != NULL; item_ptr = item_ptr->next) {
     int item_no = item_ptr->value;
 
@@ -967,7 +969,8 @@ static struct stack_element *follow_sources(struct stack_element *stack,
           /* Compute the item in the root state of the stack,*/
           /* and find the root state...                      */
           item_no -= stack->size;
-          for (q = stack; q->size != 1; q = q->previous) {}
+          for (q = stack; q->size != 1; q = q->previous) {
+          }
 
           /* We are now back in the main automaton, find all */
           /* sources where the item was introduced through   */
@@ -1034,7 +1037,8 @@ static void next_la(struct stack_element *stack,
   /* Find the transition defined on the symbol...                    */
   if (IS_A_NON_TERMINAL(symbol)) {
     go_to = statset[state_no].go_to;
-    for (i = 1; go_to.map[i].symbol != symbol; i++) {}
+    for (i = 1; go_to.map[i].symbol != symbol; i++) {
+    }
     act = go_to.map[i].action;
   } else {
     const struct shift_header_type sh = shift[statset[state_no].shift_number];
@@ -1054,9 +1058,9 @@ static void next_la(struct stack_element *stack,
   /* ACTion defined on SYMBOL...                                     */
   /* Recall that the READ_SET of ACT is but the union of the FIRST   */
   /* map defined on the suffixes of the items in the kernel of ACT.  */
-  for (const struct node *item_ptr = (act > 0
-                                  ? statset[act].kernel_items
-                                  : adequate_item[-act]);
+  for (const struct node *item_ptr = act > 0
+                                       ? statset[act].kernel_items
+                                       : adequate_item[-act];
        item_ptr != NULL; item_ptr = item_ptr->next) {
     int item_no = item_ptr->value;
 
@@ -1085,7 +1089,8 @@ static void next_la(struct stack_element *stack,
           /* Compute the item in the root state of the stack,*/
           /* and find the root state...                      */
           item_no -= stack->size;
-          for (q = stack; q->size != 1; q = q->previous) {}
+          for (q = stack; q->size != 1; q = q->previous) {
+          }
 
           /* We are now back in the main automaton, find all */
           /* sources where the item was introduced through   */
@@ -1095,7 +1100,8 @@ static void next_la(struct stack_element *stack,
           struct node *v = lpgaccess(q->state_number, item_no);
           for (struct node *p = v; p != NULL; tail = p, p = p->next) {
             go_to = statset[p->value].go_to;
-            for (i = 1; go_to.map[i].symbol != lhs_symbol; i++) {}
+            for (i = 1; go_to.map[i].symbol != lhs_symbol; i++) {
+            }
 
             /* If look-ahead after left hand side is not   */
             /* yet computed,call LA_TRAVERSE to compute it.*/
@@ -1344,7 +1350,7 @@ static struct state_element *state_to_resolve_conflicts
       shift_root = symbol;
     } else if (action[symbol]->value > num_rules) {
       num_shift_actions++;
-      (action[symbol]->value) -= num_rules;
+      action[symbol]->value -= num_rules;
       action_list[symbol] = shift_root;
       shift_root = symbol;
     } else {
@@ -1512,7 +1518,8 @@ Build_reduce_map: {
 clean_up_and_return:
   free_sources(new_sources);
   for (symbol = symbol_root; symbol != NIL; symbol = symbol_list[symbol]) {
-    for (p = action[symbol]; p != NULL; tail = p, p = p->next) {}
+    for (p = action[symbol]; p != NULL; tail = p, p = p->next) {
+    }
     if (action[symbol] != NULL)
       free_nodes(action[symbol], tail);
   }
@@ -1537,7 +1544,7 @@ void init_rmpself(const SET_PTR produces) {
   int nt;
 
   rmpself = Allocate_boolean_array(num_non_terminals);
-  rmpself -= (num_terminals + 1);
+  rmpself -= num_terminals + 1;
 
   /* Note that each element of the map produces is a boolean vector  */
   /* that is indexable in the range 1..num_non_terminals. Since each */
@@ -1610,7 +1617,7 @@ void init_lalrk_process(void) {
 /* additional lookahead.                                               */
 void exit_lalrk_process(void) {
   if (lalr_level > 1) {
-    rmpself += (num_terminals + 1);
+    rmpself += num_terminals + 1;
     ffree(rmpself);
     ffree(shift_table);
     ffree(cyclic);
@@ -1627,7 +1634,7 @@ void exit_lalrk_process(void) {
 /* If we had to report conflicts, free the SLR support structures.     */
 void free_conflict_space(void) {
   if (nt_items != NULL) {
-    nt_items += (num_terminals + 1);
+    nt_items += num_terminals + 1;
     ffree(nt_items);
     ffree(item_list);
   }
@@ -1640,7 +1647,7 @@ void free_conflict_space(void) {
 /* more lookaheads. Shift-Reduce conflicts are processed first,        */
 /* followed by Reduce-Reduce conflicts.                                */
 void resolve_conflicts(const int state_no, struct node **action,
-                       const short *symbol_list, const int symbol_root) {
+                       const short *symbol_list, const int reduce_root) {
   struct node *p,
       *tail;
 
@@ -1758,7 +1765,7 @@ void resolve_conflicts(const int state_no, struct node **action,
   /* not occur with Shift-Reduce conflicts.                          */
   rr_conflict_root = NULL;
 
-  for (symbol = symbol_root;
+  for (symbol = reduce_root;
        symbol != NIL; symbol = symbol_list[symbol]) {
     if (action[symbol] != NULL) {
       if (single_productions_bit && action[symbol]->next != NULL)
@@ -1866,7 +1873,7 @@ void create_lastats(void) {
              sizeof(struct lastats_type));
   if (lastats == NULL)
     nospace(__FILE__, __LINE__);
-  lastats -= (num_states + 1);
+  lastats -= num_states + 1;
 
   shift = (struct shift_header_type *)
       realloc(shift,

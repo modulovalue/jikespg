@@ -82,7 +82,7 @@ static void remap_non_terminals(void) {
   /* based on the new mapping of the non-terminals.                     */
   if (goto_default_bit) {
     short *temp_goto_default = Allocate_short_array(num_non_terminals);
-    temp_goto_default -= (num_terminals + 1);
+    temp_goto_default -= num_terminals + 1;
 
     for (last_symbol = num_symbols;
          last_symbol > num_terminals; last_symbol--)
@@ -97,7 +97,7 @@ static void remap_non_terminals(void) {
     /* to hold the original map.                                  */
     for ALL_NON_TERMINALS(symbol)
       temp_goto_default[symbol_map[symbol]] = gotodef[symbol];
-    gotodef += (num_terminals + 1);
+    gotodef += num_terminals + 1;
     ffree(gotodef);
     gotodef = temp_goto_default;
   } else
@@ -108,9 +108,9 @@ static void remap_non_terminals(void) {
   /* arrangement obtained by the sorting.                               */
   sortdes(ordered_state, row_size, 1, num_states, last_symbol);
 
-  frequency_symbol += (num_terminals + 1);
+  frequency_symbol += num_terminals + 1;
   ffree(frequency_symbol);
-  frequency_count += (num_terminals + 1);
+  frequency_count += num_terminals + 1;
   ffree(frequency_count);
   ffree(row_size);
 }
@@ -128,9 +128,9 @@ static void overlap_nt_rows(void) {
   long num_bytes;
 
   num_table_entries = num_gotos + num_goto_reduces + num_states;
-  increment_size = MAX((num_table_entries / 100 * increment),
-                       (last_symbol + 1));
-  table_size = MIN((num_table_entries + increment_size), MAX_TABLE_SIZE);
+  increment_size = MAX(num_table_entries / 100 * increment,
+                       last_symbol + 1);
+  table_size = MIN(num_table_entries + increment_size, MAX_TABLE_SIZE);
 
   /* Allocate space for table, and initlaize the AVAIL_POOL list.  The     */
   /* variable FIRST_INDEX keeps track of the first element in the doubly-  */
@@ -241,7 +241,7 @@ static void overlap_nt_rows(void) {
           num_table_entries);
   PRNT(msg_line);
 
-  const int percentage = ((action_size - num_table_entries) * 1000)
+  const int percentage = (action_size - num_table_entries) * 1000
                    / num_table_entries;
   sprintf(msg_line, "Percentage of increase: %d.%d%%",
           percentage / 10, percentage % 10);
@@ -257,10 +257,10 @@ static void overlap_nt_rows(void) {
     num_bytes = 2 * (action_size + check_size);
 
   if (goto_default_bit)
-    num_bytes += ((long) 2 * num_non_terminals);
+    num_bytes += (long) 2 * num_non_terminals;
   total_bytes = num_bytes;
 
-  const int k_bytes = (num_bytes / 1024) + 1;
+  const int k_bytes = num_bytes / 1024 + 1;
 
   sprintf(msg_line, "Storage required for base Tables: %ld Bytes, %dK",
           num_bytes, k_bytes);
@@ -356,7 +356,7 @@ static void merge_similar_t_rows(void) {
 
     for (i = table[hash_address]; i != NIL; i = new_state_element[i].link) {
       for (r = reduce_root, q = new_state_element_reduce_nodes[i];
-           (r != NULL) && (q != NULL);
+           r != NULL && q != NULL;
            r = r->next, q = q->next) {
         if (r->value != q->value)
           break;
@@ -375,7 +375,7 @@ static void merge_similar_t_rows(void) {
     /* contains reduce actions,  we allocate a new element for it and    */
     /* place it in the list headed by MULTI_ROOT.  Such states are not   */
     /* merged, because we do not take default reductions in them.        */
-    if (shift_on_error_symbol[state_no] && (reduce_root != NULL)) {
+    if (shift_on_error_symbol[state_no] && reduce_root != NULL) {
       top++;
       if (i == NIL) {
         new_state_element[top].link = table[hash_address];
@@ -603,10 +603,10 @@ static void merge_shift_domains(void) {
   /* stored in the vector SHIFT_CHECK_INDEX.                           */
   sortdes(ordered_shift, row_size, 1, shift_domain_count, num_terminals);
 
-  increment_size = MAX((num_table_entries / 100 * increment),
-                       (num_terminals + 1));
+  increment_size = MAX(num_table_entries / 100 * increment,
+                       num_terminals + 1);
   old_table_size = table_size;
-  table_size = MIN((num_table_entries + increment_size), MAX_TABLE_SIZE);
+  table_size = MIN(num_table_entries + increment_size, MAX_TABLE_SIZE);
   if ((int) table_size > old_table_size) {
     ffree(previous);
     ffree(next);
@@ -704,11 +704,11 @@ static void merge_shift_domains(void) {
   for (k = shift_check_size; k >= max_indx; k--)
     if (next[k] == OMEGA)
       break;
-  percentage = (((long) k - num_table_entries) * 1000)
+  percentage = ((long) k - num_table_entries) * 1000
                / num_table_entries;
 
   sprintf(msg_line, "Percentage of increase: %d.%d%%",
-          (percentage/10), (percentage % 10));
+          percentage/10, percentage % 10);
   PRNT(msg_line);
 
   if (byte_bit) {
@@ -719,7 +719,7 @@ static void merge_shift_domains(void) {
     num_bytes = 2 * shift_check_size;
   num_bytes += 2 * (num_terminal_states + num_terminals);
 
-  k_bytes = (num_bytes / 1024) + 1;
+  k_bytes = num_bytes / 1024 + 1;
 
   sprintf(msg_line,
           "Storage required for Shift Check Table: %ld Bytes, %dK",
@@ -871,7 +871,7 @@ static void overlay_sim_t_rows(void) {
          q != NULL; tail = q, q = q->next) {
       rule_no = q->value;
       reduce_size += rule_count[rule_no];
-      if ((rule_count[rule_no] > k) && (rule_no != 0)
+      if (rule_count[rule_no] > k && rule_no != 0
           && !shift_on_error_symbol[state_subset_root]) {
         k = rule_count[rule_no];
         default_rule = rule_no;
@@ -1106,10 +1106,10 @@ static void overlap_t_rows(void) {
   short *terminal_list = Allocate_short_array(num_terminals + 1);
   term_state_index = Allocate_int_array(max_la_state + 1);
 
-  increment_size = MAX((num_table_entries * increment / 100),
-                       (num_terminals + 1));
+  increment_size = MAX(num_table_entries * increment / 100,
+                       num_terminals + 1);
   const int old_size = table_size;
-  table_size = MIN((num_table_entries + increment_size), MAX_TABLE_SIZE);
+  table_size = MIN(num_table_entries + increment_size, MAX_TABLE_SIZE);
   if ((int) table_size > old_size) {
     ffree(previous);
     ffree(next);
@@ -1230,11 +1230,11 @@ static void overlap_t_rows(void) {
           num_table_entries);
   PRNT(msg_line);
 
-  const int percentage = (((long) term_action_size - num_table_entries) * 1000)
+  const int percentage = ((long) term_action_size - num_table_entries) * 1000
                    / num_table_entries;
 
   sprintf(msg_line, "Percentage of increase: %d.%d%%",
-          (percentage / 10), (percentage % 10));
+          percentage / 10, percentage % 10);
   PRNT(msg_line);
 
   if (byte_bit) {
@@ -1245,9 +1245,9 @@ static void overlap_t_rows(void) {
     num_bytes = 2 * (term_action_size + term_check_size);
 
   if (shift_default_bit)
-    num_bytes += (2 * num_terminal_states);
+    num_bytes += 2 * num_terminal_states;
 
-  int k_bytes = (num_bytes / 1024) + 1;
+  int k_bytes = num_bytes / 1024 + 1;
 
   sprintf(msg_line,
           "Storage required for Terminal Tables: %ld Bytes, %dK",
@@ -1257,7 +1257,7 @@ static void overlap_t_rows(void) {
   total_bytes += num_bytes;
 
   /* Report total number of storage used.                              */
-  k_bytes = (total_bytes / 1024) + 1;
+  k_bytes = total_bytes / 1024 + 1;
   sprintf(msg_line,
           "Total storage required for Tables: %ld Bytes, %dK",
           total_bytes, k_bytes);
@@ -1313,7 +1313,7 @@ static void print_tables(void) {
     offset += num_rules;
   la_state_offset = offset;
 
-  if (offset > (MAX_TABLE_SIZE + 1)) {
+  if (offset > MAX_TABLE_SIZE + 1) {
     sprintf(msg_line, "Table contains entries that are > "
             "%ld; Processing stopped.", MAX_TABLE_SIZE + 1);
     PRNTERR(msg_line);
@@ -1321,15 +1321,15 @@ static void print_tables(void) {
   }
 
   output_buffer[0] = 'S';
-  output_buffer[1] = (goto_default_bit ? '1' : '0');
-  output_buffer[2] = (nt_check_bit ? '1' : '0');
-  output_buffer[3] = (read_reduce_bit ? '1' : '0');
-  output_buffer[4] = (single_productions_bit ? '1' : '0');
-  output_buffer[5] = (shift_default_bit ? '1' : '0');
-  output_buffer[6] = (rules[1].lhs == accept_image ? '1' : '0');
+  output_buffer[1] = goto_default_bit ? '1' : '0';
+  output_buffer[2] = nt_check_bit ? '1' : '0';
+  output_buffer[3] = read_reduce_bit ? '1' : '0';
+  output_buffer[4] = single_productions_bit ? '1' : '0';
+  output_buffer[5] = shift_default_bit ? '1' : '0';
+  output_buffer[6] = rules[1].lhs == accept_image ? '1' : '0';
   /* are there more than 1 start symbols? */
-  output_buffer[7] = (error_maps_bit ? '1' : '0');
-  output_buffer[8] = (byte_bit && last_symbol <= 255 ? '1' : '0');
+  output_buffer[7] = error_maps_bit ? '1' : '0';
+  output_buffer[8] = byte_bit && last_symbol <= 255 ? '1' : '0';
   output_buffer[9] = escape;
 
   output_ptr = output_buffer + 10;
@@ -1538,7 +1538,7 @@ static void print_tables(void) {
     for (j = 1; j <= sh.size; j++) {
       symbol = sh.map[j].symbol;
       act = sh.map[j].action;
-      if ((!shift_default_bit) || (act != shiftdf[symbol])) {
+      if (!shift_default_bit || act != shiftdf[symbol]) {
         i = indx + symbol;
         check[i] = symbol;
 
@@ -1553,7 +1553,7 @@ static void print_tables(void) {
           shift_reduce_count++;
         }
 
-        if (result_act > (MAX_TABLE_SIZE + 1)) {
+        if (result_act > MAX_TABLE_SIZE + 1) {
           sprintf(msg_line,
                   "Table contains look-ahead shift entry that is >"
                   " %ld; Processing stopped.", MAX_TABLE_SIZE + 1);
@@ -1697,10 +1697,10 @@ static void print_tables(void) {
       BUFFER_CHECK(systab);
     }
 
-    /* First, check whether or not maximum value in SHIFT_STATE  */
+    /* First, check whether the  maximum value in SHIFT_STATE    */
     /* table exceeds 9999. If so, stop. Otherwise, write out     */
     /* SHIFT_STATE table.                                        */
-    if ((shift_check_size - num_terminals) > 9999) {
+    if (shift_check_size - num_terminals > 9999) {
       PRNTERR("SHIFT_STATE map contains > 9999 elements");
       return;
     }
@@ -1763,7 +1763,7 @@ static void print_tables(void) {
       else
         result_act = state_index[act] + num_rules;
 
-      if (result_act > (MAX_TABLE_SIZE + 1)) {
+      if (result_act > MAX_TABLE_SIZE + 1) {
         sprintf(msg_line,
                 "Table contains look-ahead shift entry that is >"
                 " %ld; Processing stopped.", MAX_TABLE_SIZE + 1);

@@ -97,7 +97,7 @@ void produce(void) {
   bool *name_used = Allocate_boolean_array(num_names + 1);
   item_list = Allocate_short_array(num_items + 1);
   nt_list = Allocate_short_array(num_non_terminals + 1);
-  nt_list -= (num_terminals + 1);
+  nt_list -= num_terminals + 1;
   const SET_PTR set = calloc(1, non_term_set_size * sizeof(BOOLEAN_CELL));
   if (set == NULL) {
     nospace(__FILE__, __LINE__);
@@ -107,12 +107,12 @@ void produce(void) {
   if (produces == NULL) {
     nospace(__FILE__, __LINE__);
   }
-  produces -= ((num_terminals + 1) * non_term_set_size);
+  produces -= (num_terminals + 1) * non_term_set_size;
   direct_produces = (struct node **) calloc(num_non_terminals, sizeof(struct node *));
   if (direct_produces == NULL) {
     nospace(__FILE__, __LINE__);
   }
-  direct_produces -= (num_terminals + 1);
+  direct_produces -= num_terminals + 1;
 
   struct node **goto_domain = calloc(num_states + 1, sizeof(struct node *));
   if (goto_domain == NULL) {
@@ -137,7 +137,7 @@ void produce(void) {
       if (IS_A_NON_TERMINAL(symbol)) {
         i = item_table[item_no].suffix_index;
         if (IS_IN_SET(first, i, empty) &&
-            (!IS_IN_NTSET(produces, symbol, nt - num_terminals))) {
+            !IS_IN_NTSET(produces, symbol, nt - num_terminals)) {
           NTSET_BIT_IN(produces, symbol, nt - num_terminals);
           q = Allocate_node();
           q->value = nt;
@@ -334,12 +334,12 @@ void produce(void) {
   ffree(index_of);
   ffree(names_map);
   ffree(name_used);
-  nt_list += (num_terminals + 1);
+  nt_list += num_terminals + 1;
   ffree(nt_list);
   ffree(set);
-  produces += ((num_terminals + 1) * non_term_set_size);
+  produces += (num_terminals + 1) * non_term_set_size;
   ffree(produces);
-  direct_produces += (num_terminals + 1);
+  direct_produces += num_terminals + 1;
   ffree(direct_produces);
   ffree(goto_domain);
 }
@@ -441,16 +441,15 @@ static void process_scopes(void) {
   prefix_index = Allocate_short_array(num_items + 1);
   suffix_index = Allocate_short_array(num_items + 1);
   item_of = Allocate_short_array(num_non_terminals);
-  item_of -= (num_terminals + 1);
+  item_of -= num_terminals + 1;
   next_item = Allocate_short_array(num_items + 1);
 
   symbol_seen = Allocate_boolean_array(num_non_terminals);
-  symbol_seen -= (num_terminals + 1);
-  states_of = (struct node **)
-      calloc(num_non_terminals, sizeof(struct node *));
-  states_of -= (num_terminals + 1);
+  symbol_seen -= num_terminals + 1;
+  states_of = (struct node **) calloc(num_non_terminals, sizeof(struct node *));
+  states_of -= num_terminals + 1;
   state_index = Allocate_short_array(num_non_terminals);
-  state_index -= (num_terminals + 1);
+  state_index -= num_terminals + 1;
   scope_element = (struct scope_elmt *)
       calloc(num_items + 1, sizeof(struct scope_elmt));
 
@@ -480,7 +479,7 @@ static void process_scopes(void) {
              non_term_set_size * sizeof(BOOLEAN_CELL));
   if (produces == NULL)
     nospace(__FILE__, __LINE__);
-  produces -= ((num_terminals + 1) * non_term_set_size);
+  produces -= (num_terminals + 1) * non_term_set_size;
 
   for ALL_NON_TERMINALS(nt) {
     NTSET_BIT_IN(right_produces, nt, nt - num_terminals);
@@ -489,7 +488,7 @@ static void process_scopes(void) {
     direct_produces[nt] = NULL;
 
     for (end_node = (p = clitems[nt]) == NULL;
-         !end_node; end_node = (p == clitems[nt])) {
+         !end_node; end_node = p == clitems[nt]) {
       p = p->next;
       for (item_no = p->value;
            IS_A_NON_TERMINAL(item_table[item_no].symbol);
@@ -527,9 +526,10 @@ static void process_scopes(void) {
   produces = (SET_PTR)
       calloc(num_non_terminals,
              non_term_set_size * sizeof(BOOLEAN_CELL));
-  if (produces == NULL)
+  if (produces == NULL) {
     nospace(__FILE__, __LINE__);
-  produces -= ((num_terminals + 1) * non_term_set_size);
+  }
+  produces -= (num_terminals + 1) * non_term_set_size;
 
   for ALL_NON_TERMINALS(nt) {
     NTSET_BIT_IN(produces, nt, nt - num_terminals);
@@ -596,13 +596,11 @@ static void process_scopes(void) {
     dot_symbol = item_table[item_no].symbol;
     if (dot_symbol == error_image) {
       if (item_table[item_no].dot != 0 &&
-          (!IS_IN_SET(first,
-                      item_table[item_no].suffix_index, empty))) {
+          !IS_IN_SET(first, item_table[item_no].suffix_index, empty)) {
         if (item_list[item_no] == OMEGA) {
           item_list[item_no] = item_root;
           item_root = item_no;
-          max_prefix_length = MAX(max_prefix_length,
-                                  item_table[item_no].dot);
+          max_prefix_length = MAX(max_prefix_length, item_table[item_no].dot);
         }
       }
     } else if (IS_A_NON_TERMINAL(dot_symbol)) {
@@ -685,9 +683,9 @@ static void process_scopes(void) {
     }
   }
 
-  right_produces += ((num_terminals + 1) * non_term_set_size);
+  right_produces += (num_terminals + 1) * non_term_set_size;
   ffree(right_produces);
-  left_produces += ((num_terminals + 1) * non_term_set_size);
+  left_produces += (num_terminals + 1) * non_term_set_size;
   ffree(left_produces);
 
   /* Next, we used the optimal partition procedure to compress the     */
@@ -893,21 +891,21 @@ process_scope_states: {
 
   ffree(prefix_index);
   ffree(suffix_index);
-  item_of += (num_terminals + 1);
+  item_of += num_terminals + 1;
   ffree(item_of);
   ffree(next_item);
-  symbol_seen += (num_terminals + 1);
+  symbol_seen += num_terminals + 1;
   ffree(symbol_seen);
-  states_of += (num_terminals + 1);
+  states_of += num_terminals + 1;
   ffree(states_of);
-  state_index += (num_terminals + 1);
+  state_index += num_terminals + 1;
   ffree(state_index);
   ffree(scope_element);
 }
 
 
 /*                              IS_SCOPE:                            */
-/* This procedure checks whether or not an item of the form:         */
+/* This procedure checks whether an item of the form:         */
 /* [A  ->  w B x  where  B ->* y A z  is a valid scope.              */
 /*                                                                   */
 /* Such an item is a valid scope if the following conditions hold:   */
@@ -920,27 +918,27 @@ process_scope_states: {
 /*    and C =>rm+ B.                                                 */
 static bool is_scope(const int item_no) {
   int nt;
-
   for (int i = item_no - item_table[item_no].dot; i < item_no; i++) {
     const int symbol = item_table[i].symbol;
-    if (IS_A_TERMINAL(symbol))
+    if (IS_A_TERMINAL(symbol)) {
       return true;
-    if (!null_nt[symbol])
+    }
+    if (!null_nt[symbol]) {
       return true;
+    }
   }
-
   const int lhs_symbol = rules[item_table[item_no].rule_number].lhs;
   const int target = item_table[item_no].symbol;
-  if (IS_IN_NTSET(left_produces, target, lhs_symbol - num_terminals))
+  if (IS_IN_NTSET(left_produces, target, lhs_symbol - num_terminals)) {
     return false;
-
-  if (item_table[item_no].dot > 0)
+  }
+  if (item_table[item_no].dot > 0) {
     return true;
-
-  for ALL_NON_TERMINALS(nt)
+  }
+  for ALL_NON_TERMINALS(nt) {
     symbol_seen[nt] = false;
-
-  return (scope_check(lhs_symbol, target, lhs_symbol));
+  }
+  return scope_check(lhs_symbol, target, lhs_symbol);
 }
 
 /*                             SCOPE_CHECK:                          */
@@ -971,10 +969,11 @@ static bool scope_check(const int lhs_symbol, const int target, const int source
 
     const int rule_no = item_table[item_no].rule_number;
     const int symbol = rules[rule_no].lhs;
-    if (!symbol_seen[symbol]) /* not yet processed */
-    {
-      if (scope_check(lhs_symbol, target, symbol))
-        return (1);
+    if (!symbol_seen[symbol]) {
+      /* not yet processed */
+      if (scope_check(lhs_symbol, target, symbol)) {
+        return 1;
+      }
     }
   }
 
@@ -1003,18 +1002,17 @@ static int insert_prefix(const int item_no) {
   i = hash_address % SCOPE_SIZE;
 
   for (int j = scope_table[i]; j != NIL; j = scope_element[j].link) {
-    if (is_prefix_equal(scope_element[j].item, item_no))
-      return (scope_element[j].index);
+    if (is_prefix_equal(scope_element[j].item, item_no)) {
+      return scope_element[j].index;
+    }
   }
   scope_top++;
   scope_element[scope_top].item = -item_no;
   scope_element[scope_top].index = scope_rhs_size + 1;
   scope_element[scope_top].link = scope_table[i];
   scope_table[i] = scope_top;
-
-  scope_rhs_size += (item_table[item_no].dot + 1);
-
-  return (scope_element[scope_top].index);
+  scope_rhs_size += item_table[item_no].dot + 1;
+  return scope_element[scope_top].index;
 }
 
 
@@ -1078,7 +1076,7 @@ static int insert_suffix(const int item_no) {
 
   for (int j = scope_table[i]; j != NIL; j = scope_element[j].link) {
     if (is_suffix_equal(scope_element[j].item, item_no))
-      return (scope_element[j].index);
+      return scope_element[j].index;
   }
   scope_top++;
   scope_element[scope_top].item = item_no;
@@ -1172,7 +1170,7 @@ static void print_scopes(void) {
     int len = PRINT_LINE_SIZE - 5;
     print_large_token(line, tok, "", len);
     strcat(line, " ::= ");
-    int i = (PRINT_LINE_SIZE / 2) - 1;
+    int i = PRINT_LINE_SIZE / 2 - 1;
     const int offset = MIN(strlen(line) - 1, i);
     len = PRINT_LINE_SIZE - (offset + 4);
     /* locate end of list */
@@ -1244,5 +1242,5 @@ static int get_shift_symbol(const int lhs_symbol) {
     }
   }
 
-  return (empty);
+  return empty;
 }

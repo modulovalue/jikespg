@@ -471,8 +471,7 @@ static void terminal_shift_default_space_lalr_k(void) {
 /*                            INIT_FILE:                             */
 static void init_file(FILE **file, char *file_name, char *file_tag) {
   const char *p = strrchr(file_name, '.');
-  if ((*file = fopen(file_name, "w")) == NULL)
-  {
+  if ((*file = fopen(file_name, "w")) == NULL) {
     fprintf(stderr,
             "***ERROR: Symbol file \"%s\" cannot be opened\n",
             file_name);
@@ -500,8 +499,9 @@ static void init_parser_files(void) {
 
 /*                            EXIT_FILE:                             */
 static void exit_file(FILE **file, char *file_tag) {
-  if (c_bit || cpp_bit)
+  if (c_bit || cpp_bit) {
     fprintf(*file, "\n#endif /* %s_INCLUDED */\n", file_tag);
+  }
   fclose(*file);
 }
 
@@ -533,17 +533,20 @@ static void print_c_names(void) {
     strcpy(tok, RETRIEVE_NAME(i));
     name_len[i] = strlen(tok);
     num_bytes += name_len[i];
-    if (max_name_length < name_len[i])
+    if (max_name_length < name_len[i]) {
       max_name_length = name_len[i];
+    }
     k = 0;
     for (j = 0; j < name_len[i]; j++) {
       *output_ptr++ = '\'';
-      if (tok[k] == '\'' || tok[k] == '\\')
+      if (tok[k] == '\'' || tok[k] == '\\') {
         *output_ptr++ = '\\';
-      if (tok[k] == '\n')
+      }
+      if (tok[k] == '\n') {
         *output_ptr++ = escape;
-      else
+      } else {
         *output_ptr++ = tok[k];
+      }
       k++;
       *output_ptr++ = '\'';
       *output_ptr++ = ',';
@@ -558,14 +561,14 @@ static void print_c_names(void) {
   }
   *(output_ptr - 1) = '\n'; /*overwrite last comma*/
   BUFFER_CHECK(sysdcl);
-  if (java_bit)
+  if (java_bit) {
     mystrcpy("    };\n");
-  else mystrcpy("                          };\n");
+  } else {
+    mystrcpy("                          };\n");
+  }
 
   /* Compute and list space required for STRING_BUFFER map.        */
-  sprintf(msg_line,
-          "    Storage required for STRING_BUFFER map: %ld Bytes",
-          num_bytes);
+  sprintf(msg_line, "    Storage required for STRING_BUFFER map: %ld Bytes", num_bytes);
   PRNT(msg_line);
 
   /* Write out NAME_START array */
@@ -591,24 +594,20 @@ static void print_c_names(void) {
     *(output_ptr - 1) = '\n';
     BUFFER_CHECK(sysdcl);
   }
-  if (java_bit)
+  if (java_bit) {
     mystrcpy("    };\n");
-  else mystrcpy("                          };\n");
+  } else {
+    mystrcpy("                          };\n");
+  }
 
   /* Compute and list space required for NAME_START map.           */
-  sprintf(msg_line,
-          "    Storage required for NAME_START map: %d Bytes",
-          (2 * num_names));
+  sprintf(msg_line, "    Storage required for NAME_START map: %d Bytes", 2 * num_names);
   PRNT(msg_line);
-
   /* Write out NAME_LENGTH array */
   prnt_shorts("\nconst unsigned char  CLASS_HEADER name_length[] = {0,\n",
               1, num_names, 10, name_len);
-
   /* Compute and list space required for NAME_LENGTH map.          */
-  sprintf(msg_line,
-          "    Storage required for NAME_LENGTH map: %d Bytes",
-          num_names);
+  sprintf(msg_line, "    Storage required for NAME_LENGTH map: %d Bytes", num_names);
   PRNT(msg_line);
 
   ffree(name_len);
@@ -626,22 +625,24 @@ static void print_java_names(void) {
     char tok[SYMBOL_SIZE + 1];
     strcpy(tok, RETRIEVE_NAME(i));
     const int len = strlen(tok);
-    num_bytes += (len * 2);
-    if (max_name_length < len)
+    num_bytes += len * 2;
+    if (max_name_length < len) {
       max_name_length = len;
+    }
     padline();
     *output_ptr++ = '\"';
     int k = 0;
     for (int j = 0; j < len; j++) {
-      if (tok[j] == '\"' || tok[j] == '\\')
+      if (tok[j] == '\"' || tok[j] == '\\') {
         *output_ptr++ = '\\';
-
-      if (tok[j] == '\n')
+      }
+      if (tok[j] == '\n') {
         *output_ptr++ = escape;
-      else
+      } else {
         *output_ptr++ = tok[j];
+      }
       k++;
-      if (k == 30 && (j != len - 1)) {
+      if (k == 30 && j != len - 1) {
         k = 0;
         *output_ptr++ = '\"';
         *output_ptr++ = ' ';
@@ -653,19 +654,20 @@ static void print_java_names(void) {
       }
     }
     *output_ptr++ = '\"';
-    if (i < num_names)
+    if (i < num_names) {
       *output_ptr++ = ',';
+    }
     *output_ptr++ = '\n';
     BUFFER_CHECK(sysdcl);
   }
-  if (java_bit)
+  if (java_bit) {
     mystrcpy("    };\n");
-  else mystrcpy("                          };\n");
+  } else {
+    mystrcpy("                          };\n");
+  }
 
   /* Compute and list space required for STRING_BUFFER map.        */
-  sprintf(msg_line,
-          "    Storage required for STRING_BUFFER map: %ld Bytes",
-          num_bytes);
+  sprintf(msg_line, "    Storage required for STRING_BUFFER map: %ld Bytes", num_bytes);
   PRNT(msg_line);
 }
 
@@ -718,24 +720,25 @@ static void print_error_maps(void) {
   for ALL_STATES(state_no) {
     struct shift_header_type sh;
     struct reduce_header_type red;
-
     sh = shift[statset[state_no].shift_number];
     as_size[state_no] = sh.size;
     for (i = 1; i <= sh.size; i++) {
-      if (table_opt == OPTIMIZE_TIME)
+      if (table_opt == OPTIMIZE_TIME) {
         symbol = original[sh.map[i].symbol];
-      else
+      } else {
         symbol = sh.map[i].symbol;
+      }
       SET_BIT_IN(action_symbols, state_no, symbol);
     }
 
     red = reduce[state_no];
     as_size[state_no] += red.size;
     for (i = 1; i <= red.size; i++) {
-      if (table_opt == OPTIMIZE_TIME)
+      if (table_opt == OPTIMIZE_TIME) {
         symbol = original[red.map[i].symbol];
-      else
+      } else {
         symbol = red.map[i].symbol;
+      }
       SET_BIT_IN(action_symbols, state_no, symbol);
     }
   }
@@ -748,9 +751,10 @@ static void print_error_maps(void) {
   /* Compute and write out the base of the ACTION_SYMBOLS map. */
   action_symbols_base = Allocate_int_array(num_states + 1);
 
-  for ALL_STATES(i)
+  for ALL_STATES(i) {
     action_symbols_base[state_list[i]] =
         ABS(state_start[state_list[i]]);
+  }
   if (java_bit) {
     prnt_shorts("\n    public final static char asb[] = {0,\n",
                 1, num_states, 10, action_symbols_base);
@@ -768,7 +772,7 @@ static void print_error_maps(void) {
   compute_action_symbols_range(state_start, state_stack,
                                state_list, action_symbols_range);
 
-  for (i = 0; i < (offset - 1); i++) {
+  for (i = 0; i < offset - 1; i++) {
     if (action_symbols_range[i] > (java_bit ? 127 : 255)) {
       byte_terminal_range = 0;
       break;
@@ -792,58 +796,44 @@ static void print_error_maps(void) {
                   0, offset - 2, 10, action_symbols_range);
     }
   }
-
   num_bytes = 2 * num_states;
-  sprintf(msg_line,
-          "    Storage required for ACTION_SYMBOLS_BASE map: "
-          "%ld Bytes", num_bytes);
+  sprintf(msg_line, "    Storage required for ACTION_SYMBOLS_BASE map: %ld Bytes", num_bytes);
   PRNT(msg_line);
-
-  if ((table_opt == OPTIMIZE_TIME) && (last_terminal <= (java_bit ? 127 : 255)))
+  if (table_opt == OPTIMIZE_TIME && last_terminal <= (java_bit ? 127 : 255)) {
     num_bytes = offset - 1;
-  else if ((table_opt != OPTIMIZE_TIME) && (num_terminals <= (java_bit ? 127 : 255)))
+  } else if (table_opt != OPTIMIZE_TIME && num_terminals <= (java_bit ? 127 : 255)) {
     num_bytes = offset - 1;
-  else
+  } else {
     num_bytes = 2 * (offset - 1);
-
-  sprintf(msg_line,
-          "    Storage required for ACTION_SYMBOLS_RANGE map: "
-          "%ld Bytes", num_bytes);
+  }
+  sprintf(msg_line, "    Storage required for ACTION_SYMBOLS_RANGE map: %ld Bytes", num_bytes);
   PRNT(msg_line);
-
   ffree(action_symbols_range);
-
   /* We now repeat the same process for the domain of the GOTO table.    */
   for ALL_STATES(state_no) {
     as_size[state_no] = gd_index[state_no + 1] - gd_index[state_no];
-
     for (i = gd_index[state_no]; i <= gd_index[state_no + 1] - 1; i++) {
       symbol = gd_range[i] - num_terminals;
       NTSET_BIT_IN(naction_symbols, state_no, symbol);
     }
   }
-
   partset(naction_symbols, as_size, state_list, state_start, state_stack, num_non_terminals, 0);
-
   ffree(as_size);
   ffree(naction_symbols);
-
   /* Remap non-terminals */
-  for (i = 1; i <= gotodom_size; i++){
+  for (i = 1; i <= gotodom_size; i++) {
     if (table_opt == OPTIMIZE_SPACE) {
       gd_range[i] = symbol_map[gd_range[i]] - num_terminals;
     } else {
       gd_range[i] = symbol_map[gd_range[i]];
     }
   }
-
   /* Compute and write out the base of the NACTION_SYMBOLS map.*/
   naction_symbols_base = Allocate_int_array(num_states + 1);
-
-  for ALL_STATES(i)
+  for ALL_STATES(i) {
     naction_symbols_base[state_list[i]] =
         ABS(state_start[state_list[i]]);
-
+  }
   if (java_bit) {
     prnt_shorts("\n    public final static char nasb[] = {0,\n",
                 1, num_states, 10, naction_symbols_base);
@@ -851,16 +841,11 @@ static void print_error_maps(void) {
     prnt_shorts("\nconst unsigned short CLASS_HEADER nasb[] = {0,\n",
                 1, num_states, 10, naction_symbols_base);
   }
-
   ffree(naction_symbols_base);
-
   /* Compute and write out the range of the NACTION_SYMBOLS map.*/
   offset = state_start[num_states + 1];
   naction_symbols_range = Allocate_int_array(offset);
-
-  compute_naction_symbols_range(state_start, state_stack,
-                                state_list, naction_symbols_range);
-
+  compute_naction_symbols_range(state_start, state_stack, state_list, naction_symbols_range);
   if (java_bit) {
     prnt_shorts("\n    public final static char nasr[] = {0,\n",
                 0, offset - 2, 10, naction_symbols_range);
@@ -870,14 +855,10 @@ static void print_error_maps(void) {
   }
 
   num_bytes = 2 * num_states;
-  sprintf(msg_line,
-          "    Storage required for NACTION_SYMBOLS_BASE map: "
-          "%ld Bytes", num_bytes);
+  sprintf(msg_line, "    Storage required for NACTION_SYMBOLS_BASE map: %ld Bytes", num_bytes);
   PRNT(msg_line);
   num_bytes = 2 * (offset - 1);
-  sprintf(msg_line,
-          "    Storage required for NACTION_SYMBOLS_RANGE map: "
-          "%ld Bytes", ((long) 2 * (offset - 1)));
+  sprintf(msg_line, "    Storage required for NACTION_SYMBOLS_RANGE map: %ld Bytes", (long) 2 * (offset - 1));
   PRNT(msg_line);
 
   ffree(naction_symbols_range);
@@ -1345,7 +1326,7 @@ static void print_symbols(void) {
   }
 
   line[strlen(line) - 2] = '\0'; /* remove the string ",\n" from last line */
-  fprintf(syssym, "%s%s", line, (java_bit ? ";\n}\n" : "\n     };\n"));
+  fprintf(syssym, "%s%s", line, java_bit ? ";\n}\n" : "\n     };\n");
 }
 
 
@@ -1400,14 +1381,12 @@ static void print_definitions(void) {
             "      ACCEPT_ACTION     = %ld,\n"
             "      ERROR_ACTION      = %ld;\n"
             "};\n\n",
-
-
-            (table_opt == OPTIMIZE_SPACE ? num_terminals : num_symbols),
+            table_opt == OPTIMIZE_SPACE ? num_terminals : num_symbols,
             num_scopes - 1,
             num_scopes,
-            (read_reduce_bit && lalr_level > 1
-               ? error_act + num_rules
-               : error_act),
+            read_reduce_bit && lalr_level > 1
+              ? error_act + num_rules
+              : error_act,
             lalr_level,
             num_rules,
             num_terminals,
@@ -1439,18 +1418,16 @@ static void print_definitions(void) {
             "      ACCEPT_ACTION     = %ld,\n"
             "      ERROR_ACTION      = %ld\n"
             "     };\n\n",
-
-
-            (table_opt == OPTIMIZE_SPACE ? num_terminals : num_symbols),
+            table_opt == OPTIMIZE_SPACE ? num_terminals : num_symbols,
             maximum_distance + lalr_level - 1,
             maximum_distance + lalr_level,
             stack_size - 1,
             stack_size,
             num_scopes - 1,
             num_scopes,
-            (read_reduce_bit && lalr_level > 1
-               ? error_act + num_rules
-               : error_act),
+            read_reduce_bit && lalr_level > 1
+              ? error_act + num_rules
+              : error_act,
             lalr_level,
             num_rules,
             num_terminals,
@@ -1484,7 +1461,7 @@ static void print_externs(void) {
             "#define asi(state)            asb[original_state(state)]\n"
             "#define nasi(state)           nasb[original_state(state)]\n"
             "#define in_symbol(state)      in_symb[original_state(state)]\n\n",
-            (table_opt == OPTIMIZE_TIME ? "check" : "base_check"));
+            table_opt == OPTIMIZE_TIME ? "check" : "base_check");
   else if (cpp_bit) {
     fprintf(sysprs,
             "class LexStream;\n\n"
@@ -1498,8 +1475,7 @@ static void print_externs(void) {
       fprintf(sysprs,
               "    static int original_state(int state) "
               "{ return -%s[state]; }\n",
-
-              (table_opt == OPTIMIZE_TIME ? "check" : "base_check"));
+              table_opt == OPTIMIZE_TIME ? "check" : "base_check");
 
     if (error_maps_bit) {
       fprintf(sysprs,
@@ -1523,8 +1499,7 @@ static void print_externs(void) {
       fprintf(sysprs,
               "    public final static int original_state(int state) "
               "{ return -%s(state); }\n",
-
-              (table_opt == OPTIMIZE_TIME ? "check" : "base_check"));
+              table_opt == OPTIMIZE_TIME ? "check" : "base_check");
 
       if (error_maps_bit) {
         fprintf(sysprs,
@@ -1544,7 +1519,7 @@ static void print_externs(void) {
 
   if (c_bit || cpp_bit) {
     fprintf(sysprs, "%s const unsigned char  rhs[];\n",
-            (c_bit ? "extern" : "    static"));
+            c_bit ? "extern" : "    static");
 
     if (check_size > 0 || table_opt == OPTIMIZE_TIME) {
       bool small;
@@ -1564,33 +1539,33 @@ static void print_externs(void) {
     fprintf(sysprs, "%s const unsigned short lhs[];\n"
             "%s const unsigned short *%s;\n",
 
-            (c_bit ? "extern" : "    static"),
-            (c_bit ? "extern" : "    static"),
-            (table_opt == OPTIMIZE_TIME
-               ? "action"
-               : "base_action"));
+            c_bit ? "extern" : "    static",
+            c_bit ? "extern" : "    static",
+            table_opt == OPTIMIZE_TIME
+              ? "action"
+              : "base_action");
 
     if (goto_default_bit)
       fprintf(sysprs, "%s const unsigned short default_goto[];\n",
-              (c_bit ? "extern" : "    static"));
+              c_bit ? "extern" : "    static");
 
     if (table_opt == OPTIMIZE_SPACE) {
       fprintf(sysprs, "%s const unsigned %s term_check[];\n",
-              (c_bit ? "extern" : "    static"),
-              (num_terminals <= (java_bit ? 127 : 255) ? "char " : "short"));
+              c_bit ? "extern" : "    static",
+              num_terminals <= (java_bit ? 127 : 255) ? "char " : "short");
       fprintf(sysprs, "%s const unsigned short term_action[];\n",
-              (c_bit ? "extern" : "    static"));
+              c_bit ? "extern" : "    static");
 
       if (shift_default_bit) {
         fprintf(sysprs, "%s const unsigned short default_reduce[];\n",
-                (c_bit ? "extern" : "    static"));
+                c_bit ? "extern" : "    static");
         fprintf(sysprs, "%s const unsigned short shift_state[];\n",
-                (c_bit ? "extern" : "    static"));
+                c_bit ? "extern" : "    static");
         fprintf(sysprs, "%s const unsigned %s shift_check[];\n",
-                (c_bit ? "extern" : "    static"),
-                (num_terminals <= (java_bit ? 127 : 255) ? "char " : "short"));
+                c_bit ? "extern" : "    static",
+                num_terminals <= (java_bit ? 127 : 255) ? "char " : "short");
         fprintf(sysprs, "%s const unsigned short default_shift[];\n",
-                (c_bit ? "extern" : "    static"));
+                c_bit ? "extern" : "    static");
       }
     }
 
@@ -1604,34 +1579,33 @@ static void print_externs(void) {
               "%s const unsigned short name_start[];\n"
               "%s const unsigned char  name_length[];\n"
               "%s const          char  string_buffer[];\n",
-
-              (c_bit ? "extern" : "    static"),
-              (c_bit ? "extern" : "    static"),
-              (byte_terminal_range <= (java_bit ? 127 : 255) ? "char " : "short"),
-              (c_bit ? "extern" : "    static"),
-              (c_bit ? "extern" : "    static"),
-              (c_bit ? "extern" : "    static"),
-              (c_bit ? "extern" : "    static"),
-              (c_bit ? "extern" : "    static"));
+              c_bit ? "extern" : "    static",
+              c_bit ? "extern" : "    static",
+              byte_terminal_range <= (java_bit ? 127 : 255) ? "char " : "short",
+              c_bit ? "extern" : "    static",
+              c_bit ? "extern" : "    static",
+              c_bit ? "extern" : "    static",
+              c_bit ? "extern" : "    static",
+              c_bit ? "extern" : "    static");
 
       if (table_opt == OPTIMIZE_SPACE) {
         fprintf(sysprs,
                 "%s const unsigned %s terminal_index[];\n"
                 "%s const unsigned %s non_terminal_index[];\n",
-                (c_bit ? "extern" : "    static"),
-                (num_names <= (java_bit ? 127 : 255) ? "char " : "short"),
-                (c_bit ? "extern" : "    static"),
-                (num_names <= (java_bit ? 127 : 255) ? "char " : "short"));
+                c_bit ? "extern" : "    static",
+                num_names <= (java_bit ? 127 : 255) ? "char " : "short",
+                c_bit ? "extern" : "    static",
+                num_names <= (java_bit ? 127 : 255) ? "char " : "short");
       } else {
         fprintf(sysprs, "%s const unsigned %s symbol_index[];\n"
                 "%s const unsigned %s *terminal_index;\n"
                 "%s const unsigned %s *non_terminal_index;\n",
-                (c_bit ? "extern" : "    static"),
-                (num_names <= (java_bit ? 127 : 255) ? "char " : "short"),
-                (c_bit ? "extern" : "    static"),
-                (num_names <= (java_bit ? 127 : 255) ? "char " : "short"),
-                (c_bit ? "extern" : "    static"),
-                (num_names <= (java_bit ? 127 : 255) ? "char " : "short"));
+                c_bit ? "extern" : "    static",
+                num_names <= (java_bit ? 127 : 255) ? "char " : "short",
+                c_bit ? "extern" : "    static",
+                num_names <= (java_bit ? 127 : 255) ? "char " : "short",
+                c_bit ? "extern" : "    static",
+                num_names <= (java_bit ? 127 : 255) ? "char " : "short");
       }
 
       if (num_scopes > 0) {
@@ -1643,22 +1617,21 @@ static void print_externs(void) {
                 "%s const unsigned %s scope_rhs[];\n"
                 "%s const unsigned short scope_state[];\n"
                 "%s const unsigned %s in_symb[];\n",
-
-                (c_bit ? "extern" : "    static"),
-                (scope_rhs_size <= (java_bit ? 127 : 255) ? "char " : "short"),
-                (c_bit ? "extern" : "    static"),
-                (scope_rhs_size <= (java_bit ? 127 : 255) ? "char " : "short"),
-                (c_bit ? "extern" : "    static"),
-                (num_symbols <= (java_bit ? 127 : 255) ? "char " : "short"),
-                (c_bit ? "extern" : "    static"),
-                (num_terminals <= (java_bit ? 127 : 255) ? "char " : "short"),
-                (c_bit ? "extern" : "    static"),
-                (scope_state_size <= (java_bit ? 127 : 255) ? "char " : "short"),
-                (c_bit ? "extern" : "    static"),
-                (num_symbols <= (java_bit ? 127 : 255) ? "char " : "short"),
-                (c_bit ? "extern" : "    static"),
-                (c_bit ? "extern" : "    static"),
-                (num_symbols <= (java_bit ? 127 : 255) ? "char " : "short"));
+                c_bit ? "extern" : "    static",
+                scope_rhs_size <= (java_bit ? 127 : 255) ? "char " : "short",
+                c_bit ? "extern" : "    static",
+                scope_rhs_size <= (java_bit ? 127 : 255) ? "char " : "short",
+                c_bit ? "extern" : "    static",
+                num_symbols <= (java_bit ? 127 : 255) ? "char " : "short",
+                c_bit ? "extern" : "    static",
+                num_terminals <= (java_bit ? 127 : 255) ? "char " : "short",
+                c_bit ? "extern" : "    static",
+                scope_state_size <= (java_bit ? 127 : 255) ? "char " : "short",
+                c_bit ? "extern" : "    static",
+                num_symbols <= (java_bit ? 127 : 255) ? "char " : "short",
+                c_bit ? "extern" : "    static",
+                c_bit ? "extern" : "    static",
+                num_symbols <= (java_bit ? 127 : 255) ? "char " : "short");
       }
     }
 
@@ -1742,7 +1715,7 @@ static void print_space_tables(void) {
   } else
     la_state_offset = error_act;
 
-  if (offset > (MAX_TABLE_SIZE + 1)) {
+  if (offset > MAX_TABLE_SIZE + 1) {
     sprintf(msg_line, "Table contains entries that are > "
             "%ld; Processing stopped.", MAX_TABLE_SIZE + 1);
     PRNTERR(msg_line);
@@ -1994,7 +1967,7 @@ static void print_space_tables(void) {
     for (j = 1; j <= sh.size; j++) {
       symbol = sh.map[j].symbol;
       act = sh.map[j].action;
-      if (!shift_default_bit || (act != shiftdf[symbol])) {
+      if (!shift_default_bit || act != shiftdf[symbol]) {
         i = indx + symbol;
         check[i] = symbol;
 
@@ -2009,7 +1982,7 @@ static void print_space_tables(void) {
           shift_reduce_count++;
         }
 
-        if (result_act > (MAX_TABLE_SIZE + 1)) {
+        if (result_act > MAX_TABLE_SIZE + 1) {
           sprintf(msg_line,
                   "Table contains look-ahead shift entry that is >"
                   " %ld; Processing stopped.", MAX_TABLE_SIZE + 1);
@@ -2249,7 +2222,7 @@ static void print_space_tables(void) {
       else
         result_act = state_index[act] + num_rules;
 
-      if (result_act > (MAX_TABLE_SIZE + 1)) {
+      if (result_act > MAX_TABLE_SIZE + 1) {
         sprintf(msg_line,
                 "Table contains look-ahead shift entry that is >"
                 " %ld; Processing stopped.", MAX_TABLE_SIZE + 1);
@@ -2352,7 +2325,7 @@ static void print_time_tables(void) {
   } else
     la_state_offset = error_act;
 
-  if (offset > (MAX_TABLE_SIZE + 1)) {
+  if (offset > MAX_TABLE_SIZE + 1) {
     sprintf(msg_line, "Table contains entries that are > "
             "%ld; Processing stopped.", MAX_TABLE_SIZE + 1);
     PRNTERR(msg_line);
@@ -2362,7 +2335,7 @@ static void print_time_tables(void) {
   /* Initialize all unfilled slots with default values.                */
   /* RECALL that the vector "check" is aliased to the vector "next".   */
   indx = first_index;
-  for (i = indx; (i != NIL) && (i <= (int) action_size); i = indx) {
+  for (i = indx; i != NIL && i <= (int) action_size; i = indx) {
     indx = next[i];
 
     check[i] = DEFAULT_SYMBOL;
@@ -2418,7 +2391,7 @@ static void print_time_tables(void) {
         shift_reduce_count++;
       }
 
-      if (result_act > (MAX_TABLE_SIZE + 1)) {
+      if (result_act > MAX_TABLE_SIZE + 1) {
         sprintf(msg_line,
                 "Table contains look-ahead shift entry that is >"
                 " %ld; Processing stopped.", MAX_TABLE_SIZE + 1);
@@ -2583,7 +2556,7 @@ static void print_time_tables(void) {
   *output_ptr++ = '\n';
   BUFFER_CHECK(sysdcl);
 
-  if (byte_check_bit && (!error_maps_bit)) {
+  if (byte_check_bit && !error_maps_bit) {
     if (java_bit)
       mystrcpy("    public final static byte check(int i) "
         "\n    {\n        return check_table[i - (NUM_RULES + 1)];\n    }\n");

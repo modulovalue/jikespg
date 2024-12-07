@@ -219,8 +219,8 @@ static void exit_process(void) {
   if (string_offset > 0) {
     string_table = (char *)
     (string_table == (char *) NULL
-       ? malloc((string_offset) * sizeof(char))
-       : realloc(string_table, (string_offset) * sizeof(char)));
+       ? malloc(string_offset * sizeof(char))
+       : realloc(string_table, string_offset * sizeof(char)));
 
     if (string_table == (char *) NULL)
       nospace(__FILE__, __LINE__);
@@ -247,10 +247,10 @@ static bool verify(const char *item) {
 /* TRANSLATE takes as arguments a character array, which it folds to upper   */
 /* to uppercase and returns.                                                 */
 static char *translate(char *str, const int len) {
-  for (register int i = 0; i < len; i++)
+  for (register int i = 0; i < len; i++) {
     str[i] = TOUPPER(str[i]);
-
-  return (str);
+  }
+  return str;
 } /* end translate */
 
 
@@ -304,10 +304,10 @@ static void options(void) {
 
   register int i = 0;
 
-  while ((parm[i] != '\0') && /* Clean front of string */
-         ((parm[i] == ',') ||
-          (parm[i] == '/') ||
-          (parm[i] == ' ')))
+  while (parm[i] != '\0' && /* Clean front of string */
+         (parm[i] == ',' ||
+          parm[i] == '/' ||
+          parm[i] == ' '))
     i++;
 
   while (parm[i] != '\0') /* Repeat until parm line is exhausted */
@@ -317,11 +317,11 @@ static void options(void) {
 
     i = 0;
 
-    while ((parm[i] != '\0') && /* Search for delimiter */
-           ((parm[i] != ',') &&
-            (parm[i] != '/') &&
-            (parm[i] != '=') &&
-            (parm[i] != ' ')))
+    while (parm[i] != '\0' && /* Search for delimiter */
+           (parm[i] != ',' &&
+            parm[i] != '/' &&
+            parm[i] != '=' &&
+            parm[i] != ' '))
       i++;
 
     for (j = 0; j < i; j++) /* Fold actual parameter */
@@ -354,8 +354,8 @@ static void options(void) {
     /* and TOKEN contains the upper-case folded value of TEMP.                   */
     if (delim != '=') /* if switch parameter then process */
     {
-      if ((len > 2) &&
-          (memcmp(token, "NO", 2) == 0)) /* option has "NO" */
+      if (len > 2 &&
+          memcmp(token, "NO", 2) == 0) /* option has "NO" */
       {
         /* prefix?         */
         flag = false;
@@ -382,63 +382,63 @@ static void options(void) {
         deferred_bit = flag;
       else if (len >= 2 && memcmp(oedit, token, len) == 0)
         edit_bit = flag;
-      else if ((len >= 2) &&
-               ((memcmp(oerrormaps, token, len) == 0) ||
-                (strcmp("EM", token) == 0) ||
-                (memcmp(oerrormaps2, token, len) == 0) ||
-                (memcmp(oerrormaps3, token, len) == 0)))
+      else if (len >= 2 &&
+               (memcmp(oerrormaps, token, len) == 0 ||
+                strcmp("EM", token) == 0 ||
+                memcmp(oerrormaps2, token, len) == 0 ||
+                memcmp(oerrormaps3, token, len) == 0))
         error_maps_bit = flag;
-      else if ((len >= 2) && (memcmp(ofirst, token, len) == 0))
+      else if (len >= 2 && memcmp(ofirst, token, len) == 0)
         first_bit = flag;
-      else if ((len >= 2) && (memcmp(ofollow, token, len) == 0))
+      else if (len >= 2 && memcmp(ofollow, token, len) == 0)
         follow_bit = flag;
       else if (len >= 2 &&
-               ((strcmp(token, "GP") == 0) ||
-                (memcmp(ogenprsr, token, len) == 0) ||
-                (memcmp(ogenprsr2, token, len) == 0) ||
-                (memcmp(ogenprsr3, token, len) == 0))) {
+               (strcmp(token, "GP") == 0 ||
+                memcmp(ogenprsr, token, len) == 0 ||
+                memcmp(ogenprsr2, token, len) == 0 ||
+                memcmp(ogenprsr3, token, len) == 0)) {
         c_bit = flag;
         cpp_bit = false;
         java_bit = false;
       } else if (len >= 2 &&
-                 ((strcmp(token, "GD") == 0) ||
-                  (memcmp(ogotodefault, token, len) == 0) ||
-                  (memcmp(ogotodefault2, token, len) == 0) ||
-                  (memcmp(ogotodefault3, token, len) == 0)))
+                 (strcmp(token, "GD") == 0 ||
+                  memcmp(ogotodefault, token, len) == 0 ||
+                  memcmp(ogotodefault2, token, len) == 0 ||
+                  memcmp(ogotodefault3, token, len) == 0))
         goto_default_bit = flag;
-      else if ((strcmp(token, "HW") == 0) ||
-               (memcmp(ohalfword, token, len) == 0) ||
-               (memcmp(ohalfword2, token, len) == 0) ||
-               (memcmp(ohalfword3, token, len) == 0))
+      else if (strcmp(token, "HW") == 0 ||
+               memcmp(ohalfword, token, len) == 0 ||
+               memcmp(ohalfword2, token, len) == 0 ||
+               memcmp(ohalfword3, token, len) == 0)
         byte_bit = !flag;
       else if (len >= 2 && memcmp(olalr, token, len) == 0) {
         slr_bit = !flag;
         lalr_level = 1;
       } else if (len >= 2 && memcmp(olist, token, len) == 0)
         list_bit = flag;
-      else if ((strcmp(token, "NC") == 0) ||
-               (memcmp(ontcheck, token, len) == 0) ||
-               (memcmp(ontcheck2, token, len) == 0) ||
-               (memcmp(ontcheck3, token, len) == 0))
+      else if (strcmp(token, "NC") == 0 ||
+               memcmp(ontcheck, token, len) == 0 ||
+               memcmp(ontcheck2, token, len) == 0 ||
+               memcmp(ontcheck3, token, len) == 0)
         nt_check_bit = flag;
-      else if ((strcmp(token, "RR") == 0) ||
-               (memcmp(oreadreduce, token, len) == 0) ||
-               (memcmp(oreadreduce2, token, len) == 0) ||
-               (memcmp(oreadreduce3, token, len) == 0))
+      else if (strcmp(token, "RR") == 0 ||
+               memcmp(oreadreduce, token, len) == 0 ||
+               memcmp(oreadreduce2, token, len) == 0 ||
+               memcmp(oreadreduce3, token, len) == 0)
         read_reduce_bit = flag;
       else if (len >= 2 && memcmp(oscopes, token, len) == 0)
         scopes_bit = flag;
-      else if ((len >= 2) &&
-               ((strcmp(token, "SD") == 0) ||
-                (memcmp(oshiftdefault, token, len) == 0) ||
-                (memcmp(oshiftdefault2, token, len) == 0) ||
-                (memcmp(oshiftdefault3, token, len) == 0)))
+      else if (len >= 2 &&
+               (strcmp(token, "SD") == 0 ||
+                memcmp(oshiftdefault, token, len) == 0 ||
+                memcmp(oshiftdefault2, token, len) == 0 ||
+                memcmp(oshiftdefault3, token, len) == 0))
         shift_default_bit = flag;
-      else if ((len >= 2) &&
-               ((strcmp(token, "SP") == 0) ||
-                (memcmp(osingleproductions, token, len) == 0) ||
-                (memcmp(osingleproductions2, token, len) == 0) ||
-                (memcmp(osingleproductions3, token, len) == 0)))
+      else if (len >= 2 &&
+               (strcmp(token, "SP") == 0 ||
+                memcmp(osingleproductions, token, len) == 0 ||
+                memcmp(osingleproductions2, token, len) == 0 ||
+                memcmp(osingleproductions3, token, len) == 0))
         single_productions_bit = flag;
       else if (len >= 2 && memcmp(oslr, token, len) == 0) {
         slr_bit = flag;
@@ -461,8 +461,8 @@ static void options(void) {
         warnings_bit = flag;
       else if (memcmp(oxref, token, len) == 0)
         xref_bit = flag;
-      else if ((strcmp(token, "D") == 0) ||
-               (strcmp(token, "DE") == 0)) {
+      else if (strcmp(token, "D") == 0 ||
+               strcmp(token, "DE") == 0) {
         sprintf(msg_line,
                 "\"%s\" is an ambiguous option: "
                 "DEBUG, DEFAULT, DEFERRED ?", temp);
@@ -506,18 +506,18 @@ static void options(void) {
       }
 
       j = i;
-      while ((parm[i] != '\0') && /* find next delimeter */
-             ((parm[i] != ',') &&
-              (parm[i] != '/') &&
-              (parm[i] != ' ')))
+      while (parm[i] != '\0' && /* find next delimeter */
+             (parm[i] != ',' &&
+              parm[i] != '/' &&
+              parm[i] != ' '))
         i++;
 
       memcpy(temp, parm+j, i - j); /* copy into TEMP */
       temp[i - j] = '\0';
-      if ((strcmp(token, "AN") == 0) ||
-          (memcmp(token, oactfile_name, len) == 0) ||
-          (memcmp(token, oactfile_name2, len) == 0) ||
-          (memcmp(token, oactfile_name3, len) == 0))
+      if (strcmp(token, "AN") == 0 ||
+          memcmp(token, oactfile_name, len) == 0 ||
+          memcmp(token, oactfile_name2, len) == 0 ||
+          memcmp(token, oactfile_name3, len) == 0)
         strcpy(act_file, temp);
       else if (strcmp(token, oblockb) == 0)
         strcpy(blockb, temp);
@@ -534,16 +534,16 @@ static void options(void) {
         }
       } else if (len >= 2 && memcmp(token, oescape, len) == 0)
         escape = temp[0];
-      else if (((strcmp(token, "FP") == 0) ||
-                (memcmp(token, ofile_prefix, len) == 0) ||
-                (memcmp(token, ofile_prefix2, len) == 0) ||
-                (memcmp(token, ofile_prefix3, len) == 0))) {
+      else if (strcmp(token, "FP") == 0 ||
+               memcmp(token, ofile_prefix, len) == 0 ||
+               memcmp(token, ofile_prefix2, len) == 0 ||
+               memcmp(token, ofile_prefix3, len) == 0) {
         memcpy(file_prefix, temp, 5);
         file_prefix[MIN(5, strlen(temp))] = '\0';
-      } else if ((strcmp(token, "GP") == 0) ||
-                 (memcmp(ogenprsr, token, len) == 0) ||
-                 (memcmp(ogenprsr2, token, len) == 0) ||
-                 (memcmp(ogenprsr3, token, len) == 0)) {
+      } else if (strcmp(token, "GP") == 0 ||
+                 memcmp(ogenprsr, token, len) == 0 ||
+                 memcmp(ogenprsr2, token, len) == 0 ||
+                 memcmp(ogenprsr3, token, len) == 0) {
         bool invalid_language = true;
 
         if (temp[0] == 'c' || temp[0] == 'C') {
@@ -577,11 +577,11 @@ static void options(void) {
                   temp, token);
           PRNTERR(msg_line);
         }
-      } else if ((strcmp(token, "HN") == 0) ||
-                 ((len >= 2) &&
-                  ((memcmp(token, ohactfile_name, len) == 0) ||
-                   (memcmp(token, ohactfile_name2, len) == 0) ||
-                   (memcmp(token, ohactfile_name3, len) == 0))))
+      } else if (strcmp(token, "HN") == 0 ||
+                 (len >= 2 &&
+                  (memcmp(token, ohactfile_name, len) == 0 ||
+                   memcmp(token, ohactfile_name2, len) == 0 ||
+                   memcmp(token, ohactfile_name3, len) == 0)))
         strcpy(hact_file, temp);
       else if (len >= 2 && strcmp(token, ohblockb) == 0)
         strcpy(hblockb, temp);
@@ -591,8 +591,8 @@ static void options(void) {
         len = strlen(temp);
         if (len > MAX_PARM_SIZE)
           temp[MAX_PARM_SIZE - 1] = '\0';
-        if ((!verify(temp)) &&
-            (memcmp(translate(temp, len), omax, len) != 0)) {
+        if (!verify(temp) &&
+            memcmp(translate(temp, len), omax, len) != 0) {
           sprintf(msg_line,
                   "\"%s\" is an invalid value for %s",
                   temp, token);
@@ -613,10 +613,10 @@ static void options(void) {
             }
           }
         }
-      } else if ((len >= 2) &&
-                 ((memcmp(token, omaximum_distance, len) == 0) ||
-                  (memcmp(token, omaximum_distance2, len) == 0) ||
-                  (memcmp(token, omaximum_distance3, len) == 0))) {
+      } else if (len >= 2 &&
+                 (memcmp(token, omaximum_distance, len) == 0 ||
+                  memcmp(token, omaximum_distance2, len) == 0 ||
+                  memcmp(token, omaximum_distance3, len) == 0)) {
         if (verify(temp))
           maximum_distance = atoi(temp);
         else {
@@ -625,10 +625,10 @@ static void options(void) {
                   temp, token);
           PRNTERR(msg_line);
         }
-      } else if ((len >= 2) &&
-                 ((memcmp(token, ominimum_distance, len) == 0) ||
-                  (memcmp(token, ominimum_distance2, len) == 0) ||
-                  (memcmp(token, ominimum_distance3, len) == 0))) {
+      } else if (len >= 2 &&
+                 (memcmp(token, ominimum_distance, len) == 0 ||
+                  memcmp(token, ominimum_distance2, len) == 0 ||
+                  memcmp(token, ominimum_distance3, len) == 0)) {
         if (verify(temp))
           minimum_distance = atoi(temp);
         else {
@@ -637,7 +637,7 @@ static void options(void) {
                   temp, token);
           PRNTERR(msg_line);
         }
-      } else if ((memcmp(onames, token, len) == 0)) {
+      } else if (memcmp(onames, token, len) == 0) {
         len = strlen(temp);
         if (len >= 2 && memcmp(omax, translate(temp, len), len) == 0)
           names_opt = MAXIMUM_NAMES;
@@ -660,11 +660,11 @@ static void options(void) {
         }
       } else if (len >= 2 && memcmp(token, oormark, len) == 0)
         ormark = temp[0];
-      else if ((len >= 2) &&
-               ((strcmp(token, "OS") == 0) ||
-                (memcmp(token, ooutputsize, len) == 0) ||
-                (memcmp(token, ooutputsize2, len) == 0) ||
-                (memcmp(token, ooutputsize3, len) == 0))) {
+      else if (len >= 2 &&
+               (strcmp(token, "OS") == 0 ||
+                memcmp(token, ooutputsize, len) == 0 ||
+                memcmp(token, ooutputsize2, len) == 0 ||
+                memcmp(token, ooutputsize3, len) == 0)) {
         if (verify(temp)) {
           const int tmpval = atoi(temp);
           if (tmpval > MAX_LINE_SIZE) {
@@ -682,9 +682,9 @@ static void options(void) {
       } else if (memcmp(token, oprefix, len) == 0)
         strcpy(prefix, temp);
       else if (strcmp(token, "SS") == 0 ||
-               ((memcmp(token, ostack_size, len) == 0) ||
-                (memcmp(token, ostack_size2, len) == 0) ||
-                (memcmp(token, ostack_size3, len) == 0))) {
+               (memcmp(token, ostack_size, len) == 0 ||
+                memcmp(token, ostack_size2, len) == 0 ||
+                memcmp(token, ostack_size3, len) == 0)) {
         if (verify(temp))
           stack_size = atoi(temp);
         else {
@@ -749,10 +749,10 @@ static void options(void) {
       }
     }
 
-    while ((parm[i] != '\0') && /* clean after paramter */
-           ((parm[i] == ',') ||
-            (parm[i] == '/') ||
-            (parm[i] == ' ')))
+    while (parm[i] != '\0' && /* clean after paramter */
+           (parm[i] == ',' ||
+            parm[i] == '/' ||
+            parm[i] == ' '))
       i++;
   }
 }
@@ -835,13 +835,13 @@ static void process_options_lines(void) {
     deferred_bit = false;
 
   if (act_file[0] == '\0')
-    sprintf(act_file, "%sact.%s", file_prefix, (java_bit ? "java" : "h"));
+    sprintf(act_file, "%sact.%s", file_prefix, java_bit ? "java" : "h");
   if (hact_file[0] == '\0')
-    sprintf(hact_file, "%shdr.%s", file_prefix, (java_bit ? "java" : "h"));
-  sprintf(sym_file, "%ssym.%s", file_prefix, (java_bit ? "java" : "h"));
-  sprintf(def_file, "%sdef.%s", file_prefix, (java_bit ? "java" : "h"));
-  sprintf(prs_file, "%sprs.%s", file_prefix, (java_bit ? "java" : "h"));
-  sprintf(dcl_file, "%sdcl.%s", file_prefix, (java_bit ? "java" : "h"));
+    sprintf(hact_file, "%shdr.%s", file_prefix, java_bit ? "java" : "h");
+  sprintf(sym_file, "%ssym.%s", file_prefix, java_bit ? "java" : "h");
+  sprintf(def_file, "%sdef.%s", file_prefix, java_bit ? "java" : "h");
+  sprintf(prs_file, "%sprs.%s", file_prefix, java_bit ? "java" : "h");
+  sprintf(dcl_file, "%sdcl.%s", file_prefix, java_bit ? "java" : "h");
 
   if (verbose_bit) /* turn everything on */
   {
@@ -1116,7 +1116,7 @@ static int hash(const char *symbl) {
   for (; *symbl != '\0'; symbl++) {
     const register unsigned short k = *symbl;
     symbl++;
-    hash_value += ((k << 7) + *symbl);
+    hash_value += (k << 7) + *symbl;
     if (*symbl == '\0')
       break;
   }
@@ -1213,7 +1213,7 @@ static int symbol_image(const char *item) {
       return ABS(q->number);
   }
 
-  return (OMEGA);
+  return OMEGA;
 }
 
 
@@ -1228,12 +1228,12 @@ static int name_map(const char *symb) {
   const register int i = hash(symb);
   for (p = hash_table[i]; p != NULL; p = p->link) {
     if (EQUAL_STRING(symb, p)) {
-      if (p->name_index != OMEGA)
-        return (p->name_index);
-      else {
+      if (p->name_index != OMEGA) {
+        return p->name_index;
+      } else {
         num_names++;
         p->name_index = num_names;
-        return (num_names);
+        return num_names;
       }
     }
   }
@@ -1275,8 +1275,8 @@ process_terminal:
 
   if (act <= NUM_RULES) /* Reduce */
     stack_top--;
-  else if ((act > ERROR_ACTION) || /* Shift_reduce */
-           (act < ACCEPT_ACTION)) /* Shift */
+  else if (act > ERROR_ACTION || /* Shift_reduce */
+           act < ACCEPT_ACTION) /* Shift */
   {
     token_action();
     scanner();
@@ -1294,7 +1294,7 @@ process_non_terminal:
   do {
     const register int lhs_sym = lhs[act]; /* to bypass IBMC12 bug */
 
-    stack_top -= (rhs[act] - 1);
+    stack_top -= rhs[act] - 1;
     rule_action[act]();
     act = nt_action(state_stack[stack_top], lhs_sym);
   } while (act <= NUM_RULES);
@@ -1314,7 +1314,7 @@ scan_token:
   /* Skip "blank" spaces.                                          */
   p1 = p2;
   while (IsSpace(*p1)) {
-    if (*(p1++) == '\n') {
+    if (*p1++ == '\n') {
       if (bufend == input_buffer + IOBUFFER_SIZE) {
         i = bufend - p1;
         if (i < MAX_LINE_SIZE) {
@@ -1353,7 +1353,7 @@ scan_token:
         PRNTERR(msg_line);
         exit(12);
       }
-      if (*(p1++) == '\n') {
+      if (*p1++ == '\n') {
         if (bufend == input_buffer + IOBUFFER_SIZE) {
           i = bufend - p1;
           if (i < MAX_LINE_SIZE) {
@@ -1397,7 +1397,7 @@ scan_token:
         PRNTERR(msg_line);
         exit(12);
       }
-      if (*(p1++) == '\n') {
+      if (*p1++ == '\n') {
         if (bufend == input_buffer + IOBUFFER_SIZE) {
           i = bufend - p1;
           if (i < MAX_LINE_SIZE) {
@@ -1431,7 +1431,7 @@ scan_token:
       if (IsAlpha(*p2)) {
         p2++;
         while (*p2 != '\n') {
-          if (*(p2++) == '>') {
+          if (*p2++ == '>') {
             ct = SYMBOL_TK;
             ct_length = p2 - p1;
             goto check_symbol_length;
@@ -1481,7 +1481,7 @@ scan_token:
       i = 0;
       p1 = ct_ptr;
       do {
-        *(p1++) = ct_ptr[i++];
+        *p1++ = ct_ptr[i++];
         if (ct_ptr[i] == '\'')
           i++; /* skip next quote */
       } while (i < ct_length);
@@ -1844,7 +1844,7 @@ static void process_actions(void) {
 
     for (register int j = 0; j < defelmt[i].length; j++) {
       defelmt[i].macro[j] = *p1;
-      if (*(p1++) == '\n') {
+      if (*p1++ == '\n') {
         if (bufend == input_buffer + IOBUFFER_SIZE) {
           k = bufend - p1;
           if (k < MAX_LINE_SIZE) {
@@ -1862,7 +1862,7 @@ static void process_actions(void) {
     defelmt[i].macro[defelmt[i].length + 1] = '\0';
 
     for (p = defelmt[i].name; *p != '\0'; p++) {
-      *p = (isupper(*p) ? tolower(*p) : *p);
+      *p = isupper(*p) ? tolower(*p) : *p;
     }
 
     mapmacro(i);
@@ -1902,7 +1902,7 @@ static void process_actions(void) {
       p = line;
       p1 = linestart + actelmt[i].start_column;
       while (*p1 != '\n')
-        *(p++) = *(p1++);
+        *p++ = *p1++;
       *p = '\0';
     }
 
@@ -1931,7 +1931,7 @@ static void process_actions(void) {
         if (line_no < actelmt[i].end_line) {
           p = line;
           while (*p1 != '\n')
-            *(p++) = *(p1++);
+            *p++ = *p1++;
           *p = '\0';
 
           if (actelmt[i].header_block)
@@ -2031,7 +2031,7 @@ static void make_rules_map(void) {
 
   rhs_sym = Allocate_short_array(num_items + 1);
 
-  num_items += (num_rules + 1);
+  num_items += num_rules + 1;
   SHORT_CHECK(num_items);
 
   /* Put starting rules from start symbol linked list in rule and rhs table    */
@@ -2065,7 +2065,7 @@ static void make_rules_map(void) {
         rhs_sym[rhs_ct++] = ptr->value;
       } while (ptr != rulehdr[i].rhs_root);
       ptr = ptr->next; /* point to 1st element */
-      rules[i].sp = (rulehdr[i].sp && ptr == rulehdr[i].rhs_root);
+      rules[i].sp = rulehdr[i].sp && ptr == rulehdr[i].rhs_root;
       if (rules[i].sp)
         num_single_productions++;
       free_nodes(ptr, rulehdr[i].rhs_root);
@@ -2105,7 +2105,7 @@ static struct line_elemt *alloc_line(void) {
       nospace(__FILE__, __LINE__);
   }
 
-  return (p);
+  return p;
 }
 
 
@@ -2452,7 +2452,7 @@ static struct line_elemt *find_macro(char *name) {
 
   register char *s = macro_name;
   for (ptr = name; *ptr != '\0'; ptr++) {
-    *(s++) = isupper(*ptr) ? tolower(*ptr) : *ptr;
+    *s++ = isupper(*ptr) ? tolower(*ptr) : *ptr;
   }
   *s = '\0';
 
@@ -2467,7 +2467,7 @@ static struct line_elemt *find_macro(char *name) {
           register struct line_elemt *q = alloc_line();
           s = q->line;
           while (*ptr != '\n')
-            *(s++) = *(ptr++);
+            *s++ = *ptr++;
           *s = '\0';
           ptr++; /* skip newline marker */
 
@@ -2566,7 +2566,7 @@ static void display_input(void) {
         ENDPAGE_CHECK();
       }
 
-      fill_in(line, (PRINT_LINE_SIZE - (strlen(blocke) + 1)), '-');
+      fill_in(line, PRINT_LINE_SIZE - (strlen(blocke) + 1), '-');
       fprintf(syslis, "%s%s\n", blocke, line);
       ENDPAGE_CHECK();
     }
@@ -2590,7 +2590,7 @@ static void display_input(void) {
       len = PRINT_LINE_SIZE - 5;
       print_large_token(line, temp, "", len);
       strcat(line, " ::= ");
-      symb = -(p->number);
+      symb = -p->number;
       restore_symbol(temp, RETRIEVE_STRING(symb));
 
       if (strlen(line) + strlen(temp) > PRINT_LINE_SIZE) {
@@ -2659,7 +2659,7 @@ static void display_input(void) {
       else
         strcat(line, " ::= ");
 
-      i = (PRINT_LINE_SIZE / 2) + 1;
+      i = PRINT_LINE_SIZE / 2 + 1;
       offset = MIN(strlen(line) - 1, i);
       len = PRINT_LINE_SIZE - offset - 1;
     } else {

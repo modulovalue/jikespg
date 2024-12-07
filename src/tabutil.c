@@ -106,7 +106,7 @@ void itoc(const int num) {
   }
 
   while (*p != '\0')
-    *(output_ptr++) = *(p++);
+    *output_ptr++ = *p++;
 }
 
 
@@ -286,13 +286,13 @@ void process_error_maps(void) {
 
   char tok[SYMBOL_SIZE + 1];
 
-  terminal_ubound = (table_opt == OPTIMIZE_TIME
-                       ? num_symbols
-                       : num_terminals);
+  terminal_ubound = table_opt == OPTIMIZE_TIME
+                      ? num_symbols
+                      : num_terminals;
 
-  non_terminal_ubound = (table_opt == OPTIMIZE_TIME
-                           ? num_symbols
-                           : num_non_terminals);
+  non_terminal_ubound = table_opt == OPTIMIZE_TIME
+                          ? num_symbols
+                          : num_non_terminals;
 
   symbol_root = Allocate_int_array(num_symbols + 1);
   symbol_count = Allocate_int_array(num_symbols + 1);
@@ -518,7 +518,7 @@ void process_error_maps(void) {
                                state_list, action_symbols_range);
 
   k = 0;
-  for (i = 0; i < (offset - 1); i++) {
+  for (i = 0; i < offset - 1; i++) {
     field(action_symbols_range[i], 4);
     k++;
     if (k == 18) {
@@ -536,10 +536,10 @@ void process_error_maps(void) {
   num_bytes = 2 * (num_states + offset);
   if (byte_bit) {
     if (offset <= 255)
-      num_bytes -= (num_states + 1);
-    if (((table_opt == OPTIMIZE_TIME) && (last_terminal <= 255)) ||
-        ((table_opt != OPTIMIZE_TIME) && (num_terminals <= 255)))
-      num_bytes -= (offset - 1);
+      num_bytes -= num_states + 1;
+    if ((table_opt == OPTIMIZE_TIME && last_terminal <= 255) ||
+        (table_opt != OPTIMIZE_TIME && num_terminals <= 255))
+      num_bytes -= offset - 1;
   }
   sprintf(msg_line,
           "    Storage required for ACTION_SYMBOLS map: "
@@ -597,7 +597,7 @@ void process_error_maps(void) {
                                 state_list, naction_symbols_range);
 
   k = 0;
-  for (i = 0; i < (offset - 1); i++) {
+  for (i = 0; i < offset - 1; i++) {
     field(naction_symbols_range[i], 4);
     k++;
     if (k == 18) {
@@ -615,10 +615,10 @@ void process_error_maps(void) {
   num_bytes = 2 * (num_states + offset);
   if (byte_bit) {
     if (offset <= 255)
-      num_bytes -= (num_states + 1);
-    if (((table_opt == OPTIMIZE_TIME) && (last_non_terminal <= 255)) ||
-        ((table_opt != OPTIMIZE_TIME) && (num_non_terminals <= 255)))
-      num_bytes -= (offset - 1);
+      num_bytes -= num_states + 1;
+    if ((table_opt == OPTIMIZE_TIME && last_non_terminal <= 255) ||
+        (table_opt != OPTIMIZE_TIME && num_non_terminals <= 255))
+      num_bytes -= offset - 1;
   }
   sprintf(msg_line,
           "    Storage required for NACTION_SYMBOLS map: "
@@ -896,7 +896,7 @@ void process_error_maps(void) {
     offset = num_symbols;
 
   if (num_bytes > 255)
-    offset += (2 * num_symbols);
+    offset += 2 * num_symbols;
   else
     offset += num_symbols;
 
@@ -911,12 +911,12 @@ void process_error_maps(void) {
     offset = num_names;
 
   if (num_bytes > 255)
-    offset += (2 * num_names);
+    offset += 2 * num_names;
   else
     offset += num_names;
 
   if (num_names > 255)
-    offset += (2 * num_symbols);
+    offset += 2 * num_symbols;
   else
     offset += num_symbols;
 
@@ -1059,7 +1059,7 @@ void process_error_maps(void) {
       num_bytes = 5 * num_scopes +
                   scope_rhs_size + scope_state_size;
       if (num_symbols > 255)
-        num_bytes += (2 * num_scopes + scope_rhs_size);
+        num_bytes += 2 * num_scopes + scope_rhs_size;
     } else {
       num_bytes = 5 * num_scopes +
                   scope_rhs_size + 2 * scope_state_size;
@@ -1071,7 +1071,7 @@ void process_error_maps(void) {
         num_bytes += scope_rhs_size;
     }
     if (scope_rhs_size > 255)
-      num_bytes += (2 * num_scopes);
+      num_bytes += 2 * num_scopes;
     if (scope_state_size > 255)
       num_bytes += num_scopes;
     sprintf(msg_line,
@@ -1201,8 +1201,8 @@ void compute_naction_symbols_range(const long *state_start,
       /* that has not yet been processed into the list.            */
       /* Continue until stack is empty...                          */
       /* Recall that the stack is represented by a circular queue. */
-      for (bool end_node = ((state = state_no) == NIL);
-           !end_node; end_node = (state == state_no)) {
+      for (bool end_node = (state = state_no) == NIL;
+           !end_node; end_node = state == state_no) {
         state = state_stack[state];
         for (j = gd_index[state];
              j <= gd_index[state + 1] - 1; j++) {
