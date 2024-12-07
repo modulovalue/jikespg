@@ -10,19 +10,13 @@ jikespg: ctabs.o globals.o lpgparse.o lpgutil.o main.o \
 	    mkfirst.o mkred.o mkstates.o partset.o prntstat.o produce.o \
 	    ptables.o remsp.o resolve.o spacetab.o tabutil.o timetab.o
 
-lpgact.i: jikespg.g
-	  jikespg jikespg
-	  rm jikespg.l
-	  make
-	  rm CRASH_THE_INITIAL_MAKE_COMMAND_TO_BREAK_OUT
-
 main.o:	main.c common.h
 	$(CC) -c main.c
 
 globals.o: globals.c common.h
 	$(CC) -c globals.c
 
-lpgparse.o: lpgprs.h lpgdcl.h lpgdef.h lpgact.h lpgact.i lpgsym.h \
+lpgparse.o: lpgprs.h lpgdcl.h lpgdef.h lpgact.h lpgact.c lpgsym.h \
 	    common.h lpgparse.h	lpgparse.c
 	$(CC) -c lpgparse.c
 

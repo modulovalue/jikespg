@@ -1,4 +1,4 @@
-%Options nogoto-default,esc=$,os=100,action,actfile=lpgact.i,noem
+%Options nogoto-default,esc=$,os=100,action,actfile=lpgact.c,noem
 %Options fp=lpg,gp,nodefer,suffix=_TK,stack_size=21,hactfile=lpgact.h
 -- $Id: jikespg.g,v 1.2 1999/11/04 14:02:22 shields Exp $
 -- This software is subject to the terms of the IBM Jikes Compiler
@@ -71,7 +71,7 @@ static void null_action(void)
     return;
 }
 
-static void add_macro_definition(char *name, struct terminal_type *term)
+static void add_macro_definition(const char *name, const struct terminal_type *term)
 {
     if (num_defs >= (int)defelmt_size)
     {
@@ -84,18 +84,18 @@ static void add_macro_definition(char *name, struct terminal_type *term)
             nospace(__FILE__, __LINE__);
     }
 
-    defelmt[num_defs].length       = (*term).length;
-    defelmt[num_defs].start_line   = (*term).start_line;
-    defelmt[num_defs].start_column = (*term).start_column;
-    defelmt[num_defs].end_line     = (*term).end_line;
-    defelmt[num_defs].end_column   = (*term).end_column;
+    defelmt[num_defs].length       = term->length;
+    defelmt[num_defs].start_line   = term->start_line;
+    defelmt[num_defs].start_column = term->start_column;
+    defelmt[num_defs].end_line     = term->end_line;
+    defelmt[num_defs].end_column   = term->end_column;
     strcpy(defelmt[num_defs].name, name);
     num_defs++;
 
     return;
 }
 
-static void add_block_definition(struct terminal_type *term)
+static void add_block_definition(const struct terminal_type *term)
 {
     if (num_acts >= (int) actelmt_size)
     {
@@ -109,11 +109,11 @@ static void add_block_definition(struct terminal_type *term)
     }
 
     actelmt[num_acts].rule_number  = num_rules;
-    actelmt[num_acts].start_line   = (*term).start_line;
-    actelmt[num_acts].start_column = (*term).start_column;
-    actelmt[num_acts].end_line     = (*term).end_line;
-    actelmt[num_acts].end_column   = (*term).end_column;
-    actelmt[num_acts].header_block = ((*term).kind == HBLOCK_TK);
+    actelmt[num_acts].start_line   = term->start_line;
+    actelmt[num_acts].start_column = term->start_column;
+    actelmt[num_acts].end_line     = term->end_line;
+    actelmt[num_acts].end_column   = term->end_column;
+    actelmt[num_acts].header_block = term->kind == HBLOCK_TK;
     num_acts++;
 
     return;
@@ -628,10 +628,8 @@ static void missing_quote(void)
 /.$location
 static void act$rule_number(void)
 {
-    register struct node *q;
-
     assign_symbol_no(SYM1.name, OMEGA);
-    q = Allocate_node();
+    register struct node *q = Allocate_node();
     q -> value = symbol_image(SYM1.name);
     if (start_symbol_root == NULL)
         q -> next = q;
@@ -708,11 +706,10 @@ static void misplaced_keyword_found_in_START_section(void)
 /.$location
 static void act$rule_number(void)
 {
-    register struct node *q;
 
     if (start_symbol_root == NULL)
     {
-        q = Allocate_node();
+        register struct node *q = Allocate_node();
         q -> value = empty;
         q -> next = q;
         start_symbol_root = q;
@@ -745,12 +742,10 @@ static void act$rule_number(void)
 /.$location
 static void act$rule_number(void)
 {
-    register struct node *q;
-
     assign_symbol_no(SYM2.name, OMEGA);
     if (start_symbol_root == NULL)
     {
-        q = Allocate_node();
+        register struct node *q = Allocate_node();
         q -> value = symbol_image(SYM2.name);
         q -> next = q;
 
@@ -840,11 +835,9 @@ static void act$rule_number(void)
 /.$location
 static void act$rule_number(void)
 {
-    register struct node *q;
-    char tok_string[SYMBOL_SIZE + 1];
-
     if (error_image == DEFAULT_SYMBOL)
     {
+        char tok_string[SYMBOL_SIZE + 1];
         restore_symbol(tok_string, kerror);
         sprintf(msg_line,
                 "%s not declared or aliased to terminal "
@@ -854,7 +847,7 @@ static void act$rule_number(void)
         PRNTERR(msg_line);
         exit(12);
     }
-    q = Allocate_node();
+    register struct node *q = Allocate_node();
     q -> value = error_image;
     num_items++;
     SHORT_CHECK(num_items);
@@ -875,11 +868,8 @@ static void act$rule_number(void)
 /.$location
 static void act$rule_number(void)
 {
-    register int sym;
-    register struct node *q;
-
     assign_symbol_no(SYM2.name, OMEGA);
-    sym = symbol_image(SYM2.name);
+    register int sym = symbol_image(SYM2.name);
     if (sym != empty)
     {
         if (sym == eoft_image)
@@ -891,7 +881,7 @@ static void act$rule_number(void)
             PRNTERR(msg_line);
             exit(12);
         }
-        q = Allocate_node();
+        register struct node *q = Allocate_node();
         q -> value = sym;
         num_items++;
         SHORT_CHECK(num_items);
@@ -1177,11 +1167,8 @@ static void process_TERMINALS_section(void)
 /.$location
 static void process_ALIAS_section(void)
 {
-    register int i,
-                 k;
-    register struct hash_type *p;
 
-    k = 0;
+    register int k = 0;
     if (eoft_image <= num_terminals)
         k++;
     else
@@ -1201,9 +1188,9 @@ static void process_ALIAS_section(void)
 
     if (k > 0)
     {
-        for (i = 0; i < HT_SIZE; i++)
+        for (register int i = 0; i < HT_SIZE; i++)
         {
-            p = hash_table[i];
+            register struct hash_type* p = hash_table[i];
             while(p != NULL)
             {
                 if (p -> number > num_terminals)

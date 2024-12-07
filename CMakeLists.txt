@@ -10,7 +10,7 @@ add_executable(
         src/ctabs.c
         src/globals.c
         src/lpgact.h
-        src/lpgact.i
+        src/lpgact.c
         src/lpgdcl.h
         src/lpgdef.h
         src/lpgparse.c

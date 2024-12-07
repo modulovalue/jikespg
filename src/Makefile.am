@@ -20,7 +20,7 @@ jikespg_SOURCES = ctabs.c \
 
 noinst_HEADERS = common.h \
                  lpgact.h \
-                 lpgact.i \
+                 lpgact.c \
                  lpgdcl.h \
                  lpgdef.h \
                  lpgparse.h \

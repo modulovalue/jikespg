@@ -8,7 +8,7 @@ static void null_action(void)
     return;
 }
 
-static void add_macro_definition(char *name, struct terminal_type *term)
+static void add_macro_definition(const char *name, const struct terminal_type *term)
 {
     if (num_defs >= (int)defelmt_size)
     {
@@ -21,18 +21,18 @@ static void add_macro_definition(char *name, struct terminal_type *term)
             nospace(__FILE__, __LINE__);
     }
 
-    defelmt[num_defs].length       = (*term).length;
-    defelmt[num_defs].start_line   = (*term).start_line;
-    defelmt[num_defs].start_column = (*term).start_column;
-    defelmt[num_defs].end_line     = (*term).end_line;
-    defelmt[num_defs].end_column   = (*term).end_column;
+    defelmt[num_defs].length       = term->length;
+    defelmt[num_defs].start_line   = term->start_line;
+    defelmt[num_defs].start_column = term->start_column;
+    defelmt[num_defs].end_line     = term->end_line;
+    defelmt[num_defs].end_column   = term->end_column;
     strcpy(defelmt[num_defs].name, name);
     num_defs++;
 
     return;
 }
 
-static void add_block_definition(struct terminal_type *term)
+static void add_block_definition(const struct terminal_type *term)
 {
     if (num_acts >= (int) actelmt_size)
     {
@@ -46,11 +46,11 @@ static void add_block_definition(struct terminal_type *term)
     }
 
     actelmt[num_acts].rule_number  = num_rules;
-    actelmt[num_acts].start_line   = (*term).start_line;
-    actelmt[num_acts].start_column = (*term).start_column;
-    actelmt[num_acts].end_line     = (*term).end_line;
-    actelmt[num_acts].end_column   = (*term).end_column;
-    actelmt[num_acts].header_block = ((*term).kind == HBLOCK_TK);
+    actelmt[num_acts].start_line   = term->start_line;
+    actelmt[num_acts].start_column = term->start_column;
+    actelmt[num_acts].end_line     = term->end_line;
+    actelmt[num_acts].end_column   = term->end_column;
+    actelmt[num_acts].header_block = term->kind == HBLOCK_TK;
     num_acts++;
 
     return;
@@ -430,13 +430,11 @@ static void missing_quote(void)
 }
 
 /* start_symbol ::= SYMBOL */
-#line 630 "jikespg.g"
+#line 629 "jikespg.g"
 static void act63(void)
 {
-    register struct node *q;
-
     assign_symbol_no(SYM1.name, OMEGA);
-    q = Allocate_node();
+    register struct node *q = Allocate_node();
     q -> value = symbol_image(SYM1.name);
     if (start_symbol_root == NULL)
         q -> next = q;
@@ -454,7 +452,7 @@ static void act63(void)
 }
 
 /* start_symbol ::= OR */
-#line 657 "jikespg.g"
+#line 652 "jikespg.g"
 static void bad_start_symbol(void)
 {
     sprintf(msg_line,
@@ -467,7 +465,7 @@ static void bad_start_symbol(void)
 }
 
 /* start_symbol ::= BLOCK */
-#line 677 "jikespg.g"
+#line 672 "jikespg.g"
 static void act68(void)
 {
     sprintf(msg_line,
@@ -480,7 +478,7 @@ static void act68(void)
 }
 
 /* start_symbol ::= DEFINE_KEY */
-#line 691 "jikespg.g"
+#line 686 "jikespg.g"
 static void misplaced_keyword_found_in_START_section(void)
 {
     sprintf(msg_line,
@@ -493,14 +491,13 @@ static void misplaced_keyword_found_in_START_section(void)
 }
 
 /* rules_block ::= RULES_KEY */
-#line 712 "jikespg.g"
+#line 707 "jikespg.g"
 static void act73(void)
 {
-    register struct node *q;
 
     if (start_symbol_root == NULL)
     {
-        q = Allocate_node();
+        register struct node *q = Allocate_node();
         q -> value = empty;
         q -> next = q;
         start_symbol_root = q;
@@ -513,7 +510,7 @@ static void act73(void)
 }
 
 /* rules_block ::= RULES_KEY rule_list */
-#line 733 "jikespg.g"
+#line 727 "jikespg.g"
 static void act74(void)
 {
     build_symno();
@@ -522,15 +519,13 @@ static void act74(void)
 }
 
 /* rule_list ::= {action_block} SYMBOL produces */
-#line 749 "jikespg.g"
+#line 743 "jikespg.g"
 static void act77(void)
 {
-    register struct node *q;
-
     assign_symbol_no(SYM2.name, OMEGA);
     if (start_symbol_root == NULL)
     {
-        q = Allocate_node();
+        register struct node *q = Allocate_node();
         q -> value = symbol_image(SYM2.name);
         q -> next = q;
 
@@ -563,7 +558,7 @@ static void act77(void)
 }
 
 /* rule_list ::= rule_list OR */
-#line 794 "jikespg.g"
+#line 784 "jikespg.g"
 static void act78(void)
 {
     num_rules++;
@@ -585,7 +580,7 @@ static void act78(void)
 }
 
 /* rule_list ::= rule_list SYMBOL produces */
-#line 817 "jikespg.g"
+#line 807 "jikespg.g"
 static void act79(void)
 {
     num_rules++;
@@ -608,14 +603,12 @@ static void act79(void)
 }
 
 /* rule_list ::= rule_list ERROR_SYMBOL */
-#line 846 "jikespg.g"
+#line 836 "jikespg.g"
 static void act82(void)
 {
-    register struct node *q;
-    char tok_string[SYMBOL_SIZE + 1];
-
     if (error_image == DEFAULT_SYMBOL)
     {
+        char tok_string[SYMBOL_SIZE + 1];
         restore_symbol(tok_string, kerror);
         sprintf(msg_line,
                 "%s not declared or aliased to terminal "
@@ -625,7 +618,7 @@ static void act82(void)
         PRNTERR(msg_line);
         exit(12);
     }
-    q = Allocate_node();
+    register struct node *q = Allocate_node();
     q -> value = error_image;
     num_items++;
     SHORT_CHECK(num_items);
@@ -642,14 +635,11 @@ static void act82(void)
 }
 
 /* rule_list ::= rule_list SYMBOL */
-#line 881 "jikespg.g"
+#line 869 "jikespg.g"
 static void act83(void)
 {
-    register int sym;
-    register struct node *q;
-
     assign_symbol_no(SYM2.name, OMEGA);
-    sym = symbol_image(SYM2.name);
+    register int sym = symbol_image(SYM2.name);
     if (sym != empty)
     {
         if (sym == eoft_image)
@@ -661,7 +651,7 @@ static void act83(void)
             PRNTERR(msg_line);
             exit(12);
         }
-        q = Allocate_node();
+        register struct node *q = Allocate_node();
         q -> value = sym;
         num_items++;
         SHORT_CHECK(num_items);
@@ -679,7 +669,7 @@ static void act83(void)
 }
 
 /* rule_list ::= OR */
-#line 919 "jikespg.g"
+#line 904 "jikespg.g"
 static void bad_first_symbol_in_RULES_section(void)
 {
     sprintf(msg_line,
@@ -692,7 +682,7 @@ static void bad_first_symbol_in_RULES_section(void)
 }
 
 /* rule_list ::= rule_list OR produces */
-#line 939 "jikespg.g"
+#line 924 "jikespg.g"
 static void rule_without_left_hand_side(void)
 {
     sprintf(msg_line,
@@ -704,7 +694,7 @@ static void rule_without_left_hand_side(void)
 }
 
 /* rule_list ::= rule_list keyword produces */
-#line 956 "jikespg.g"
+#line 941 "jikespg.g"
 static void act91(void)
 {
     sprintf(msg_line,
@@ -717,7 +707,7 @@ static void act91(void)
 }
 
 /* action_block ::= BLOCK */
-#line 971 "jikespg.g"
+#line 956 "jikespg.g"
 static void act92(void)
 {
     if (action_bit)
@@ -727,7 +717,7 @@ static void act92(void)
 }
 
 /* action_block ::= HBLOCK */
-#line 982 "jikespg.g"
+#line 967 "jikespg.g"
 static void act93(void)
 {
     if (action_bit)
@@ -737,7 +727,7 @@ static void act93(void)
 }
 
 /* keyword ::= DEFINE_KEY */
-#line 994 "jikespg.g"
+#line 979 "jikespg.g"
 static void misplaced_keyword_found_in_RULES_section(void)
 {
     sprintf(msg_line,
@@ -750,7 +740,7 @@ static void misplaced_keyword_found_in_RULES_section(void)
 }
 
 /* names_definition ::= name produces name */
-#line 1020 "jikespg.g"
+#line 1005 "jikespg.g"
 static void act100(void)
 {
     if (error_maps_bit)
@@ -807,7 +797,7 @@ static void act100(void)
 }
 
 /* bad_name ::= DEFINE_KEY */
-#line 1098 "jikespg.g"
+#line 1083 "jikespg.g"
 static void misplaced_keyword_found_in_NAMES_section(void)
 {
     sprintf(msg_line,
@@ -820,7 +810,7 @@ static void misplaced_keyword_found_in_NAMES_section(void)
 }
 
 /* bad_name ::= BLOCK */
-#line 1122 "jikespg.g"
+#line 1107 "jikespg.g"
 static void act116(void)
 {
     sprintf(msg_line,
@@ -833,7 +823,7 @@ static void act116(void)
 }
 
 /* bad_name ::= MACRO_NAME */
-#line 1136 "jikespg.g"
+#line 1121 "jikespg.g"
 static void act117(void)
 {
     sprintf(msg_line,
@@ -846,7 +836,7 @@ static void act117(void)
 }
 
 /* [terminals_block] ::= */
-#line 1158 "jikespg.g"
+#line 1143 "jikespg.g"
 static void process_TERMINALS_section(void)
 {
     num_terminals = num_symbols;
@@ -867,14 +857,11 @@ static void process_TERMINALS_section(void)
 }
 
 /* [alias_block] ::= */
-#line 1183 "jikespg.g"
+#line 1168 "jikespg.g"
 static void process_ALIAS_section(void)
 {
-    register int i,
-                 k;
-    register struct hash_type *p;
 
-    k = 0;
+    register int k = 0;
     if (eoft_image <= num_terminals)
         k++;
     else
@@ -894,9 +881,9 @@ static void process_ALIAS_section(void)
 
     if (k > 0)
     {
-        for (i = 0; i < HT_SIZE; i++)
+        for (register int i = 0; i < HT_SIZE; i++)
         {
-            p = hash_table[i];
+            register struct hash_type* p = hash_table[i];
             while(p != NULL)
             {
                 if (p -> number > num_terminals)
@@ -918,7 +905,7 @@ static void process_ALIAS_section(void)
 }
 
 /* {terminal_symbol} ::= */
-#line 1260 "jikespg.g"
+#line 1242 "jikespg.g"
 static void act132(void)
 {
     assign_symbol_no(kempty, OMEGA);
