@@ -120,8 +120,6 @@ void process_input(void) {
   process_grammar();
 
   exit_process();
-
-  return;
 }
 
 
@@ -138,8 +136,6 @@ static void read_input(void) {
   }
   bufend += num_read;
   *bufend = '\0';
-
-  return;
 }
 
 
@@ -214,8 +210,6 @@ static void init_process(void) {
   knext_line[0] = escape;
   kstart_nt[0] = escape;
   keolt[0] = escape;
-
-  return;
 }
 
 
@@ -237,8 +231,6 @@ static void exit_process(void) {
   ffree(hash_table);
   ffree(input_buffer);
   ffree(rulehdr); /* allocated in action LPGACT when grammar is not empty */
-
-  return;
 }
 
 
@@ -768,8 +760,6 @@ static void options(void) {
             (parm[i] == ' ')))
       i++;
   }
-
-  return;
 }
 
 
@@ -1120,10 +1110,7 @@ static void process_options_lines(void) {
     PRNT(msg_line);
     exit(12);
   }
-
-  return;
-} /* end process_options_lines */
-
+}
 
 /*                                 HASH:                                     */
 /*    HASH takes as argument a symbol and hashes it into a location in       */
@@ -1162,7 +1149,6 @@ static void insert_string(struct hash_type *q, const char *string) {
   q->st_ptr = string_offset;
   while ((string_table[string_offset++] = *string++)); /* Copy until NULL */
   /* is copied.      */
-  return;
 }
 
 
@@ -1202,8 +1188,6 @@ static void assign_symbol_no(const char *string_ptr, int image) {
   insert_string(p, string_ptr);
   p->link = hash_table[i];
   hash_table[i] = p;
-
-  return;
 }
 
 
@@ -1221,8 +1205,6 @@ static void alias_map(const char *stringptr, int image) {
   }
 
   assign_symbol_no(stringptr, image);
-
-  return;
 }
 
 
@@ -1233,7 +1215,7 @@ static void alias_map(const char *stringptr, int image) {
 static int symbol_image(const char *item) {
   for (register struct hash_type *q = hash_table[hash(item)]; q != NULL; q = q->link) {
     if (EQUAL_STRING(item, q))
-      return ABS(q -> number);
+      return ABS(q->number);
   }
 
   return (OMEGA);
@@ -1246,10 +1228,9 @@ static int symbol_image(const char *item) {
 /* assigned a NAME_INDEX number if it did not yet have one.  The name index  */
 /* assigned is returned.                                                     */
 static int name_map(const char *symb) {
-  register int i;
   register struct hash_type *p;
 
-  i = hash(symb);
+  register int i = hash(symb);
   for (p = hash_table[i]; p != NULL; p = p->link) {
     if (EQUAL_STRING(symb, p)) {
       if (p->name_index != OMEGA)
@@ -1287,10 +1268,9 @@ static int name_map(const char *symb) {
 
 static void process_grammar(void) {
   short state_stack[STACK_SIZE];
-  register int act;
 
   scanner(); /* Get first token */
-  act = START_STATE;
+  register int act = START_STATE;
 
 process_terminal:
   /* Note that this driver assumes that the tables are LPG SPACE    */
@@ -1311,7 +1291,9 @@ process_terminal:
   } else if (act == ACCEPT_ACTION) {
     accept_action();
     return;
-  } else error_action();
+  } else {
+    error_action();
+  }
 
 process_non_terminal:
   do {
@@ -1330,7 +1312,6 @@ process_non_terminal:
 /* SCANNER scans the input stream and returns the next input token.          */
 static void scanner(void) {
   register int i;
-  register char *p3;
 
   char tok_string[SYMBOL_SIZE + 1];
 
@@ -1519,7 +1500,7 @@ scan_token:
         while (*p2 != '\n')
           p2++;
         goto scan_token;
-      } else if (*p2 == '>' && IsSpace(*(p2+1))) {
+      } else if (*p2 == '>' && IsSpace(*(p2 + 1))) {
         ct = ARROW_TK;
         ct_length = 2;
         p2++;
@@ -1528,7 +1509,7 @@ scan_token:
       break;
 
     case ':':
-      if (*p2 == ':' && *(p2 + 1) == '=' && IsSpace(*(p2+2))) {
+      if (*p2 == ':' && *(p2 + 1) == '=' && IsSpace(*(p2 + 2))) {
         ct = EQUIVALENCE_TK;
         ct_length = 3;
         p2 = p1 + 3;
@@ -1551,11 +1532,11 @@ scan_token:
         return;
       } else if (*p1 == escape) /* escape character? */
       {
-        p3 = p2 + 1;
+        register char *p3 = p2 + 1;
         switch (*p2) {
           case 't':
           case 'T':
-            if (strxeq(p3, "erminals") && IsSpace(*(p1+10))) {
+            if (strxeq(p3, "erminals") && IsSpace(*(p1 + 10))) {
               ct = TERMINALS_KEY_TK;
               ct_length = 10;
               p2 = p1 + 10;
@@ -1565,7 +1546,7 @@ scan_token:
 
           case 'd':
           case 'D':
-            if (strxeq(p3, "efine") && IsSpace(*(p1+7))) {
+            if (strxeq(p3, "efine") && IsSpace(*(p1 + 7))) {
               ct = DEFINE_KEY_TK;
               ct_length = 7;
               p2 = p1 + 7;
@@ -1575,31 +1556,31 @@ scan_token:
 
           case 'e':
           case 'E':
-            if (strxeq(p3, "mpty") && IsSpace(*(p1+6))) {
+            if (strxeq(p3, "mpty") && IsSpace(*(p1 + 6))) {
               ct = EMPTY_SYMBOL_TK;
               ct_length = 6;
               p2 = p1 + 6;
               return;
             }
-            if (strxeq(p3, "rror") && IsSpace(*(p1+6))) {
+            if (strxeq(p3, "rror") && IsSpace(*(p1 + 6))) {
               ct = ERROR_SYMBOL_TK;
               ct_length = 6;
               p2 = p1 + 6;
               return;
             }
-            if (strxeq(p3, "ol") && IsSpace(*(p1+4))) {
+            if (strxeq(p3, "ol") && IsSpace(*(p1 + 4))) {
               ct = EOL_SYMBOL_TK;
               ct_length = 4;
               p2 = p1 + 4;
               return;
             }
-            if (strxeq(p3, "of") && IsSpace(*(p1+4))) {
+            if (strxeq(p3, "of") && IsSpace(*(p1 + 4))) {
               ct = EOF_SYMBOL_TK;
               ct_length = 4;
               p2 = p1 + 4;
               return;
             }
-            if (strxeq(p3, "nd") && IsSpace(*(p1+4))) {
+            if (strxeq(p3, "nd") && IsSpace(*(p1 + 4))) {
               ct = END_KEY_TK;
               ct_length = 4;
               p2 = p1 + 4;
@@ -1609,7 +1590,7 @@ scan_token:
 
           case 'r':
           case 'R':
-            if (strxeq(p3, "ules") && IsSpace(*(p1+6))) {
+            if (strxeq(p3, "ules") && IsSpace(*(p1 + 6))) {
               ct = RULES_KEY_TK;
               ct_length = 6;
               p2 = p1 + 6;
@@ -1619,7 +1600,7 @@ scan_token:
 
           case 'a':
           case 'A':
-            if (strxeq(p3, "lias") && IsSpace(*(p1+6))) {
+            if (strxeq(p3, "lias") && IsSpace(*(p1 + 6))) {
               ct = ALIAS_KEY_TK;
               ct_length = 6;
               p2 = p1 + 6;
@@ -1629,7 +1610,7 @@ scan_token:
 
           case 's':
           case 'S':
-            if (strxeq(p3, "tart") && IsSpace(*(p1+6))) {
+            if (strxeq(p3, "tart") && IsSpace(*(p1 + 6))) {
               ct = START_KEY_TK;
               ct_length = 6;
               p2 = p1 + 6;
@@ -1639,7 +1620,7 @@ scan_token:
 
           case 'n':
           case 'N':
-            if (strxeq(p3, "ames") && IsSpace(*(p1+6))) {
+            if (strxeq(p3, "ames") && IsSpace(*(p1 + 6))) {
               ct = NAMES_KEY_TK;
               ct_length = 6;
               p2 = p1 + 6;
@@ -1679,8 +1660,6 @@ check_symbol_length:
       }
     }
   }
-
-  return;
 }
 
 
@@ -1702,16 +1681,14 @@ static void token_action(void) {
   if (ct != BLOCK_TK) {
     memcpy(terminal[top].name, ct_ptr, ct_length);
     terminal[top].name[ct_length] = '\0';
-  } else terminal[top].name[0] = '\0';
-
-  return;
+  } else {
+    terminal[top].name[0] = '\0';
+  }
 }
 
 /*                              ERROR_ACTION:                               */
 /*  Error messages to be printed if an error is encountered during parsing. */
 static void error_action(void) {
-  char tok_string[SYMBOL_SIZE + 1];
-
   ct_ptr[ct_length] = '\0';
 
   if (ct == EOF_TK)
@@ -1722,6 +1699,7 @@ static void error_action(void) {
             "in line %d, column %d",
             ct_ptr, line_no, ct_start_col);
   } else if (ct == SYMBOL_TK) {
+    char tok_string[SYMBOL_SIZE + 1];
     restore_symbol(tok_string, ct_ptr);
     sprintf(msg_line,
             "Misplaced symbol \"%s\" found "
@@ -1765,12 +1743,11 @@ static void accept_action(void) {
 
   fclose(sysgrm); /* Close grammar input file. */
 
-  if (action_bit)
+  if (action_bit) {
     process_actions();
-  else if (list_bit)
+  } else if (list_bit) {
     display_input();
-
-  return;
+  }
 }
 
 
@@ -1778,11 +1755,6 @@ static void accept_action(void) {
 /* BUILD_SYMNO constructs the SYMNO table which is a mapping from each       */
 /* symbol number into that symbol.                                           */
 static void build_symno(void) {
-  register int i,
-      symbol;
-
-  register struct hash_type *p;
-
   symno_size = num_symbols + 1;
   symno = (struct symno_type *)
       calloc(symno_size, sizeof(struct symno_type));
@@ -1791,9 +1763,9 @@ static void build_symno(void) {
 
   /* Go thru entire hash table. For each non_empty bucket, go through    */
   /* linked list in that bucket.                                         */
-  for (i = 0; i < HT_SIZE; ++i) {
-    for (p = hash_table[i]; p != NULL; p = p->link) {
-      symbol = p->number;
+  for (register int i = 0; i < HT_SIZE; ++i) {
+    for (register struct hash_type *p = hash_table[i]; p != NULL; p = p->link) {
+      register int symbol = p->number;
       if (symbol >= 0) /* Not an alias */
       {
         symno[symbol].name_index = OMEGA;
@@ -1801,8 +1773,6 @@ static void build_symno(void) {
       }
     }
   }
-
-  return;
 }
 
 
@@ -1810,7 +1780,6 @@ static void build_symno(void) {
 /*     Process all semantic actions and generate action file.               */
 static void process_actions(void) {
   register int i,
-      j,
       k,
       len;
   register char *p;
@@ -1878,7 +1847,7 @@ static void process_actions(void) {
 
     p1 = linestart + defelmt[i].start_column;
 
-    for (j = 0; j < defelmt[i].length; j++) {
+    for (register int j = 0; j < defelmt[i].length; j++) {
       defelmt[i].macro[j] = *p1;
       if (*(p1++) == '\n') {
         if (bufend == input_buffer + IOBUFFER_SIZE) {
@@ -2003,8 +1972,6 @@ static void process_actions(void) {
   fclose(sysgrm); /* Close grammar file and reopen it. */
   fclose(sysact);
   fclose(syshact);
-
-  return;
 }
 
 
@@ -2012,10 +1979,8 @@ static void process_actions(void) {
 /*  Construct the NAME map, and update the elements of SYMNO with their */
 /* names.                                                               */
 static void make_names_map(void) {
-  register int i,
+  register int
       symbol;
-
-  register struct hash_type *p;
 
   symno[accept_image].name_index = name_map("");
 
@@ -2043,14 +2008,12 @@ static void make_names_map(void) {
   if (name == (int *) NULL)
     nospace(__FILE__, __LINE__);
 
-  for (i = 0; i < HT_SIZE; i++) {
-    for (p = hash_table[i]; p != NULL; p = p->link) {
+  for (register int i = 0; i < HT_SIZE; i++) {
+    for (register struct hash_type *p = hash_table[i]; p != NULL; p = p->link) {
       if (p->name_index != OMEGA)
         name[p->name_index] = p->st_ptr;
     }
   }
-
-  return;
 }
 
 
@@ -2061,9 +2024,7 @@ static void make_names_map(void) {
 /* correct value.  Recall that the first rule is numbered 0; therefore we    */
 /* increase the number of items by 1 to reflect this numbering.              */
 static void make_rules_map(void) {
-  register struct node *ptr, *q;
-
-  char temp[SYMBOL_SIZE + 1];
+  register struct node *ptr;
 
   register int i = 0,
       rhs_ct = 0;
@@ -2081,7 +2042,7 @@ static void make_rules_map(void) {
   /* Put starting rules from start symbol linked list in rule and rhs table    */
   if (start_symbol_root != NULL) {
     /* Turn circular list into linear */
-    q = start_symbol_root;
+    register struct node *q = start_symbol_root;
     start_symbol_root = q->next;
     q->next = NULL;
 
@@ -2121,6 +2082,7 @@ static void make_rules_map(void) {
         rules[i].lhs = OMEGA;
       else rules[i].lhs = rules[i - 1].lhs;
     } else if (IS_A_TERMINAL(rulehdr[i].lhs)) {
+      char temp[SYMBOL_SIZE + 1];
       restore_symbol(temp, RETRIEVE_STRING(rulehdr[i].lhs));
       sprintf(msg_line,
               "In rule %d: terminal \"%s\" used as left hand side",
@@ -2139,9 +2101,7 @@ static void make_rules_map(void) {
 /*  This function allocates a line_elemt structure and returns a pointer    */
 /* to it.                                                                   */
 static struct line_elemt *alloc_line(void) {
-  register struct line_elemt *p;
-
-  p = line_pool_root;
+  register struct line_elemt *p = line_pool_root;
   if (p != NULL)
     line_pool_root = p->link;
   else {
@@ -2172,12 +2132,9 @@ static void free_line(struct line_elemt *p) {
 /* the action file.                                                          */
 static void process_action_line(FILE *sysout, char *text,
                                 int line_no, int rule_no) {
-  register int j,
-      k,
-      text_len;
+  register int j;
 
   char temp1[MAX_LINE_SIZE + 1];
-  char temp2[MAX_LINE_SIZE + 1];
   char suffix[MAX_LINE_SIZE + 1];
   char symbol[SYMBOL_SIZE + 1];
 
@@ -2185,9 +2142,10 @@ static void process_action_line(FILE *sysout, char *text,
   struct line_elemt *root = NULL;
   struct line_elemt *input_line_root = NULL;
 
-next_line:
-  text_len = strlen(text);
-  k = 0; /* k is the cursor */
+next_line: {
+  };
+  register int text_len = strlen(text);
+  register int k = 0; /* k is the cursor */
   while (k < text_len) {
     if (text[k] == escape) /* all macro names begin with the ESCAPE */
     {
@@ -2230,7 +2188,7 @@ next_line:
       /* %rule_text, %num_rules and %next_line */
       {
         if (strxeq(text + k, krule_text)) {
-          register int max_len;
+          char temp2[MAX_LINE_SIZE + 1];
 
           if (k + 10 != text_len) {
             strcpy(temp1, text + k + 10);
@@ -2247,7 +2205,7 @@ next_line:
             temp1[0] = '\0';
             j = 0;
           }
-          max_len = output_size - k - j;
+          register int max_len = output_size - k - j;
 
           restore_symbol(temp2,
                          RETRIEVE_STRING(rules[rule_no].lhs));
@@ -2442,18 +2400,13 @@ next_line:
 
     goto next_line;
   }
-  return;
 }
-
 
 /*                                MAPMACRO:                                 */
 /* This procedure takes as argument a macro definition.  If the name of the */
 /* macro is one of the predefined names, it issues an error.  Otherwise, it */
 /* inserts the macro definition into the table headed by MACRO_TABLE.       */
 static void mapmacro(int def_index) {
-  register int i,
-      j;
-
   if (strcmp(defelmt[def_index].name, krule_text) == 0 ||
       strcmp(defelmt[def_index].name, krule_number) == 0 ||
       strcmp(defelmt[def_index].name, knum_rules) == 0 ||
@@ -2472,8 +2425,8 @@ static void mapmacro(int def_index) {
     return;
   }
 
-  i = hash(defelmt[def_index].name);
-  for (j = macro_table[i]; j != NIL; j = defelmt[j].next) {
+  register int i = hash(defelmt[def_index].name);
+  for (register int j = macro_table[i]; j != NIL; j = defelmt[j].next) {
     if (strcmp(defelmt[j].name, defelmt[def_index].name) == 0) {
       if (warnings_bit) {
         sprintf(msg_line, "Redefinition of macro \"%s\" in line %ld",
@@ -2487,8 +2440,6 @@ static void mapmacro(int def_index) {
 
   defelmt[def_index].next = macro_table[i];
   macro_table[i] = def_index;
-
-  return;
 }
 
 
@@ -2499,30 +2450,27 @@ static void mapmacro(int def_index) {
 /* If the name is not found, then a message is printed, a new definition is  */
 /* entered so as to avoid more messages and NULL is returned.                */
 static struct line_elemt *find_macro(char *name) {
-  register int i,
-      j;
-  register char *ptr,
-      *s;
+  register char *ptr;
 
-  register struct line_elemt *q,
+  register struct line_elemt
       *root = NULL;
   char macro_name[MAX_LINE_SIZE + 1];
 
-  s = macro_name;
+  register char *s = macro_name;
   for (ptr = name; *ptr != '\0'; ptr++) {
     *(s++) = (isupper(*ptr) ? tolower(*ptr) : *ptr);
   }
   *s = '\0';
 
-  i = hash(macro_name);
-  for (j = macro_table[i]; j != NIL; j = defelmt[j].next) {
+  register int i = hash(macro_name);
+  for (register int j = macro_table[i]; j != NIL; j = defelmt[j].next) {
     if (strcmp(macro_name, defelmt[j].name) == 0) {
       ptr = defelmt[j].macro;
 
       if (ptr) /* undefined macro? */
       {
         while (*ptr != '\0') {
-          q = alloc_line();
+          register struct line_elemt *q = alloc_line();
           s = q->line;
           while (*ptr != '\n')
             *(s++) = *(ptr++);
@@ -2572,13 +2520,9 @@ static struct line_elemt *find_macro(char *name) {
 /* of this loop the hash_table is destroyed because the LINK field of    */
 /* alias symbols is used to construct a list of the alias symbols.       */
 static void process_aliases(void) {
-  register int i;
-  register struct hash_type *p,
-      *tail;
-
-  for (i = 0; i < HT_SIZE; i++) {
-    tail = hash_table[i];
-    for (p = tail; p != NULL; p = tail) {
+  for (register int i = 0; i < HT_SIZE; i++) {
+    register struct hash_type *tail = hash_table[i];
+    for (register struct hash_type *p = tail; p != NULL; p = tail) {
       tail = p->link;
 
       if (p->number < 0) {
@@ -2587,8 +2531,6 @@ static void process_aliases(void) {
       }
     }
   }
-
-  return;
 }
 
 
@@ -2607,8 +2549,7 @@ static void display_input(void) {
   register int j,
       len,
       offset,
-      symb,
-      rule_no;
+      symb;
   char line[PRINT_LINE_SIZE + 1],
       temp[SYMBOL_SIZE + 1];
 
@@ -2618,15 +2559,13 @@ static void display_input(void) {
     fprintf(syslis, "\nDefined Symbols:\n\n");
     output_line_no += 3;
     for (j = 0; j < num_defs; j++) {
-      char *ptr;
-
       fill_in(line, (PRINT_LINE_SIZE - (strlen(blockb) + 1)), '-');
       fprintf(syslis, "\n\n%s\n%s%s\n",
               defelmt[j].name, blockb, line);
 
       output_line_no += 4;
 
-      for (ptr = defelmt[j].macro; *ptr != '\0'; ptr++) {
+      for (char *ptr = defelmt[j].macro; *ptr != '\0'; ptr++) {
         for (; *ptr != '\n'; ptr++) {
           putc(*ptr, syslis);
         }
@@ -2643,8 +2582,6 @@ static void display_input(void) {
 
   /*   Print the Aliases, if any.   */
   if (alias_root != NULL) {
-    struct hash_type *p;
-
     PR_HEADING();
     if (alias_root->link == NULL) {
       fprintf(syslis, "\nAlias:\n\n");
@@ -2654,8 +2591,8 @@ static void display_input(void) {
       output_line_no += 3;
     }
 
-    for (p = alias_root; p != NULL; p = p->link) {
-      restore_symbol(temp, EXTRACT_STRING(p -> st_ptr));
+    for (struct hash_type *p = alias_root; p != NULL; p = p->link) {
+      restore_symbol(temp, EXTRACT_STRING(p->st_ptr));
 
       len = PRINT_LINE_SIZE - 5;
       print_large_token(line, temp, "", len);
@@ -2706,7 +2643,7 @@ static void display_input(void) {
   PR_HEADING();
   fprintf(syslis, "\nRules:\n\n");
   output_line_no += 3;
-  for (rule_no = 0; rule_no <= num_rules; rule_no++) {
+  for (register int rule_no = 0; rule_no <= num_rules; rule_no++) {
     register int i;
 
     symb = rules[rule_no].lhs;
@@ -2773,6 +2710,4 @@ static void display_input(void) {
     fprintf(syslis, "\n%s", line);
     ENDPAGE_CHECK();
   }
-
-  return;
 }

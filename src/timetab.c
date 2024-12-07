@@ -191,8 +191,7 @@ static void overlap_tables(void) {
   struct reduce_header_type red;
 
   int symbol,
-      indx,
-      i;
+      indx;
 
   long num_bytes;
 
@@ -278,8 +277,7 @@ static void overlap_tables(void) {
     if (indx + num_symbols > (int) table_size)
       reallocate();
 
-    for (symbol = root_symbol;
-         symbol != NIL; symbol = symbol_list[symbol]) {
+    for (symbol = root_symbol; symbol != NIL; symbol = symbol_list[symbol]) {
       if (next[indx + symbol] == OMEGA) {
         indx = next[indx];
         goto look_for_match_in_table;
@@ -291,14 +289,14 @@ static void overlap_tables(void) {
     /* will be taken by row from the doubly-linked list.                 */
     /* NOTE that since SYMBOLs start at 1, the first index can never be  */
     /* a candidate (==> I = INDX + SYMBOL) in this loop.                 */
-    if (indx > max_indx)
+    if (indx > max_indx) {
       max_indx = indx;
+    }
 
     state_index[state_no] = indx;
 
-    for (symbol = root_symbol;
-         symbol != NIL; symbol = symbol_list[symbol]) {
-      i = indx + symbol;
+    for (symbol = root_symbol; symbol != NIL; symbol = symbol_list[symbol]) {
+      int i = indx + symbol;
       if (first_index == last_index)
         first_index = NIL;
       else if (i == first_index) {

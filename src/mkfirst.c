@@ -10,9 +10,8 @@ static char hostfile[] = __FILE__;
 #define NEXT_RULE_SIZE (num_rules + 1)
 #define LAST_RHS_INDEX(rule_no) rules[rule_no + 1].rhs - 1
 
-static inline void INIT_FIRST(int nt) {
-  register int k;
-  for (k = 0; k < term_set_size; k++) {
+static void INIT_FIRST(int nt) {
+  for (register int k = 0; k < term_set_size; k++) {
     first[nt * term_set_size + k] = 0;
   }
 }
@@ -102,8 +101,6 @@ static int top;
 void mkfirst(void) {
   int symbol,
       nt,
-      item_no,
-      first_of_empty,
       rule_no;
 
   bool end_node;
@@ -233,26 +230,23 @@ void mkfirst(void) {
     first_table[i] = NIL;
 
   top = 1;
-  first_of_empty = top;
+  int first_of_empty = top;
   first_element[first_of_empty].suffix_root = 1;
   first_element[first_of_empty].suffix_tail = 0;
 
   for ALL_NON_TERMINALS(i) /* Initialize NT_ITEMS to NIL */
     nt_items[i] = NIL;
 
-  item_no = 0;
+  int item_no = 0;
   item_table[item_no].rule_number = 0;
   item_table[item_no].symbol = empty;
   item_table[item_no].dot = 0;
   item_table[item_no].suffix_index = NIL;
 
   for ALL_RULES(rule_no) {
-    int j,
-        k;
-
     first_item_of[rule_no] = item_no + 1;
-    j = 0;
-    k = LAST_RHS_INDEX(rule_no);
+    int j = 0;
+    int k = LAST_RHS_INDEX(rule_no);
     for ENTIRE_RHS(i, rule_no) {
       item_no++;
       symbol = rhs_sym[i];
@@ -333,14 +327,10 @@ void mkfirst(void) {
 
   if (read_reduce_bit) {
     for ALL_RULES(rule_no) {
-      int j;
-
-      j = RHS_SIZE(rule_no);
+      int j = RHS_SIZE(rule_no);
       if (rules[rule_no].lhs != accept_image && j > 0) {
-        struct node *p;
-
         item_no = first_item_of[rule_no] + j;
-        p = Allocate_node();
+        struct node *p = Allocate_node();
         p->value = item_no;
         p->next = NULL;
         adequate_item[rule_no] = p;
@@ -364,10 +354,8 @@ void mkfirst(void) {
     for (end_node = (rule_no = lhs_rule[nt]) == NIL;
          !end_node;
          end_node = rule_no == lhs_rule[nt]) {
-      struct node *p;
-
       rule_no = next_rule[rule_no];
-      p = Allocate_node();
+      struct node *p = Allocate_node();
       p->value = first_item_of[rule_no];
       if (clitems[nt] == NULL)
         p->next = p;
