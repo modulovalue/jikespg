@@ -146,13 +146,11 @@ static void init_process(void) {
   /* Set up a a pool of temporary space.                            */
   reset_temporary_space();
 
-  terminal = (struct terminal_type *)
-      calloc(STACK_SIZE, sizeof(struct terminal_type));
+  terminal = (struct terminal_type *) calloc(STACK_SIZE, sizeof(struct terminal_type));
   if (terminal == (struct terminal_type *) NULL)
     nospace(__FILE__, __LINE__);
 
-  hash_table = (struct hash_type **)
-      calloc(HT_SIZE, sizeof(struct hash_type *));
+  hash_table = (struct hash_type **) calloc(HT_SIZE, sizeof(struct hash_type *));
   if (hash_table == (struct hash_type **) NULL)
     nospace(__FILE__, __LINE__);
 

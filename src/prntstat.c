@@ -124,7 +124,7 @@ void ptstats(void) {
 
     int i = number_len(state_no) + 8; /* 8 = length of "STATE" */
     /* + 2 spaces + newline  */
-    fill_in(buffer, (PRINT_LINE_SIZE - i), '-');
+    fill_in(buffer, PRINT_LINE_SIZE - i, '-');
 
     fprintf(syslis, "\n\n\nSTATE %d %s", state_no, buffer);
     output_line_no += 2;

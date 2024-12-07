@@ -2312,7 +2312,7 @@ static void print_space_tables(void) {
 /*                         PRINT_TIME_TABLES:                             */
 static void print_time_tables(void) {
   long *action;
-  int *check;
+  long *check;
 
   int la_shift_count = 0,
       shift_count = 0,

@@ -422,14 +422,14 @@ static void compute_update_actions(const short source_state,
 /* map sp_symbol[SYMBOL]. The value SP_RULE_COUNT is the number of    */
 /* rules in the list. The value SP_ACTION_COUNT is the number of      */
 /* actions in the map sp_symbol[SYMBOL].                              */
-static short sp_state_map(const int rule_head, const short item_no,
-                          const short sp_rule_count,
-                          const short sp_action_count, const short symbol) {
+static short sp_state_map(const int rule_head, const int item_no,
+                          const int sp_rule_count,
+                          const int sp_action_count, const int symbol) {
   struct sp_state_element *state;
   struct node *p;
 
-  int rule_no,
-      i;
+  int rule_no;
+  int i;
 
   /* These new SP states are defined by their reduce maps. Hash the */
   /* reduce map based on the set of rules in its range - simply add */
@@ -915,14 +915,15 @@ void remove_single_productions(void) {
           /* this new state.                                    */
           if (rule_no != OMEGA) {
             if (IS_SP_RULE(rule_no)) {
-              struct action_element *p;
+              struct action_element *p_inner;
 
               sp_rule_count = 0;
               sp_action_count = 0;
               rule_head = NIL;
 
-              for ALL_RULES(i)
+              for ALL_RULES(i) {
                 next_rule[i] = OMEGA;
+              }
 
               for ALL_TERMINALS(i) {
                 rule_no = sp_action[symbol][i];
@@ -946,11 +947,11 @@ void remove_single_productions(void) {
                                       sp_action_count,
                                       symbol);
               }
-              p = allocate_action_element();
-              p->symbol = symbol;
-              p->action = action;
-              p->next = new_action[state_no];
-              new_action[state_no] = p;
+              p_inner = allocate_action_element();
+              p_inner->symbol = symbol;
+              p_inner->action = action;
+              p_inner->next = new_action[state_no];
+              new_action[state_no] = p_inner;
             }
           }
         }
@@ -1101,21 +1102,23 @@ void remove_single_productions(void) {
     /* Update reduce actions for final items of single productions*/
     /* that are in non-final states.                              */
     if (update_action[state_no] != NULL) {
-      struct update_action_element *p;
+      struct update_action_element *p_inner;
 
       red = reduce[state_no];
-      for (i = 1; i <= red.size; i++)
+      for (i = 1; i <= red.size; i++) {
         index_of[red.map[i].symbol] = i;
+      }
 
-      for (p = update_action[state_no]; p != NULL; p = p->next)
-        red.map[index_of[p->symbol]].rule_number = p->action;
+      for (p_inner = update_action[state_no]; p_inner != NULL; p_inner = p_inner->next) {
+        red.map[index_of[p_inner->symbol]].rule_number = p_inner->action;
+      }
     }
 
     /* Update initial automaton with transitions into new SP      */
     /* states.                                                    */
     if (new_action[state_no] != NULL) {
       bool any_shift_action;
-      struct action_element *p;
+      struct action_element *p_inner;
 
       /* Mark the index of each symbol on which there is a      */
       /* transition and copy the shift map into the vector      */
@@ -1137,21 +1140,21 @@ void remove_single_productions(void) {
       /* not there were any shift transitions at all...         */
       any_shift_action = false;
 
-      for (p = new_action[state_no]; p != NULL; p = p->next) {
-        if (IS_A_NON_TERMINAL(p->symbol)) {
-          if (go_to.map[index_of[p->symbol]].action < 0 &&
-              p->action > 0) {
+      for (p_inner = new_action[state_no]; p_inner != NULL; p_inner = p_inner->next) {
+        if (IS_A_NON_TERMINAL(p_inner->symbol)) {
+          if (go_to.map[index_of[p_inner->symbol]].action < 0 &&
+              p_inner->action > 0) {
             num_goto_reduces--;
             num_gotos++;
           }
-          go_to.map[index_of[p->symbol]].action = p->action;
+          go_to.map[index_of[p_inner->symbol]].action = p_inner->action;
         } else {
-          if (sh.map[index_of[p->symbol]].action < 0 &&
-              p->action > 0) {
+          if (sh.map[index_of[p_inner->symbol]].action < 0 &&
+              p_inner->action > 0) {
             num_shift_reduces--;
             num_shifts++;
           }
-          shift_transition[p->symbol] = p->action;
+          shift_transition[p_inner->symbol] = p_inner->action;
           any_shift_action = true;
         }
       }

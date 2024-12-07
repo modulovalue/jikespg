@@ -709,7 +709,7 @@ process_scope_states: {
     short *bucket;
 
     int state_root;
-    int state_no;
+    int state_no_inner;
 
     state_set_size = num_states / SIZEOF_BC + (num_states % SIZEOF_BC ? 1 : 0);
     collection = (SET_PTR) calloc(num_state_sets + 1, state_set_size * sizeof(BOOLEAN_CELL));
@@ -763,20 +763,20 @@ process_scope_states: {
           j = stack[j];
           symbol = ordered_symbol[j];
           for (p = states_of[symbol]; p != NULL; p = p->next) {
-            state_no = p->value;
-            if (state_list[state_no] == OMEGA) {
-              state_list[state_no] = state_root;
-              state_root = state_no;
+            state_no_inner = p->value;
+            if (state_list[state_no_inner] == OMEGA) {
+              state_list[state_no_inner] = state_root;
+              state_root = state_no_inner;
             }
           }
         }
 
-        for (state_no = state_root;
-             state_no != NIL; state_no = state_root) {
-          state_root = state_list[state_no];
-          state_list[state_no] = OMEGA;
+        for (state_no_inner = state_root;
+             state_no_inner != NIL; state_no_inner = state_root) {
+          state_root = state_list[state_no_inner];
+          state_list[state_no_inner] = OMEGA;
           k++;
-          scope_state[k] = state_no;
+          scope_state[k] = state_no_inner;
         }
       }
     }

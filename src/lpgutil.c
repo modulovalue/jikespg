@@ -34,14 +34,14 @@ static bool allocate_more_space(cell ***base, long *size, long *base_size) {
   /* index for the next segment in base. If base is already full, it is */
   /* reallocated.                                                       */
   /*                                                                    */
-  const int k = (*size) >> LOG_BLKSIZE; /* which segment? */
-  if (k == (*base_size)) /* base overflow? reallocate */
+  const long k = *size >> LOG_BLKSIZE; /* which segment? */
+  if (k == *base_size) /* base overflow? reallocate */
   {
-    register int i = *base_size;
+    register long i = *base_size;
 
     *base_size += BASE_INCREMENT;
     *base = (cell **)
-        (*base == NULL ? malloc(sizeof(cell *) * (*base_size)) : realloc((*base), sizeof(cell *) * (*base_size)));
+        (*base == NULL ? malloc(sizeof(cell *) * (*base_size)) : realloc(*base, sizeof(cell *) * *base_size));
     if (*base == (cell **) NULL)
       return false;
 

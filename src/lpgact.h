@@ -1,3 +1,4 @@
+#pragma once
 static void (*rule_action[]) (void) = {NULL,
      null_action, /* 1 */
      null_action, /* 2 */

@@ -69,9 +69,9 @@ void mkstats(void) {
     }
   }
 
-  closure += (num_terminals + 1);
+  closure += num_terminals + 1;
   ffree(closure);
-  clitems += (num_terminals + 1);
+  clitems += num_terminals + 1;
   ffree(clitems);
 }
 
@@ -135,19 +135,21 @@ static void mklr0(void) {
   shift_action = Allocate_short_array(num_terminals + 1);
   shift_list = Allocate_short_array(num_terminals + 1);
   nt_list = Allocate_short_array(num_non_terminals);
-  nt_list -= (num_terminals + 1);
-  partition = (struct node **)
-      calloc(num_symbols + 1, sizeof(struct node *));
-  if (partition == NULL)
+  nt_list -= num_terminals + 1;
+  partition = (struct node **) calloc(num_symbols + 1, sizeof(struct node *));
+  if (partition == NULL) {
     nospace(__FILE__, __LINE__);
+  }
   state_table = (struct state_element **)
       calloc(STATE_TABLE_SIZE, sizeof(struct state_element *));
-  if (state_table == NULL)
+  if (state_table == NULL) {
     nospace(__FILE__, __LINE__);
+  }
   shift_table = (struct state_element **)
       calloc(SHIFT_TABLE_SIZE, sizeof(struct state_element *));
-  if (shift_table == NULL)
+  if (shift_table == NULL) {
     nospace(__FILE__, __LINE__);
+  }
 
   /* INITIALIZATION -----------------------------------------------------------*/
   goto_size = 0;
@@ -155,12 +157,14 @@ static void mklr0(void) {
 
   state_root = NULL;
 
-  for (i = 0; i <= num_terminals; i++)
+  for (i = 0; i <= num_terminals; i++) {
     shift_action[i] = OMEGA;
+  }
 
   nt_root = NIL;
-  for ALL_NON_TERMINALS(i)
+  for ALL_NON_TERMINALS(i) {
     nt_list[i] = OMEGA;
+  }
 
   /* PARTITION, STATE_TABLE and SHIFT_TABLE are initialized by calloc */
 
@@ -410,7 +414,7 @@ static void mklr0(void) {
 
       struct shift_header_type sh;
 
-      struct state_element *p;
+      struct state_element *p_inner;
 
       hash_address = shift_size;
       for (symbol = shift_root;
@@ -419,10 +423,10 @@ static void mklr0(void) {
       }
       hash_address %= SHIFT_TABLE_SIZE;
 
-      for (p = shift_table[hash_address];
-           p != NULL; /* Search has table for shift map */
-           p = p->next_shift) {
-        sh = p->lr0_shift;
+      for (p_inner = shift_table[hash_address];
+           p_inner != NULL; /* Search has table for shift map */
+           p_inner = p_inner->next_shift) {
+        sh = p_inner->lr0_shift;
         if (sh.size == shift_size) {
           for (i = 1; i <= shift_size; i++) /* Compare shift maps */
           {
@@ -434,7 +438,7 @@ static void mklr0(void) {
           if (i > shift_size) /* Are they equal ? */
           {
             state->lr0_shift = sh;
-            state->shift_number = p->shift_number;
+            state->shift_number = p_inner->shift_number;
             for (symbol = shift_root;
                  symbol != NIL; symbol = shift_list[symbol]) {
               /* Clear SHIFT_ACTION */
@@ -480,7 +484,7 @@ static void mklr0(void) {
   /* Release all NODEs used by  the maps CLITEMS and CLOSURE.          */
   {
     int state_no;
-    struct state_element *p;
+    struct state_element *p_inner;
 
     /* If the grammar is LALR(k), k > 1, more states may be added and    */
     /* the size of the shift map increased.                              */
@@ -494,20 +498,20 @@ static void mklr0(void) {
     if (statset == NULL)
       nospace(__FILE__, __LINE__);
 
-    for (p = state_root; p != NULL; p = p->queue) {
-      state_no = p->state_number;
-      statset[state_no].kernel_items = p->kernel_items;
-      statset[state_no].complete_items = p->complete_items;
-      shift[p->shift_number] = p->lr0_shift;
-      statset[state_no].shift_number = p->shift_number;
-      statset[state_no].go_to = p->lr0_goto;
+    for (p_inner = state_root; p_inner != NULL; p_inner = p_inner->queue) {
+      state_no = p_inner->state_number;
+      statset[state_no].kernel_items = p_inner->kernel_items;
+      statset[state_no].complete_items = p_inner->complete_items;
+      shift[p_inner->shift_number] = p_inner->lr0_shift;
+      statset[state_no].shift_number = p_inner->shift_number;
+      statset[state_no].go_to = p_inner->lr0_goto;
     }
   }
 
   ffree(list);
   ffree(shift_action);
   ffree(shift_list);
-  nt_list += (num_terminals + 1);
+  nt_list += num_terminals + 1;
   ffree(nt_list);
   ffree(partition);
   ffree(state_table);
@@ -543,18 +547,19 @@ static struct state_element *lr0_state_map(struct node *kernel) {
         break;
     }
 
-    if (p == q) /* Both P and Q are NULL? */
-    {
+    /* Both P and Q are NULL? */
+    if (p == q) {
       free_nodes(kernel, r);
-      return (state_ptr);
+      return state_ptr;
     }
   }
 
 
   /* Add a new state based on the KERNEL set.                        */
   struct state_element *ptr = talloc(sizeof(struct state_element));
-  if (ptr == (struct state_element *) NULL)
+  if (ptr == (struct state_element *) NULL) {
     nospace(__FILE__, __LINE__);
+  }
 
   num_states++;
   SHORT_CHECK(num_states);
@@ -564,12 +569,11 @@ static struct state_element *lr0_state_map(struct node *kernel) {
   ptr->state_number = num_states;
   ptr->link = state_table[hash_address];
   state_table[hash_address] = ptr;
-  if (state_root == NULL)
+  if (state_root == NULL) {
     state_root = ptr;
-  else
+  } else {
     state_tail->queue = ptr;
-
+  }
   state_tail = ptr;
-
-  return (ptr);
+  return ptr;
 }

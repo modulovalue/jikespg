@@ -103,10 +103,10 @@ static void trace_lalr_path(const int state_no, const int goto_indx) {
       const int symbol = rules[item_table[item].rule_number].lhs;
       struct node *w = lpgaccess(state_no, item);
       for (struct node *t = w; t != NULL; p = t, t = t->next) {
-        struct goto_header_type go_to = statset[t->value].go_to;
-        for (i = 1; go_to.map[i].symbol != symbol; i++) {
+        struct goto_header_type go_to_inner = statset[t->value].go_to;
+        for (i = 1; go_to_inner.map[i].symbol != symbol; i++) {
         }
-        if (go_to.map[i].laptr == OMEGA)
+        if (go_to_inner.map[i].laptr == OMEGA)
           trace_lalr_path(t->value, i);
       }
 
@@ -361,16 +361,16 @@ void la_traverse(const int state_no, const int goto_indx, int *stack_top) {
         /* Search for GOTO action in access-state after reducing  */
         /* RULE to its left hand side (SYMBOL). Q points to the   */
         /* GOTO_ELEMENT in question.                              */
-        struct goto_header_type go_to = statset[t->value].go_to;
-        for (i = 1; go_to.map[i].symbol != symbol; i++) {
+        struct goto_header_type go_to_inner = statset[t->value].go_to;
+        for (i = 1; go_to_inner.map[i].symbol != symbol; i++) {
         }
-        if (la_index[go_to.map[i].laptr] == OMEGA) {
+        if (la_index[go_to_inner.map[i].laptr] == OMEGA) {
           la_traverse(t->value, i, stack_top);
         }
         SET_UNION(la_set, la_ptr,
-                  la_set, go_to.map[i].laptr);
+                  la_set, go_to_inner.map[i].laptr);
         la_index[la_ptr] = MIN(la_index[la_ptr],
-                               la_index[go_to.map[i].laptr]);
+                               la_index[go_to_inner.map[i].laptr]);
       }
 
       free_nodes(w, s);

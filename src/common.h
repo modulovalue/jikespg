@@ -111,8 +111,8 @@ struct node {
 /* The RHS vector as mentioned above is used to hold a complete    */
 /* list of allthe right-hand-side symbols specified in the grammar.*/
 struct ruletab_type {
-  short lhs;
-  short rhs;
+  long lhs;
+  long rhs;
   bool sp;
 };
 
@@ -391,7 +391,7 @@ extern int *symbol_map;
 extern int *ordered_state;
 extern long *state_list;
 
-extern int *next;
+extern long *next;
 extern long *previous;
 extern long *state_index;
 
@@ -533,7 +533,7 @@ void sortdes(int array[], int count[], long low, long high, long max);
 
 void reallocate(void);
 
-void resolve_conflicts(int state_no, struct node **action, const short *reduce_list, int reduce_root);
+void resolve_conflicts(int state_no, struct node **action, const short *symbol_list, int reduce_root);
 
 void restore_symbol(char *out, const char *in);
 

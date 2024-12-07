@@ -129,7 +129,7 @@ void mkfirst(void) {
   index_of -= (num_terminals + 1);
 
   /* NT_FIRST is used to construct a mapping from non-terminals to the */
-  /* set of terminals taht may appear first in a string derived from   */
+  /* set of terminals that may appear first in a string derived from   */
   /* the non-terminal.                                                 */
   nt_first = (SET_PTR)
       calloc(num_non_terminals,

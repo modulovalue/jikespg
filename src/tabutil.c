@@ -164,7 +164,7 @@ void sortdes(int array[], int count[], const long low, const long high, const lo
   /*                                                                   */
   /*   NOTE that it is known that the values of the elements of ARRAY  */
   /* also lie in the range LOW..HIGH.                                  */
-  for (register int i = high; i >= low; i--) {
+  for (register long i = high; i >= low; i--) {
     k = count[i];
     element = array[i];
     list[element - low] = bucket[k];
@@ -213,7 +213,7 @@ void reallocate(void) {
     PRNT(msg_line);
   }
 
-  int *n = Allocate_int_array(table_size + 1);
+  long *n = Allocate_long_array(table_size + 1);
   long *p = Allocate_long_array(table_size + 1);
 
   /* Copy old information */

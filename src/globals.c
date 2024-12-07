@@ -184,7 +184,7 @@ int *symbol_map = NULL;
 int *ordered_state = NULL;
 long *state_list = NULL;
 
-int *next = NULL;
+long *next = NULL;
 long *previous = NULL;
 long *state_index = NULL;
 

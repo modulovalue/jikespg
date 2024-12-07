@@ -29,8 +29,7 @@ static void process_shift_actions(struct action_element **action_count,
 
     if (q == NULL) /* new action not yet seen */
     {
-      q = (struct action_element *)
-          talloc(sizeof(struct action_element));
+      q = (struct action_element *) talloc(sizeof(struct action_element));
       if (q == NULL)
         nospace(__FILE__, __LINE__);
 
@@ -38,7 +37,7 @@ static void process_shift_actions(struct action_element **action_count,
       q->count = 1;
       q->next = action_count[symbol];
       action_count[symbol] = q;
-    } else (q->count)++;
+    } else q->count++;
   }
 }
 
@@ -134,7 +133,7 @@ static void compute_goto_default(void) {
   reset_temporary_space();
 
   gotodef = Allocate_short_array(num_non_terminals);
-  gotodef -= (num_terminals + 1);
+  gotodef -= num_terminals + 1;
 
   struct action_element **action_count = calloc(num_non_terminals, sizeof(struct action_element *));
   action_count -= num_terminals + 1;
@@ -168,7 +167,7 @@ static void compute_goto_default(void) {
         q->count = 1;
         q->next = action_count[symbol];
         action_count[symbol] = q;
-      } else (q->count)++;
+      } else q->count++;
     }
   }
 
@@ -221,7 +220,7 @@ static void compute_goto_default(void) {
   num_goto_reduces -= goto_reduce_count;
   num_entries = num_entries - goto_count - goto_reduce_count;
 
-  action_count += (num_terminals + 1);
+  action_count += num_terminals + 1;
   ffree(action_count);
 }
 
@@ -316,38 +315,35 @@ void process_tables(void) {
   /* We allocate the necessary structures, open the appropriate    */
   /* output file and call the appropriate compression routine.     */
   if (error_maps_bit) {
-    naction_symbols = (SET_PTR)
-        calloc(num_states + 1,
-               non_term_set_size * sizeof(BOOLEAN_CELL));
+    naction_symbols = (SET_PTR) calloc(num_states + 1, non_term_set_size * sizeof(BOOLEAN_CELL));
     if (naction_symbols == NULL)
       nospace(__FILE__, __LINE__);
-    action_symbols = (SET_PTR)
-        calloc(num_states + 1,
-               term_set_size * sizeof(BOOLEAN_CELL));
+    action_symbols = (SET_PTR) calloc(num_states + 1, term_set_size * sizeof(BOOLEAN_CELL));
     if (action_symbols == NULL)
       nospace(__FILE__, __LINE__);
   }
 
   output_buffer = (char *) calloc(IOBUFFER_SIZE, sizeof(char));
-  if (output_buffer == NULL)
+  if (output_buffer == NULL) {
     nospace(__FILE__, __LINE__);
+  }
 
-  if ((!c_bit) && (!cpp_bit) && (!java_bit)) {
+  if (!c_bit && !cpp_bit && !java_bit) {
     if ((systab = fopen(tab_file, "w")) == NULL) {
-      fprintf(stderr,
-              "***ERROR: Table file \"%s\" cannot be opened\n",
-              tab_file);
+      fprintf(stderr, "***ERROR: Table file \"%s\" cannot be opened\n", tab_file);
       exit(12);
     }
   }
 
-  if (table_opt == OPTIMIZE_SPACE)
+  if (table_opt == OPTIMIZE_SPACE) {
     cmprspa();
-  else if (table_opt == OPTIMIZE_TIME)
+  } else if (table_opt == OPTIMIZE_TIME) {
     cmprtim();
+  }
 
-  if ((!c_bit) && (!cpp_bit) && (!java_bit))
+  if (!c_bit && !cpp_bit && !java_bit) {
     fclose(systab);
+  }
 
   /* If printing of the states was requested,  print the new mapping   */
   /* of the states.                                                    */

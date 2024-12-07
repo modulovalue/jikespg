@@ -1400,7 +1400,7 @@ static struct state_element *state_to_resolve_conflicts
 
     struct shift_header_type sh;
 
-    struct state_element *p;
+    struct state_element *p_inner;
 
     /* In this loop, we compute the hash address as the number of  */
     /* shift actions, plus the sum of all the symbols on which a   */
@@ -1427,9 +1427,9 @@ static struct state_element *state_to_resolve_conflicts
     /* Search list associated with HASH_ADDRESS, and if the shift  */
     /* map in question is found, update the SHIFT, and SHIFT_NUMBER*/
     /* fields of the new Look-Ahead State.                         */
-    for (p = shift_table[hash_address]; p != NULL; p = p->next_shift) {
+    for (p_inner = shift_table[hash_address]; p_inner != NULL; p_inner = p_inner->next_shift) {
       /* Search hash table for shift map */
-      sh = p->shift;
+      sh = p_inner->shift;
       if (sh.size == num_shift_actions) {
         for (i = 1; i <= num_shift_actions; i++) {
           /* compare shift maps */
@@ -1440,7 +1440,7 @@ static struct state_element *state_to_resolve_conflicts
         if (i > num_shift_actions) /* are they equal ? */
         {
           state->shift = sh;
-          state->shift_number = p->shift_number;
+          state->shift_number = p_inner->shift_number;
           break;
         }
       }
@@ -1448,7 +1448,7 @@ static struct state_element *state_to_resolve_conflicts
 
     /* Shift map was not found.  We have to create a new one and   */
     /* insert it into the table.                                   */
-    if (p == NULL) {
+    if (p_inner == NULL) {
       num_shift_maps++;
 
       sh = Allocate_shift_map(num_shift_actions);
@@ -1474,7 +1474,6 @@ static struct state_element *state_to_resolve_conflicts
   /* taken.                                                          */
 Build_reduce_map: {
     struct reduce_header_type red;
-    int i;
 
     if (default_rule != OMEGA &&
         table_opt != OPTIMIZE_TIME &&
@@ -1486,16 +1485,16 @@ Build_reduce_map: {
 
     red = Allocate_reduce_map(num_reduce_actions);
     state->reduce = red;
-    for (symbol = reduce_root, i = 1;
+    int i_inner;
+    for (symbol = reduce_root, i_inner = 1;
          symbol != NIL; symbol = action_list[symbol]) {
       if (default_opt == 0 ||
           action[symbol]->value != default_rule ||
           table_opt == OPTIMIZE_TIME ||
           table_opt == OPTIMIZE_SPACE) {
-        red.map[i].symbol = symbol;
-        red.map[i].rule_number = action[symbol]->value;
-
-        i++;
+        red.map[i_inner].symbol = symbol;
+        red.map[i_inner].rule_number = action[symbol]->value;
+        i_inner++;
       }
     }
 
@@ -1735,13 +1734,12 @@ void resolve_conflicts(const int state_no, struct node **action,
 
       for (p = action[symbol]; p != NULL; tail = p, p = p->next) {
         if (conflicts_bit) {
-          struct sr_conflict_element *q = allocate_conflict_element();
-          q->state_number = act;
-          q->item = p->value;
-          q->symbol = symbol;
-
-          q->next = sr_conflict_root;
-          sr_conflict_root = q;
+          struct sr_conflict_element *q_inner = allocate_conflict_element();
+          q_inner->state_number = act;
+          q_inner->item = p->value;
+          q_inner->symbol = symbol;
+          q_inner->next = sr_conflict_root;
+          sr_conflict_root = q_inner;
         }
 
         num_sr_conflicts++;
@@ -1816,12 +1814,12 @@ void resolve_conflicts(const int state_no, struct node **action,
         act = action[symbol]->value;
         for (p = action[symbol]->next; p != NULL; tail = p, p = p->next) {
           if (conflicts_bit) {
-            struct rr_conflict_element *q = allocate_conflict_element();
-            q->symbol = symbol;
-            q->item1 = act;
-            q->item2 = p->value;
-            q->next = rr_conflict_root;
-            rr_conflict_root = q;
+            struct rr_conflict_element *q_inner = allocate_conflict_element();
+            q_inner->symbol = symbol;
+            q_inner->item1 = act;
+            q_inner->item2 = p->value;
+            q_inner->next = rr_conflict_root;
+            rr_conflict_root = q_inner;
           }
 
           num_rr_conflicts++;

@@ -57,7 +57,7 @@ int main(const int argc, char *argv[]) {
     int j = 0;
     parm[0] = '\0';
     while (j < argc - 2) {
-      if (*(argv[++j]) == '-')
+      if (*argv[++j] == '-')
         strcat(parm, argv[j]+1);
       else {
         strcat(parm, argv[j]);
@@ -245,11 +245,11 @@ int main(const int argc, char *argv[]) {
       }
       ffree(in_stat);
       ffree(first);
-      null_nt += (num_terminals + 1);
+      null_nt += num_terminals + 1;
       ffree(null_nt);
       if (follow != NULL) {
-        if ((!error_maps_bit) || c_bit || cpp_bit || java_bit) {
-          follow += ((num_terminals + 1) * term_set_size);
+        if (!error_maps_bit || c_bit || cpp_bit || java_bit) {
+          follow += (num_terminals + 1) * term_set_size;
           ffree(follow);
         }
       }

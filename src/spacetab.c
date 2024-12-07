@@ -138,7 +138,7 @@ static void overlap_nt_rows(void) {
   /* list.                                                                 */
   /*   The variable MAX_INDX is used to keep track of the maximum starting */
   /* position for a row that has been used.                                */
-  next = Allocate_int_array(table_size + 1);
+  next = Allocate_long_array(table_size + 1);
   previous = Allocate_long_array(table_size + 1);
 
   first_index = 1;
@@ -611,7 +611,7 @@ static void merge_shift_domains(void) {
     ffree(previous);
     ffree(next);
     previous = Allocate_long_array(table_size + 1);
-    next = Allocate_int_array(table_size + 1);
+    next = Allocate_long_array(table_size + 1);
   } else
     table_size = old_table_size;
 
@@ -1113,7 +1113,7 @@ static void overlap_t_rows(void) {
   if ((int) table_size > old_size) {
     ffree(previous);
     ffree(next);
-    next = Allocate_int_array(table_size + 1);
+    next = Allocate_long_array(table_size + 1);
     previous = Allocate_long_array(table_size + 1);
   } else
     table_size = old_size;

@@ -210,7 +210,7 @@ static void overlap_tables(void) {
   /* element in the list.                                              */
   /* The variable MAX_INDX is used to keep track of the maximum        */
   /* starting position for a row that has been used.                   */
-  next = Allocate_int_array(table_size + 1);
+  next = Allocate_long_array(table_size + 1);
   previous = Allocate_long_array(table_size + 1);
 
   first_index = 1;
@@ -342,7 +342,7 @@ static void overlap_tables(void) {
   if (byte_bit) {
     num_bytes = 2 * action_size + table_size;
     if (!goto_default_bit && !nt_check_bit) {
-      for (; last_symbol >= 1 && (!is_terminal[last_symbol]);
+      for (; last_symbol >= 1 && !is_terminal[last_symbol];
              last_symbol--);
     }
     sprintf(msg_line, "Highest symbol in Check Table: %d", last_symbol);
@@ -353,7 +353,7 @@ static void overlap_tables(void) {
     num_bytes = 2 * (action_size + table_size);
 
   if (goto_default_bit)
-    num_bytes += ((long) 2 * num_symbols);
+    num_bytes += (long) 2 * num_symbols;
 
   const long k_bytes = num_bytes / 1024 + 1;
 
@@ -375,7 +375,7 @@ static void overlap_tables(void) {
 /* We now write out the tables to the SYSTAB file.                   */
 static void print_tables(void) {
   long *action;
-  int *check;
+  long *check;
 
   struct goto_header_type go_to;
   struct shift_header_type sh;
@@ -412,7 +412,7 @@ static void print_tables(void) {
     offset += num_rules;
   la_state_offset = offset;
 
-  if (offset > (MAX_TABLE_SIZE + 1)) {
+  if (offset > MAX_TABLE_SIZE + 1) {
     sprintf(msg_line, "Table contains entries that are > "
             "%ld; Processing stopped.", MAX_TABLE_SIZE + 1);
     PRNTERR(msg_line);
@@ -421,7 +421,7 @@ static void print_tables(void) {
 
   /* Initialize all unfilled slots with default values.                */
   indx = first_index;
-  for (int i = indx; i != NIL && i <= (int) action_size; i = indx) {
+  for (long i = indx; i != NIL && i <= (int) action_size; i = indx) {
     indx = next[i];
 
     check[i] = DEFAULT_SYMBOL;
@@ -475,7 +475,7 @@ static void print_tables(void) {
         shift_reduce_count++;
       }
 
-      if (result_act > (MAX_TABLE_SIZE + 1)) {
+      if (result_act > MAX_TABLE_SIZE + 1) {
         sprintf(msg_line,
                 "Table contains look-ahead shift entry that is >"
                 " %ld; Processing stopped.", MAX_TABLE_SIZE + 1);
@@ -711,7 +711,7 @@ static void print_tables(void) {
   /* after rearranging its elements based on the new ordering of the*/
   /* symbols.  The array TEMP is used to hold the GOTODEF values.   */
   if (goto_default_bit) {
-    int *default_map = Allocate_int_array(num_symbols + 1);
+    long *default_map = Allocate_long_array(num_symbols + 1);
 
     for (int i = 0; i <= num_symbols; i++) {
       default_map[i] = error_act;
