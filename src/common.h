@@ -313,7 +313,7 @@ struct ruletab_type {
 };
 
 struct shift_type {
-  short symbol;
+  int symbol;
   short action;
 };
 
@@ -323,7 +323,7 @@ struct shift_header_type {
 };
 
 struct reduce_type {
-  short symbol;
+  int symbol;
   short rule_number;
 };
 
@@ -334,7 +334,7 @@ struct reduce_header_type {
 
 struct goto_type {
   int laptr;
-  short symbol;
+  int symbol;
   short action;
 };
 
@@ -390,7 +390,7 @@ extern FILE *syslis,
 /*  The variables below are global counters.          */
 extern long num_items;
 extern long num_states;
-extern long max_la_state;
+extern int max_la_state;
 
 extern int num_symbols,
     symno_size, /* NUM_SYMBOLS + 1 */
@@ -462,11 +462,11 @@ extern char blockb[],
 
 /*   The variables below are used to hold information about special  */
 /* grammar symbols.                                                  */
-extern short accept_image,
-    eoft_image,
-    eolt_image,
-    empty,
-    error_image;
+extern int accept_image;
+extern int eoft_image;
+extern int eolt_image;
+extern int empty;
+extern int error_image;
 
 /* Miscellaneous counters. */
 
@@ -582,12 +582,12 @@ extern short *scope_right_side,
 /**                                                               **/
 /* The following external variables are used only in processing    */
 /* output.                                                         */
-extern char *output_ptr,
-    *output_buffer;
+extern char *output_ptr;
+extern char *output_buffer;
 
-extern short *symbol_map,
-    *ordered_state,
-    *state_list;
+extern int *symbol_map;
+extern int *ordered_state;
+extern int *state_list;
 
 extern int *next,
     *previous,
@@ -597,7 +597,7 @@ extern long table_size,
     action_size,
     increment_size;
 
-extern short last_non_terminal,
+extern int last_non_terminal,
     last_terminal;
 
 extern int accept_act,
@@ -688,7 +688,7 @@ void nospace(char *, long);
 
 int number_len(int state_no);
 
-void partset(SET_PTR collection, const short *element_size, const short *list,
+void partset(SET_PTR collection, const short *element_size, const int *list,
              short *start, short *stack, int set_size, int from_process_scopes);
 
 void print_item(int item_no);
@@ -699,12 +699,12 @@ void print_state(int state_no);
 
 void compute_action_symbols_range(const short *state_start,
                                   const short *state_stack,
-                                  const short *state_list,
+                                  const int *state_list,
                                   short *action_symbols_range);
 
 void compute_naction_symbols_range(const short *state_start,
                                    const short *state_stack,
-                                   const short *state_list,
+                                   const int *state_list,
                                    short *naction_symbols_range);
 
 void produce(void);
@@ -725,7 +725,7 @@ void ptstats(void);
 
 void remvsp(void);
 
-void sortdes(short array[], short count[], int low, int high, int max);
+void sortdes(int array[], int count[], int low, int high, int max);
 
 void reallocate(void);
 
@@ -784,11 +784,11 @@ static int TOUPPER(int c) {
   return islower(c) ? toupper(c) : c;
 }
 
-static int MAX(const int a, const int b) {
+static int MAX(const long a, const long b) {
   return a > b ? a : b;
 }
 
-static int MIN(const int a, const int b) {
+static int MIN(const long a, const long b) {
   return a < b ? a : b;
 }
 

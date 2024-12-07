@@ -17,9 +17,9 @@ static int top,
     single_root,
     multi_root;
 
-static short *row_size,
-    *frequency_symbol,
-    *frequency_count;
+static int *row_size;
+static int *frequency_symbol;
+static int *frequency_count;
 
 static bool *shift_on_error_symbol;
 
@@ -37,11 +37,11 @@ static void remap_non_terminals(void) {
   /* in the grammar, and  FREQUENCY_COUNT is used correspondingly to    */
   /* hold the number of actions defined on each non-terminal.           */
   /* ORDERED_STATE and ROW_SIZE are used in a similar fashion for states*/
-  short *frequency_symbol = Allocate_short_array(num_non_terminals);
-  frequency_symbol -= (num_terminals + 1);
-  short *frequency_count = Allocate_short_array(num_non_terminals);
-  frequency_count -= (num_terminals + 1);
-  short *row_size = Allocate_short_array(num_states + 1);
+  int *frequency_symbol = Allocate_int_array(num_non_terminals);
+  frequency_symbol -= num_terminals + 1;
+  int *frequency_count = Allocate_int_array(num_non_terminals);
+  frequency_count -= num_terminals + 1;
+  int *row_size = Allocate_int_array(num_states + 1);
 
   for ALL_NON_TERMINALS(i) {
     frequency_symbol[i] = i;
@@ -439,10 +439,10 @@ static void merge_similar_t_rows(void) {
 /* we can apply shift default to the Shift actions just like we did  */
 /* for the Goto actions.                                             */
 static void merge_shift_domains(void) {
-  short *shift_domain_link,
-      *ordered_shift,
-      *terminal_list,
-      *temp_shift_default;
+  short *shift_domain_link;
+  int *ordered_shift;
+  short *terminal_list;
+  short *temp_shift_default;
 
   short shift_domain_table[SHIFT_TABLE_SIZE];
 
@@ -491,7 +491,7 @@ static void merge_shift_domains(void) {
   /* The arrays ORDERED_SHIFT and ROW_SIZE are also initialized here.  */
   /* They are used to sort the rows of the shift actions map later...  */
   shift_domain_link = Allocate_short_array(num_terminal_states + 1);
-  ordered_shift = Allocate_short_array(num_shift_maps + 1);
+  ordered_shift = Allocate_int_array(num_shift_maps + 1);
   terminal_list = Allocate_short_array(num_terminals + 1);
   shift_image = Allocate_short_array(max_la_state + 1);
   real_shift_number = Allocate_short_array(num_shift_maps + 1);
@@ -996,9 +996,9 @@ static void overlay_sim_t_rows(void) {
 
   num_terminal_states = top;
 
-  frequency_symbol = Allocate_short_array(num_terminals + 1);
-  frequency_count = Allocate_short_array(num_terminals + 1);
-  row_size = Allocate_short_array(max_la_state + 1);
+  frequency_symbol = Allocate_int_array(num_terminals + 1);
+  frequency_count = Allocate_int_array(num_terminals + 1);
+  row_size = Allocate_int_array(max_la_state + 1);
 
   if (shift_default_bit)
     merge_shift_domains();
@@ -1840,9 +1840,9 @@ static void print_tables(void) {
 void cmprspa(void) {
   state_index = Allocate_int_array(max_la_state + 1);
 
-  ordered_state = Allocate_short_array(max_la_state + 1);
-  symbol_map = Allocate_short_array(num_symbols + 1);
-  state_list = Allocate_short_array(max_la_state + 1);
+  ordered_state = Allocate_int_array(max_la_state + 1);
+  symbol_map = Allocate_int_array(num_symbols + 1);
+  state_list = Allocate_int_array(max_la_state + 1);
   shift_on_error_symbol = Allocate_boolean_array(max_la_state + 1);
   new_state_element = (struct new_state_type *)
       calloc(max_la_state + 1,

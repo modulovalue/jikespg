@@ -41,7 +41,7 @@ FILE *sysdef;
 /*  The variables below are global counters.          */
 long num_items = 0;
 long num_states = 0;
-long max_la_state;
+int max_la_state;
 
 int num_symbols = 0;
 int symno_size;
@@ -55,11 +55,11 @@ int gotodom_size = 0;
 
 /*   The variables below are used to hold information about special  */
 /* grammar symbols.                                                  */
-short accept_image;
-short eoft_image;
-short eolt_image;
-short empty;
-short error_image;
+int accept_image;
+int eoft_image;
+int eolt_image;
+int empty;
+int error_image;
 
 /* Miscellaneous counters. */
 
@@ -181,9 +181,9 @@ short *scope_state = NULL;
 char *output_ptr = NULL;
 char *output_buffer = NULL;
 
-short *symbol_map = NULL;
-short *ordered_state = NULL;
-short *state_list = NULL;
+int *symbol_map = NULL;
+int *ordered_state = NULL;
+int *state_list = NULL;
 
 int *next = NULL;
 int *previous = NULL;
@@ -193,8 +193,8 @@ long table_size;
 long action_size;
 long increment_size;
 
-short last_non_terminal = 0;
-short last_terminal = 0;
+int last_non_terminal = 0;
+int last_terminal = 0;
 
 int accept_act;
 int error_act;

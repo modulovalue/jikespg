@@ -144,10 +144,10 @@ void field(int num, int len) {
 /* based on the values of the elements of COUNT. Knowing that the maximum  */
 /* value of the elements of count cannot exceed MAX and cannot be lower    */
 /* than zero, we can use a bucket sort technique.                          */
-void sortdes(short array[], short count[], int low, int high, int max) {
-  register int element,
-      i,
-      k;
+void sortdes(int array[], int count[], int low, int high, int max) {
+  register int element;
+  register int i;
+  register int k;
 
   /* BUCKET is used to hold the roots of lists that contain the    */
   /* elements of each bucket.  LIST is used to hold these lists.   */
@@ -1109,7 +1109,7 @@ void process_error_maps(void) {
 /*                                                                   */
 void compute_action_symbols_range(const short *state_start,
                                   const short *state_stack,
-                                  const short *state_list,
+                                  const int *state_list,
                                   short *action_symbols_range) {
   int i,
       j,
@@ -1176,7 +1176,7 @@ void compute_action_symbols_range(const short *state_start,
 /* organization is analoguous to COMPUTE_ACTION_SYMBOLS_RANGE.       */
 void compute_naction_symbols_range(const short *state_start,
                                    const short *state_stack,
-                                   const short *state_list,
+                                   const int *state_list,
                                    short *naction_symbols_range) {
   int i,
       j,

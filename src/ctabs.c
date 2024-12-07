@@ -2032,7 +2032,7 @@ static void print_space_tables(void) {
     sh = shift[new_state_element[state_no].shift_number];
     for (j = 1; j <= sh.size; j++) {
       symbol = sh.map[j].symbol;
-      act = sh.map[j].symbol;
+      act = sh.map[j].action;
       if (!shift_default_bit || (act != shiftdf[symbol])) {
         i = indx + symbol;
         check[i] = symbol;
@@ -2375,7 +2375,7 @@ static void print_time_tables(void) {
 
   long offset;
 
-  state_list = Allocate_short_array(max_la_state + 1);
+  state_list = Allocate_int_array(max_la_state + 1);
 
   output_ptr = &output_buffer[0];
 

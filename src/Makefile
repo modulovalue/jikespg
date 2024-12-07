@@ -1,11 +1,6 @@
-# Makefile for aix for Jikes Parser Generator
 CC = gcc $(CPPFLAGS) $(CFLAGS)
 
-all: jikespg
-
-jikespg: ctabs.o globals.o lpgparse.o lpgutil.o main.o \
-     mkfirst.o mkred.o mkstates.o partset.o prntstat.o produce.o \
-     ptables.o remsp.o resolve.o spacetab.o tabutil.o timetab.o
+jikespg: ctabs.o globals.o lpgparse.o lpgutil.o main.o mkfirst.o mkred.o mkstates.o partset.o prntstat.o produce.o ptables.o remsp.o resolve.o spacetab.o tabutil.o timetab.o
 	$(CC) $(LDFLAGS) -o jikespg ctabs.o globals.o lpgparse.o lpgutil.o main.o \
 	    mkfirst.o mkred.o mkstates.o partset.o prntstat.o produce.o \
 	    ptables.o remsp.o resolve.o spacetab.o tabutil.o timetab.o
@@ -16,8 +11,7 @@ main.o:	main.c common.h
 globals.o: globals.c common.h
 	$(CC) -c globals.c
 
-lpgparse.o: lpgprs.h lpgdcl.h lpgdef.h lpgact.h lpgact.c lpgsym.h \
-	    common.h lpgparse.h	lpgparse.c
+lpgparse.o: lpgprs.h lpgdcl.h lpgdef.h lpgact.h lpgact.c lpgsym.h common.h lpgparse.h lpgparse.c
 	$(CC) -c lpgparse.c
 
 lpgutil.o: lpgutil.c common.h

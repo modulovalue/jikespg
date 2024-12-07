@@ -19,15 +19,15 @@ static void remap_symbols(void) {
   struct shift_header_type sh;
   struct reduce_header_type red;
 
-  int symbol,
-      state_no;
+  int symbol;
+  int state_no;
 
-  ordered_state = Allocate_short_array(max_la_state + 1);
-  symbol_map = Allocate_short_array(num_symbols + 1);
+  ordered_state = Allocate_int_array(max_la_state + 1);
+  symbol_map = Allocate_int_array(num_symbols + 1);
   is_terminal = Allocate_boolean_array(num_symbols + 1);
-  short *frequency_symbol = Allocate_short_array(num_symbols + 1);
-  short *frequency_count = Allocate_short_array(num_symbols + 1);
-  short *row_size = Allocate_short_array(max_la_state + 1);
+  int *frequency_symbol = Allocate_int_array(num_symbols + 1);
+  int *frequency_count = Allocate_int_array(num_symbols + 1);
+  int *row_size = Allocate_int_array(max_la_state + 1);
 
   fprintf(syslis, "\n");
 
@@ -116,23 +116,24 @@ static void remap_symbols(void) {
   /* As we merge the symbols, we keep track of which ones are terminals*/
   /* and which ones are non-terminals.  We also keep track of the new  */
   /* mapping for the symbols in SYMBOL_MAP.                            */
-  int i = 1;
   int j = num_terminals + 1;
-  int k = 0;
-  while (i <= num_terminals) {
-    k++;
-    if (frequency_count[i] >= frequency_count[j]) {
-      symbol = frequency_symbol[i];
-      is_terminal[k] = true;
-      i++;
-    } else {
-      symbol = frequency_symbol[j];
-      is_terminal[k] = false;
-      j++;
+  int k = 0; {
+    int i = 1;
+    while (i <= num_terminals) {
+      k++;
+      if (frequency_count[i] >= frequency_count[j]) {
+        symbol = frequency_symbol[i];
+        is_terminal[k] = true;
+        i++;
+      } else {
+        symbol = frequency_symbol[j];
+        is_terminal[k] = false;
+        j++;
+      }
+      symbol_map[symbol] = k;
     }
-    symbol_map[symbol] = k;
+    symbol_map[DEFAULT_SYMBOL] = DEFAULT_SYMBOL;
   }
-  symbol_map[DEFAULT_SYMBOL] = DEFAULT_SYMBOL;
 
   /* Process the remaining non-terminal and useless terminal symbols.  */
   for (; j <= num_symbols; j++) {
@@ -190,18 +191,18 @@ static void overlap_tables(void) {
   struct shift_header_type sh;
   struct reduce_header_type red;
 
-  int symbol,
-      indx;
+  int symbol;
+  int indx;
 
   long num_bytes;
 
   state_index = Allocate_int_array(max_la_state + 1);
 
-  short *symbol_list = Allocate_short_array(num_symbols + 1);
+  int *symbol_list = Allocate_int_array(num_symbols + 1);
 
   num_entries -= default_saves;
-  increment_size = MAX((num_entries*increment/100), (num_symbols + 1));
-  table_size = MIN((num_entries + increment_size), MAX_TABLE_SIZE);
+  increment_size = MAX(num_entries * increment / 100, num_symbols + 1);
+  table_size = MIN(num_entries + increment_size, MAX_TABLE_SIZE);
 
   /* Allocate space for table, and initialize the AVAIL_POOL list.     */
   /* The variable FIRST_INDEX keeps track of the first element in the  */
@@ -330,23 +331,20 @@ static void overlap_tables(void) {
   sprintf(msg_line, "Length of Action table: %ld", action_size);
   PRNT(msg_line);
 
-  sprintf(msg_line,
-          "Number of entries in Action Table: %ld", num_entries);
+  sprintf(msg_line, "Number of entries in Action Table: %ld", num_entries);
   PRNT(msg_line);
 
-  int percentage = ((action_size - num_entries) * 1000) / num_entries;
-  sprintf(msg_line, "Percentage of increase: %d.%d%%",
-          percentage / 10, percentage % 10);
+  long percentage = (action_size - num_entries) * 1000 / num_entries;
+  sprintf(msg_line, "Percentage of increase: %ld.%ld%%", percentage / 10, percentage % 10);
   PRNT(msg_line);
 
   if (byte_bit) {
     num_bytes = 2 * action_size + table_size;
-    if ((!goto_default_bit) && (!nt_check_bit)) {
-      for (; (last_symbol >= 1) && (!is_terminal[last_symbol]);
+    if (!goto_default_bit && !nt_check_bit) {
+      for (; last_symbol >= 1 && (!is_terminal[last_symbol]);
              last_symbol--);
     }
-    sprintf(msg_line,
-            "Highest symbol in Check Table: %d", last_symbol);
+    sprintf(msg_line, "Highest symbol in Check Table: %d", last_symbol);
     PRNT(msg_line);
     if (last_symbol > 255)
       num_bytes += table_size;
@@ -356,11 +354,9 @@ static void overlap_tables(void) {
   if (goto_default_bit)
     num_bytes += ((long) 2 * num_symbols);
 
-  int k_bytes = (num_bytes / 1024) + 1;
+  const long k_bytes = num_bytes / 1024 + 1;
 
-  sprintf(msg_line,
-          "Storage Required for Tables: %ld Bytes, %dK",
-          num_bytes, k_bytes);
+  sprintf(msg_line, "Storage Required for Tables: %ld Bytes, %ldK", num_bytes, k_bytes);
   PRNT(msg_line);
 
   num_bytes = (long) 4 * num_rules;
@@ -369,8 +365,7 @@ static void overlap_tables(void) {
     if (num_symbols < 256)
       num_bytes -= num_rules;
   }
-  sprintf(msg_line,
-          "Storage Required for Rules: %ld Bytes", num_bytes);
+  sprintf(msg_line, "Storage Required for Rules: %ld Bytes", num_bytes);
   PRNT(msg_line);
 }
 
@@ -378,8 +373,8 @@ static void overlap_tables(void) {
 /*                         PRINT_TABLES:                             */
 /* We now write out the tables to the SYSTAB file.                   */
 static void print_tables(void) {
-  int *action,
-      *check;
+  int *action;
+  int *check;
 
   struct goto_header_type go_to;
   struct shift_header_type sh;
@@ -397,7 +392,6 @@ static void print_tables(void) {
       la_state_offset,
       act,
       result_act,
-      i,
       j,
       k,
       symbol,
@@ -405,9 +399,9 @@ static void print_tables(void) {
 
   char *tok;
 
-  long offset;
+  int offset;
 
-  state_list = Allocate_short_array(max_la_state + 1);
+  state_list = Allocate_int_array(max_la_state + 1);
 
   check = next;
   action = previous;
@@ -426,7 +420,7 @@ static void print_tables(void) {
 
   /* Initialize all unfilled slots with default values.                */
   indx = first_index;
-  for (int i = indx; (i != NIL) && (i <= (int) action_size); i = indx) {
+  for (int i = indx; i != NIL && i <= (int) action_size; i = indx) {
     indx = next[i];
 
     check[i] = DEFAULT_SYMBOL;
@@ -436,7 +430,7 @@ static void print_tables(void) {
     check[i] = DEFAULT_SYMBOL;
 
   /* We set the rest of the table with the proper table entries.       */
-  for (state_no = 1; state_no <= (int) max_la_state; state_no++) {
+  for (state_no = 1; state_no <= max_la_state; state_no++) {
     indx = state_index[state_no];
     if (state_no > (int) num_states) {
       sh = shift[lastats[state_no].shift_number];
@@ -445,7 +439,7 @@ static void print_tables(void) {
       go_to = statset[state_no].go_to;
       for (j = 1; j <= go_to.size; j++) {
         symbol = go_to.map[j].symbol;
-        i = indx + symbol;
+        int i = indx + symbol;
         if (goto_default_bit || nt_check_bit) {
           check[i] = symbol;
         } else {
@@ -466,7 +460,7 @@ static void print_tables(void) {
 
     for (j = 1; j <= sh.size; j++) {
       symbol = sh.map[j].symbol;
-      i = indx + symbol;
+      int i = indx + symbol;
       check[i] = symbol;
       act = sh.map[j].action;
       if (act > (int) num_states) {
@@ -497,7 +491,7 @@ static void print_tables(void) {
     for (j = 1; j <= red.size; j++) {
       if (red.map[j].rule_number != default_rule) {
         symbol = red.map[j].symbol;
-        i = indx + symbol;
+        int i = indx + symbol;
         check[i] = symbol;
         act = red.map[j].rule_number;
         if (rules[act].lhs == accept_image)
@@ -513,7 +507,7 @@ static void print_tables(void) {
     /* default slot is initialized to the original state number, and the */
     /* corresponding element of the DEFAULT_REDUCE array is initialized. */
     /* Otherwise it is initialized to the rule number in question.       */
-    i = indx + DEFAULT_SYMBOL;
+    int i = indx + DEFAULT_SYMBOL;
     check[i] = DEFAULT_SYMBOL;
     act = red.map[0].rule_number;
     if (act == OMEGA)
@@ -591,14 +585,13 @@ static void print_tables(void) {
   /* We write the terminal symbols map.                    */
   for (symbol = 1; symbol <= num_symbols; symbol++) {
     if (is_terminal[symbol_map[symbol]]) {
-      int len;
-
-      if (last_terminal < symbol_map[symbol])
+      if (last_terminal < symbol_map[symbol]) {
         last_terminal = symbol_map[symbol];
+      }
       tok = RETRIEVE_STRING(symbol);
       if (tok[0] == '\n') /* We're dealing with special symbol?  */
         tok[0] = escape; /* replace initial marker with escape. */
-      len = strlen(tok);
+      int len = strlen(tok);
       field(symbol_map[symbol], 4);
       field(len, 4);
       if (len <= 64)
@@ -610,7 +603,7 @@ static void print_tables(void) {
         *output_ptr = '\0';
         BUFFER_CHECK(systab);
         tok += 64;
-        for (len = strlen(tok); len > 72; len = strlen(tok)) {
+        for (unsigned long len1 = strlen(tok); len1 > 72; len1 = strlen(tok)) {
           memcpy(output_ptr, tok, 72);
           output_ptr += 72;
           *output_ptr++ = '\n';
@@ -628,14 +621,12 @@ static void print_tables(void) {
   /* We write the non-terminal symbols map.                */
   for (symbol = 1; symbol <= num_symbols; symbol++) {
     if (!is_terminal[symbol_map[symbol]]) {
-      int len;
-
       if (last_non_terminal < symbol_map[symbol])
         last_non_terminal = symbol_map[symbol];
       tok = RETRIEVE_STRING(symbol);
       if (tok[0] == '\n') /* we're dealing with special symbol?  */
         tok[0] = escape; /* replace initial marker with escape. */
-      len = strlen(tok);
+      int len = strlen(tok);
       field(symbol_map[symbol], 4);
       field(len, 4);
       if (len <= 64)
@@ -646,7 +637,7 @@ static void print_tables(void) {
         *output_ptr++ = '\n';
         BUFFER_CHECK(systab);
         tok += 64;
-        for (len = strlen(tok); len > 72; len = strlen(tok)) {
+        for (unsigned long len1 = strlen(tok); len1 > 72; len1 = strlen(tok)) {
           memcpy(output_ptr, tok, 72);
           output_ptr += 72;
           *output_ptr++ = '\n';
@@ -719,12 +710,11 @@ static void print_tables(void) {
   /* after rearranging its elements based on the new ordering of the*/
   /* symbols.  The array TEMP is used to hold the GOTODEF values.   */
   if (goto_default_bit) {
-    short *default_map;
+    int *default_map = Allocate_int_array(num_symbols + 1);
 
-    default_map = Allocate_short_array(num_symbols + 1);
-
-    for (int i = 0; i <= num_symbols; i++)
+    for (int i = 0; i <= num_symbols; i++) {
       default_map[i] = error_act;
+    }
 
     for ALL_NON_TERMINALS(symbol) {
       act = gotodef[symbol];

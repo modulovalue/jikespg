@@ -703,16 +703,16 @@ static void process_scopes(void) {
 process_scope_states: {
     SET_PTR collection;
 
-    short *element_size,
-        *list,
-        *start,
-        *stack,
-        *ordered_symbol,
-        *state_list,
-        *bucket;
+    short *element_size;
+    int *list;
+    short *start;
+    short *stack;
+    short *ordered_symbol;
+    short *state_list;
+    short *bucket;
 
-    int state_root,
-        state_no;
+    int state_root;
+    int state_no;
 
     state_set_size = num_states / SIZEOF_BC
                      + (num_states % SIZEOF_BC ? 1 : 0);
@@ -726,7 +726,7 @@ process_scope_states: {
     start = Allocate_short_array(num_state_sets + 2);
     stack = Allocate_short_array(num_state_sets + 1);
     ordered_symbol = Allocate_short_array(num_state_sets + 1);
-    list = Allocate_short_array(num_state_sets + 1);
+    list = Allocate_int_array(num_state_sets + 1);
     state_list = Allocate_short_array(num_states + 1);
     bucket = Allocate_short_array(max_prefix_length + 1);
 

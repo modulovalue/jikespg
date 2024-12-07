@@ -49,7 +49,7 @@ static char hostfile[] = __FILE__;
 /*    into the stack. Repeat step 2 until the partition is empty.    */
 /*                                                                   */
 void partset(SET_PTR collection,
-             const short *element_size, const short *list,
+             const short *element_size, const int *list,
              short *start, short *stack, int set_size, const int from_scope_processing) {
   int
       base_set,

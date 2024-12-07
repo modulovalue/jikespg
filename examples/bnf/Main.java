@@ -6,27 +6,20 @@
 // and others.  All Rights Reserved.
 // You must accept the terms of that agreement to use this software.
 
-public class Main
-{
-    public static void main(String[] args) throws java.io.IOException, java.io.FileNotFoundException
-    {
-        Option option = new Option(args);
-        if (option.filename == null)
-        {
-            System.out.println("No Input File Specified !!!");
-            return;
+public class Main {
+    public static void main(final String[] args) throws java.io.IOException {
+        final Option option = new Option(args);
+        if (option.filename == null) {
+            System.out.println("No Input File Specified, parsing example1.bnf as default");
+            option.filename = "example1.bnf";
         }
-
-        LexStream lex_stream = new LexStream(option.filename);
-        Scanner scanner = new Scanner(option, lex_stream);
+        final LexStream lex_stream = new LexStream(option.filename);
+        final Scanner scanner = new Scanner(option, lex_stream);
         scanner.scan();
-
-        if (option.dump)
+        if (option.dump) {
             lex_stream.dump();
-
-        Parser parser = new Parser(lex_stream);
+        }
+        final Parser parser = new Parser(lex_stream);
         parser.parse();
-
-        return;
     }
 }
