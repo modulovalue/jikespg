@@ -1472,11 +1472,10 @@ static void print_externs(void) {
             "%s DEFERRED_RECOVERY\n"
             "%s FULL_DIAGNOSIS\n"
             "%s SPACE_TABLES\n\n",
-
-            (num_scopes > 0 ? "#define" : "#undef "),
-            (deferred_bit ? "#define" : "#undef "),
-            (error_maps_bit ? "#define" : "#undef "),
-            (table_opt == OPTIMIZE_SPACE ? "#define" : "#undef "));
+            num_scopes > 0 ? "#define" : "#undef ",
+            deferred_bit ? "#define" : "#undef ",
+            error_maps_bit ? "#define" : "#undef ",
+            table_opt == OPTIMIZE_SPACE ? "#define" : "#undef ");
   }
 
   if (c_bit)

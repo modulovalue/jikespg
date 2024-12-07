@@ -4,9 +4,6 @@ static char hostfile[] = __FILE__;
 #include "common.h"
 #include "reduce.h"
 
-#define IS_SP_RHS(symbol)   (sp_rules[symbol] != NIL)
-#define IS_SP_RULE(rule_no) (rule_list[rule_no] != OMEGA)
-
 static int max_sp_state;
 
 static struct action_element {
@@ -42,9 +39,15 @@ static short *sp_rules,
     *index_of,
     *next_rule,
     *rule_list,
-
     **sp_action;
 
+bool IS_SP_RHS(long symbol) {
+  return sp_rules[symbol] != NIL;
+}
+
+bool IS_SP_RULE(long rule_no) {
+  return rule_list[rule_no] != OMEGA;
+}
 static bool *is_conflict_symbol;
 
 static SET_PTR look_ahead;

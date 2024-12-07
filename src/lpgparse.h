@@ -100,7 +100,7 @@ static const char *oaction = "ACTION",
 /**                                                               **/
 /* The following static variables are used only in processing the  */
 /* the input source.                                               */
-#define CTL_Z '\x1a'
+static const char CTL_Z = '\x1a';
 #undef  min
 #define min(x, y) ((x) < (y) ? (x) : (y))
 

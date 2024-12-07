@@ -6,9 +6,15 @@ static char hostfile[] = __FILE__;
 #include <string.h>
 #include "common.h"
 
-#define LEN (PRINT_LINE_SIZE - 4)
-#define NEXT_RULE_SIZE (num_rules + 1)
-#define LAST_RHS_INDEX(rule_no) rules[rule_no + 1].rhs - 1
+int const LEN = PRINT_LINE_SIZE - 4;
+
+int NEXT_RULE_SIZE() {
+  return num_rules + 1;
+}
+
+int LAST_RHS_INDEX(const int rule_no) {
+  return rules[rule_no + 1].rhs - 1;
+}
 
 static void INIT_FIRST(const int nt) {
   for (register int k = 0; k < term_set_size; k++) {
@@ -115,8 +121,8 @@ void mkfirst(void) {
   lhs_rule = Allocate_short_array(num_non_terminals);
   lhs_rule -= (num_terminals + 1);
 
-  next_rule = Allocate_short_array(NEXT_RULE_SIZE);
-  first_item_of = Allocate_short_array(NEXT_RULE_SIZE);
+  next_rule = Allocate_short_array(NEXT_RULE_SIZE());
+  first_item_of = Allocate_short_array(NEXT_RULE_SIZE());
   stack = Allocate_short_array(num_non_terminals + 1);
 
   index_of = Allocate_short_array(num_non_terminals);
@@ -686,7 +692,7 @@ static void nullables_computation(void) {
 
   bool changed = true;
 
-  short *rhs_start = Allocate_short_array(NEXT_RULE_SIZE);
+  short *rhs_start = Allocate_short_array(NEXT_RULE_SIZE());
 
   /* First, mark all non-terminals as non-nullable.  Then initialize*/
   /* RHS_START. RHS_START is a mapping from each rule in the grammar*/
@@ -842,7 +848,7 @@ static void check_non_terminals(void) {
 
   bool changed = true;
 
-  short *rhs_start = Allocate_short_array(NEXT_RULE_SIZE);
+  short *rhs_start = Allocate_short_array(NEXT_RULE_SIZE());
   bool *produces_terminals = Allocate_boolean_array(num_non_terminals);
   produces_terminals -= (num_terminals + 1);
 

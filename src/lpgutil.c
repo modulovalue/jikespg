@@ -9,14 +9,9 @@ static char hostfile[] = __FILE__;
 /* The following are global variables and constants used to manage a  */
 /* pool of temporary space. Externally, the user invokes the function */
 /* "talloc" just as he would invoke "malloc".                         */
-#ifdef DOS
-#define LOG_BLKSIZE 12
-#else
-#define LOG_BLKSIZE 14
-#endif
-
-#define BLKSIZE (1 << LOG_BLKSIZE)
-#define BASE_INCREMENT 64
+const int LOG_BLKSIZE = 14;
+const int BLKSIZE = 1 << LOG_BLKSIZE;
+const int BASE_INCREMENT = 64;
 
 typedef long cell;
 
