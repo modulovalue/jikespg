@@ -1,5 +1,5 @@
-#include <stdlib.h>
 static char hostfile[] = __FILE__;
+#include <stdlib.h>
 
 #include "common.h"
 

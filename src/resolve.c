@@ -1,4 +1,6 @@
 #include <stdlib.h>
+
+#include "lpgparse.h"
 static char hostfile[] = __FILE__;
 
 #include "common.h"
@@ -574,12 +576,12 @@ static bool lalr_path_retraced(int state_no,
                            : adequate_item[-state]);
        (p != NULL) && (!found); p = p->next) {
     item = p->value - 1;
-    if IS_IN_SET(first, item_table[item].suffix_index, conflict_symbol) {
+    if (IS_IN_SET(first, item_table[item].suffix_index, conflict_symbol)) {
       /* Conflict_symbol can be read in state? */
       if (trace_opt == TRACE_FULL)
         print_root_path(item);
       found = true;
-    } else if IS_IN_SET(first, item_table[item].suffix_index, empty) {
+    } else if (IS_IN_SET(first, item_table[item].suffix_index, empty)) {
       int symbol = rules[item_table[item].rule_number].lhs;
       struct node *w = lpgaccess(state_no, item);
       for (q = w; q != NULL; tail = q, q = q->next) {
@@ -655,12 +657,12 @@ static bool slr_trace(int lhs_symbol, int conflict_symbol) {
   slr_visited[lhs_symbol] = true;
 
   for (item = nt_items[lhs_symbol]; item != NIL; item = item_list[item]) {
-    if IS_IN_SET(first, item_table[item].suffix_index, conflict_symbol) {
+    if (IS_IN_SET(first, item_table[item].suffix_index, conflict_symbol)) {
       if (trace_opt == TRACE_FULL)
         print_root_path(item);
       break;
     }
-    if IS_IN_SET(first, item_table[item].suffix_index, empty) {
+    if (IS_IN_SET(first, item_table[item].suffix_index, empty)) {
       if (slr_trace(rules[item_table[item].rule_number].lhs,
                     conflict_symbol))
         break;

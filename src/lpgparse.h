@@ -1,11 +1,16 @@
+#pragma once
+#include <stdbool.h>
+#include "common.h"
+#include <string.h>
+
 /**                                                               **/
 /**                        OPTIONS DECLARATIONS                   **/
 /**                                                               **/
 /* The following static variables are used only in processing the  */
 /* options.                                                        */
-#define OUTPUT_PARM_SIZE MAX_PARM_SIZE + 7
-#define MAXIMUM_LA_LEVEL 15
-#define STRING_BUFFER_SIZE 8192
+static const int OUTPUT_PARM_SIZE = MAX_PARM_SIZE + 7;
+static const int MAXIMUM_LA_LEVEL = 15;
+static const int STRING_BUFFER_SIZE = 8192;
 
 static const char *oaction = "ACTION",
     *oactfile_name = "ACTFILENAME",
@@ -160,19 +165,37 @@ struct actelmt_type /* structure to store location of action */
 struct hash_type /* structure used to hash grammar symbols */
 {
   struct hash_type *link;
-  short number,
-      name_index;
+  short number;
+  short name_index;
   int st_ptr;
 };
 
+extern char *string_table;
+
+static const char *EXTRACT_STRING(int indx) {
+  return &string_table[indx];
+}
+
+static char* RETRIEVE_STRING(int indx) {
+    return &string_table[symno[indx].ptr];
+}
+
+static const char* RETRIEVE_NAME(int indx) {
+    return &string_table[name[indx]];
+}
+
+static bool EQUAL_STRING(const char *symb, const struct hash_type *p) {
+  return strcmp(symb, string_table + p->st_ptr) == 0;
+}
+
 struct terminal_type /* structure used to hold token information */
 {
-  long start_line,
-      end_line;
-  short start_column,
-      end_column,
-      length,
-      kind;
+  long start_line;
+  long end_line;
+  short start_column;
+  short end_column;
+  short length;
+  short kind;
   char name[SYMBOL_SIZE + 1];
 };
 

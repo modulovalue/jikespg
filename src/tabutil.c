@@ -1,4 +1,6 @@
 #include <stdlib.h>
+
+#include "lpgparse.h"
 static char hostfile[] = __FILE__;
 
 #include <string.h>
@@ -329,7 +331,7 @@ void process_error_maps(void) {
       symbol = symbol_map[lhs_symbol] - num_terminals;
     symbol_root[symbol] = lhs_symbol;
     for ALL_TERMINALS(i) {
-      if IS_IN_SET(follow, (lhs_symbol + 1), (i + 1))
+      if (IS_IN_SET(follow, lhs_symbol + 1, i + 1))
         symbol_count[symbol]++;
     }
   }
@@ -358,7 +360,7 @@ void process_error_maps(void) {
     lhs_symbol = symbol_root[symbol];
     if (lhs_symbol != OMEGA) {
       for ALL_TERMINALS(i) {
-        if IS_IN_SET(follow, (lhs_symbol + 1), (i + 1)) {
+        if (IS_IN_SET(follow, lhs_symbol + 1, i + 1)) {
           field(symbol_map[i], 4);
           k++;
           if (k == 18) {

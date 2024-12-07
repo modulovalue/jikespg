@@ -353,7 +353,7 @@ void la_traverse(int state_no, int goto_indx, int *stack_top) {
   for (; r != NULL; r = r->next) {
     /* loop over items [A -> x LHS_SYMBOL . y] */
     int item = r->value - 1;
-    if IS_IN_SET(first, item_table[item].suffix_index, empty) {
+    if (IS_IN_SET(first, item_table[item].suffix_index, empty)) {
       int symbol = rules[item_table[item].rule_number].lhs;
       struct node *w = lpgaccess(state_no, item); /* states where RULE was  */
       /* introduced through closure   */

@@ -1,3 +1,4 @@
+#include "lpgparse.h"
 static char hostfile[] = __FILE__;
 
 #include <string.h>

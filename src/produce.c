@@ -1,4 +1,6 @@
 #include <stdlib.h>
+
+#include "lpgparse.h"
 static char hostfile[] = __FILE__;
 
 #include <string.h>
@@ -745,11 +747,11 @@ process_scope_states: {
          symbol != NIL; symbol = nt_list[symbol], i++) {
       list[i] = i;
       ordered_symbol[i] = symbol;
-      EMPTY_COLLECTION_SET(i);
+      EMPTY_COLLECTION_SET(collection, i);
       element_size[i] = 0;
       for (p = states_of[symbol]; p != NULL; p = p->next) {
         element_size[i]++;
-        SET_COLLECTION_BIT(i, p -> value);
+        SET_COLLECTION_BIT(collection, i, p -> value);
       }
     }
 

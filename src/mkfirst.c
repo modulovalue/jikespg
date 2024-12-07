@@ -1,4 +1,6 @@
 #include <stdlib.h>
+
+#include "lpgparse.h"
 static char hostfile[] = __FILE__;
 
 #include <string.h>
@@ -16,7 +18,7 @@ static inline void INIT_FIRST(int nt) {
 }
 
 static bool is_terminal_rhs(short *rhs_start,
-                               const bool *produces_terminals, int rule_no);
+                            const bool *produces_terminals, int rule_no);
 
 static bool is_nullable_rhs(short *rhs_start, int rule_no);
 
@@ -397,22 +399,16 @@ void mkfirst(void) {
     direct_produces -= (num_terminals + 1);
 
     for ALL_NON_TERMINALS(nt) {
-      struct node *p,
-          *q;
-
-      for (end_node = (p = clitems[nt]) == NULL;
-           !end_node; end_node = p == clitems[nt]) {
+      struct node *p;
+      for (end_node = (p = clitems[nt]) == NULL; !end_node; end_node = p == clitems[nt]) {
         p = p->next;
         item_no = p->value;
         symbol = item_table[item_no].symbol;
         if (symbol IS_A_NON_TERMINAL) {
           i = item_table[item_no].suffix_index;
-          if (IS_IN_SET(first, i, empty) &&
-              (!IS_IN_NTSET(produces, nt,
-                            symbol - num_terminals))) {
-            NTSET_BIT_IN(produces, nt,
-                         symbol - num_terminals);
-            q = Allocate_node();
+          if (IS_IN_SET(first, i, empty) && !IS_IN_NTSET(produces, nt, symbol - num_terminals)) {
+            NTSET_BIT_IN(produces, nt, symbol - num_terminals);
+            struct node *q = Allocate_node();
             q->value = symbol;
             q->next = direct_produces[nt];
             direct_produces[nt] = q;
@@ -958,7 +954,7 @@ static void check_non_terminals(void) {
 /* returns FALSE.  Otherwise, the whole right-hand side is traversed, and it */
 /* returns the value TRUE.                                                   */
 static bool is_terminal_rhs(short *rhs_start,
-                               const bool *produces_terminals, int rule_no) {
+                            const bool *produces_terminals, int rule_no) {
   for (rhs_start[rule_no] = rhs_start[rule_no];
        rhs_start[rule_no] <= rules[rule_no + 1].rhs - 1;
        rhs_start[rule_no]++) {
