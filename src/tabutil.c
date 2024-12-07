@@ -116,7 +116,7 @@ void itoc(const int num) {
 /* string and placed in the iobuffer.                                      */
 /* Leading zeros are replaced by blanks and if the number is negative,  a  */
 /* leading "-" is added.                                                   */
-void field(const int num, const int len) {
+void field(const long num, const int len) {
   register int val = ABS(num);
   register char *p = output_ptr + len;
   do {
@@ -146,7 +146,7 @@ void field(const int num, const int len) {
 /* than zero, we can use a bucket sort technique.                          */
 void sortdes(int array[], int count[], const long low, const long high, const long max) {
   register int element;
-  register int k;
+  register long k;
 
   /* BUCKET is used to hold the roots of lists that contain the    */
   /* elements of each bucket.  LIST is used to hold these lists.   */
@@ -214,7 +214,7 @@ void reallocate(void) {
   }
 
   int *n = Allocate_int_array(table_size + 1);
-  int *p = Allocate_int_array(table_size + 1);
+  long *p = Allocate_long_array(table_size + 1);
 
   /* Copy old information */
   for (register int i = 1; i <= old_size; i++) {
@@ -260,16 +260,16 @@ void reallocate(void) {
 /*      question: TRANSITION_STATES                                          */
 /*                                                                           */
 void process_error_maps(void) {
-  int *state_start,
-      *state_stack,
-      *temp,
-      *original = NULL,
-      *symbol_root,
-      *symbol_count,
-      *term_list,
-      *as_size,
-      *action_symbols_range,
-      *naction_symbols_range;
+  long *state_start;
+  long *state_stack;
+  int *temp;
+  int *original = NULL;
+  int *symbol_root;
+  int *symbol_count;
+  int *term_list;
+  long *as_size;
+  int *action_symbols_range;
+  int *naction_symbols_range;
 
   int offset;
   int item_no;
@@ -296,8 +296,8 @@ void process_error_maps(void) {
 
   symbol_root = Allocate_int_array(num_symbols + 1);
   symbol_count = Allocate_int_array(num_symbols + 1);
-  state_start = Allocate_int_array(num_states + 2);
-  state_stack = Allocate_int_array(num_states + 1);
+  state_start = Allocate_long_array(num_states + 2);
+  state_stack = Allocate_long_array(num_states + 1);
   term_list = Allocate_int_array(num_symbols + 1);
 
   PRNT("\nError maps storage:");
@@ -443,7 +443,7 @@ void process_error_maps(void) {
   /* We now construct a bit map for the set of terminal symbols that  */
   /* may appear in each state. Then, we invoke PARTSET to apply the   */
   /* Partition Heuristic and print it.                                */
-  as_size = Allocate_int_array(num_states + 1);
+  as_size = Allocate_long_array(num_states + 1);
 
   if (table_opt == OPTIMIZE_TIME) {
     original = Allocate_int_array(num_symbols + 1);
@@ -1105,9 +1105,9 @@ void process_error_maps(void) {
 /* is organized as a circular list where the smallest sets appear    */
 /* first in the list.                                                */
 /*                                                                   */
-void compute_action_symbols_range(const int *state_start,
-                                  const int *state_stack,
-                                  const int *state_list,
+void compute_action_symbols_range(const long *state_start,
+                                  const long *state_stack,
+                                  const long *state_list,
                                   int *action_symbols_range) {
   int i,
       j,
@@ -1173,9 +1173,9 @@ void compute_action_symbols_range(const int *state_start,
 /*                   COMPUTE_NACTION_SYMBOLS_RANGE:                  */
 /* This procedure computes the range of the NACTION_SYMBOLS map. It  */
 /* organization is analoguous to COMPUTE_ACTION_SYMBOLS_RANGE.       */
-void compute_naction_symbols_range(const int *state_start,
-                                   const int *state_stack,
-                                   const int *state_list,
+void compute_naction_symbols_range(const long *state_start,
+                                   const long *state_stack,
+                                   const long *state_list,
                                    int *naction_symbols_range) {
   int i;
   int j;

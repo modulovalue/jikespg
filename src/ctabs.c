@@ -695,37 +695,36 @@ static void print_java_names(void) {
 
 /*                          PRINT_ERROR_MAPS:                             */
 static void print_error_maps(void) {
-  int *state_start;
-  int *state_stack;
+  long *state_start;
+  long *state_stack;
   int *temp;
   short *original;
-  int *as_size;
+  long *as_size;
   int *action_symbols_base;
   int *action_symbols_range;
   int *naction_symbols_base;
   int *naction_symbols_range;
 
-  int i,
-      k,
-      offset,
-      state_no,
-      symbol;
+  int i;
+  int k;
+  int offset;
+  int state_no;
+  int symbol;
 
   long num_bytes;
 
-  state_start = Allocate_int_array(num_states + 2);
-  state_stack = Allocate_int_array(num_states + 1);
+  state_start = Allocate_long_array(num_states + 2);
+  state_stack = Allocate_long_array(num_states + 1);
 
   PRNT("\nError maps storage:");
 
   /* We now construct a bit map for the set of terminal symbols that  */
   /* may appear in each state. Then, we invoke PARTSET to apply the   */
   /* Partition Heuristic and print it.                                */
-  as_size = Allocate_int_array(num_states + 1);
+  as_size = Allocate_long_array(num_states + 1);
 
   if (table_opt == OPTIMIZE_TIME) {
     original = Allocate_short_array(num_symbols + 1);
-
     /* In a compressed TIME table, the terminal and non-terminal */
     /* symbols are mixed together when they are remapped.        */
     /* We shall now recover the original number associated with  */
@@ -734,9 +733,9 @@ static void print_error_maps(void) {
     /* amount of space in the bit_string representation of sets  */
     /* as well as time when operations are performed on those    */
     /* bit-strings.                                              */
-
-    for ALL_TERMINALS(symbol)
+    for ALL_TERMINALS(symbol) {
       original[symbol_map[symbol]] = symbol;
+    }
   }
 
   for ALL_STATES(state_no) {
@@ -847,18 +846,18 @@ static void print_error_maps(void) {
     }
   }
 
-  partset(naction_symbols, as_size, state_list, state_start,
-          state_stack, num_non_terminals, 0);
+  partset(naction_symbols, as_size, state_list, state_start, state_stack, num_non_terminals, 0);
 
   ffree(as_size);
   ffree(naction_symbols);
 
-  for (i = 1; i <= gotodom_size; i++) /* Remap non-terminals */
-  {
-    if (table_opt == OPTIMIZE_SPACE)
+  /* Remap non-terminals */
+  for (i = 1; i <= gotodom_size; i++){
+    if (table_opt == OPTIMIZE_SPACE) {
       gd_range[i] = symbol_map[gd_range[i]] - num_terminals;
-    else
+    } else {
       gd_range[i] = symbol_map[gd_range[i]];
+    }
   }
 
   /* Compute and write out the base of the NACTION_SYMBOLS map.*/
@@ -1426,17 +1425,17 @@ static void print_definitions(void) {
             "      NT_OFFSET         = %d,\n"
             "      SCOPE_UBOUND      = %d,\n"
             "      SCOPE_SIZE        = %d,\n"
-            "      LA_STATE_OFFSET   = %d,\n"
+            "      LA_STATE_OFFSET   = %ld,\n"
             "      MAX_LA            = %d,\n"
             "      NUM_RULES         = %d,\n"
             "      NUM_TERMINALS     = %d,\n"
             "      NUM_NON_TERMINALS = %d,\n"
             "      NUM_SYMBOLS       = %d,\n"
-            "      START_STATE       = %d,\n"
+            "      START_STATE       = %ld,\n"
             "      EOFT_SYMBOL       = %d,\n"
             "      EOLT_SYMBOL       = %d,\n"
-            "      ACCEPT_ACTION     = %d,\n"
-            "      ERROR_ACTION      = %d;\n"
+            "      ACCEPT_ACTION     = %ld,\n"
+            "      ERROR_ACTION      = %ld;\n"
             "};\n\n",
 
 
@@ -1465,17 +1464,17 @@ static void print_definitions(void) {
             "      STACK_SIZE        = %d,\n"
             "      SCOPE_UBOUND      = %d,\n"
             "      SCOPE_SIZE        = %d,\n"
-            "      LA_STATE_OFFSET   = %d,\n"
+            "      LA_STATE_OFFSET   = %ld,\n"
             "      MAX_LA            = %d,\n"
             "      NUM_RULES         = %d,\n"
             "      NUM_TERMINALS     = %d,\n"
             "      NUM_NON_TERMINALS = %d,\n"
             "      NUM_SYMBOLS       = %d,\n"
-            "      START_STATE       = %d,\n"
+            "      START_STATE       = %ld,\n"
             "      EOFT_SYMBOL       = %d,\n"
             "      EOLT_SYMBOL       = %d,\n"
-            "      ACCEPT_ACTION     = %d,\n"
-            "      ERROR_ACTION      = %d\n"
+            "      ACCEPT_ACTION     = %ld,\n"
+            "      ERROR_ACTION      = %ld\n"
             "     };\n\n",
 
 
@@ -2350,8 +2349,8 @@ static void print_space_tables(void) {
 
 /*                         PRINT_TIME_TABLES:                             */
 static void print_time_tables(void) {
-  int *action,
-      *check;
+  long *action;
+  int *check;
 
   int la_shift_count = 0,
       shift_count = 0,
@@ -2375,7 +2374,7 @@ static void print_time_tables(void) {
 
   long offset;
 
-  state_list = Allocate_int_array(max_la_state + 1);
+  state_list = Allocate_long_array(max_la_state + 1);
 
   output_ptr = &output_buffer[0];
 

@@ -183,11 +183,11 @@ char *output_buffer = NULL;
 
 int *symbol_map = NULL;
 int *ordered_state = NULL;
-int *state_list = NULL;
+long *state_list = NULL;
 
 int *next = NULL;
-int *previous = NULL;
-int *state_index = NULL;
+long *previous = NULL;
+long *state_index = NULL;
 
 long table_size;
 long action_size;
@@ -196,10 +196,10 @@ long increment_size;
 int last_non_terminal = 0;
 int last_terminal = 0;
 
-int accept_act;
-int error_act;
+long accept_act;
+long error_act;
 int first_index;
-int last_index;
+long last_index;
 int last_symbol;
 int max_name_length = 0;
 

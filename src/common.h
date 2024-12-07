@@ -1,206 +1,11 @@
 #pragma once
+#include "bitset.h"
 #include <ctype.h>
-
-static char hostfile[];
-
 #include <stdbool.h>
 #include <stdlib.h>
 #include <limits.h>
 
-
-// region bitsets
-/* These variables hold the number of BOOLEAN_CELLS required to form a */
-/* set of terminals, non-terminals and states, respectively.           */
-extern int term_set_size;
-extern int non_term_set_size;
-extern int state_set_size;
-
-/**                      GLOBAL DECLARATIONS                      **/
-typedef unsigned int BOOLEAN_CELL;
-/* Basic unit used to represent */
-/* Bit sets                     */
-typedef BOOLEAN_CELL *SET_PTR;
-
-/**                         BIT SET MACROS                        **/
-/* The following macros are used to define operations on sets that */
-/* are represented as bit-strings.  BOOLEAN_CELL is a type that is */
-/* used as the elemental unit used to construct the sets.  For     */
-/* example, if BOOLEAN_CELL consists of four bytes and assumming   */
-/* that each byte contains 8 bits then the constant SIZEOF_BC      */
-/* represents the total number of bits that is contained in each   */
-/* elemental unit.                                                 */
-/*                                                                 */
-/* In general, a parameter called "set" or "set"i, where i is an   */
-/* integer, is a pointer to a set or array of sets; a parameter    */
-/* called "i" or "j" represents an index in an array of sets; a    */
-/* parameter called "b" represents a particular element (or bit)   */
-/* within a set.                                                   */
-static const int SIZEOF_BC = sizeof(BOOLEAN_CELL) * CHAR_BIT;
-static const int BC_OFFSET = SIZEOF_BC - 1;
-
-/* This macro takes as argument an array of bit sets called "set", */
-/* an integer "nt" indicating the index of a particular set in the */
-/* array and an integer "t" indicating a particular element within */
-/* the set. IS_IN_SET check whether ot not the element "t" is in   */
-/* the set "set(nt)".                                              */
-/*                                                                 */
-/* The value (nt*term_set_size) is used to determine the starting  */
-/* address of the set element in question.  The value              */
-/* (??? / SIZEOF_BC) is used to determine the actual BOOLEAN_CELL  */
-/* containing the bit in question.  Finally, the value             */
-/* (SIZEOF_BC - (t % SIZEOF_BC)) identifies the actual bit in the  */
-/* unit. The bit in question is pushed to the first position and   */
-/* and-ed with the value 01. This operation yields the value TRUE  */
-/* if the bit is on. Otherwise, the value FALSE is obtained.       */
-/* Recall that in C, one cannot shift (left or right) by 0. This   */
-/* is why the ? is used here.                                      */
-static bool IS_IN_SET(const SET_PTR set, const int i, const int b) {
-  /* is b in set[i] ? */
-  return set[i * term_set_size + (b - 1) / SIZEOF_BC] &
-         ((b + BC_OFFSET) % SIZEOF_BC ? (BOOLEAN_CELL) 1 << (b + BC_OFFSET) % SIZEOF_BC : (BOOLEAN_CELL) 1);
-}
-
-/* The macro SET_UNION takes as argument two arrays of sets:       */
-/* "set1" and "set2", and two integers "i" and "j" which are       */
-/* indices to be used to access particular sets in "set1" and      */
-/* "set2", respectively.  SET_UNION computes the union of the two  */
-/* sets in question and places the result in the relevant set in   */
-/* "set1".                                                         */
-/*                                                                 */
-/* The remaining macros are either analogous to IS_IN_SET or       */
-/* SET_UNION.                                                      */
-/*                                                                 */
-/* Note that a macro with the variable "kji" declared in its body  */
-/* should not be invoked with a parameter of the same name.        */
-/* set[i] union set2[j] */
-static void SET_UNION(const SET_PTR set1, const int i, const SET_PTR set2, const int j) {
-  for (register int kji = 0; kji < term_set_size; kji++) {
-    set1[i * term_set_size + kji] |= set2[j * term_set_size + kji];
-  }
-}
-
-/* set = {} */
-static void INIT_SET(const SET_PTR set) {
-  for (register int kji = 0; kji < term_set_size; kji++) {
-    set[kji] = 0;
-  }
-}
-
-/* set1[i] = set2[j] */
-static void ASSIGN_SET(const SET_PTR set1, const int i, const SET_PTR set2, const int j) {
-  for (register int kji = 0; kji < term_set_size; kji++) {
-    set1[i * term_set_size + kji] = set2[j * term_set_size + kji];
-  }
-}
-
-/* set[i] = set[i] with b; */
-static void SET_BIT_IN(const SET_PTR set, const int i, const int b) {
-  set[i * term_set_size + (b - 1) / SIZEOF_BC] |=
-      (b + BC_OFFSET) % SIZEOF_BC ? (BOOLEAN_CELL) 1 << (b + BC_OFFSET) % SIZEOF_BC : (BOOLEAN_CELL) 1;
-}
-
-/* set[i] = set[i] less b; */
-static void RESET_BIT_IN(const SET_PTR set, const int i, const int b) {
-  set[i * term_set_size + (b - 1) / SIZEOF_BC] &=
-      ~((b + BC_OFFSET) % SIZEOF_BC ? (BOOLEAN_CELL) 1 << (b + BC_OFFSET) % SIZEOF_BC : (BOOLEAN_CELL) 1);
-}
-
-/* The following macros are analogous to the ones above, except    */
-/* that they deal with sets of non-terminals instead of sets of    */
-/* terminals.                                                      */
-/* is b in set[i] ? */
-static bool IS_IN_NTSET(const SET_PTR set, const int i, const int b) {
-  return set[i * non_term_set_size + (b - 1) / SIZEOF_BC] &
-         ((b + BC_OFFSET) % SIZEOF_BC ? (BOOLEAN_CELL) 1 << (b + BC_OFFSET) % SIZEOF_BC : (BOOLEAN_CELL) 1);
-}
-
-/* set1[i] union set2[j] */
-static void NTSET_UNION(const SET_PTR set1, const int i, const SET_PTR set2, const int j) {
-  for (register int kji = 0; kji < non_term_set_size; kji++) {
-    set1[i * non_term_set_size + kji] |= set2[j * non_term_set_size + kji];
-  }
-}
-
-/* set = {} */
-static void INIT_NTSET(const SET_PTR set) {
-  for (register int kji = 0; kji < non_term_set_size; kji++) {
-    set[kji] = 0;
-  }
-}
-
-/* set1[i] = set2[j] */
-static void ASSIGN_NTSET(const SET_PTR set1, const int i, const SET_PTR set2, const int j) {
-  for (register int kji = 0; kji < non_term_set_size; kji++) {
-    set1[i * non_term_set_size + kji] = set2[j * non_term_set_size + kji];
-  }
-}
-
-/* set[i] = set[i] with b; */
-static void NTSET_BIT_IN(const SET_PTR set, const int i, const int b) {
-  set[i * non_term_set_size + (b - 1) / SIZEOF_BC] |=
-      (b + BC_OFFSET) % SIZEOF_BC ? (BOOLEAN_CELL) 1 << (b + BC_OFFSET) % SIZEOF_BC : (BOOLEAN_CELL) 1;
-}
-
-/* set[i] = set[i] less b; */
-static void NTRESET_BIT_IN(const SET_PTR set, const int i, const int b) {
-  set[i * non_term_set_size + (b - 1) / SIZEOF_BC] &=
-      ~((b + BC_OFFSET) % SIZEOF_BC ? (BOOLEAN_CELL) 1 << (b + BC_OFFSET) % SIZEOF_BC : (BOOLEAN_CELL) 1);
-}
-
-/* The following macros are analogous to the ones above, except    */
-/* that they deal with sets of states instead of sets of terminals */
-/* or non-terminals.                                               */
-static void SET_COLLECTION_BIT(const SET_PTR collection, const int i, const int b) {
-  collection[i * state_set_size + (b - 1) / SIZEOF_BC] |=
-      (b + BC_OFFSET) % SIZEOF_BC ? (BOOLEAN_CELL) 1 << (b + BC_OFFSET) % SIZEOF_BC : (BOOLEAN_CELL) 1;
-}
-
-static void EMPTY_COLLECTION_SET(const SET_PTR collection, const int i) {
-  for (register int kji = 0; kji < state_set_size; kji++) {
-    collection[i * state_set_size + kji] = 0;
-  }
-}
-
-/* The following macros can be used to check, set, or reset a bit  */
-/* in a bit-string of any length.                                  */
-static void SET_BIT(const SET_PTR set, const int b) {
-  set[(b - 1) / SIZEOF_BC] |= (b + BC_OFFSET) % SIZEOF_BC ? (BOOLEAN_CELL) 1 << (b + BC_OFFSET) % SIZEOF_BC : (BOOLEAN_CELL) 1;
-}
-
-static void RESET_BIT(const SET_PTR set, const int b) {
-  set[(b - 1) / SIZEOF_BC] &=
-      ~((b + BC_OFFSET) % SIZEOF_BC ? (BOOLEAN_CELL) 1 << (b + BC_OFFSET) % SIZEOF_BC : (BOOLEAN_CELL) 1);
-}
-
-/* is b in set ? */
-static bool IS_ELEMENT(const SET_PTR set, const int b) {
-  return set[(b - 1) / SIZEOF_BC] &
-         ((b + BC_OFFSET) % SIZEOF_BC ? (BOOLEAN_CELL) 1 << (b + BC_OFFSET) % SIZEOF_BC : (BOOLEAN_CELL) 1);
-}
-
-static void B_ASSIGN_SET(const SET_PTR s1, const int dest, const SET_PTR s2, const int source, const int bound) {
-  for (int j = 0; j < bound; j++) {
-    s1[dest * bound + j] = s2[source * bound + j];
-  }
-}
-
-static void B_SET_UNION(const SET_PTR s1, const int dest, const SET_PTR s2, const int source, const int bound) {
-  for (int j = 0; j < bound; j++) {
-    s1[dest * bound + j] |= s2[source * bound + j];
-  }
-}
-
-/*                               EQUAL_SETS:                                */
-/* EQUAL_SETS checks to see if two sets are equal and returns True or False */
-static bool equal_sets(const SET_PTR set1, const int indx1, const SET_PTR set2, const int indx2, const int bound) {
-  for (register int i = 0; i < bound; i++) {
-    if (set1[indx1 * bound + i] != set2[indx2 * bound + i])
-      return false;
-  }
-  return true;
-}
-
-// endregion
+static char hostfile[];
 
 
 #ifndef COMMON_INCLUDED
@@ -586,25 +391,25 @@ extern char *output_buffer;
 
 extern int *symbol_map;
 extern int *ordered_state;
-extern int *state_list;
+extern long *state_list;
 
-extern int *next,
-    *previous,
-    *state_index;
+extern int *next;
+extern long *previous;
+extern long *state_index;
 
-extern long table_size,
-    action_size,
-    increment_size;
+extern long table_size;
+extern long action_size;
+extern long increment_size;
 
-extern int last_non_terminal,
-    last_terminal;
+extern int last_non_terminal;
+extern int last_terminal;
 
-extern int accept_act,
-    error_act,
-    first_index,
-    last_index,
-    last_symbol,
-    max_name_length;
+extern long accept_act;
+extern long error_act;
+extern int first_index;
+extern long last_index;
+extern int last_symbol;
+extern int max_name_length;
 
 extern SET_PTR naction_symbols,
     action_symbols;
@@ -633,6 +438,8 @@ bool *allocate_boolean_array(long size, char *file, long line);
 
 int *allocate_int_array(long size, char *file, long line);
 
+long *allocate_long_array(long size, char *file, long line);
+
 short *allocate_short_array(long size, char *file, long line);
 
 struct goto_header_type allocate_goto_map(int size, char *file, long line);
@@ -659,7 +466,7 @@ void init_rmpself(SET_PTR produces);
 
 void itoc(int num);
 
-void field(int num, int len);
+void field(long num, int len);
 
 void fill_in(char string[], int amount, char character);
 
@@ -687,8 +494,8 @@ void nospace(char *, long);
 
 int number_len(int state_no);
 
-void partset(SET_PTR collection, const int *element_size, const int *list,
-             int *start, int *stack, int set_size, int from_process_scopes);
+void partset(SET_PTR collection, long *element_size, long *list,
+             long *start, long *stack, long set_size, long from_process_scopes);
 
 void print_item(int item_no);
 
@@ -696,14 +503,14 @@ void print_large_token(char *line, char *token, const char *indent, int len);
 
 void print_state(int state_no);
 
-void compute_action_symbols_range(const int *state_start,
-                                  const int *state_stack,
-                                  const int *state_list,
+void compute_action_symbols_range(const long *state_start,
+                                  const long *state_stack,
+                                  const long *state_list,
                                   int *action_symbols_range);
 
-void compute_naction_symbols_range(const int *state_start,
-                                   const int *state_stack,
-                                   const int *state_list,
+void compute_naction_symbols_range(const long *state_start,
+                                   const long *state_stack,
+                                   const long *state_list,
                                    int *naction_symbols_range);
 
 void produce(void);
@@ -750,6 +557,10 @@ static int *Allocate_int_array(const long n) {
   return allocate_int_array(n, hostfile, __LINE__);
 }
 
+static long *Allocate_long_array(const long n) {
+  return allocate_long_array(n, hostfile, __LINE__);
+}
+
 static short *Allocate_short_array(const long n) {
   return allocate_short_array(n, hostfile, __LINE__);
 }
@@ -791,7 +602,7 @@ static int MIN(const long a, const long b) {
   return a < b ? a : b;
 }
 
-static int ABS(const int x) {
+static int ABS(const long x) {
   return x < 0 ? -x : x;
 }
 

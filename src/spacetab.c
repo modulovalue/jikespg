@@ -139,7 +139,7 @@ static void overlap_nt_rows(void) {
   /*   The variable MAX_INDX is used to keep track of the maximum starting */
   /* position for a row that has been used.                                */
   next = Allocate_int_array(table_size + 1);
-  previous = Allocate_int_array(table_size + 1);
+  previous = Allocate_long_array(table_size + 1);
 
   first_index = 1;
   previous[first_index] = NIL;
@@ -610,7 +610,7 @@ static void merge_shift_domains(void) {
   if ((int) table_size > old_table_size) {
     ffree(previous);
     ffree(next);
-    previous = Allocate_int_array(table_size + 1);
+    previous = Allocate_long_array(table_size + 1);
     next = Allocate_int_array(table_size + 1);
   } else
     table_size = old_table_size;
@@ -1114,7 +1114,7 @@ static void overlap_t_rows(void) {
     ffree(previous);
     ffree(next);
     next = Allocate_int_array(table_size + 1);
-    previous = Allocate_int_array(table_size + 1);
+    previous = Allocate_long_array(table_size + 1);
   } else
     table_size = old_size;
 
@@ -1824,11 +1824,10 @@ static void print_tables(void) {
 
 /*                             CMPRSPA:                              */
 void cmprspa(void) {
-  state_index = Allocate_int_array(max_la_state + 1);
-
+  state_index = Allocate_long_array(max_la_state + 1);
   ordered_state = Allocate_int_array(max_la_state + 1);
   symbol_map = Allocate_int_array(num_symbols + 1);
-  state_list = Allocate_int_array(max_la_state + 1);
+  state_list = Allocate_long_array(max_la_state + 1);
   shift_on_error_symbol = Allocate_boolean_array(max_la_state + 1);
   new_state_element = (struct new_state_type *)
       calloc(max_la_state + 1,

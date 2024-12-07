@@ -8,6 +8,7 @@ include_directories(src)
 add_executable(
         src/common.h
         src/ctabs.c
+        src/bitset.h
         src/globals.c
         src/lpgact.h
         src/lpgact.c
@@ -32,4 +33,5 @@ add_executable(
         src/spacetab.c
         src/tabutil.c
         src/timetab.c
-        src/main.c)
+        src/main.c
+        src/bitset.h)

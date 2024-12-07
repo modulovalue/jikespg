@@ -305,7 +305,20 @@ int *allocate_int_array(const long size, char *file, const long line) {
   if (p == (int *) NULL)
     nospace(file, line);
 
-  return (&p[0]);
+  return &p[0];
+}
+
+
+/*                           ALLOCATE_INT_ARRAY:                            */
+/*   This function allocates an array of size "size" of int integers.       */
+long *allocate_long_array(const long size, char *file, const long line) {
+  long *p;
+
+  p = (long *) calloc(size, sizeof(long));
+  if (p == (long *) NULL)
+    nospace(file, line);
+
+  return &p[0];
 }
 
 

@@ -358,7 +358,7 @@ void process_tables(void) {
             "original numbers:\n");
     for ALL_STATES(i)
       fprintf(syslis,
-              "\n%5d  ==>>  %5d", ordered_state[i], state_list[i]);
+              "\n%5d  ==>>  %5ld", ordered_state[i], state_list[i]);
     fprintf(syslis, "\n");
   }
 }

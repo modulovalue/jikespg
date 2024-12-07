@@ -192,11 +192,11 @@ static void overlap_tables(void) {
   struct reduce_header_type red;
 
   int symbol;
-  int indx;
+  long indx;
 
   long num_bytes;
 
-  state_index = Allocate_int_array(max_la_state + 1);
+  state_index = Allocate_long_array(max_la_state + 1);
 
   int *symbol_list = Allocate_int_array(num_symbols + 1);
 
@@ -211,7 +211,7 @@ static void overlap_tables(void) {
   /* The variable MAX_INDX is used to keep track of the maximum        */
   /* starting position for a row that has been used.                   */
   next = Allocate_int_array(table_size + 1);
-  previous = Allocate_int_array(table_size + 1);
+  previous = Allocate_long_array(table_size + 1);
 
   first_index = 1;
   next[first_index] = first_index + 1; /* Should be constant-folded */
@@ -224,7 +224,7 @@ static void overlap_tables(void) {
   previous[last_index] = last_index - 1;
   next[last_index] = NIL;
 
-  int max_indx = first_index;
+  long max_indx = first_index;
 
   /* We now iterate over all the states in their new sorted order as   */
   /* indicated by the variable STATE_NO, and determine an "overlap"    */
@@ -273,11 +273,12 @@ static void overlap_tables(void) {
     indx = first_index;
 
   look_for_match_in_table:
-    if (indx == NIL)
+    if (indx == NIL) {
       indx = table_size + 1;
-    if (indx + num_symbols > (int) table_size)
+    }
+    if (indx + num_symbols > (int) table_size) {
       reallocate();
-
+    }
     for (symbol = root_symbol; symbol != NIL; symbol = symbol_list[symbol]) {
       if (next[indx + symbol] == OMEGA) {
         indx = next[indx];
@@ -297,7 +298,7 @@ static void overlap_tables(void) {
     state_index[state_no] = indx;
 
     for (symbol = root_symbol; symbol != NIL; symbol = symbol_list[symbol]) {
-      const int i = indx + symbol;
+      const long i = indx + symbol;
       if (first_index == last_index)
         first_index = NIL;
       else if (i == first_index) {
@@ -373,7 +374,7 @@ static void overlap_tables(void) {
 /*                         PRINT_TABLES:                             */
 /* We now write out the tables to the SYSTAB file.                   */
 static void print_tables(void) {
-  int *action;
+  long *action;
   int *check;
 
   struct goto_header_type go_to;
@@ -388,20 +389,20 @@ static void print_tables(void) {
       shift_reduce_count = 0,
       goto_reduce_count = 0;
 
-  int indx,
-      la_state_offset,
-      act,
-      result_act,
-      j,
-      k,
-      symbol,
-      state_no;
+  long indx;
+  long la_state_offset;
+  int act;
+  long result_act;
+  int j;
+  int k;
+  int symbol;
+  long state_no;
 
   char *tok;
 
-  int offset;
+  long offset;
 
-  state_list = Allocate_int_array(max_la_state + 1);
+  state_list = Allocate_long_array(max_la_state + 1);
 
   check = next;
   action = previous;
@@ -439,7 +440,7 @@ static void print_tables(void) {
       go_to = statset[state_no].go_to;
       for (j = 1; j <= go_to.size; j++) {
         symbol = go_to.map[j].symbol;
-        int i = indx + symbol;
+        long i = indx + symbol;
         if (goto_default_bit || nt_check_bit) {
           check[i] = symbol;
         } else {
@@ -460,7 +461,7 @@ static void print_tables(void) {
 
     for (j = 1; j <= sh.size; j++) {
       symbol = sh.map[j].symbol;
-      int i = indx + symbol;
+      long i = indx + symbol;
       check[i] = symbol;
       act = sh.map[j].action;
       if (act > num_states) {
@@ -491,7 +492,7 @@ static void print_tables(void) {
     for (j = 1; j <= red.size; j++) {
       if (red.map[j].rule_number != default_rule) {
         symbol = red.map[j].symbol;
-        int i = indx + symbol;
+        long i = indx + symbol;
         check[i] = symbol;
         act = red.map[j].rule_number;
         if (rules[act].lhs == accept_image)
@@ -507,7 +508,7 @@ static void print_tables(void) {
     /* default slot is initialized to the original state number, and the */
     /* corresponding element of the DEFAULT_REDUCE array is initialized. */
     /* Otherwise it is initialized to the rule number in question.       */
-    int i = indx + DEFAULT_SYMBOL;
+    long i = indx + DEFAULT_SYMBOL;
     check[i] = DEFAULT_SYMBOL;
     act = red.map[0].rule_number;
     if (act == OMEGA)

@@ -49,13 +49,12 @@ static char hostfile[] = __FILE__;
 /*    into the stack. Repeat step 2 until the partition is empty.    */
 /*                                                                   */
 void partset(const SET_PTR collection,
-             const int *element_size, const int *list,
-             int *start, int *stack, int set_size, const int from_process_scopes) {
-  int
-      base_set,
-      size,
-      bctype,
-      index;
+             long *element_size, long *list,
+             long *start, long *stack, long set_size, const long from_process_scopes) {
+  int base_set;
+  int size;
+  int bctype;
+  int index;
 
   short domain_table[STATE_TABLE_SIZE];
 

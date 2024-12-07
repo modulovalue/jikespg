@@ -700,10 +700,10 @@ static void process_scopes(void) {
 process_scope_states: {
     SET_PTR collection;
 
-    int *element_size;
-    int *list;
-    int *start;
-    int *stack;
+    long *element_size;
+    long *list;
+    long *start;
+    long *stack;
     short *ordered_symbol;
     short *state_list;
     short *bucket;
@@ -711,24 +711,20 @@ process_scope_states: {
     int state_root;
     int state_no;
 
-    state_set_size = num_states / SIZEOF_BC
-                     + (num_states % SIZEOF_BC ? 1 : 0);
-    collection = (SET_PTR)
-        calloc(num_state_sets + 1,
-               state_set_size * sizeof(BOOLEAN_CELL));
+    state_set_size = num_states / SIZEOF_BC + (num_states % SIZEOF_BC ? 1 : 0);
+    collection = (SET_PTR) calloc(num_state_sets + 1, state_set_size * sizeof(BOOLEAN_CELL));
     if (collection == NULL)
       nospace(__FILE__, __LINE__);
 
-    element_size = Allocate_int_array(num_state_sets + 1);
-    start = Allocate_int_array(num_state_sets + 2);
-    stack = Allocate_int_array(num_state_sets + 1);
+    element_size = Allocate_long_array(num_state_sets + 1);
+    start = Allocate_long_array(num_state_sets + 2);
+    stack = Allocate_long_array(num_state_sets + 1);
     ordered_symbol = Allocate_short_array(num_state_sets + 1);
-    list = Allocate_int_array(num_state_sets + 1);
+    list = Allocate_long_array(num_state_sets + 1);
     state_list = Allocate_short_array(num_states + 1);
     bucket = Allocate_short_array(max_prefix_length + 1);
 
-    for (symbol = nt_root, i = 1;
-         symbol != NIL; symbol = nt_list[symbol], i++) {
+    for (symbol = nt_root, i = 1; symbol != NIL; symbol = nt_list[symbol], i++) {
       list[i] = i;
       ordered_symbol[i] = symbol;
       EMPTY_COLLECTION_SET(collection, i);

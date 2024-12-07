@@ -11,17 +11,17 @@ static int max_sp_state;
 
 static struct action_element {
   struct action_element *next;
-  short symbol,
-      action;
+  int symbol;
+  int action;
 } **new_action;
 
 static struct action_element *action_element_pool = NULL;
 
 static struct update_action_element {
   struct update_action_element *next;
-  short symbol,
-      action,
-      state;
+  short symbol;
+  int action;
+  short state;
 } **update_action;
 
 static struct sp_state_element {
@@ -118,7 +118,6 @@ static void compute_sp_map(const int symbol) {
   /* If the index of symbol is the same index it started with then      */
   /* symbol if the root of a SCC...                                     */
   if (index_of[symbol] == indx) {
-    int i;
     /* If symbol is on top of the stack then it is the only       */
     /* symbol in its SCC (thus it is not part of a cycle).        */
     /* Note that since remove_single_productions is only invoked  */
@@ -142,6 +141,7 @@ static void compute_sp_map(const int symbol) {
 
     /* As all SCC contains exactly one symbol (as explained above)*/
     /* this loop will always execute exactly once.                */
+    int i;
     do {
       i = stack[top--];
       index_of[i] = INFINITY;
@@ -163,7 +163,6 @@ static void compute_sp_map(const int symbol) {
 static void compute_sp_action(const short state_no, const short symbol, const short action) {
   int rule_no;
   int lhs_symbol;
-  int i;
   int k;
 
   const struct goto_header_type go_to = statset[state_no].go_to;
@@ -171,16 +170,17 @@ static void compute_sp_action(const short state_no, const short symbol, const sh
   if (sp_action[symbol] == NULL)
     sp_action[symbol] = Allocate_short_array(num_terminals + 1);
 
+  int i;
   for ALL_TERMINALS(i) /* initialize sp_action to the empty map */
     sp_action[symbol][i] = OMEGA;
 
   /* Note that before this routine is invoked, the global vector        */
   /* index_of identifies the index of each symbol in the goto map of    */
   /* state_no.                                                          */
-  if (is_conflict_symbol[symbol]) /* do nothing */
-    ;
-  else if (action > 0) /* transition action (shift or goto) */
-  {
+  if (is_conflict_symbol[symbol]) {
+    /* do nothing */
+  } else if (action > 0) {
+    /* transition action (shift or goto) */
     struct node *p;
     for (const struct node *item_ptr = statset[action].complete_items;
          item_ptr != NULL; item_ptr = item_ptr->next) {
@@ -299,9 +299,9 @@ static short sp_default_action(const short state_no, short rule_no) {
 /* be processed after taking the transition. It returns the reduce    */
 /* action that follows the transition if an action on la_symbol is    */
 /* found, otherwise it returns the most suitable default action.      */
-static short sp_nt_action(const short state_no, const short lhs_symbol, const short la_symbol) {
-  int i;
+static int sp_nt_action(const short state_no, const int lhs_symbol, const short la_symbol) {
   const struct goto_header_type go_to = statset[state_no].go_to;
+  int i;
   for (i = 1; go_to.map[i].symbol != lhs_symbol; i++) {
   }
   int action = go_to.map[i].action;
@@ -333,14 +333,12 @@ static short sp_nt_action(const short state_no, const short lhs_symbol, const sh
 /* is also executed ending with RULE2.                                */
 /* The goal of this function is to find the greatest ancestor of      */
 /* BASE_RULE that is also a descendant of both RULE1 and RULE2.       */
-static short greatest_common_ancestor(const short base_rule, const short la_symbol,
-                                      const short state1, const short rule1,
-                                      const short state2, const short rule2) {
-  int
-      rule_no;
-
+static int greatest_common_ancestor(const short base_rule, const short la_symbol,
+                                    const short state1, const short rule1,
+                                    const short state2, const short rule2) {
   int act1 = base_rule;
   int act2 = base_rule;
+  int rule_no;
   while (act1 == act2) {
     rule_no = act1;
     if (act1 == rule1 || act2 == rule2)
@@ -400,7 +398,8 @@ static void compute_update_actions(const short source_state,
                  (p->action != red.map[i].rule_number)) {
         p->action = greatest_common_ancestor(red.map[i].rule_number,
                                              red.map[i].symbol,
-                                             source_state, rule_no,
+                                             source_state,
+                                             rule_no,
                                              p->state,
                                              p->action);
       }
@@ -522,10 +521,10 @@ static short sp_state_map(const int rule_head, const short item_no,
   /* If we did not find a compatible state, construct a new one.    */
   /* Add it to the list of state and add it to the hash table.      */
   if (state == NULL) {
-    state = (struct sp_state_element *)
-        talloc(sizeof(struct sp_state_element));
-    if (state == NULL)
+    state = (struct sp_state_element *) talloc(sizeof(struct sp_state_element));
+    if (state == NULL) {
       nospace(__FILE__, __LINE__);
+    }
 
     state->next = sp_state_root;
     sp_state_root = state;
@@ -543,8 +542,7 @@ static short sp_state_map(const int rule_head, const short item_no,
     state->complete_items = p;
 
     state->rule_root = NULL;
-    for (rule_no = rule_head;
-         rule_no != NIL; rule_no = next_rule[rule_no]) {
+    for (rule_no = rule_head; rule_no != NIL; rule_no = next_rule[rule_no]) {
       p = Allocate_node();
       p->value = rule_no;
       p->next = state->rule_root;
@@ -561,7 +559,6 @@ static short sp_state_map(const int rule_head, const short item_no,
       struct action_element *actionp = allocate_action_element();
       actionp->symbol = i;
       actionp->action = sp_action[symbol][i];
-
       actionp->next = state->action_root;
       state->action_root = actionp;
     }
@@ -649,21 +646,23 @@ void remove_single_productions(void) {
 
   new_action = (struct action_element **)
       calloc(num_states + 1, sizeof(struct action_element *));
-  if (new_action == NULL)
+  if (new_action == NULL) {
     nospace(__FILE__, __LINE__);
+  }
 
   update_action = (struct update_action_element **)
-      calloc(num_states + 1,
-             sizeof(struct update_action_element *));
-  if (update_action == NULL)
+      calloc(num_states + 1, sizeof(struct update_action_element *));
+  if (update_action == NULL) {
     nospace(__FILE__, __LINE__);
+  }
 
   /* Initialize all relevant sets and maps to the empty set.        */
   rule_root = NIL;
   symbol_root = NIL;
 
-  for ALL_RULES(i)
+  for ALL_RULES(i) {
     rule_list[i] = OMEGA;
+  }
 
   for ALL_SYMBOLS(i) {
     symbol_list[i] = OMEGA;

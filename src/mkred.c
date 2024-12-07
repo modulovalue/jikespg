@@ -63,8 +63,8 @@ struct node *lpgaccess(const int state_no, const int item_no) {
 static void trace_lalr_path(const int state_no, const int goto_indx) {
   int i;
 
-  struct node *p,
-      *r;
+  struct node *p;
+  struct node *r;
 
   /*  If STATE is a state number we first check to see if its base     */
   /* look-ahead set is a special one that does not contain EMPTY and   */
