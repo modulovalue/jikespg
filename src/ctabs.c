@@ -482,27 +482,10 @@ static void init_file(FILE **file, char *file_name, char *file_tag) {
   memcpy(file_tag, file_name, p - file_name);
   file_tag[p - file_name] = '\0';
 
-  if (jikes_bit)
-    fprintf(*file, "// $I"/*CVS hack*/"d$\n"
-            "// DO NOT MODIFY THIS FILE - it is generated using jikespg on java.g.\n"
-            "//\n"
-            "// This software is subject to the terms of the IBM Jikes Compiler Open\n"
-            "// Source License Agreement available at the following URL:\n"
-            "// http://ibm.com/developerworks/opensource/jikes.\n"
-            "// Copyright (C) 1996, 1997, 1998, 1999, 2001, International\n"
-            "// Business Machines Corporation and others.  All Rights Reserved.\n"
-            "// You must accept the terms of that agreement to use this software.\n"
-            "//\n\n");
-
   if (c_bit || cpp_bit) {
     fprintf(*file, "#ifndef %s_INCLUDED\n", file_tag);
     fprintf(*file, "#define %s_INCLUDED\n\n", file_tag);
   }
-
-  if (jikes_bit)
-    fprintf(*file, "#ifdef HAVE_JIKES_NAMESPACE\n"
-            "namespace Jikes { // Open namespace Jikes block\n"
-            "#endif\n\n");
 }
 
 
@@ -517,14 +500,8 @@ static void init_parser_files(void) {
 
 /*                            EXIT_FILE:                             */
 static void exit_file(FILE **file, char *file_tag) {
-  if (jikes_bit)
-    fprintf(*file, "\n#ifdef HAVE_JIKES_NAMESPACE\n"
-            "} // Close namespace Jikes block\n"
-            "#endif\n");
-
   if (c_bit || cpp_bit)
     fprintf(*file, "\n#endif /* %s_INCLUDED */\n", file_tag);
-
   fclose(*file);
 }
 
@@ -1389,20 +1366,6 @@ static void print_definitions(void) {
               max_name_length,
               num_states);
     else {
-      if (!jikes_bit)
-        fprintf(sysdef,
-                "      ERROR_CODE,\n"
-                "      BEFORE_CODE,\n"
-                "      INSERTION_CODE,\n"
-                "      INVALID_CODE,\n"
-                "      SUBSTITUTION_CODE,\n"
-                "      DELETION_CODE,\n"
-                "      MERGE_CODE,\n"
-                "      MISPLACED_CODE,\n"
-                "      SCOPE_CODE,\n"
-                "      MANUAL_CODE,\n"
-                "      SECONDARY_CODE,\n"
-                "      EOF_CODE,\n\n");
       fprintf(sysdef,
               "      ERROR_SYMBOL      = %d,\n"
               "      MAX_DISTANCE      = %d,\n"

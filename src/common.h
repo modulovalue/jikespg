@@ -7,7 +7,6 @@
 
 static char hostfile[];
 
-
 #ifndef COMMON_INCLUDED
 #define COMMON_INCLUDED
 
@@ -238,7 +237,6 @@ extern bool list_bit,
     c_bit,
     cpp_bit,
     java_bit,
-    jikes_bit, /* undocumented hack for special jikes behavior */
     scopes_bit;
 
 extern int lalr_level,

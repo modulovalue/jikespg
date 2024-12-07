@@ -109,23 +109,21 @@ int main(const int argc, char *argv[]) {
 
   /* If the user only wanted to edit his grammar, we quit the program.        */
   if (edit_bit) {
-    if (first_bit || follow_bit || xref_bit)
+    if (first_bit || follow_bit || xref_bit) {
       mkfirst();
+    }
     PR_HEADING();
-    sprintf(msg_line, "\nNumber of Terminals: %d",
-            num_terminals - 1); /*-1 for %empty */
+    sprintf(msg_line, "\nNumber of Terminals: %d", num_terminals - 1); /*-1 for %empty */
     PRNT(msg_line);
 
-    sprintf(msg_line, "Number of Nonterminals: %d",
-            num_non_terminals - 1); /* -1 for %ACC */
+    sprintf(msg_line, "Number of Nonterminals: %d", num_non_terminals - 1); /* -1 for %ACC */
     PRNT(msg_line);
 
     sprintf(msg_line, "Number of Productions: %d", num_rules + 1);
     PRNT(msg_line);
 
     if (single_productions_bit) {
-      sprintf(msg_line, "Number of Single Productions: %d",
-              num_single_productions);
+      sprintf(msg_line, "Number of Single Productions: %d", num_single_productions);
       PRNT(msg_line);
     }
 

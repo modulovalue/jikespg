@@ -413,9 +413,6 @@ static void options(void) {
                (memcmp(ohalfword2, token, len) == 0) ||
                (memcmp(ohalfword3, token, len) == 0))
         byte_bit = !flag;
-      else if ((strcmp(token, "JI") == 0) ||
-               (memcmp(ojikes, token, len) == 0))
-        jikes_bit = 1;
       else if (len >= 2 && memcmp(olalr, token, len) == 0) {
         slr_bit = !flag;
         lalr_level = 1;

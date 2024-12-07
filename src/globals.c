@@ -106,7 +106,6 @@ bool deferred_bit = true;
 bool c_bit = false;
 bool cpp_bit = false;
 bool java_bit = false;
-bool jikes_bit = false;
 bool scopes_bit = false;
 
 int lalr_level = 1;
