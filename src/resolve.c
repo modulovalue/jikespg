@@ -538,7 +538,7 @@ static void print_root_path(int item_no) {
 
   if (trace_root(rules[item_table[item_no].rule_number].lhs)) {
     fprintf(syslis, "\n"); /* Leave one blank line after root trace. */
-    ENDPAGE_CHECK;
+    ENDPAGE_CHECK();
   }
 
   symbol_seen += (num_terminals + 1);
@@ -801,7 +801,7 @@ static void process_conflicts(int state_no) {
         print_item(p->item1);
         fill_in(msg_line, PRINT_LINE_SIZE - 3, '-');
         fprintf(syslis, "\n%s", msg_line);
-        ENDPAGE_CHECK;
+        ENDPAGE_CHECK();
         if (!slr_bit)
           print_relevant_lalr_items(state_no, p->item2, symbol);
         else

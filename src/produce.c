@@ -400,14 +400,14 @@ static void print_name_map(int symbol) {
   restore_symbol(tok, RETRIEVE_NAME(symno[symbol].name_index));
   if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 1) {
     fprintf(syslis, "\n%s", line);
-    ENDPAGE_CHECK;
+    ENDPAGE_CHECK();
     len = PRINT_LINE_SIZE - 4;
     print_large_token(line, tok, "    ", len);
   } else
     strcat(line, tok);
 
   fprintf(syslis, "\n%s", line);
-  ENDPAGE_CHECK;
+  ENDPAGE_CHECK();
 }
 
 
@@ -1190,7 +1190,7 @@ static void print_scopes(void) {
       restore_symbol(tok, RETRIEVE_STRING(symbol));
       if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 4) {
         fprintf(syslis, "\n%s", line);
-        ENDPAGE_CHECK;
+        ENDPAGE_CHECK();
         fill_in(tmp, offset, ' ');
         print_large_token(line, tok, tmp, len);
       } else
@@ -1208,7 +1208,7 @@ static void print_scopes(void) {
       restore_symbol(tok, RETRIEVE_STRING(symbol));
       if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 1) {
         fprintf(syslis, "\n%s", line);
-        ENDPAGE_CHECK;
+        ENDPAGE_CHECK();
         fill_in(tmp, offset, ' ');
         print_large_token(line, tok, tmp, len);
       } else
@@ -1216,7 +1216,7 @@ static void print_scopes(void) {
       strcat(line, BLANK);
     }
     fprintf(syslis, "\n%s", line);
-    ENDPAGE_CHECK;
+    ENDPAGE_CHECK();
   }
 }
 

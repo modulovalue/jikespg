@@ -1283,7 +1283,7 @@ static void print_xref(void) {
       char line[PRINT_LINE_SIZE + 1];
       char tok[SYMBOL_SIZE + 1];
       fprintf(syslis, "\n");
-      ENDPAGE_CHECK;
+      ENDPAGE_CHECK();
       restore_symbol(tok, RETRIEVE_STRING(symbol));
       print_large_token(line, tok, "", PRINT_LINE_SIZE - 7);
       strcat(line, "  ==>> ");
@@ -1296,7 +1296,7 @@ static void print_xref(void) {
           sprintf(tok, "%d", rule_no);
           if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE) {
             fprintf(syslis, "\n%s", line);
-            ENDPAGE_CHECK;
+            ENDPAGE_CHECK();
             strcpy(line, BLANK);
             for (int j = 1; j <= offset; j++)
               strcat(line, BLANK);
@@ -1306,7 +1306,7 @@ static void print_xref(void) {
             strcat(line, BLANK);
         }
         fprintf(syslis, "\n%s", line);
-        ENDPAGE_CHECK;
+        ENDPAGE_CHECK();
         item_no = nt_items[symbol];
       } else {
         for (item_no = t_items[symbol];
@@ -1315,7 +1315,7 @@ static void print_xref(void) {
           sprintf(tok, "%d", rule_no);
           if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE) {
             fprintf(syslis, "\n%s", line);
-            ENDPAGE_CHECK;
+            ENDPAGE_CHECK();
             strcpy(line, BLANK);
             for (int j = 1; j <= offset; j++)
               strcat(line, BLANK);
@@ -1325,7 +1325,7 @@ static void print_xref(void) {
             strcat(line, BLANK);
         }
         fprintf(syslis, "\n%s", line);
-        ENDPAGE_CHECK;
+        ENDPAGE_CHECK();
       }
     }
   }
@@ -1408,7 +1408,7 @@ static void print_nt_first(void) {
         restore_symbol(tok, RETRIEVE_STRING(t));
         if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 1) {
           fprintf(syslis, "\n%s", line);
-          ENDPAGE_CHECK;
+          ENDPAGE_CHECK();
           print_large_token(line, tok, "    ", LEN);
         } else
           strcat(line, tok);
@@ -1417,7 +1417,7 @@ static void print_nt_first(void) {
     }
     fprintf(syslis, "\n%s\n", line);
     output_line_no++;
-    ENDPAGE_CHECK;
+    ENDPAGE_CHECK();
   }
 }
 
@@ -1443,7 +1443,7 @@ static void print_follow_map(void) {
         restore_symbol(tok, RETRIEVE_STRING(t));
         if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 2) {
           fprintf(syslis, "\n%s", line);
-          ENDPAGE_CHECK;
+          ENDPAGE_CHECK();
           print_large_token(line, tok, "    ", LEN);
         } else
           strcat(line, tok);
@@ -1452,6 +1452,6 @@ static void print_follow_map(void) {
     }
     fprintf(syslis, "\n%s\n", line);
     output_line_no++;
-    ENDPAGE_CHECK;
+    ENDPAGE_CHECK();
   }
 }

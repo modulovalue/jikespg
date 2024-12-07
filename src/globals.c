@@ -7,7 +7,7 @@ static char hostfile[] = __FILE__;
 const char HEADER_INFO[] = "IBM Research Jikes Parser Generator";
 const char VERSION[] = "1.2";
 const char BLANK[] = " ";
-const long MAX_TABLE_SIZE = MIN((long) USHRT_MAX, INT_MAX) - 1;
+const long MAX_TABLE_SIZE = (USHRT_MAX < INT_MAX ? USHRT_MAX : INT_MAX) - 1;
 
 char *timeptr;
 

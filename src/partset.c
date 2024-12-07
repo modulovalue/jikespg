@@ -1,23 +1,7 @@
 static char hostfile[] = __FILE__;
+
 #include <stdlib.h>
-
 #include "common.h"
-
-#define B_ASSIGN_SET(s1, dest, s2, source, bound) \
-    {   int j; \
-        for (j = 0; j < bound; j++) \
-             s1[dest * bound + j] = s2[source * bound + j]; \
-    }
-
-#define B_SET_UNION(s1, dest, s2, source, bound) \
-    {   int j; \
-        for (j = 0; j < bound; j++) \
-            s1[dest * bound + j] |= s2[source * bound + j]; \
-    }
-
-static bool equal_sets(SET_PTR set1, int indx1,
-                          SET_PTR set2, int indx2, int bound);
-
 
 /*                          PARTSET:                                 */
 /* This procedure, PARTSET, is invoked to apply a heuristic of the   */
@@ -66,7 +50,7 @@ static bool equal_sets(SET_PTR set1, int indx1,
 /*                                                                   */
 void partset(SET_PTR collection,
              const short *element_size, const short *list,
-             short *start, short *stack, int set_size, int from_scope_processing) {
+             short *start, short *stack, int set_size, const int from_scope_processing) {
   int
       base_set,
       size,
@@ -276,17 +260,4 @@ void partset(SET_PTR collection,
   ffree(next);
   ffree(is_a_base);
   ffree(temp_set);
-}
-
-
-/*                               EQUAL_SETS:                                */
-/* EQUAL_SETS checks to see if two sets are equal and returns True or False */
-static bool equal_sets(const SET_PTR set1, int indx1,
-                          const SET_PTR set2, int indx2, int bound) {
-  for (register int i = 0; i < bound; i++) {
-    if (set1[indx1 * bound + i] != set2[indx2 * bound + i])
-      return (0);
-  }
-
-  return true;
 }

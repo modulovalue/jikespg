@@ -196,8 +196,7 @@ void reallocate(void) {
       i;
 
   if (table_size == MAX_TABLE_SIZE) {
-    sprintf(msg_line, "Table has exceeded maximum limit of %ld",
-            MAX_TABLE_SIZE);
+    sprintf(msg_line, "Table has exceeded maximum limit of %ld", MAX_TABLE_SIZE);
     PRNTERR(msg_line);
     exit(12);
   }

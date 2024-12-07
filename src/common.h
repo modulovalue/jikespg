@@ -1,4 +1,5 @@
 #pragma once
+#include <ctype.h>
 
 static char hostfile[];
 
@@ -176,24 +177,30 @@ static bool IS_ELEMENT(const SET_PTR set, const int b) {
   return set[(b - 1) / SIZEOF_BC] &
          ((b + BC_OFFSET) % SIZEOF_BC ? (BOOLEAN_CELL) 1 << (b + BC_OFFSET) % SIZEOF_BC : (BOOLEAN_CELL) 1);
 }
+
+static void B_ASSIGN_SET(const SET_PTR s1, const int dest, const SET_PTR s2, const int source, int bound) {
+  for (int j = 0; j < bound; j++) {
+    s1[dest * bound + j] = s2[source * bound + j];
+  }
+}
+
+static void B_SET_UNION(const SET_PTR s1, const int dest, const SET_PTR s2, const int source, int bound) {
+  for (int j = 0; j < bound; j++) {
+    s1[dest * bound + j] |= s2[source * bound + j];
+  }
+}
+
+/*                               EQUAL_SETS:                                */
+/* EQUAL_SETS checks to see if two sets are equal and returns True or False */
+static bool equal_sets(const SET_PTR set1, int indx1, const SET_PTR set2, int indx2, int bound) {
+  for (register int i = 0; i < bound; i++) {
+    if (set1[indx1 * bound + i] != set2[indx2 * bound + i])
+      return false;
+  }
+  return true;
+}
+
 // endregion
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 #ifndef COMMON_INCLUDED
@@ -278,74 +285,6 @@ static const int IOBUFFER_SIZE = 655360;
 #define ALL_RULES_BACKWARDS(indx) (indx = num_rules; indx >= 0; indx--)
 
 #define ENTIRE_RHS(indx, rule_no) (indx = rules[rule_no].rhs; indx < rules[(rule_no) + 1].rhs; indx++)
-
-
-/**                      MISCELLANEOUS MACROS                     **/
-#define TOUPPER(c) (islower(c) ? toupper(c) : c)
-
-#define MAX(a,b) (((a) > (b)) ? (a) : (b))
-
-#define MIN(a,b) (((a) < (b)) ? (a) : (b))
-
-#define ABS(x) (((x) < 0) ? -(x) : (x))
-
-/* The following two macros check whether the value of an      */
-/* integer variable exceeds the maximum limit for a short or a long   */
-/* integer, respectively. Note that the user should declare the       */
-/* variable in question as a long integer. In the case of INT_CHECK,  */
-/* this check is meaningful only if INT and SHORT are the same size.  */
-/* Otherwise, if INT and LONG are of the same size, as is usually the */
-/* case on large systems, this check is meaningless - too late !!!    */
-#define SHORT_CHECK(var) \
-    if (var > SHRT_MAX) { \
-        PRNTERR("The limit of a short int value" \
-                " has been exceeded by " #var); \
-        exit(12); \
-    }
-
-#define INT_CHECK(var) \
-    if (var > INT_MAX) { \
-        PRNTERR("The limit of an int value" \
-                " has been exceeded by " #var); \
-        exit(12); \
-    }
-
-#define ENDPAGE_CHECK if (++output_line_no >= PAGE_SIZE) \
-                          PR_HEADING()
-
-#define PRNT(msg) \
-    { \
-        printf("%s\n",msg); \
-        fprintf(syslis,"%s\n",msg); \
-        ENDPAGE_CHECK; \
-    }
-
-#define PRNTWNG(msg) \
-    { \
-        printf("***WARNING: %s\n",msg);\
-        fprintf(syslis,"***WARNING: %s\n",msg);\
-        ENDPAGE_CHECK; \
-    }
-
-#define PRNTERR(msg) \
-    { \
-        printf("***ERROR: %s\n",msg);\
-        fprintf(syslis,"***ERROR: %s\n",msg);\
-        ENDPAGE_CHECK; \
-    }
-
-/**                                                               **/
-/**                         OUTPUT MACROS                         **/
-/**                                                               **/
-/* The following macro definitions are used only in processing the */
-/* output.                                                         */
-#define BUFFER_CHECK(file) \
-    if ((IOBUFFER_SIZE - (output_ptr - &output_buffer[0])) < 73) \
-    { \
-        fwrite(output_buffer, sizeof(char), \
-               output_ptr - &output_buffer[0], file); \
-        output_ptr = &output_buffer[0]; \
-    }
 
 extern const char HEADER_INFO[];
 extern const char VERSION[];
@@ -553,6 +492,7 @@ extern struct ruletab_type *rules;
 static int RHS_SIZE(int rule_no) {
   return rules[rule_no + 1].rhs - rules[rule_no].rhs;
 }
+
 /* CLOSURE is a mapping from non-terminal to a set (linked-list) of    */
 /* non-terminals.  The set consists of non-terminals that are          */
 /* automatically introduced via closure when the original non-terminal */
@@ -797,9 +737,7 @@ char *strlwr(char *string);
 
 char *strupr(char *string);
 
-/**                                                               **/
 /**                       ALLOCATE/FREE MACROS                    **/
-/**                                                               **/
 /* The following macro definitions are used to preprocess calls to */
 /* allocate routines that require locations. The FFREE macro is    */
 /* normally an invocation to the FREE routine. It is encoded as    */
@@ -840,5 +778,72 @@ static void PR_HEADING() {
 
 static void ffree(void *y) {
   return free(y); /* { free(x); x = (void *) ULONG_MAX; } */
+}
+
+static int TOUPPER(int c) {
+  return islower(c) ? toupper(c) : c;
+}
+
+static int MAX(const int a, const int b) {
+  return a > b ? a : b;
+}
+
+static int MIN(const int a, const int b) {
+  return a < b ? a : b;
+}
+
+static int ABS(const int x) {
+  return x < 0 ? -x : x;
+}
+
+static void ENDPAGE_CHECK() {
+  if (++output_line_no >= PAGE_SIZE) PR_HEADING();
+}
+
+static void PRNT(char *msg) {
+  printf("%s\n", msg);
+  fprintf(syslis, "%s\n", msg);
+  ENDPAGE_CHECK();
+}
+
+static void PRNTWNG(char *msg) {
+  printf("***WARNING: %s\n", msg);
+  fprintf(syslis, "***WARNING: %s\n", msg);
+  ENDPAGE_CHECK();
+}
+
+static void PRNTERR(char *msg) {
+  printf("***ERROR: %s\n", msg);
+  fprintf(syslis, "***ERROR: %s\n", msg);
+  ENDPAGE_CHECK();
+}
+
+/* The following two macros check whether the value of an             */
+/* integer variable exceeds the maximum limit for a short or a long   */
+/* integer, respectively. Note that the user should declare the       */
+/* variable in question as a long integer. In the case of INT_CHECK,  */
+/* this check is meaningful only if INT and SHORT are the same size.  */
+/* Otherwise, if INT and LONG are of the same size, as is usually the */
+/* case on large systems, this check is meaningless - too late !!!    */
+static void SHORT_CHECK(const long var) {
+  if (var > SHRT_MAX) {
+    PRNTERR("The limit of a short int value has been exceeded by");
+    exit(12);
+  }
+}
+
+static void INT_CHECK(const long var) {
+  if (var > INT_MAX) {
+    PRNTERR("The limit of an int value has been exceeded by var");
+    exit(12);
+  }
+}
+
+/* The following macro definitions are used only in processing the output. */
+static void BUFFER_CHECK(FILE *file) {
+  if (IOBUFFER_SIZE - (output_ptr - &output_buffer[0]) < 73) {
+    fwrite(output_buffer, sizeof(char), output_ptr - &output_buffer[0], file);
+    output_ptr = &output_buffer[0];
+  }
 }
 #endif /* COMMON_INCLUDED */

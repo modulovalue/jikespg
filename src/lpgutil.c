@@ -463,7 +463,7 @@ void print_large_token(char *line, char *token, const char *indent, int len) {
 
   if (toklen > len && toklen <= PRINT_LINE_SIZE - 1) {
     fprintf(syslis, "\n%s", token);
-    ENDPAGE_CHECK;
+    ENDPAGE_CHECK();
     token = "";
     strcpy(line, indent);
   } else {
@@ -472,7 +472,7 @@ void print_large_token(char *line, char *token, const char *indent, int len) {
       memcpy(temp, token, len);
       temp[len] = '\0';
       fprintf(syslis, "\n%s", temp);
-      ENDPAGE_CHECK;
+      ENDPAGE_CHECK();
       strcpy(temp, token+len + 1);
       token = temp;
     }
@@ -513,7 +513,7 @@ void print_item(int item_no) {
     restore_symbol(tok, RETRIEVE_STRING(symbol));
     if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE - 4) {
       fprintf(syslis, "\n%s", line);
-      ENDPAGE_CHECK;
+      ENDPAGE_CHECK();
       fill_in(tempstr, offset, SPACE);
       print_large_token(line, tok, tempstr, len);
     } else
@@ -537,7 +537,7 @@ void print_item(int item_no) {
     restore_symbol(tok, RETRIEVE_STRING(symbol));
     if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE - 1) {
       fprintf(syslis, "\n%s", line);
-      ENDPAGE_CHECK;
+      ENDPAGE_CHECK();
       fill_in(tempstr, offset, SPACE);
       print_large_token(line, tok, tempstr, len);
     } else
@@ -549,13 +549,13 @@ void print_item(int item_no) {
     sprintf(tok, " (%d)", rule_no);
     if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE - 1) {
       fprintf(syslis, "\n%s", line);
-      ENDPAGE_CHECK;
+      ENDPAGE_CHECK();
       fill_in(line, offset, SPACE);
     }
     strcat(line, tok);
   }
   fprintf(syslis, "\n%s", line);
-  ENDPAGE_CHECK;
+  ENDPAGE_CHECK();
 }
 
 
@@ -619,7 +619,7 @@ void print_state(int state_no) {
       state_seen[q->value] = true;
       if (strlen(line) + number_len(q->value) > PRINT_LINE_SIZE - 2) {
         fprintf(syslis, "\n%s", line);
-        ENDPAGE_CHECK;
+        ENDPAGE_CHECK();
         strcpy(line, "  ");
       }
       if (q->value != 0) {
@@ -631,7 +631,7 @@ void print_state(int state_no) {
   strcat(line, ")");
   fprintf(syslis, "\n%s\n", line);
   output_line_no++;
-  ENDPAGE_CHECK;
+  ENDPAGE_CHECK();
 
   /* Add the set of kernel items to the array ITEM_LIST, and mark all  */
   /* items seen to avoid duplicates.                                   */
@@ -717,7 +717,7 @@ void print_state(int state_no) {
     print_item(item_list[item_no]);
   if (kernel_size < n) {
     fprintf(syslis, "\n");
-    ENDPAGE_CHECK;
+    ENDPAGE_CHECK();
     qcksrt(item_list, kernel_size + 1, n);
     for (item_no = kernel_size + 1; item_no <= n; item_no++)
       print_item(item_list[item_no]);

@@ -60,7 +60,7 @@ void ptstats(void) {
     /* 4) If there is a default then print it.                    */
     if (sh.size > 0) {
       fprintf(syslis, "\n");
-      ENDPAGE_CHECK;
+      ENDPAGE_CHECK();
       for (i = 1; i <= sh.size; i++) {
         symbol = sh.map[i].symbol;
         restore_symbol(temp, RETRIEVE_STRING(symbol));
@@ -70,24 +70,24 @@ void ptstats(void) {
           fprintf(syslis,
                   "\n%-*s    La/Sh  %d",
                   max_size, line, number);
-          ENDPAGE_CHECK;
+          ENDPAGE_CHECK();
         } else if (sh.map[i].action > 0) {
           fprintf(syslis,
                   "\n%-*s    Shift  %d",
                   max_size, line, number);
-          ENDPAGE_CHECK;
+          ENDPAGE_CHECK();
         } else {
           fprintf(syslis,
                   "\n%-*s    Sh/Rd  %d",
                   max_size, line, number);
-          ENDPAGE_CHECK;
+          ENDPAGE_CHECK();
         }
       }
     }
 
     if (go_to.size > 0) {
       fprintf(syslis, "\n");
-      ENDPAGE_CHECK;
+      ENDPAGE_CHECK();
       for (i = 1; i <= go_to.size; i++) {
         symbol = go_to.map[i].symbol;
         restore_symbol(temp, RETRIEVE_STRING(symbol));
@@ -97,19 +97,19 @@ void ptstats(void) {
           fprintf(syslis,
                   "\n%-*s    Goto   %d",
                   max_size, line, number);
-          ENDPAGE_CHECK;
+          ENDPAGE_CHECK();
         } else {
           fprintf(syslis,
                   "\n%-*s    Gt/Rd  %d",
                   max_size, line, number);
-          ENDPAGE_CHECK;
+          ENDPAGE_CHECK();
         }
       }
     }
 
     if (red.size != 0) {
       fprintf(syslis, "\n");
-      ENDPAGE_CHECK;
+      ENDPAGE_CHECK();
       for (i = 1; i <= red.size; i++) {
         symbol = red.map[i].symbol;
         restore_symbol(temp, RETRIEVE_STRING(symbol));
@@ -119,10 +119,10 @@ void ptstats(void) {
           fprintf(syslis,
                   "\n%-*s    Reduce %d",
                   max_size, line, number);
-          ENDPAGE_CHECK;
+          ENDPAGE_CHECK();
         } else {
           fprintf(syslis, "\n%-*s    Accept", max_size, line);
-          ENDPAGE_CHECK;
+          ENDPAGE_CHECK();
         }
       }
     }
@@ -132,7 +132,7 @@ void ptstats(void) {
               "\n\nDefault reduction to rule  %d",
               red.map[0].rule_number);
       output_line_no++;
-      ENDPAGE_CHECK;
+      ENDPAGE_CHECK();
     }
   }
 
@@ -149,17 +149,17 @@ void ptstats(void) {
 
     fprintf(syslis, "\n\n\nSTATE %d %s", state_no, buffer);
     output_line_no += 2;
-    ENDPAGE_CHECK;
+    ENDPAGE_CHECK();
 
     /* Print the set of states that have transitions to STATE_NO. */
     if (lastats[state_no].in_state == state_no) {
       fprintf(syslis, "\n(Unreachable State)\n");
       output_line_no++;
-      ENDPAGE_CHECK;
+      ENDPAGE_CHECK();
     } else {
       fprintf(syslis, "\n(%d)\n", lastats[state_no].in_state);
       output_line_no++;
-      ENDPAGE_CHECK;
+      ENDPAGE_CHECK();
 
       max_size = 0;
 
@@ -188,7 +188,7 @@ void ptstats(void) {
       /* 3) Print all reduce actions.                           */
       /* 4) If there is a default then print it.                */
       fprintf(syslis, "\n");
-      ENDPAGE_CHECK;
+      ENDPAGE_CHECK();
       for (i = 1; i <= sh.size; i++) {
         symbol = sh.map[i].symbol;
         restore_symbol(temp, RETRIEVE_STRING(symbol));
@@ -198,22 +198,22 @@ void ptstats(void) {
           fprintf(syslis,
                   "\n%-*s    La/Sh  %d",
                   max_size, line, number);
-          ENDPAGE_CHECK;
+          ENDPAGE_CHECK();
         } else if (sh.map[i].action > 0) {
           fprintf(syslis,
                   "\n%-*s    Shift  %d",
                   max_size, line, number);
-          ENDPAGE_CHECK;
+          ENDPAGE_CHECK();
         } else {
           fprintf(syslis,
                   "\n%-*s    Sh/Rd  %d",
                   max_size, line, number);
-          ENDPAGE_CHECK;
+          ENDPAGE_CHECK();
         }
       }
 
       fprintf(syslis, "\n");
-      ENDPAGE_CHECK;
+      ENDPAGE_CHECK();
       for (i = 1; i <= red.size; i++) {
         symbol = red.map[i].symbol;
         restore_symbol(temp, RETRIEVE_STRING(symbol));
@@ -221,7 +221,7 @@ void ptstats(void) {
         number = red.map[i].rule_number;
         fprintf(syslis,
                 "\n%-*s    Reduce %d", max_size, line, number);
-        ENDPAGE_CHECK;
+        ENDPAGE_CHECK();
       }
 
       if (default_opt > 0 && red.map[0].rule_number != OMEGA) {
@@ -229,11 +229,11 @@ void ptstats(void) {
                 "\n\nDefault reduction to rule  %d",
                 red.map[0].rule_number);
         output_line_no++;
-        ENDPAGE_CHECK;
+        ENDPAGE_CHECK();
       }
     }
   }
 
   fprintf(syslis, "\n");
-  ENDPAGE_CHECK;
+  ENDPAGE_CHECK();
 }

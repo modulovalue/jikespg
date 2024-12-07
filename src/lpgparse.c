@@ -1061,7 +1061,7 @@ static void process_options_lines(void) {
         PRNTWNG("DEFAULT_OPTion requested must be >= 4");
       }
     } else if (shift_default_bit) {
-      PRNTWNG("SHIFT-DEFAULT option is only valid for Space tables")
+      PRNTWNG("SHIFT-DEFAULT option is only valid for Space tables");
     }
   }
 
@@ -2631,12 +2631,12 @@ static void display_input(void) {
           putc(*ptr, syslis);
         }
         putc(*ptr, syslis);
-        ENDPAGE_CHECK;
+        ENDPAGE_CHECK();
       }
 
       fill_in(line, (PRINT_LINE_SIZE - (strlen(blocke) + 1)), '-');
       fprintf(syslis, "%s%s\n", blocke, line);
-      ENDPAGE_CHECK;
+      ENDPAGE_CHECK();
     }
   }
 
@@ -2665,13 +2665,13 @@ static void display_input(void) {
 
       if (strlen(line) + strlen(temp) > PRINT_LINE_SIZE) {
         fprintf(syslis, "%s\n", line);
-        ENDPAGE_CHECK;
+        ENDPAGE_CHECK();
         len = PRINT_LINE_SIZE - 4;
         print_large_token(line, temp, "    ", len);
       } else
         strcat(line, temp);
       fprintf(syslis, "%s\n", line);
-      ENDPAGE_CHECK;
+      ENDPAGE_CHECK();
     }
   }
 
@@ -2690,7 +2690,7 @@ static void display_input(void) {
 
     if (strlen(line) + strlen(temp) > PRINT_LINE_SIZE) {
       fprintf(syslis, "\n%s", line);
-      ENDPAGE_CHECK;
+      ENDPAGE_CHECK();
       print_large_token(line, temp, "    ", len);
     } else
       strcat(line, temp);
@@ -2700,7 +2700,7 @@ static void display_input(void) {
     }
   }
   fprintf(syslis, "\n%s", line);
-  ENDPAGE_CHECK;
+  ENDPAGE_CHECK();
 
   /*    Print the Rules     */
   PR_HEADING();
@@ -2716,7 +2716,7 @@ static void display_input(void) {
       if (strlen(temp) > PRINT_LINE_SIZE - 12) {
         strncat(line, temp, PRINT_LINE_SIZE - 12);
         fprintf(syslis, "\n%s", line);
-        ENDPAGE_CHECK;
+        ENDPAGE_CHECK();
         memmove(temp, temp + (PRINT_LINE_SIZE - 12),
                 sizeof(temp) - (PRINT_LINE_SIZE - 12));
         i = PRINT_LINE_SIZE - 12;
@@ -2740,7 +2740,7 @@ static void display_input(void) {
         if (strlen(temp) > PRINT_LINE_SIZE - 12) {
           strncat(line, temp, PRINT_LINE_SIZE - 12);
           fprintf(syslis, "\n%s", line);
-          ENDPAGE_CHECK;
+          ENDPAGE_CHECK();
           memmove(temp, temp + (PRINT_LINE_SIZE - 12),
                   sizeof(temp) - (PRINT_LINE_SIZE - 12));
           i = PRINT_LINE_SIZE - 12;
@@ -2761,7 +2761,7 @@ static void display_input(void) {
         char tempbuffer1[SYMBOL_SIZE + 1];
 
         fprintf(syslis, "\n%s", line);
-        ENDPAGE_CHECK;
+        ENDPAGE_CHECK();
         strcpy(tempbuffer1, BLANK);
         for (j = 1; j < offset + 1; j++)
           strcat(tempbuffer1, BLANK);
@@ -2771,7 +2771,7 @@ static void display_input(void) {
       strcat(line, BLANK);
     }
     fprintf(syslis, "\n%s", line);
-    ENDPAGE_CHECK;
+    ENDPAGE_CHECK();
   }
 
   return;
