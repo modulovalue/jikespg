@@ -470,7 +470,7 @@ static void terminal_shift_default_space_lalr_k(void) {
 
 /*                            INIT_FILE:                             */
 static void init_file(FILE **file, char *file_name, char *file_tag) {
-  char *p = strrchr(file_name, '.');
+  const char *p = strrchr(file_name, '.');
   if ((*file = fopen(file_name, "w")) == NULL)
   {
     fprintf(stderr,
@@ -540,9 +540,10 @@ static void exit_parser_files(void) {
 
 /*                              PRINT_C_NAMES:                            */
 static void print_c_names(void) {
-  short *name_len = Allocate_short_array(num_names + 1);
+  int *name_len = Allocate_int_array(num_names + 1);
   long num_bytes = 0;
-  int i, k;
+  int i;
+  int k;
 
   max_name_length = 0;
   mystrcpy("\nconst char  CLASS_HEADER string_buffer[] = {0,\n");
@@ -647,7 +648,7 @@ static void print_java_names(void) {
   for (int i = 1; i <= num_names; i++) {
     char tok[SYMBOL_SIZE + 1];
     strcpy(tok, RETRIEVE_NAME(i));
-    int len = strlen(tok);
+    const int len = strlen(tok);
     num_bytes += (len * 2);
     if (max_name_length < len)
       max_name_length = len;
@@ -694,34 +695,33 @@ static void print_java_names(void) {
 
 /*                          PRINT_ERROR_MAPS:                             */
 static void print_error_maps(void) {
-  short *state_start,
-      *state_stack,
-      *temp,
-      *original,
-      *as_size,
-      *action_symbols_base,
-      *action_symbols_range,
-      *naction_symbols_base,
-      *naction_symbols_range;
+  int *state_start;
+  int *state_stack;
+  int *temp;
+  short *original;
+  int *as_size;
+  int *action_symbols_base;
+  int *action_symbols_range;
+  int *naction_symbols_base;
+  int *naction_symbols_range;
 
   int i,
       k,
-      n,
       offset,
       state_no,
       symbol;
 
   long num_bytes;
 
-  state_start = Allocate_short_array(num_states + 2);
-  state_stack = Allocate_short_array(num_states + 1);
+  state_start = Allocate_int_array(num_states + 2);
+  state_stack = Allocate_int_array(num_states + 1);
 
   PRNT("\nError maps storage:");
 
   /* We now construct a bit map for the set of terminal symbols that  */
   /* may appear in each state. Then, we invoke PARTSET to apply the   */
   /* Partition Heuristic and print it.                                */
-  as_size = Allocate_short_array(num_states + 1);
+  as_size = Allocate_int_array(num_states + 1);
 
   if (table_opt == OPTIMIZE_TIME) {
     original = Allocate_short_array(num_symbols + 1);
@@ -770,7 +770,7 @@ static void print_error_maps(void) {
   ffree(action_symbols);
 
   /* Compute and write out the base of the ACTION_SYMBOLS map. */
-  action_symbols_base = Allocate_short_array(num_states + 1);
+  action_symbols_base = Allocate_int_array(num_states + 1);
 
   for ALL_STATES(i)
     action_symbols_base[state_list[i]] =
@@ -787,7 +787,7 @@ static void print_error_maps(void) {
 
   /* Compute and write out the range of the ACTION_SYMBOLS map. */
   offset = state_start[num_states + 1];
-  action_symbols_range = Allocate_short_array(offset);
+  action_symbols_range = Allocate_int_array(offset);
 
   compute_action_symbols_range(state_start, state_stack,
                                state_list, action_symbols_range);
@@ -862,7 +862,7 @@ static void print_error_maps(void) {
   }
 
   /* Compute and write out the base of the NACTION_SYMBOLS map.*/
-  naction_symbols_base = Allocate_short_array(num_states + 1);
+  naction_symbols_base = Allocate_int_array(num_states + 1);
 
   for ALL_STATES(i)
     naction_symbols_base[state_list[i]] =
@@ -880,7 +880,7 @@ static void print_error_maps(void) {
 
   /* Compute and write out the range of the NACTION_SYMBOLS map.*/
   offset = state_start[num_states + 1];
-  naction_symbols_range = Allocate_short_array(offset);
+  naction_symbols_range = Allocate_int_array(offset);
 
   compute_naction_symbols_range(state_start, state_stack,
                                 state_list, naction_symbols_range);
@@ -910,7 +910,7 @@ static void print_error_maps(void) {
   /* is used to remap the NAME_INDEX values based on the new symbol    */
   /* numberings. If time tables are requested, the terminals and non-  */
   /* terminals are mixed together.                                     */
-  temp = Allocate_short_array(num_symbols + 1);
+  temp = Allocate_int_array(num_symbols + 1);
 
   if (table_opt == OPTIMIZE_SPACE) {
     for ALL_TERMINALS(symbol)
@@ -1295,7 +1295,7 @@ static void print_error_maps(void) {
     *output_ptr++ = '0';
     *output_ptr++ = COMMA;
     k = 1;
-    for (state_no = 2; state_no <= (int) num_states; state_no++) {
+    for (state_no = 2; state_no <= num_states; state_no++) {
       struct node *q;
 
       q = statset[state_no].kernel_items;
@@ -1308,7 +1308,7 @@ static void print_error_maps(void) {
       itoc(symbol_map[i]);
       *output_ptr++ = COMMA;
       k++;
-      if (k == 10 && state_no != (int) num_states) {
+      if (k == 10 && state_no != num_states) {
         *output_ptr++ = '\n';
         BUFFER_CHECK(sysdcl);
         padline();
@@ -1385,7 +1385,7 @@ static void print_definitions(void) {
       fprintf(sysdef,
               "      ERROR_SYMBOL      = %d,\n"
               "      MAX_NAME_LENGTH   = %d,\n"
-              "      NUM_STATES        = %ld,\n\n",
+              "      NUM_STATES        = %d,\n\n",
               error_image,
               max_name_length,
               num_states);
@@ -1410,7 +1410,7 @@ static void print_definitions(void) {
               "      MIN_DISTANCE      = %d,\n"
               "      MAX_NAME_LENGTH   = %d,\n"
               "      MAX_TERM_LENGTH   = %d,\n"
-              "      NUM_STATES        = %ld,\n\n",
+              "      NUM_STATES        = %d,\n\n",
 
               error_image,
               maximum_distance,
@@ -1586,11 +1586,11 @@ static void print_externs(void) {
             (c_bit ? "extern" : "    static"));
 
     if (check_size > 0 || table_opt == OPTIMIZE_TIME) {
-      bool small = byte_check_bit && !error_maps_bit;
+      bool small;
+      small = byte_check_bit && !error_maps_bit;
 
       fprintf(sysprs, "%s const %s check_table[];\n"
               "%s const %s *%s;\n",
-
               c_bit ? "extern" : "    static",
               small ? "unsigned char " : "  signed short",
               c_bit ? "extern" : "    static",
@@ -1806,7 +1806,7 @@ static void print_space_tables(void) {
     /*  Each non-terminal row identifies its original state number, and  */
     /* a new vector START_TERMINAL_STATE indexable by state numbers      */
     /* identifies the starting point of each state in the terminal table.*/
-    if (state_no <= (int) num_states) {
+    if (state_no <= num_states) {
       for (; state_no != NIL; state_no = state_list[state_no])
         action[state_index[state_no]] = indx;
     } else {
@@ -2037,7 +2037,7 @@ static void print_space_tables(void) {
         i = indx + symbol;
         check[i] = symbol;
 
-        if (act > (int) num_states) {
+        if (act > num_states) {
           result_act = state_index[act];
           la_shift_count++;
         } else if (act > 0) {
@@ -2283,7 +2283,7 @@ static void print_space_tables(void) {
         result_act = -act + error_act;
       else if (act == 0)
         result_act = error_act;
-      else if (act > (int) num_states)
+      else if (act > num_states)
         result_act = state_index[act];
       else
         result_act = state_index[act] + num_rules;
@@ -2411,12 +2411,12 @@ static void print_time_tables(void) {
     check[i] = DEFAULT_SYMBOL;
 
   /* We set the rest of the table with the proper table entries.       */
-  for (state_no = 1; state_no <= (int) max_la_state; state_no++) {
+  for (state_no = 1; state_no <= max_la_state; state_no++) {
     struct shift_header_type sh;
     struct reduce_header_type red;
 
     indx = state_index[state_no];
-    if (state_no > (int) num_states) {
+    if (state_no > num_states) {
       sh = shift[lastats[state_no].shift_number];
       red = lastats[state_no].reduce;
     } else {
@@ -2446,7 +2446,7 @@ static void print_time_tables(void) {
       i = indx + symbol;
       check[i] = symbol;
       act = sh.map[j].action;
-      if (act > (int) num_states) {
+      if (act > num_states) {
         result_act = la_state_offset + state_index[act];
         la_shift_count++;
       } else if (act > 0) {

@@ -51,7 +51,7 @@ void process_input(void) {
                                grm_file[i] != '.' &&
                                grm_file[i] != '/' && /* Unix */
                                grm_file[i] != '\\'; /* Dos  */
-         i--);
+         i--) {}
 
     if (grm_file[i] != '.') {
       strcat(grm_file, ".g");
@@ -248,7 +248,7 @@ static bool verify(const char *item) {
 /*                              TRANSLATE:                                   */
 /* TRANSLATE takes as arguments a character array, which it folds to upper   */
 /* to uppercase and returns.                                                 */
-static char *translate(char *str, int len) {
+static char *translate(char *str, const int len) {
   for (register int i = 0; i < len; i++)
     str[i] = TOUPPER(str[i]);
 
@@ -671,7 +671,7 @@ static void options(void) {
                 (memcmp(token, ooutputsize2, len) == 0) ||
                 (memcmp(token, ooutputsize3, len) == 0))) {
         if (verify(temp)) {
-          int tmpval = atoi(temp);
+          const int tmpval = atoi(temp);
           if (tmpval > MAX_LINE_SIZE) {
             sprintf(msg_line, "OUTPUT_SIZE cannot exceed %d",
                     MAX_LINE_SIZE);
@@ -1115,14 +1115,14 @@ static void process_options_lines(void) {
 /*                                 HASH:                                     */
 /*    HASH takes as argument a symbol and hashes it into a location in       */
 /* HASH_TABLE.                                                               */
-static int hash(const char *symb) {
+static int hash(const char *symbl) {
   register unsigned long hash_value = 0;
 
-  for (; *symb != '\0'; symb++) {
-    register unsigned short k = *symb;
-    symb++;
-    hash_value += ((k << 7) + *symb);
-    if (*symb == '\0')
+  for (; *symbl != '\0'; symbl++) {
+    const register unsigned short k = *symbl;
+    symbl++;
+    hash_value += ((k << 7) + *symbl);
+    if (*symbl == '\0')
       break;
   }
 
@@ -1166,10 +1166,10 @@ static void insert_string(struct hash_type *q, const char *string) {
 /* The NAME_INDEX field is set to OMEGA and will be assigned a value later.  */
 /*   ASSIGN_SYMBOL_NO takes as arguments a pointer to a node and an image    */
 /* number and assigns a symbol number to the symbol pointed to by the node.  */
-static void assign_symbol_no(const char *string_ptr, int image) {
+static void assign_symbol_no(const char *string_ptr, const int image) {
   register struct hash_type *p;
 
-  register int i = hash(string_ptr);
+  const register int i = hash(string_ptr);
   for (p = hash_table[i]; p != NULL; p = p->link) {
     if (EQUAL_STRING(string_ptr, p)) /* Are they the same */
       return;
@@ -1196,7 +1196,7 @@ static void assign_symbol_no(const char *string_ptr, int image) {
 /* table for stringptr and if it finds it, it turns it into an alias of the  */
 /* symbol whose number is IMAGE. Otherwise, it invokes PROCESS_SYMBOL and    */
 /* ASSIGN SYMBOL_NO to enter stringptr into the table and then we alias it.  */
-static void alias_map(const char *stringptr, int image) {
+static void alias_map(const char *stringptr, const int image) {
   for (register struct hash_type *q = hash_table[hash(stringptr)]; q != NULL; q = q->link) {
     if (EQUAL_STRING(stringptr, q)) {
       q->number = -image; /* Mark alias of image */
@@ -1213,7 +1213,7 @@ static void alias_map(const char *stringptr, int image) {
 /* in the HASH_TABLE, and if found, it returns its image; otherwise, it      */
 /* returns OMEGA.                                                            */
 static int symbol_image(const char *item) {
-  for (register struct hash_type *q = hash_table[hash(item)]; q != NULL; q = q->link) {
+  for (const register struct hash_type *q = hash_table[hash(item)]; q != NULL; q = q->link) {
     if (EQUAL_STRING(item, q))
       return ABS(q->number);
   }
@@ -1230,7 +1230,7 @@ static int symbol_image(const char *item) {
 static int name_map(const char *symb) {
   register struct hash_type *p;
 
-  register int i = hash(symb);
+  const register int i = hash(symb);
   for (p = hash_table[i]; p != NULL; p = p->link) {
     if (EQUAL_STRING(symb, p)) {
       if (p->name_index != OMEGA)
@@ -1297,7 +1297,7 @@ process_terminal:
 
 process_non_terminal:
   do {
-    register int lhs_sym = lhs[act]; /* to bypass IBMC12 bug */
+    const register int lhs_sym = lhs[act]; /* to bypass IBMC12 bug */
 
     stack_top -= (rhs[act] - 1);
     rule_action[act]();
@@ -1669,7 +1669,7 @@ check_symbol_length:
 /* the token is not copied since blocks are processed separately on a       */
 /* second pass.                                                             */
 static void token_action(void) {
-  register int top = stack_top + 1;
+  const register int top = stack_top + 1;
 
   terminal[top].kind = ct;
   terminal[top].start_line = ct_start_line;
@@ -1761,11 +1761,11 @@ static void build_symno(void) {
   if (symno == (struct symno_type *) NULL)
     nospace(__FILE__, __LINE__);
 
-  /* Go thru entire hash table. For each non_empty bucket, go through    */
+  /* Go through entire hash table. For each non_empty bucket, go through    */
   /* linked list in that bucket.                                         */
   for (register int i = 0; i < HT_SIZE; ++i) {
-    for (register struct hash_type *p = hash_table[i]; p != NULL; p = p->link) {
-      register int symbol = p->number;
+    for (const register struct hash_type *p = hash_table[i]; p != NULL; p = p->link) {
+      const register int symbol = p->number;
       if (symbol >= 0) /* Not an alias */
       {
         symno[symbol].name_index = OMEGA;
@@ -2131,7 +2131,7 @@ static void free_line(struct line_elemt *p) {
 /* stituted for the name. The modified action text is then printed out in    */
 /* the action file.                                                          */
 static void process_action_line(FILE *sysout, char *text,
-                                int line_no, int rule_no) {
+                                const int line_no, const int rule_no) {
   register int j;
 
   char temp1[MAX_LINE_SIZE + 1];
@@ -2143,7 +2143,7 @@ static void process_action_line(FILE *sysout, char *text,
   struct line_elemt *input_line_root = NULL;
 
 next_line: {
-  };
+  }
   register int text_len = strlen(text);
   register int k = 0; /* k is the cursor */
   while (k < text_len) {
@@ -2189,23 +2189,21 @@ next_line: {
       {
         if (strxeq(text + k, krule_text)) {
           char temp2[MAX_LINE_SIZE + 1];
-
           if (k + 10 != text_len) {
             strcpy(temp1, text + k + 10);
-
             /* Remove trailing blanks */
-            for (j = strlen(temp1) - 1;
-                 j >= 0 && temp1[j] == ' '; j--);
-
-            if (j != 0) /* if not a string of blanks */
+            for (j = strlen(temp1) - 1; j >= 0 && temp1[j] == ' '; j--) {}
+            /* if not a string of blanks */
+            if (j != 0) {
               temp1[++j] = '\0';
-            else
+            } else {
               temp1[0] = '\0';
+            }
           } else {
             temp1[0] = '\0';
             j = 0;
           }
-          register int max_len = output_size - k - j;
+          const register int max_len = output_size - k - j;
 
           restore_symbol(temp2,
                          RETRIEVE_STRING(rules[rule_no].lhs));
@@ -2293,10 +2291,11 @@ next_line: {
       {
         if (strxeq(text + k, knum_non_terminals)) {
           strcpy(temp1, text + k + 18);
-          if (k + 18 != text_len)
+          if (k + 18 != text_len) {
             sprintf(text + k, "%d%s", num_non_terminals, temp1);
-          else
+          } else {
             sprintf(text + k, "%d", num_non_terminals);
+          }
           goto proceed;
         }
       }
@@ -2304,15 +2303,15 @@ next_line: {
       /* Macro in question is not one of the predefined macros. Try user-defined   */
       /* macro list.                                                               */
       /* find next delimeter */
-      for (j = k + 1; j < text_len && !IsSpace(text[j]); ++j);
-
+      for (j = k + 1; j < text_len && !IsSpace(text[j]); ++j) {}
       memcpy(symbol, text + k, j - k); /* copy macro name into symbol */
       symbol[j - k] = '\0';
-
-      if (j < text_len) /* Is there any text after macro ? */
+      /* Is there any text after macro ? */
+      if (j < text_len) {
         strcpy(suffix, text + j); /* Copy rest of text into "suffix". */
-      else
+      } else {
         suffix[0] = '\0';
+      }
       text[k] = '\0'; /* prefix before macro */
 
       root = find_macro(symbol); /* "root" points to a circular  */
@@ -2406,7 +2405,7 @@ next_line: {
 /* This procedure takes as argument a macro definition.  If the name of the */
 /* macro is one of the predefined names, it issues an error.  Otherwise, it */
 /* inserts the macro definition into the table headed by MACRO_TABLE.       */
-static void mapmacro(int def_index) {
+static void mapmacro(const int def_index) {
   if (strcmp(defelmt[def_index].name, krule_text) == 0 ||
       strcmp(defelmt[def_index].name, krule_number) == 0 ||
       strcmp(defelmt[def_index].name, knum_rules) == 0 ||
@@ -2425,7 +2424,7 @@ static void mapmacro(int def_index) {
     return;
   }
 
-  register int i = hash(defelmt[def_index].name);
+  const register int i = hash(defelmt[def_index].name);
   for (register int j = macro_table[i]; j != NIL; j = defelmt[j].next) {
     if (strcmp(defelmt[j].name, defelmt[def_index].name) == 0) {
       if (warnings_bit) {
@@ -2458,11 +2457,11 @@ static struct line_elemt *find_macro(char *name) {
 
   register char *s = macro_name;
   for (ptr = name; *ptr != '\0'; ptr++) {
-    *(s++) = (isupper(*ptr) ? tolower(*ptr) : *ptr);
+    *(s++) = isupper(*ptr) ? tolower(*ptr) : *ptr;
   }
   *s = '\0';
 
-  register int i = hash(macro_name);
+  const register int i = hash(macro_name);
   for (register int j = macro_table[i]; j != NIL; j = defelmt[j].next) {
     if (strcmp(macro_name, defelmt[j].name) == 0) {
       ptr = defelmt[j].macro;
@@ -2559,13 +2558,12 @@ static void display_input(void) {
     fprintf(syslis, "\nDefined Symbols:\n\n");
     output_line_no += 3;
     for (j = 0; j < num_defs; j++) {
-      fill_in(line, (PRINT_LINE_SIZE - (strlen(blockb) + 1)), '-');
-      fprintf(syslis, "\n\n%s\n%s%s\n",
-              defelmt[j].name, blockb, line);
+      fill_in(line, PRINT_LINE_SIZE - (strlen(blockb) + 1), '-');
+      fprintf(syslis, "\n\n%s\n%s%s\n", defelmt[j].name, blockb, line);
 
       output_line_no += 4;
 
-      for (char *ptr = defelmt[j].macro; *ptr != '\0'; ptr++) {
+      for (const char *ptr = defelmt[j].macro; *ptr != '\0'; ptr++) {
         for (; *ptr != '\n'; ptr++) {
           putc(*ptr, syslis);
         }
@@ -2591,7 +2589,7 @@ static void display_input(void) {
       output_line_no += 3;
     }
 
-    for (struct hash_type *p = alias_root; p != NULL; p = p->link) {
+    for (const struct hash_type *p = alias_root; p != NULL; p = p->link) {
       restore_symbol(temp, EXTRACT_STRING(p->st_ptr));
 
       len = PRINT_LINE_SIZE - 5;

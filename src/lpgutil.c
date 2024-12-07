@@ -21,9 +21,9 @@ static char hostfile[] = __FILE__;
 typedef long cell;
 
 static cell **temp_base = NULL;
-static long temp_top = 0,
-    temp_size = 0,
-    temp_base_size = 0;
+static long temp_top = 0;
+static long temp_size = 0;
+static long temp_base_size = 0;
 
 /*                          ALLOCATE_MORE_SPACE:                      */
 /* This procedure obtains more TEMPORARY space.                       */
@@ -39,7 +39,7 @@ static bool allocate_more_space(cell ***base, long *size, long *base_size) {
   /* index for the next segment in base. If base is already full, it is */
   /* reallocated.                                                       */
   /*                                                                    */
-  int k = (*size) >> LOG_BLKSIZE; /* which segment? */
+  const int k = (*size) >> LOG_BLKSIZE; /* which segment? */
   if (k == (*base_size)) /* base overflow? reallocate */
   {
     register int i = *base_size;
@@ -107,36 +107,33 @@ void free_temporary_space(void) {
 /*                                TALLOC:                             */
 /* talloc allocates an object of size "size" in temporary space and   */
 /* returns a pointer to it.                                           */
-void *talloc(long size) {
+void *talloc(const long size) {
   long i = temp_top;
-  temp_top += ((size + sizeof(cell) - 1) / sizeof(cell));
+  temp_top += (size + sizeof(cell) - 1) / sizeof(cell);
   if (temp_top > temp_size) {
     i = temp_size;
-    temp_top = temp_size +
-               ((size + sizeof(cell) - 1) / sizeof(cell));
+    temp_top = temp_size + (size + sizeof(cell) - 1) / sizeof(cell);
     if (!allocate_more_space(&temp_base, &temp_size, &temp_base_size)) {
       temp_top = temp_size;
       return NULL;
     }
   }
-
-  return ((void *) &(temp_base[i >> LOG_BLKSIZE][i]));
+  return &temp_base[i >> LOG_BLKSIZE][i];
 }
 
 
 /*                      TEMPORARY_SPACE_ALLOCATED:                    */
 /* Return the total size of temporary space allocated.                */
 long temporary_space_allocated(void) {
-  return ((temp_base_size * sizeof(cell **)) +
-          (temp_size * sizeof(cell)));
+  return temp_base_size * sizeof(cell **) + temp_size * sizeof(cell);
 }
 
 
 /*                         TEMPORARY_SPACE_USED:                      */
 /* Return the total size of temporary space used.                     */
 long temporary_space_used(void) {
-  return (((temp_size >> LOG_BLKSIZE) * sizeof(cell **)) +
-          (temp_top * sizeof(cell)));
+  return (temp_size >> LOG_BLKSIZE) * sizeof(cell **) +
+         temp_top * sizeof(cell);
 }
 
 
@@ -167,7 +164,7 @@ static struct node *node_pool = NULL;
 /* in that space and stacked up in the NODE_POOL list.                */
 static void process_global_waste(long top) {
   while (true) {
-    long i = top;
+    const long i = top;
     top += ((sizeof(struct node) + sizeof(cell) - 1) / sizeof(cell));
     if (top > global_size)
       break;
@@ -182,14 +179,14 @@ static void process_global_waste(long top) {
 /* returns a pointer to it. It is analoguous to "talloc", but it      */
 /* is a local (static) routine that is only invoked in this file by   */
 /* other more specialized routines.                                   */
-static void *galloc(long size) {
+static void *galloc(const long size) {
   long i = global_top;
-  global_top += ((size + sizeof(cell) - 1) / sizeof(cell));
+  global_top += (size + sizeof(cell) - 1) / sizeof(cell);
   if (global_top > global_size) {
     process_global_waste(i);
     i = global_size;
     global_top = global_size +
-                 ((size + sizeof(cell) - 1) / sizeof(cell));
+                 (size + sizeof(cell) - 1) / sizeof(cell);
     if (!allocate_more_space(&global_base,
                              &global_size, &global_base_size)) {
       global_top = global_size;
@@ -197,7 +194,7 @@ static void *galloc(long size) {
     }
   }
 
-  return ((void *) &(global_base[i >> LOG_BLKSIZE][i]));
+  return &global_base[i >> LOG_BLKSIZE][i];
 }
 
 
@@ -205,7 +202,7 @@ static void *galloc(long size) {
 /*   This function allocates a node structure and returns a pointer to it.  */
 /* it there are nodes in the free pool, one of them is returned. Otherwise, */
 /* a new node is allocated from the global storage pool.                    */
-struct node *allocate_node(char *file, long line) {
+struct node *allocate_node(char *file, const long line) {
   struct node *p = node_pool;
   if (p != NULL) /* is free list not empty? */
     node_pool = p->next;
@@ -234,7 +231,7 @@ void free_nodes(struct node *head, struct node *tail) {
 /* map is successfully allocated, it is offset by one element. This is      */
 /* to allow the array in question to be indexed from 1..size instead of     */
 /* 0..(size-1).                                                             */
-struct goto_header_type allocate_goto_map(int size, char *file, long line) {
+struct goto_header_type allocate_goto_map(const int size, char *file, const long line) {
   struct goto_header_type go_to;
 
   go_to.size = size;
@@ -254,8 +251,8 @@ struct goto_header_type allocate_goto_map(int size, char *file, long line) {
 /* map is successfully allocated, it is offset by one element. This is      */
 /* to allow the array in question to be indexed from 1..size instead of     */
 /* 0..(size-1).                                                             */
-struct shift_header_type allocate_shift_map(int size,
-                                            char *file, long line) {
+struct shift_header_type allocate_shift_map(const int size,
+                                            char *file, const long line) {
   struct shift_header_type sh;
 
   sh.size = size;
@@ -273,16 +270,12 @@ struct shift_header_type allocate_shift_map(int size,
 /*   This function allocates space for a REDUCE map with "size"+1 elements, */
 /* initializes and returns a REDUCE header for that map. The 0th element of */
 /* a reduce map is used for the default reduction.                          */
-struct reduce_header_type allocate_reduce_map(int size,
-                                              char *file, long line) {
+struct reduce_header_type allocate_reduce_map(const int size, char *file, const long line) {
   struct reduce_header_type red;
-
-  red.map = (struct reduce_type *)
-      galloc((size + 1) * sizeof(struct reduce_type));
+  red.map = (struct reduce_type *) galloc((size + 1) * sizeof(struct reduce_type));
   if (red.map == NULL)
     nospace(file, line);
   red.size = size;
-
   return (red);
 }
 
@@ -298,14 +291,14 @@ long global_space_allocated(void) {
 /*                           GLOBAL_SPACE_USED:                       */
 /* Return the total size of global space used.                        */
 long global_space_used(void) {
-  return (((global_size >> LOG_BLKSIZE) * sizeof(cell **)) +
-          (global_top * sizeof(cell)));
+  return (global_size >> LOG_BLKSIZE) * sizeof(cell **) +
+         global_top * sizeof(cell);
 }
 
 
 /*                           ALLOCATE_INT_ARRAY:                            */
 /*   This function allocates an array of size "size" of int integers.       */
-int *allocate_int_array(long size, char *file, long line) {
+int *allocate_int_array(const long size, char *file, const long line) {
   int *p;
 
   p = (int *) calloc(size, sizeof(int));
@@ -318,7 +311,7 @@ int *allocate_int_array(long size, char *file, long line) {
 
 /*                           ALLOCATE_SHORT_ARRAY:                          */
 /*   This function allocates an array of size "size" of short integers.     */
-short *allocate_short_array(long size, char *file, long line) {
+short *allocate_short_array(const long size, char *file, const long line) {
   short *p;
 
   p = (short *) calloc(size, sizeof(short));
@@ -331,7 +324,7 @@ short *allocate_short_array(long size, char *file, long line) {
 
 /*                           ALLOCATE_BOOLEAN_ARRAY:                        */
 /*   This function allocates an array of size "size" of type boolean.       */
-bool *allocate_boolean_array(long size, char *file, long line) {
+bool *allocate_boolean_array(const long size, char *file, const long line) {
   bool *p;
 
   p = (bool *) calloc(size, sizeof(bool));
@@ -345,7 +338,7 @@ bool *allocate_boolean_array(long size, char *file, long line) {
 /*                              FILL_IN:                                     */
 /* FILL_IN is a subroutine that pads a buffer, STRING,  with CHARACTER a     */
 /* certain AMOUNT of times.                                                  */
-void fill_in(char string[], int amount, char character) {
+void fill_in(char string[], const int amount, const char character) {
   int i;
 
   for (i = 0; i <= amount; i++)
@@ -358,7 +351,7 @@ void fill_in(char string[], int amount, char character) {
 /* QCKSRT is a quicksort algorithm that takes as arguments an array of       */
 /* integers, two numbers L and H that indicate the lower and upper bound     */
 /* positions in ARRAY to be sorted.                                          */
-static void qcksrt(short array[], int l, int h) {
+static void qcksrt(short array[], const int l, const int h) {
   int
       lostack[14], /* A stack of size 14 can sort an array of up to */
       histack[14]; /* 2 ** 15 - 1 elements                          */
@@ -372,7 +365,7 @@ static void qcksrt(short array[], int l, int h) {
 
     while (upper > lower) {
       int i = lower;
-      int pivot = array[lower];
+      const int pivot = array[lower];
       for (int j = lower + 1; j <= upper; j++) {
         if (array[j] < pivot) {
           array[i] = array[j];
@@ -419,7 +412,7 @@ int number_len(int state_no) {
 /* as IN is copied into the space identified by OUT.                     */
 /* NOTE that it is assumed that IN and OUT do not overlap each other.    */
 void restore_symbol(char *out, const char *in) {
-  int len = strlen(in);
+  const int len = strlen(in);
   if (len > 0) {
     if ((len == 1 && in[0] == ormark) ||
         (in[0] == escape) ||
@@ -484,7 +477,7 @@ void print_large_token(char *line, char *token, const char *indent, int len) {
 
 /*                                PRINT_ITEM:                                */
 /* PRINT_ITEM takes as parameter an ITEM_NO which it prints.                 */
-void print_item(int item_no) {
+void print_item(const int item_no) {
   char tempstr[PRINT_LINE_SIZE + 1],
       line[PRINT_LINE_SIZE + 1],
       tok[SYMBOL_SIZE + 1];
@@ -492,10 +485,10 @@ void print_item(int item_no) {
   /* We first print the left hand side of the rule, leaving at least   */
   /* 5 spaces in the output line to accomodate the equivalence symbol  */
   /* "::=" surrounded by blanks on both sides.  Then, we print all the */
-  /* terminal symbols in the right hand side up to but not including   */
+  /* terminal symbols on the right hand side up to but not including   */
   /* the dot symbol.                                                   */
 
-  int rule_no = item_table[item_no].rule_number;
+  const int rule_no = item_table[item_no].rule_number;
   int symbol = rules[rule_no].lhs;
 
   restore_symbol(tok, RETRIEVE_STRING(symbol));
@@ -503,12 +496,11 @@ void print_item(int item_no) {
   print_large_token(line, tok, "", len);
   strcat(line, " ::= ");
   int i = (PRINT_LINE_SIZE / 2) - 1;
-  int offset = MIN(strlen(line)-1, i);
+  const int offset = MIN(strlen(line) - 1, i);
   len = PRINT_LINE_SIZE - (offset + 4);
   i = rules[rule_no].rhs; /* symbols before dot */
 
-  int k = ((rules[rule_no].rhs + item_table[item_no].dot) - 1);
-  for (; i <= k; i++) {
+  for (const int k = ((rules[rule_no].rhs + item_table[item_no].dot) - 1); i <= k; i++) {
     symbol = rhs_sym[i];
     restore_symbol(tok, RETRIEVE_STRING(symbol));
     if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE - 4) {
@@ -567,7 +559,7 @@ void print_item(int item_no) {
 /* replaced by say the GOTO or GOTO_REDUCE of A, the item above can no longer*/
 /* be retrieved, since transitions in a given state are reconstructed from   */
 /* the KERNEL and ADEQUATE items of the actions in the GOTO and SHIFT maps.  */
-void print_state(int state_no) {
+void print_state(const int state_no) {
   int
       i,
       item_no;
@@ -662,11 +654,11 @@ void print_state(int state_no) {
   /* If the shift-action is a look-ahead shift, we check to see if the */
   /* look-ahead state contains shift actions, and retrieve the next    */
   /* state from one of those shift actions.                            */
-  struct shift_header_type sh = shift[statset[state_no].shift_number];
+  const struct shift_header_type sh = shift[statset[state_no].shift_number];
   for (i = 1; i <= sh.size; i++) {
     int next_state = sh.map[i].action;
-    while (next_state > (int) num_states) {
-      struct shift_header_type next_sh = shift[lastats[next_state].shift_number];
+    while (next_state > num_states) {
+      const struct shift_header_type next_sh = shift[lastats[next_state].shift_number];
       if (next_sh.size > 0)
         next_state = next_sh.map[1].action;
       else
@@ -692,7 +684,7 @@ void print_state(int state_no) {
   }
 
   /* GOTOS and GOTO-REDUCES are analogous to SHIFTS and SHIFT-REDUCES. */
-  struct goto_header_type go_to = statset[state_no].go_to;
+  const struct goto_header_type go_to = statset[state_no].go_to;
   for (i = 1; i <= go_to.size; i++) {
     if (go_to.map[i].action > 0) {
       q = statset[go_to.map[i].action].kernel_items;
@@ -730,7 +722,7 @@ void print_state(int state_no) {
 
 /*                                 NOSPACE:                                  */
 /* This procedure is invoked when a call to MALLOC, CALLOC or REALLOC fails. */
-void nospace(char *file_name, long line_number) {
+void nospace(char *file_name, const long line_number) {
   fprintf(stderr,
           "*** Cannot allocate space ... LPG terminated in "
           "file %s at line %ld\n", file_name, line_number);
@@ -746,7 +738,7 @@ void nospace(char *file_name, long line_number) {
 char *strupr(char *string) {
   /* While not at end of string, change all lower case to upper case.  */
   for (char *s = string; *s != '\0'; s++)
-    *s = islower((int) *s) ? toupper((int) *s) : *s;
+    *s = islower(*s) ? toupper(*s) : *s;
 
   return string;
 }
@@ -754,8 +746,8 @@ char *strupr(char *string) {
 /*                               STRLWR:                                */
 char *strlwr(char *string) {
   /* While not at end of string, change all upper case to lower case.  */
-  for (char *s = string; *s != '\0'; s++)
-    *s = (isupper((int) *s) ? tolower((int) *s) : *s);
-
+  for (char *s = string; *s != '\0'; s++) {
+    *s = isupper(*s) ? tolower(*s) : *s;
+  }
   return string;
 }

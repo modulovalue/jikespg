@@ -552,7 +552,7 @@ static struct state_element *lr0_state_map(struct node *kernel) {
 
 
   /* Add a new state based on the KERNEL set.                        */
-  struct state_element *ptr = (struct state_element *) talloc(sizeof(struct state_element));
+  struct state_element *ptr = talloc(sizeof(struct state_element));
   if (ptr == (struct state_element *) NULL)
     nospace(__FILE__, __LINE__);
 

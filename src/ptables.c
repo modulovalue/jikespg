@@ -16,13 +16,12 @@ struct action_element {
 /* This procedure is invoked with a specific shift map which it processes   */
 /* and updates the ACTION_COUNT map accordingly.                            */
 static void process_shift_actions(struct action_element **action_count,
-                                  int shift_no) {
+                                  const int shift_no) {
   struct action_element *q;
-
-  struct shift_header_type sh = shift[shift_no];
+  const struct shift_header_type sh = shift[shift_no];
   for (int i = 1; i <= sh.size; i++) {
-    int symbol = sh.map[i].symbol;
-    int act = sh.map[i].action;
+    const int symbol = sh.map[i].symbol;
+    const int act = sh.map[i].action;
     for (q = action_count[symbol]; q != NULL; q = q->next) {
       if (q->action == act)
         break;
@@ -82,7 +81,7 @@ static void compute_shift_default(void) {
     int max_count = 0;
     int default_action = 0;
 
-    for (struct action_element *q = action_count[symbol]; q != NULL; q = q->next) {
+    for (const struct action_element *q = action_count[symbol]; q != NULL; q = q->next) {
       if (q->count > max_count) {
         max_count = q->count;
         default_action = q->action;
@@ -137,12 +136,11 @@ static void compute_goto_default(void) {
   gotodef = Allocate_short_array(num_non_terminals);
   gotodef -= (num_terminals + 1);
 
-  struct action_element **action_count = (struct action_element **)
-      calloc(num_non_terminals,
-             sizeof(struct action_element *));
-  action_count -= (num_terminals + 1);
-  if (action_count == NULL)
+  struct action_element **action_count = calloc(num_non_terminals, sizeof(struct action_element *));
+  action_count -= num_terminals + 1;
+  if (action_count == NULL) {
     nospace(__FILE__, __LINE__);
+  }
 
   /* The array ACTION_COUNT is used to construct a map from each     */
   /* non-terminal into the set (list) of actions defined on that     */
@@ -257,7 +255,7 @@ void process_tables(void) {
   /* Remap all the symbols used in the range of SCOPE.           */
   /* Release space trapped by the maps IN_STAT and FIRST.        */
   for ALL_STATES(state_no) {
-    struct goto_header_type go_to = statset[state_no].go_to;
+    const struct goto_header_type go_to = statset[state_no].go_to;
     for (i = 1; i <= go_to.size; i++) {
       go_to.map[i].symbol--;
     }
@@ -285,7 +283,7 @@ void process_tables(void) {
 
   /* Remap all symbols in the domain of the Shift maps.              */
   for (i = 1; i <= num_shift_maps; i++) {
-    struct shift_header_type sh = shift[i];
+    const struct shift_header_type sh = shift[i];
     for (int j = 1; j <= sh.size; j++)
       sh.map[j].symbol--;
   }
@@ -335,8 +333,7 @@ void process_tables(void) {
     nospace(__FILE__, __LINE__);
 
   if ((!c_bit) && (!cpp_bit) && (!java_bit)) {
-    if ((systab = fopen(tab_file, "w")) == NULL)
-    {
+    if ((systab = fopen(tab_file, "w")) == NULL) {
       fprintf(stderr,
               "***ERROR: Table file \"%s\" cannot be opened\n",
               tab_file);

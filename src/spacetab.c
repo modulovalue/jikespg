@@ -113,10 +113,7 @@ static void remap_non_terminals(void) {
   frequency_count += (num_terminals + 1);
   ffree(frequency_count);
   ffree(row_size);
-
-  return;
 }
-
 
 /*                           OVERLAP_NT_ROWS:                               */
 /* We now overlap the non-terminal table, or more precisely, we compute the */
@@ -124,10 +121,9 @@ static void remap_non_terminals(void) {
 /* without clobbering elements in another row.  The starting positions are  */
 /* stored in the vector STATE_INDEX.                                        */
 static void overlap_nt_rows(void) {
-  int
-      indx,
-      k,
-      i;
+  int indx;
+  int k;
+  int i;
 
   long num_bytes;
 
@@ -162,13 +158,13 @@ static void overlap_nt_rows(void) {
   /* indicated by the variable STATE_NO, and determine an "overlap"  */
   /* position for them.                                              */
   for ALL_STATES(k) {
-    int state_no = ordered_state[k];
+    const int state_no = ordered_state[k];
 
     /* INDX is set to the beginning of the list of available slots  */
     /* and we try to determine if it might be a valid starting      */
     /* position.  If not, INDX is moved to the next element, and we */
     /* repeat the process until a valid position is found.          */
-    struct goto_header_type go_to = statset[state_no].go_to;
+    const struct goto_header_type go_to = statset[state_no].go_to;
     indx = first_index;
 
   look_for_match_in_base_table:
@@ -189,7 +185,7 @@ static void overlap_nt_rows(void) {
     /* NOTE tha since SYMBOLs start at 1, the first index can never  */
     /* be a candidate (==> I = INDX + SYMBOL) in this loop.          */
     for (int j = 1; j <= go_to.size; j++) {
-      int symbol = go_to.map[j].symbol;
+      const int symbol = go_to.map[j].symbol;
       i = indx + symbol;
       if (i == last_index) {
         last_index = previous[last_index];
@@ -245,7 +241,7 @@ static void overlap_nt_rows(void) {
           num_table_entries);
   PRNT(msg_line);
 
-  int percentage = ((action_size - num_table_entries) * 1000)
+  const int percentage = ((action_size - num_table_entries) * 1000)
                    / num_table_entries;
   sprintf(msg_line, "Percentage of increase: %d.%d%%",
           percentage / 10, percentage % 10);
@@ -264,7 +260,7 @@ static void overlap_nt_rows(void) {
     num_bytes += ((long) 2 * num_non_terminals);
   total_bytes = num_bytes;
 
-  int k_bytes = (num_bytes / 1024) + 1;
+  const int k_bytes = (num_bytes / 1024) + 1;
 
   sprintf(msg_line, "Storage required for base Tables: %ld Bytes, %dK",
           num_bytes, k_bytes);
@@ -277,8 +273,6 @@ static void overlap_nt_rows(void) {
   }
   sprintf(msg_line, "Storage required for Rules: %ld Bytes", num_bytes);
   PRNT(msg_line);
-
-  return;
 }
 
 
@@ -307,7 +301,7 @@ static void merge_similar_t_rows(void) {
   multi_root = NIL;
   top = 0;
 
-  for (i = 1; i <= (int) max_la_state; i++)
+  for (i = 1; i <= max_la_state; i++)
     shift_on_error_symbol[i] = false;
 
   for (i = 0; i <= num_shift_maps; i++)
@@ -317,9 +311,9 @@ static void merge_similar_t_rows(void) {
   /* number.                                                           */
   /* The rules in the range of the REDUCE MAP are placed in sorted     */
   /* order in a linear linked list headed by REDUCE_ROOT.              */
-  for (int state_no = 1; state_no <= (int) max_la_state; state_no++) {
+  for (int state_no = 1; state_no <= max_la_state; state_no++) {
     struct node *reduce_root = NULL;
-    if (state_no > (int) num_states)
+    if (state_no > num_states)
       red = lastats[state_no].reduce;
     else
       red = reduce[state_no];
@@ -349,11 +343,11 @@ static void merge_similar_t_rows(void) {
     /*   We compute the HASH_ADDRESS,  mark if the state has a shift     */
     /* action on the ERROR symbol, and search the hash TABLE to see if a */
     /* state matching the description is already in there.               */
-    if (state_no > (int) num_states)
+    if (state_no > num_states)
       hash_address = lastats[state_no].shift_number;
     else {
       if (default_opt == 5) {
-        struct shift_header_type sh = shift[statset[state_no].shift_number];
+        const struct shift_header_type sh = shift[statset[state_no].shift_number];
         for (int j = 1; j <= sh.size && !shift_on_error_symbol[state_no]; j++)
           shift_on_error_symbol[state_no] = sh.map[j].symbol == error_image;
       }
@@ -417,15 +411,13 @@ static void merge_similar_t_rows(void) {
       state_list[state_no] = new_state_element[i].image;
       new_state_element[i].image = state_no;
 
-      for (r = reduce_root; r != NULL; tail = r, r = r->next);
+      for (r = reduce_root; r != NULL; tail = r, r = r->next) {}
       if (reduce_root != NULL)
         free_nodes(reduce_root, tail);
     }
   }
 
   ffree(table);
-
-  return;
 }
 
 
@@ -739,8 +731,6 @@ static void merge_shift_domains(void) {
   ffree(terminal_list);
   ffree(shift_symbols);
   ffree(shift_domain_link);
-
-  return;
 }
 
 
@@ -801,7 +791,7 @@ static void overlay_sim_t_rows(void) {
     /* initialize REDUCE_ACTION with its reduce map, and count the number*/
     /* of reductions associated with each rule in that state.            */
     state_no = new_state_element[i].image;
-    if (state_no > (int) num_states)
+    if (state_no > num_states)
       red = lastats[state_no].reduce;
     else
       red = reduce[state_no];
@@ -832,7 +822,7 @@ static void overlay_sim_t_rows(void) {
       /* We traverse the reduce map of the state taken out from the group  */
       /* and check to see if it is compatible with the subset being        */
       /* constructed so far.                                               */
-      if (state_no > (int) num_states) {
+      if (state_no > num_states) {
         red = lastats[state_no].reduce;
       } else {
         red = reduce[state_no];
@@ -897,7 +887,7 @@ static void overlay_sim_t_rows(void) {
       top++;
       new_state_element[top].thread = new_state_element[i].thread;
       new_state_element[i].thread = top;
-      if (state_root > (int) num_states)
+      if (state_root > num_states)
         new_state_element[top].shift_number =
             lastats[state_root].shift_number;
       else
@@ -959,7 +949,7 @@ static void overlay_sim_t_rows(void) {
         reduce_action[j] = OMEGA;
       }
       for (; state_no != NIL; state_no = state_list[state_no]) {
-        if (state_no > (int) num_states) {
+        if (state_no > num_states) {
           red = lastats[state_no].reduce;
         } else {
           red = reduce[state_no];
@@ -984,7 +974,7 @@ static void overlay_sim_t_rows(void) {
   /* Their default is ERROR_ACTION.                                    */
   for (i = empty_root; i != NIL; i = new_state_element[i].thread) {
     state_no = new_state_element[i].image;
-    if (state_no > (int) num_states) {
+    if (state_no > num_states) {
       red = lastats[state_no].reduce;
     } else {
       red = reduce[state_no];
@@ -1098,8 +1088,6 @@ static void overlay_sim_t_rows(void) {
   ffree(frequency_symbol);
   ffree(shift_on_error_symbol);
   ffree(new_state_element_reduce_nodes);
-
-  return;
 }
 
 
@@ -1120,7 +1108,7 @@ static void overlap_t_rows(void) {
 
   increment_size = MAX((num_table_entries * increment / 100),
                        (num_terminals + 1));
-  int old_size = table_size;
+  const int old_size = table_size;
   table_size = MIN((num_table_entries + increment_size), MAX_TABLE_SIZE);
   if ((int) table_size > old_size) {
     ffree(previous);
@@ -1144,13 +1132,13 @@ static void overlap_t_rows(void) {
   int max_indx = first_index;
 
   for (int k = 1; k <= num_terminal_states; k++) {
-    int state_no = ordered_state[k];
+    const int state_no = ordered_state[k];
     /* For the terminal table, we are dealing with two lists, the SHIFT  */
     /* list, and the REDUCE list. Those lists are merged together first  */
     /* in TERMINAL_LIST.  Since we have to iterate over the list twice,  */
     /* this merging makes things easy.                                   */
     int root_symbol = NIL;
-    struct shift_header_type sh = shift[new_state_element[state_no].shift_number];
+    const struct shift_header_type sh = shift[new_state_element[state_no].shift_number];
     for (i = 1; i <= sh.size; i++) {
       symbol = sh.map[i].symbol;
       if (!shift_default_bit ||
@@ -1160,7 +1148,7 @@ static void overlap_t_rows(void) {
       }
     }
 
-    struct reduce_header_type red = new_state_element[state_no].reduce;
+    const struct reduce_header_type red = new_state_element[state_no].reduce;
     for (i = 1; i <= red.size; i++) {
       terminal_list[red.map[i].symbol] = root_symbol;
       root_symbol = red.map[i].symbol;
@@ -1242,7 +1230,7 @@ static void overlap_t_rows(void) {
           num_table_entries);
   PRNT(msg_line);
 
-  int percentage = (((long) term_action_size - num_table_entries) * 1000)
+  const int percentage = (((long) term_action_size - num_table_entries) * 1000)
                    / num_table_entries;
 
   sprintf(msg_line, "Percentage of increase: %d.%d%%",
@@ -1446,7 +1434,7 @@ static void print_tables(void) {
     /*  Each non-terminal row identifies its original state number, and  */
     /* a new vector START_TERMINAL_STATE indexable by state numbers      */
     /* identifies the starting point of each state in the terminal table.*/
-    if (state_no <= (int) num_states) {
+    if (state_no <= num_states) {
       for (; state_no != NIL; state_no = state_list[state_no]) {
         action[state_index[state_no]] = indx;
       }
@@ -1554,7 +1542,7 @@ static void print_tables(void) {
         i = indx + symbol;
         check[i] = symbol;
 
-        if (act > (int) num_states) {
+        if (act > num_states) {
           result_act = state_index[act];
           la_shift_count++;
         } else if (act > 0) {
@@ -1770,7 +1758,7 @@ static void print_tables(void) {
         result_act = -act + error_act;
       else if (act == 0)
         result_act = error_act;
-      else if (act > (int) num_states)
+      else if (act > num_states)
         result_act = state_index[act];
       else
         result_act = state_index[act] + num_rules;
@@ -1831,8 +1819,6 @@ static void print_tables(void) {
 
   fwrite(output_buffer, sizeof(char),
          output_ptr - &output_buffer[0], systab);
-
-  return;
 }
 
 
@@ -1865,6 +1851,4 @@ void cmprspa(void) {
     print_space_parser();
   else
     print_tables();
-
-  return;
 }

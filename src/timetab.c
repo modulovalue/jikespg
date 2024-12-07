@@ -227,19 +227,19 @@ static void overlap_tables(void) {
   int max_indx = first_index;
 
   /* We now iterate over all the states in their new sorted order as   */
-  /* indicated by the variable STATE_NO, and deternime an "overlap"    */
+  /* indicated by the variable STATE_NO, and determine an "overlap"    */
   /* position for them.                                                */
-  for (int k = 1; k <= (int) max_la_state; k++) {
-    int state_no = ordered_state[k];
+  for (int k = 1; k <= max_la_state; k++) {
+    const int state_no = ordered_state[k];
 
     /* First, we iterate over all actions defined in STATE_NO, and       */
     /* create a set with all the symbols involved.                       */
     int root_symbol = NIL;
-    if (state_no > (int) num_states) {
+    if (state_no > num_states) {
       sh = shift[lastats[state_no].shift_number];
       red = lastats[state_no].reduce;
     } else {
-      struct goto_header_type go_to = statset[state_no].go_to;
+      const struct goto_header_type go_to = statset[state_no].go_to;
       for (int i = 1; i <= go_to.size; i++) {
         symbol = go_to.map[i].symbol;
         symbol_list[symbol] = root_symbol;
@@ -297,7 +297,7 @@ static void overlap_tables(void) {
     state_index[state_no] = indx;
 
     for (symbol = root_symbol; symbol != NIL; symbol = symbol_list[symbol]) {
-      int i = indx + symbol;
+      const int i = indx + symbol;
       if (first_index == last_index)
         first_index = NIL;
       else if (i == first_index) {
@@ -334,7 +334,7 @@ static void overlap_tables(void) {
   sprintf(msg_line, "Number of entries in Action Table: %ld", num_entries);
   PRNT(msg_line);
 
-  long percentage = (action_size - num_entries) * 1000 / num_entries;
+  const long percentage = (action_size - num_entries) * 1000 / num_entries;
   sprintf(msg_line, "Percentage of increase: %ld.%ld%%", percentage / 10, percentage % 10);
   PRNT(msg_line);
 
@@ -432,7 +432,7 @@ static void print_tables(void) {
   /* We set the rest of the table with the proper table entries.       */
   for (state_no = 1; state_no <= max_la_state; state_no++) {
     indx = state_index[state_no];
-    if (state_no > (int) num_states) {
+    if (state_no > num_states) {
       sh = shift[lastats[state_no].shift_number];
       red = lastats[state_no].reduce;
     } else {
@@ -463,7 +463,7 @@ static void print_tables(void) {
       int i = indx + symbol;
       check[i] = symbol;
       act = sh.map[j].action;
-      if (act > (int) num_states) {
+      if (act > num_states) {
         result_act = la_state_offset + state_index[act];
         la_shift_count++;
       } else if (act > 0) {
@@ -797,7 +797,7 @@ static void print_tables(void) {
 /* In this routine we compress the State tables and write them out   */
 /* to a file.  The emphasis here is in generating tables that allow  */
 /* fast access. The terminal and non-terminal tables are compressed  */
-/* together, so as to achieve maximum speed efficiency.              */
+/* together, to achieve maximum speed efficiency.                    */
 /* Otherwise, the compression technique used in this table is        */
 /* analoguous to the technique used in the routine CMPRSPA.          */
 void cmprtim(void) {

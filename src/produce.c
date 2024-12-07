@@ -98,28 +98,26 @@ void produce(void) {
   item_list = Allocate_short_array(num_items + 1);
   nt_list = Allocate_short_array(num_non_terminals + 1);
   nt_list -= (num_terminals + 1);
-  SET_PTR set = (SET_PTR)
-      calloc(1, non_term_set_size * sizeof(BOOLEAN_CELL));
-  if (set == NULL)
+  const SET_PTR set = calloc(1, non_term_set_size * sizeof(BOOLEAN_CELL));
+  if (set == NULL) {
     nospace(__FILE__, __LINE__);
-
+  }
   produces = (SET_PTR)
-      calloc(num_non_terminals,
-             non_term_set_size * sizeof(BOOLEAN_CELL));
-  if (produces == NULL)
+      calloc(num_non_terminals, non_term_set_size * sizeof(BOOLEAN_CELL));
+  if (produces == NULL) {
     nospace(__FILE__, __LINE__);
+  }
   produces -= ((num_terminals + 1) * non_term_set_size);
-
-  direct_produces = (struct node **)
-      calloc(num_non_terminals, sizeof(struct node *));
-  if (direct_produces == NULL)
+  direct_produces = (struct node **) calloc(num_non_terminals, sizeof(struct node *));
+  if (direct_produces == NULL) {
     nospace(__FILE__, __LINE__);
+  }
   direct_produces -= (num_terminals + 1);
 
-  struct node **goto_domain = (struct node **)
-      calloc(num_states + 1, sizeof(struct node *));
-  if (goto_domain == NULL)
+  struct node **goto_domain = calloc(num_states + 1, sizeof(struct node *));
+  if (goto_domain == NULL) {
     nospace(__FILE__, __LINE__);
+  }
 
   /* Note that the space allocated for PRODUCES and DIRECT_PRODUCES    */
   /* is automatically initialized to 0 by calloc. Logically, this sets */
@@ -220,13 +218,13 @@ void produce(void) {
   nt_list[accept_image] = NIL;
 
   for ALL_STATES(state_no) {
-    struct goto_header_type go_to = statset[state_no].go_to;
+    const struct goto_header_type go_to = statset[state_no].go_to;
     int nt_root = NIL;
     INIT_NTSET(set);
 
     for (i = 1; i <= go_to.size; i++) {
       symbol = go_to.map[i].symbol;
-      int state = go_to.map[i].action;
+      const int state = go_to.map[i].action;
       if (state < 0)
         rule_no = -state;
       else {
@@ -350,14 +348,13 @@ void produce(void) {
 /*                     COMPUTE_PRODUCES:                          */
 /* This procedure is used to compute the transitive closure of    */
 /* the PRODUCES, LEFT_PRODUCES and RIGHT_MOST_PRODUCES maps.      */
-static void compute_produces(int symbol) {
+static void compute_produces(const int symbol) {
   int new_symbol;
 
-  struct node
-      *q;
+  struct node *q;
 
   stack[++top] = symbol;
-  int indx = top;
+  const int indx = top;
   index_of[symbol] = indx;
 
   for (struct node *p = direct_produces[symbol]; p != NULL; q = p, p = p->next) {
@@ -388,7 +385,7 @@ static void compute_produces(int symbol) {
 /* This procedure prints the name associated with a given symbol. */
 /* The same format that was used in the procedure DISPLAY_INPUT   */
 /* to print aliases is used to print name mappings.               */
-static void print_name_map(int symbol) {
+static void print_name_map(const int symbol) {
   char line[PRINT_LINE_SIZE],
       tok[SYMBOL_SIZE + 1];
 
@@ -703,10 +700,10 @@ static void process_scopes(void) {
 process_scope_states: {
     SET_PTR collection;
 
-    short *element_size;
+    int *element_size;
     int *list;
-    short *start;
-    short *stack;
+    int *start;
+    int *stack;
     short *ordered_symbol;
     short *state_list;
     short *bucket;
@@ -722,9 +719,9 @@ process_scope_states: {
     if (collection == NULL)
       nospace(__FILE__, __LINE__);
 
-    element_size = Allocate_short_array(num_state_sets + 1);
-    start = Allocate_short_array(num_state_sets + 2);
-    stack = Allocate_short_array(num_state_sets + 1);
+    element_size = Allocate_int_array(num_state_sets + 1);
+    start = Allocate_int_array(num_state_sets + 2);
+    stack = Allocate_int_array(num_state_sets + 1);
     ordered_symbol = Allocate_short_array(num_state_sets + 1);
     list = Allocate_int_array(num_state_sets + 1);
     state_list = Allocate_short_array(num_states + 1);
@@ -750,15 +747,14 @@ process_scope_states: {
     }
     scope_state_size = start[num_state_sets + 1] - 1;
 
-    scope = (struct scope_type *)
-        calloc(num_scopes + 1, sizeof(struct scope_type));
+    scope = (struct scope_type *) calloc(num_scopes + 1, sizeof(struct scope_type));
     if (scope == NULL)
       nospace(__FILE__, __LINE__);
-    scope_right_side = Allocate_short_array(scope_rhs_size + 1);
+    scope_right_side = Allocate_int_array(scope_rhs_size + 1);
     scope_state = Allocate_short_array(scope_state_size + 1);
 
     k = 0;
-    for (i = 0; i <= (int) num_states; i++)
+    for (i = 0; i <= num_states; i++)
       state_list[i] = OMEGA;
 
     for (i = 1; i <= num_state_sets; i++) {
@@ -790,7 +786,8 @@ process_scope_states: {
     }
 
     for (symbol = nt_root; symbol != NIL; symbol = nt_list[symbol]) {
-      for (p = states_of[symbol]; p != NULL; q = p, p = p->next);
+      for (p = states_of[symbol]; p != NULL; q = p, p = p->next) {
+      }
       free_nodes(states_of[symbol], q);
     }
 
@@ -925,20 +922,19 @@ process_scope_states: {
 /* 3) it is not the case that whenever A is introduced through       */
 /*    closure, it is introduced by a nonterminal C where C =>rm* A   */
 /*    and C =>rm+ B.                                                 */
-static bool is_scope(int item_no) {
-  int
-      nt;
+static bool is_scope(const int item_no) {
+  int nt;
 
   for (int i = item_no - item_table[item_no].dot; i < item_no; i++) {
-    int symbol = item_table[i].symbol;
+    const int symbol = item_table[i].symbol;
     if (IS_A_TERMINAL(symbol))
       return true;
     if (!null_nt[symbol])
       return true;
   }
 
-  int lhs_symbol = rules[item_table[item_no].rule_number].lhs;
-  int target = item_table[item_no].symbol;
+  const int lhs_symbol = rules[item_table[item_no].rule_number].lhs;
+  const int target = item_table[item_no].symbol;
   if (IS_IN_NTSET(left_produces, target, lhs_symbol - num_terminals))
     return false;
 
@@ -965,7 +961,7 @@ static bool is_scope(int item_no) {
 /*                                                                   */
 /*                     SOURCE ->rm+ TARGET                           */
 /*                                                                   */
-static bool scope_check(int lhs_symbol, int target, int source) {
+static bool scope_check(const int lhs_symbol, const int target, const int source) {
   symbol_seen[source] = true;
 
   if (IS_IN_NTSET(right_produces, target, source - num_terminals) &&
@@ -977,8 +973,8 @@ static bool scope_check(int lhs_symbol, int target, int source) {
     if (item_table[item_no].dot != 0)
       return true;
 
-    int rule_no = item_table[item_no].rule_number;
-    int symbol = rules[rule_no].lhs;
+    const int rule_no = item_table[item_no].rule_number;
+    const int symbol = rules[rule_no].lhs;
     if (!symbol_seen[symbol]) /* not yet processed */
     {
       if (scope_check(lhs_symbol, target, symbol))
@@ -998,12 +994,12 @@ static bool scope_check(int lhs_symbol, int target, int source) {
 /* NOTE that since both prefixes and suffixes are entered in the     */
 /* table, the prefix of a given item, ITEM_NO, is encoded as         */
 /* -ITEM_NO, whereas the suffix of that item is encoded as +ITEM_NO. */
-static int insert_prefix(int item_no) {
+static int insert_prefix(const int item_no) {
   int i;
 
   unsigned long hash_address = 0;
 
-  int rule_no = item_table[item_no].rule_number;
+  const int rule_no = item_table[item_no].rule_number;
   for (i = rules[rule_no].rhs; /* symbols before dot */
        i < rules[rule_no].rhs + item_table[item_no].dot; i++)
     hash_address += rhs_sym[i];
@@ -1029,17 +1025,20 @@ static int insert_prefix(int item_no) {
 /*                      IS_PREFIX_EQUAL:                          */
 /* This boolean function takes two items as arguments and checks  */
 /* whether they have the same prefix.                      */
-static bool is_prefix_equal(int item_no, int item_no2) {
-  if (item_no > 0) /* a suffix */
+static bool is_prefix_equal(const int item_no, const int item_no2) {
+  /* a suffix */
+  if (item_no > 0) {
     return false;
+  }
 
-  int item_no1 = -item_no;
-  if (item_table[item_no1].dot != item_table[item_no2].dot)
+  const int item_no1 = -item_no;
+  if (item_table[item_no1].dot != item_table[item_no2].dot) {
     return false;
+  }
 
   int j = rules[item_table[item_no1].rule_number].rhs;
-  int start = rules[item_table[item_no2].rule_number].rhs;
-  int dot = start + item_table[item_no2].dot - 1;
+  const int start = rules[item_table[item_no2].rule_number].rhs;
+  const int dot = start + item_table[item_no2].dot - 1;
   for (int i = start; i <= dot; i++) /* symbols before dot */
   {
     if (rhs_sym[i] != rhs_sym[j])
@@ -1058,13 +1057,13 @@ static bool is_prefix_equal(int item_no, int item_no2) {
 /* In any case, it returns the index associated with the suffix.     */
 /* When inserting a suffix into the table, all nullable nonterminals */
 /* in the suffix are disregarded.                                    */
-static int insert_suffix(int item_no) {
+static int insert_suffix(const int item_no) {
   int i,
       num_elements = 0;
 
   unsigned long hash_address = 0;
 
-  int rule_no = item_table[item_no].rule_number;
+  const int rule_no = item_table[item_no].rule_number;
   for (i = rules[rule_no].rhs + item_table[item_no].dot;
        i < rules[rule_no + 1].rhs; /* symbols after dot */
        i++) {
@@ -1100,17 +1099,17 @@ static int insert_suffix(int item_no) {
 /*                        IS_SUFFIX_EQUAL:                        */
 /* This boolean function takes two items as arguments and checks  */
 /* whether they have the same suffix.                      */
-static bool is_suffix_equal(int item_no1, int item_no2) {
+static bool is_suffix_equal(const int item_no1, const int item_no2) {
   if (item_no1 < 0) /* a prefix */
     return false;
 
   int rule_no = item_table[item_no1].rule_number;
   int i = rules[rule_no].rhs + item_table[item_no1].dot;
-  int dot1 = rules[rule_no + 1].rhs - 1;
+  const int dot1 = rules[rule_no + 1].rhs - 1;
 
   rule_no = item_table[item_no2].rule_number;
   int j = rules[rule_no].rhs + item_table[item_no2].dot;
-  int dot2 = rules[rule_no + 1].rhs - 1;
+  const int dot2 = rules[rule_no + 1].rhs - 1;
 
   while (i <= dot1 && j <= dot2) /* non-nullable syms before dot */
   {
@@ -1178,14 +1177,13 @@ static void print_scopes(void) {
     print_large_token(line, tok, "", len);
     strcat(line, " ::= ");
     int i = (PRINT_LINE_SIZE / 2) - 1;
-    int offset = MIN(strlen(line) - 1, i);
+    const int offset = MIN(strlen(line) - 1, i);
     len = PRINT_LINE_SIZE - (offset + 4);
-
     /* locate end of list */
-    for (i = scope[k].prefix; scope_right_side[i] != 0; i++);
-
-    for (i = i - 1; i >= scope[k].prefix; i--) /* symbols before dot */
-    {
+    for (i = scope[k].prefix; scope_right_side[i] != 0; i++) {
+    }
+    /* symbols before dot */
+    for (i = i - 1; i >= scope[k].prefix; i--) {
       symbol = scope_right_side[i];
       restore_symbol(tok, RETRIEVE_STRING(symbol));
       if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 4) {
@@ -1223,10 +1221,10 @@ static void print_scopes(void) {
 
 /*                           GET_SHIFT_SYMBOL:                       */
 /* This procedure takes as parameter a nonterminal, LHS_SYMBOL, and  */
-/* determines whether or not there is a terminal symbol t such that  */
+/* determines whether there is a terminal symbol t such that  */
 /* LHS_SYMBOL can rightmost produce a string tX.  If so, t is        */
 /* returned, otherwise EMPTY is returned.                            */
-static int get_shift_symbol(int lhs_symbol) {
+static int get_shift_symbol(const int lhs_symbol) {
   if (!symbol_seen[lhs_symbol]) {
     struct node *p;
     symbol_seen[lhs_symbol] = true;
@@ -1234,8 +1232,8 @@ static int get_shift_symbol(int lhs_symbol) {
     for (bool end_node = (p = clitems[lhs_symbol]) == NULL;
          !end_node; end_node = p == clitems[lhs_symbol]) {
       p = p->next;
-      int item_no = p->value;
-      int rule_no = item_table[item_no].rule_number;
+      const int item_no = p->value;
+      const int rule_no = item_table[item_no].rule_number;
       if (RHS_SIZE(rule_no) > 0) {
         int symbol = rhs_sym[rules[rule_no].rhs];
         if (IS_A_TERMINAL(symbol)) {

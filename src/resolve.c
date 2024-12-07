@@ -164,8 +164,8 @@ static void *allocate_conflict_element(void) {
   if (p != NULL)
     conflict_element_pool = ((struct sr_conflict_element *) p)->next;
   else {
-    p = (void *) talloc(MAX(sizeof(struct sr_conflict_element),
-                            sizeof(struct rr_conflict_element)));
+    p = talloc(MAX(sizeof(struct sr_conflict_element),
+                   sizeof(struct rr_conflict_element)));
     if (p == NULL)
       nospace(__FILE__, __LINE__);
   }
@@ -277,17 +277,13 @@ static struct sources_element allocate_sources(void) {
 /* resets to the empty map.                                                */
 /* See definition of SOURCE_ELEMENT above.                                 */
 static struct sources_element clear_sources(struct sources_element sources) {
-  struct stack_element
-      *tail;
-
+  struct stack_element *tail;
   for (int act = sources.root; act != NIL; act = sources.list[act]) {
-    for (struct stack_element *p = sources.configs[act]; p != NULL; tail = p, p = p->next);
+    for (struct stack_element *p = sources.configs[act]; p != NULL; tail = p, p = p->next) {}
     free_stack_elements(sources.configs[act], tail);
     sources.configs[act] = NULL;
   }
-
   sources.root = NIL;
-
   return sources;
 }
 
@@ -395,7 +391,7 @@ static struct stack_element *union_config_sets(struct stack_element *root1,
 /* to the previous set of configurations associated with the ACTION in the */
 /* SOURCES_ELEMENT map.                                                    */
 static struct sources_element add_configs(struct sources_element sources,
-                                          int action,
+                                          const int action,
                                           struct stack_element *config_root) {
   if (config_root == NULL) /* The new set is empty? Do nothing */
     return sources;
@@ -417,12 +413,10 @@ static struct sources_element add_configs(struct sources_element sources,
 /* This function clears out all external space used by the VISITED set and */
 /* resets VISITED to the empty set.                                        */
 static void clear_visited(void) {
-  struct node
-      *tail;
+  struct node *tail;
 
-  for (int state_no = visited.root;
-       state_no != NIL; state_no = visited.list[state_no]) {
-    for (struct node *p = visited.map[state_no]; p != NULL; tail = p, p = p->next);
+  for (int state_no = visited.root; state_no != NIL; state_no = visited.list[state_no]) {
+    for (struct node *p = visited.map[state_no]; p != NULL; tail = p, p = p->next) {}
     free_nodes(visited.map[state_no], tail);
     visited.map[state_no] = NULL;
   }
@@ -431,9 +425,9 @@ static void clear_visited(void) {
 }
 
 /*                                WAS_VISITED:                             */
-/* This boolean function checks whether or not a given pair [state, symbol]*/
+/* This boolean function checks whether a given pair [state, symbol]*/
 /* was already inserted in the VISITED set.                                */
-static bool was_visited(int state_no, int symbol) {
+static bool was_visited(const int state_no, const int symbol) {
   struct node *p;
 
   for (p = visited.map[state_no]; p != NULL; p = p->next) {
@@ -447,7 +441,7 @@ static bool was_visited(int state_no, int symbol) {
 
 /*                               MARK_VISITED:                             */
 /* This function inserts a given pair [state, symbol] into the VISITED set.*/
-static void mark_visited(int state_no, int symbol) {
+static void mark_visited(const int state_no, const int symbol) {
   if (visited.map[state_no] == NULL) /* 1st time we see state_no? */
   {
     visited.list[state_no] = visited.root;
@@ -464,7 +458,7 @@ static void mark_visited(int state_no, int symbol) {
 /*                             COMPUTE_CYCLIC:                         */
 /* This procedure is a modified instantiation of the digraph algorithm */
 /* to compute the CYCLIC set of states.                                */
-static void compute_cyclic(short state_no) {
+static void compute_cyclic(const short state_no) {
   int act;
 
   stack[++top] = state_no;
@@ -472,9 +466,9 @@ static void compute_cyclic(short state_no) {
   cyclic[state_no] = false;
   index_of[state_no] = indx;
 
-  struct goto_header_type go_to = statset[state_no].go_to;
+  const struct goto_header_type go_to = statset[state_no].go_to;
   for (int i = 1; i <= go_to.size; i++) {
-    int symbol = go_to.map[i].symbol;
+    const int symbol = go_to.map[i].symbol;
     act = go_to.map[i].action;
     if (act > 0 && null_nt[symbol]) {
       /* We have a transition on a nullable nonterminal? */
@@ -510,7 +504,7 @@ static void compute_cyclic(short state_no) {
 /* array, SLR_VISITED, indexable by non-terminals, is used.  For       */
 /* trace-backs to the root item, the boolean array SYMBOL_SEEN, also   */
 /* also indexable by non-terminals, is used.                           */
-static bool trace_root(int lhs_symbol) {
+static bool trace_root(const int lhs_symbol) {
   if (lhs_symbol == accept_image)
     return true;
 
@@ -532,7 +526,7 @@ static bool trace_root(int lhs_symbol) {
 /*                             PRINT_ROOT_PATH:                        */
 /* The procedure below is invoked to retrace a path from the initial   */
 /* item to a given item (ITEM_NO) passed to it as argument.            */
-static void print_root_path(int item_no) {
+static void print_root_path(const int item_no) {
   symbol_seen = Allocate_boolean_array(num_non_terminals);
   symbol_seen -= (num_terminals + 1);
 
@@ -554,9 +548,9 @@ static void print_root_path(int item_no) {
 /* to a state where the conflict symbol can be read. If a path is      */
 /* found, all items along the path are printed and SUCCESS is returned.*/
 /*  Otherwise, FAILURE is returned.                                    */
-static bool lalr_path_retraced(int state_no,
-                               int goto_indx,
-                               int conflict_symbol) {
+static bool lalr_path_retraced(const int state_no,
+                               const int goto_indx,
+                               const int conflict_symbol) {
   int
       item,
       i;
@@ -570,8 +564,8 @@ static bool lalr_path_retraced(int state_no,
 
   bool found = false;
 
-  int state = go_to.map[goto_indx].action;
-  for (struct node *p = (state > 0
+  const int state = go_to.map[goto_indx].action;
+  for (const struct node *p = (state > 0
                            ? statset[state].kernel_items
                            : adequate_item[-state]);
        (p != NULL) && (!found); p = p->next) {
@@ -582,7 +576,7 @@ static bool lalr_path_retraced(int state_no,
         print_root_path(item);
       found = true;
     } else if (IS_IN_SET(first, item_table[item].suffix_index, empty)) {
-      int symbol = rules[item_table[item].rule_number].lhs;
+      const int symbol = rules[item_table[item].rule_number].lhs;
       struct node *w = lpgaccess(state_no, item);
       for (q = w; q != NULL; tail = q, q = q->next) {
         go_to = statset[q->value].go_to;
@@ -594,8 +588,7 @@ static bool lalr_path_retraced(int state_no,
           }
         }
       }
-
-      for (; q != NULL; tail = q, q = q->next);
+      for (; q != NULL; tail = q, q = q->next) {}
       free_nodes(w, tail);
     }
   }
@@ -611,16 +604,16 @@ static bool lalr_path_retraced(int state_no,
 /*   In this procedure, we attempt to retrace an LALR conflict path    */
 /* (there may be more than one) of CONFLICT_SYMBOL in the state        */
 /* automaton that led to ITEM_NO in state STATE_NO.                    */
-static void print_relevant_lalr_items(int state_no,
-                                      int item_no,
-                                      int conflict_symbol) {
+static void print_relevant_lalr_items(const int state_no,
+                                      const int item_no,
+                                      const int conflict_symbol) {
   int
       i;
 
   struct node *p,
       *tail;
 
-  int lhs_symbol = rules[item_table[item_no].rule_number].lhs;
+  const int lhs_symbol = rules[item_table[item_no].rule_number].lhs;
   if (lhs_symbol == accept_image)
     return;
 
@@ -628,13 +621,13 @@ static void print_relevant_lalr_items(int state_no,
 
   struct node *v = lpgaccess(state_no, item_no);
   for (p = v; p != NULL; tail = p, p = p->next) {
-    struct goto_header_type go_to = statset[p->value].go_to;
-    for (i = 1; go_to.map[i].symbol != lhs_symbol; i++);
+    const struct goto_header_type go_to = statset[p->value].go_to;
+    for (i = 1; go_to.map[i].symbol != lhs_symbol; i++) {}
     if (lalr_path_retraced(p->value, i, conflict_symbol))
       break;
   }
 
-  for (; p != NULL; tail = p, p = p->next);
+  for (; p != NULL; tail = p, p = p->next) {}
 
   free_nodes(v, tail);
 
@@ -646,7 +639,7 @@ static void print_relevant_lalr_items(int state_no,
 /* The procedure below is invoked to retrace a path that may have      */
 /* introduced the CONFLICT_SYMBOL in the FOLLOW set of the nonterminal */
 /* that produces ITEM_NO.  Note that such a path must exist.           */
-static bool slr_trace(int lhs_symbol, int conflict_symbol) {
+static bool slr_trace(const int lhs_symbol, const int conflict_symbol) {
   int item;
 
   if (slr_visited[lhs_symbol])
@@ -679,7 +672,7 @@ static bool slr_trace(int lhs_symbol, int conflict_symbol) {
 /*                           PRINT_RELEVANT_SLR_ITEMS:                 */
 /* This procedure is invoked to print an SLR path of items that leads  */
 /* to the conflict symbol.                                             */
-static void print_relevant_slr_items(int item_no, int conflict_symbol) {
+static void print_relevant_slr_items(const int item_no, const int conflict_symbol) {
   slr_visited = Allocate_boolean_array(num_non_terminals);
   slr_visited -= (num_terminals + 1);
 
@@ -735,7 +728,7 @@ static void conflicts_initialization(void) {
 /*   If conflicts are detected, tehy are placed in two lists headed by */
 /* SR_CONFLICT_ROOT and RR_CONFLICT_ROOT.  We scan these lists, and    */
 /* report the conflicts.                                               */
-static void process_conflicts(int state_no) {
+static void process_conflicts(const int state_no) {
   int symbol,
       rule_no;
 
@@ -781,7 +774,7 @@ static void process_conflicts(int state_no) {
 
     for (struct rr_conflict_element *p = rr_conflict_root; p != NULL; tail = p, p = p->next) {
       symbol = p->symbol;
-      int n = item_table[p->item1].rule_number;
+      const int n = item_table[p->item1].rule_number;
       rule_no = item_table[p->item2].rule_number;
 
       restore_symbol(temp, RETRIEVE_STRING(symbol));
@@ -817,7 +810,7 @@ static void process_conflicts(int state_no) {
 
 /*                           ADD_CONFLICT_SYMBOL:                      */
 /* Add SYMBOL to the set of symbols CONFLICT_SYMBOLS[STATE_NO].        */
-static void add_conflict_symbol(int state_no, int symbol) {
+static void add_conflict_symbol(const int state_no, const int symbol) {
   struct node *p = Allocate_node();
   p->value = symbol;
   if (conflict_symbols[state_no] == NULL)
@@ -839,7 +832,7 @@ static void add_conflict_symbol(int state_no, int symbol) {
 /* the lookahead symbol. It then returns the new set of configurations */
 /* found on which a transition on LA_SYMBOL is possible.               */
 static struct stack_element *follow_sources(struct stack_element *stack,
-                                            int symbol, int la_symbol) {
+                                            int symbol, const int la_symbol) {
   struct shift_header_type sh;
   struct goto_header_type go_to;
 
@@ -855,7 +848,7 @@ static struct stack_element *follow_sources(struct stack_element *stack,
   /* If the starting configuration consists of a single state and    */
   /* the initial [state, symbol] pair has already been visited,      */
   /* return the null set. Otherwise, mark the pair visited and ...   */
-  int state_no = stack->state_number;
+  const int state_no = stack->state_number;
   if (stack->size == 1) {
     if (was_visited(state_no, symbol) ||
         (state_no == 1 && symbol == accept_image))
@@ -871,7 +864,7 @@ static struct stack_element *follow_sources(struct stack_element *stack,
   /* search and return the NULL set.                                 */
   if (IS_A_NON_TERMINAL(symbol)) {
     go_to = statset[state_no].go_to;
-    for (i = 1; go_to.map[i].symbol != symbol; i++);
+    for (i = 1; go_to.map[i].symbol != symbol; i++) {}
     if (la_index[go_to.map[i].laptr] == OMEGA) {
       int stack_top = 0;
       la_traverse(state_no, i, &stack_top);
@@ -883,7 +876,7 @@ static struct stack_element *follow_sources(struct stack_element *stack,
     act = go_to.map[i].action;
   } else {
     sh = shift[statset[state_no].shift_number];
-    for (i = 1; sh.map[i].symbol != symbol; i++);
+    for (i = 1; sh.map[i].symbol != symbol; i++) {}
     act = sh.map[i].action;
   }
 
@@ -941,7 +934,7 @@ static struct stack_element *follow_sources(struct stack_element *stack,
 
   /* We now iterate over the kernel set of items associated with the */
   /* ACTion defined on SYMBOL...                                     */
-  for (struct node *item_ptr = (act > 0
+  for (const struct node *item_ptr = (act > 0
                                   ? statset[act].kernel_items
                                   : adequate_item[-act]);
        item_ptr != NULL; item_ptr = item_ptr->next) {
@@ -951,8 +944,8 @@ static struct stack_element *follow_sources(struct stack_element *stack,
     /* is neither the starting symbol nor a symbol that can        */
     /* right-most produce itself...                                */
     if (item_table[item_no].symbol == empty) {
-      int rule_no = item_table[item_no].rule_number;
-      int lhs_symbol = rules[rule_no].lhs;
+      const int rule_no = item_table[item_no].rule_number;
+      const int lhs_symbol = rules[rule_no].lhs;
       if (lhs_symbol != accept_image && !rmpself[lhs_symbol]) {
         /* If the length of the prefix of the item preceeding  */
         /* the dot is shorter that the length of the stack, we */
@@ -974,7 +967,7 @@ static struct stack_element *follow_sources(struct stack_element *stack,
           /* Compute the item in the root state of the stack,*/
           /* and find the root state...                      */
           item_no -= stack->size;
-          for (q = stack; q->size != 1; q = q->previous);
+          for (q = stack; q->size != 1; q = q->previous) {}
 
           /* We are now back in the main automaton, find all */
           /* sources where the item was introduced through   */
@@ -1020,7 +1013,7 @@ static struct stack_element *follow_sources(struct stack_element *stack,
 /* NEXT_LA first executes the transition on SYMBOL and thereafter, all */
 /* terminal symbols that can be read are added to LOOKAHEAD.           */
 static void next_la(struct stack_element *stack,
-                    int symbol, SET_PTR look_ahead) {
+                    const int symbol, const SET_PTR look_ahead) {
   struct goto_header_type go_to;
 
   struct stack_element *q;
@@ -1036,15 +1029,15 @@ static void next_la(struct stack_element *stack,
     return;
   }
 
-  int state_no = stack->state_number;
+  const int state_no = stack->state_number;
 
   /* Find the transition defined on the symbol...                    */
   if (IS_A_NON_TERMINAL(symbol)) {
     go_to = statset[state_no].go_to;
-    for (i = 1; go_to.map[i].symbol != symbol; i++);
+    for (i = 1; go_to.map[i].symbol != symbol; i++) {}
     act = go_to.map[i].action;
   } else {
-    struct shift_header_type sh = shift[statset[state_no].shift_number];
+    const struct shift_header_type sh = shift[statset[state_no].shift_number];
     for (i = 1; sh.map[i].symbol != symbol; i++) {
     }
     act = sh.map[i].action;
@@ -1061,7 +1054,7 @@ static void next_la(struct stack_element *stack,
   /* ACTion defined on SYMBOL...                                     */
   /* Recall that the READ_SET of ACT is but the union of the FIRST   */
   /* map defined on the suffixes of the items in the kernel of ACT.  */
-  for (struct node *item_ptr = (act > 0
+  for (const struct node *item_ptr = (act > 0
                                   ? statset[act].kernel_items
                                   : adequate_item[-act]);
        item_ptr != NULL; item_ptr = item_ptr->next) {
@@ -1071,8 +1064,8 @@ static void next_la(struct stack_element *stack,
     /* is neither the starting symbol nor a symbol that can        */
     /* right-most produce itself...                                */
     if (IS_IN_SET(first, item_table[item_no - 1].suffix_index, empty)) {
-      int rule_no = item_table[item_no].rule_number;
-      int lhs_symbol = rules[rule_no].lhs;
+      const int rule_no = item_table[item_no].rule_number;
+      const int lhs_symbol = rules[rule_no].lhs;
       if (lhs_symbol != accept_image && !rmpself[lhs_symbol]) {
         /* If the length of the prefix of the item preceeding  */
         /* the dot is shorter that the length of the stack, we */
@@ -1092,7 +1085,7 @@ static void next_la(struct stack_element *stack,
           /* Compute the item in the root state of the stack,*/
           /* and find the root state...                      */
           item_no -= stack->size;
-          for (q = stack; q->size != 1; q = q->previous);
+          for (q = stack; q->size != 1; q = q->previous) {}
 
           /* We are now back in the main automaton, find all */
           /* sources where the item was introduced through   */
@@ -1102,7 +1095,7 @@ static void next_la(struct stack_element *stack,
           struct node *v = lpgaccess(q->state_number, item_no);
           for (struct node *p = v; p != NULL; tail = p, p = p->next) {
             go_to = statset[p->value].go_to;
-            for (i = 1; go_to.map[i].symbol != lhs_symbol; i++);
+            for (i = 1; go_to.map[i].symbol != lhs_symbol; i++) {}
 
             /* If look-ahead after left hand side is not   */
             /* yet computed,call LA_TRAVERSE to compute it.*/
@@ -1520,7 +1513,7 @@ Build_reduce_map: {
 clean_up_and_return:
   free_sources(new_sources);
   for (symbol = symbol_root; symbol != NIL; symbol = symbol_list[symbol]) {
-    for (p = action[symbol]; p != NULL; tail = p, p = p->next);
+    for (p = action[symbol]; p != NULL; tail = p, p = p->next) {}
     if (action[symbol] != NULL)
       free_nodes(action[symbol], tail);
   }
@@ -1541,7 +1534,7 @@ clean_up_and_return:
 /* produce themselves. It takes as argumen the map PRODUCES which      */
 /* identifies for each nonterminal the set of nonterminals that it can */
 /* right-most produce.                                                 */
-void init_rmpself(SET_PTR produces) {
+void init_rmpself(const SET_PTR produces) {
   int nt;
 
   rmpself = Allocate_boolean_array(num_non_terminals);
@@ -1645,10 +1638,10 @@ void free_conflict_space(void) {
 /*                           RESOLVE_CONFLICTS:                        */
 /* If conflicts were detected and LALR(k) processing was requested,    */
 /* where k > 1, then we attempt to resolve the conflicts by computing  */
-/* more lookaheads.  Shift-Reduce conflicts are processed first,       */
+/* more lookaheads. Shift-Reduce conflicts are processed first,        */
 /* followed by Reduce-Reduce conflicts.                                */
-void resolve_conflicts(int state_no, struct node **action,
-                       const short *symbol_list, int symbol_root) {
+void resolve_conflicts(const int state_no, struct node **action,
+                       const short *symbol_list, const int symbol_root) {
   struct node *p,
       *tail;
 
@@ -1668,7 +1661,7 @@ void resolve_conflicts(int state_no, struct node **action,
   /* actions lie in the range [-NUM_RULES..-1].                      */
   sr_conflict_root = NULL;
 
-  struct shift_header_type sh = shift[statset[state_no].shift_number];
+  const struct shift_header_type sh = shift[statset[state_no].shift_number];
   for (int i = 1; i <= sh.size; i++) {
     symbol = sh.map[i].symbol;
 
@@ -1821,16 +1814,12 @@ void resolve_conflicts(int state_no, struct node **action,
       /* reported (if the CONFLICT option is on) and count them. */
       if (action[symbol] != NULL) {
         act = action[symbol]->value;
-
-        for (p = action[symbol]->next;
-             p != NULL; tail = p, p = p->next) {
+        for (p = action[symbol]->next; p != NULL; tail = p, p = p->next) {
           if (conflicts_bit) {
-            struct rr_conflict_element *q = (struct rr_conflict_element *)
-                allocate_conflict_element();
+            struct rr_conflict_element *q = allocate_conflict_element();
             q->symbol = symbol;
             q->item1 = act;
             q->item2 = p->value;
-
             q->next = rr_conflict_root;
             rr_conflict_root = q;
           }
@@ -1889,8 +1878,7 @@ void create_lastats(void) {
 
   /* Allocate temporary space used to construct final lookahead      */
   /* states.                                                         */
-  struct state_element **new_shift_actions = (struct state_element **)
-      calloc(num_states + 1, sizeof(struct state_element *));
+  struct state_element **new_shift_actions = calloc(num_states + 1, sizeof(struct state_element *));
   if (new_shift_actions == NULL)
     nospace(__FILE__, __LINE__);
 
@@ -1906,7 +1894,7 @@ void create_lastats(void) {
   for ALL_TERMINALS(symbol)
     shift_action[symbol] = OMEGA;
 
-  for (i = 0; i <= (int) max_la_state; i++)
+  for (i = 0; i <= max_la_state; i++)
     shift_count[i] = 0;
 
   for ALL_STATES(state_no)
@@ -1926,7 +1914,7 @@ void create_lastats(void) {
       shift[p->shift_number] = p->shift;
 
     state_no = p->in_state;
-    if (state_no <= (int) num_states) {
+    if (state_no <= num_states) {
       if (new_shift_actions[state_no] == NULL) {
         state_list[state_no] = state_root;
         state_root = state_no;
@@ -1942,7 +1930,7 @@ void create_lastats(void) {
        state_no != NIL; state_no = state_list[state_no]) {
     /* Copy the shift map associated with STATE_NO into the direct */
     /* access map SHIFT_ACTION.                                    */
-    int shift_no = statset[state_no].shift_number;
+    const int shift_no = statset[state_no].shift_number;
     struct shift_header_type sh = shift[shift_no];
     int shift_root = NIL;
     for (i = 1; i <= sh.size; i++) {

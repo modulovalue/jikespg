@@ -5,7 +5,6 @@
 
 static void null_action(void)
 {
-    return;
 }
 
 static void add_macro_definition(const char *name, const struct terminal_type *term)
@@ -28,8 +27,6 @@ static void add_macro_definition(const char *name, const struct terminal_type *t
     defelmt[num_defs].end_column   = term->end_column;
     strcpy(defelmt[num_defs].name, name);
     num_defs++;
-
-    return;
 }
 
 static void add_block_definition(const struct terminal_type *term)
@@ -52,8 +49,6 @@ static void add_block_definition(const struct terminal_type *term)
     actelmt[num_acts].end_column   = term->end_column;
     actelmt[num_acts].header_block = term->kind == HBLOCK_TK;
     num_acts++;
-
-    return;
 }
 
 /* bad_symbol ::= EQUIVALENCE */
@@ -88,8 +83,6 @@ static void act13(void)
 {
     if (action_bit)
         add_macro_definition(SYM1.name, &(SYM2));
-
-    return;
 }
 
 /* macro_list ::= macro_list macro_name_symbol macro_block */
@@ -98,8 +91,6 @@ static void act14(void)
 {
     if (action_bit)
         add_macro_definition(SYM2.name, &(SYM3));
-
-    return;
 }
 
 /* macro_name_symbol ::= SYMBOL */
@@ -111,8 +102,6 @@ static void act16(void)
             "escape character. Line %ld, column %d",
             SYM1.name, SYM1.start_line, SYM1.start_column);
     PRNTWNG(msg_line);
-
-     return;
 }
 
 /* macro_name_symbol ::= OR */
@@ -171,8 +160,6 @@ static void definition_expected(void)
 static void process_terminal(void)
 {
     assign_symbol_no(SYM1.name, OMEGA);
-
-    return;
 }
 
 /* terminal_symbol ::= DEFINE_KEY */
@@ -373,8 +360,6 @@ static void act39(void)
             }
             break;
     }
-
-    return;
 }
 
 /* bad_alias_rhs ::= DEFINE_KEY */
@@ -447,8 +432,6 @@ static void act63(void)
     num_rules++;
     num_items++;
     SHORT_CHECK(num_items);
-
-    return;
 }
 
 /* start_symbol ::= OR */
@@ -505,8 +488,6 @@ static void act73(void)
         num_items = 0;                 /* 0 items */
     }
     build_symno();
-
-    return;
 }
 
 /* rules_block ::= RULES_KEY rule_list */
@@ -514,8 +495,6 @@ static void act73(void)
 static void act74(void)
 {
     build_symno();
-
-    return;
 }
 
 /* rule_list ::= {action_block} SYMBOL produces */
@@ -553,8 +532,6 @@ static void act77(void)
     rulehdr[num_rules].sp = ((SYM3.kind == ARROW_TK) ? true : false);
     rulehdr[num_rules].lhs = symbol_image(SYM2.name);
     rulehdr[num_rules].rhs_root = NULL;
-
-    return;
 }
 
 /* rule_list ::= rule_list OR */
@@ -575,8 +552,6 @@ static void act78(void)
     rulehdr[num_rules].sp = rulehdr[num_rules - 1].sp;
     rulehdr[num_rules].lhs = OMEGA;
     rulehdr[num_rules].rhs_root = NULL;
-
-    return;
 }
 
 /* rule_list ::= rule_list SYMBOL produces */
@@ -598,8 +573,6 @@ static void act79(void)
     assign_symbol_no(SYM2.name, OMEGA);
     rulehdr[num_rules].lhs = symbol_image(SYM2.name);
     rulehdr[num_rules].rhs_root = NULL;
-
-    return;
 }
 
 /* rule_list ::= rule_list ERROR_SYMBOL */
@@ -630,8 +603,6 @@ static void act82(void)
          rulehdr[num_rules].rhs_root -> next = q;
     }
     rulehdr[num_rules].rhs_root = q;
-
-    return;
 }
 
 /* rule_list ::= rule_list SYMBOL */
@@ -664,8 +635,6 @@ static void act83(void)
         }
         rulehdr[num_rules].rhs_root = q;
     }
-
-    return;
 }
 
 /* rule_list ::= OR */
@@ -712,8 +681,6 @@ static void act92(void)
 {
     if (action_bit)
         add_block_definition(&(SYM1));
-
-    return;
 }
 
 /* action_block ::= HBLOCK */
@@ -722,8 +689,6 @@ static void act93(void)
 {
     if (action_bit)
         add_block_definition(&(SYM1));
-
-    return;
 }
 
 /* keyword ::= DEFINE_KEY */
@@ -792,8 +757,6 @@ static void act100(void)
         }
          symno[symbol].name_index = name_map(SYM3.name);
      }
-
-     return;
 }
 
 /* bad_name ::= DEFINE_KEY */
@@ -852,15 +815,12 @@ static void process_TERMINALS_section(void)
 
     assign_symbol_no(kaccept, OMEGA);
     accept_image = symbol_image(kaccept);
-
-    return;
 }
 
 /* [alias_block] ::= */
 #line 1168 "jikespg.g"
 static void process_ALIAS_section(void)
 {
-
     register int k = 0;
     if (eoft_image <= num_terminals)
         k++;
@@ -900,8 +860,6 @@ static void process_ALIAS_section(void)
         eolt_image = eoft_image;
     if (error_image == DEFAULT_SYMBOL)
         alias_map(kerror, DEFAULT_SYMBOL);
-
-    return;
 }
 
 /* {terminal_symbol} ::= */
@@ -910,6 +868,4 @@ static void act132(void)
 {
     assign_symbol_no(kempty, OMEGA);
     empty = symbol_image(kempty);
-
-    return;
 }

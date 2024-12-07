@@ -68,7 +68,6 @@ $Rules
 
 static void null_action(void)
 {
-    return;
 }
 
 static void add_macro_definition(const char *name, const struct terminal_type *term)
@@ -91,8 +90,6 @@ static void add_macro_definition(const char *name, const struct terminal_type *t
     defelmt[num_defs].end_column   = term->end_column;
     strcpy(defelmt[num_defs].name, name);
     num_defs++;
-
-    return;
 }
 
 static void add_block_definition(const struct terminal_type *term)
@@ -115,8 +112,6 @@ static void add_block_definition(const struct terminal_type *term)
     actelmt[num_acts].end_column   = term->end_column;
     actelmt[num_acts].header_block = term->kind == HBLOCK_TK;
     num_acts++;
-
-    return;
 }
 ./
     LPG_INPUT ::= [define_block]
@@ -183,8 +178,6 @@ static void act$rule_number(void)
 {
     if (action_bit)
         add_macro_definition(SYM1.name, &(SYM2));
-
-    return;
 }
 ./
                  | macro_list macro_name_symbol macro_block
@@ -194,8 +187,6 @@ static void act$rule_number(void)
 {
     if (action_bit)
         add_macro_definition(SYM2.name, &(SYM3));
-
-    return;
 }
 ./
 
@@ -211,8 +202,6 @@ static void act$rule_number(void)
             "escape character. Line %ld, column %d",
             SYM1.name, SYM1.start_line, SYM1.start_column);
     PRNTWNG(msg_line);
-
-     return;
 }
 ./
                         | '|'             -- No Good !!!
@@ -302,8 +291,6 @@ static void definition_expected(void)
 static void process_terminal(void)
 {
     assign_symbol_no(SYM1.name, OMEGA);
-
-    return;
 }
 ./
                       | '|'
@@ -517,8 +504,6 @@ static void act$rule_number(void)
             }
             break;
     }
-
-    return;
 }
 ./
                        | bad_alias_lhs
@@ -642,8 +627,6 @@ static void act$rule_number(void)
     num_rules++;
     num_items++;
     SHORT_CHECK(num_items);
-
-    return;
 }
 ./
                   | '|'            -- No Good !!!
@@ -717,8 +700,6 @@ static void act$rule_number(void)
         num_items = 0;                 /* 0 items */
     }
     build_symno();
-
-    return;
 }
 ./
                   | RULES_KEY rule_list
@@ -727,8 +708,6 @@ static void act$rule_number(void)
 static void act$rule_number(void)
 {
     build_symno();
-
-    return;
 }
 ./
 
@@ -773,8 +752,6 @@ static void act$rule_number(void)
     rulehdr[num_rules].sp = ((SYM3.kind == ARROW_TK) ? true : false);
     rulehdr[num_rules].lhs = symbol_image(SYM2.name);
     rulehdr[num_rules].rhs_root = NULL;
-
-    return;
 }
 ./
 
@@ -797,8 +774,6 @@ static void act$rule_number(void)
     rulehdr[num_rules].sp = rulehdr[num_rules - 1].sp;
     rulehdr[num_rules].lhs = OMEGA;
     rulehdr[num_rules].rhs_root = NULL;
-
-    return;
 }
 ./
                 | rule_list SYMBOL produces
@@ -821,8 +796,6 @@ static void act$rule_number(void)
     assign_symbol_no(SYM2.name, OMEGA);
     rulehdr[num_rules].lhs = symbol_image(SYM2.name);
     rulehdr[num_rules].rhs_root = NULL;
-
-    return;
 }
 ./
 
@@ -859,8 +832,6 @@ static void act$rule_number(void)
          rulehdr[num_rules].rhs_root -> next = q;
     }
     rulehdr[num_rules].rhs_root = q;
-
-    return;
 }
 ./
                 | rule_list SYMBOL
@@ -894,8 +865,6 @@ static void act$rule_number(void)
         }
         rulehdr[num_rules].rhs_root = q;
     }
-
-    return;
 }
 ./
                 | '|'                    -- can't be first SYMBOL
@@ -957,8 +926,6 @@ static void act$rule_number(void)
 {
     if (action_bit)
         add_block_definition(&(SYM1));
-
-    return;
 }
 ./
                    | HBLOCK
@@ -968,8 +935,6 @@ static void act$rule_number(void)
 {
     if (action_bit)
         add_block_definition(&(SYM1));
-
-    return;
 }
 ./
 
@@ -1053,8 +1018,6 @@ static void act$rule_number(void)
         }
          symno[symbol].name_index = name_map(SYM3.name);
      }
-
-     return;
 }
 ./
                        | bad_name produces name
@@ -1155,8 +1118,6 @@ static void process_TERMINALS_section(void)
 
     assign_symbol_no(kaccept, OMEGA);
     accept_image = symbol_image(kaccept);
-
-    return;
 }
 ./
                     | terminals_block
@@ -1207,8 +1168,6 @@ static void process_ALIAS_section(void)
         eolt_image = eoft_image;
     if (error_image == DEFAULT_SYMBOL)
         alias_map(kerror, DEFAULT_SYMBOL);
-
-    return;
 }
 ./
                 | alias_block
@@ -1243,8 +1202,6 @@ static void act$rule_number(void)
 {
     assign_symbol_no(kempty, OMEGA);
     empty = symbol_image(kempty);
-
-    return;
 }
 ./
                     | {terminal_symbol} terminal_symbol

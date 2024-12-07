@@ -40,7 +40,7 @@ FILE *sysdef;
 
 /*  The variables below are global counters.          */
 long num_items = 0;
-long num_states = 0;
+int num_states = 0;
 int max_la_state;
 
 int num_symbols = 0;
@@ -175,7 +175,7 @@ struct node **in_stat = NULL;
 
 struct scope_type *scope = NULL;
 
-short *scope_right_side = NULL;
+int *scope_right_side = NULL;
 short *scope_state = NULL;
 
 char *output_ptr = NULL;

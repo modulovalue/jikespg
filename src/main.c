@@ -33,7 +33,7 @@ void process_input(void);
 /*                                                                   */
 
 /*                          MAIN PROGRAM  MAIN:                             */
-int main(int argc, char *argv[]) {
+int main(const int argc, char *argv[]) {
   int i;
 
   char *dot,
@@ -167,13 +167,11 @@ int main(int argc, char *argv[]) {
     PRNT(msg_line);
   }
 
-  sprintf(msg_line, "Number of States: %ld", num_states);
+  sprintf(msg_line, "Number of States: %d", num_states);
   PRNT(msg_line);
 
   if (max_la_state > num_states) {
-    sprintf(msg_line,
-            "Number of look-ahead states: %ld",
-            max_la_state - num_states);
+    sprintf(msg_line, "Number of look-ahead states: %d", max_la_state - num_states);
     PRNT(msg_line);
   }
 
@@ -184,24 +182,20 @@ int main(int argc, char *argv[]) {
   PRNT(msg_line);
 
   if (read_reduce_bit) {
-    sprintf(msg_line,
-            "Number of Shift/Reduce actions: %ld", num_shift_reduces);
+    sprintf(msg_line, "Number of Shift/Reduce actions: %ld", num_shift_reduces);
     PRNT(msg_line);
 
-    sprintf(msg_line,
-            "Number of Goto/Reduce actions: %ld", num_goto_reduces);
+    sprintf(msg_line, "Number of Goto/Reduce actions: %ld", num_goto_reduces);
     PRNT(msg_line);
   }
 
   sprintf(msg_line, "Number of Reduce actions: %ld", num_reductions);
   PRNT(msg_line);
 
-  sprintf(msg_line,
-          "Number of Shift-Reduce conflicts: %ld", num_sr_conflicts);
+  sprintf(msg_line, "Number of Shift-Reduce conflicts: %ld", num_sr_conflicts);
   PRNT(msg_line);
 
-  sprintf(msg_line,
-          "Number of Reduce-Reduce conflicts: %ld", num_rr_conflicts);
+  sprintf(msg_line, "Number of Reduce-Reduce conflicts: %ld", num_rr_conflicts);
   PRNT(msg_line);
 
   /* If the removal of single productions is requested, do  */
@@ -217,8 +211,7 @@ int main(int argc, char *argv[]) {
   /* If the tables are requested, we process them.          */
   if (table_opt != 0) {
     if (goto_default_bit && nt_check_bit) {
-      PRNTERR("The options GOTO_DEFAULT and NT_CHECK are "
-        "incompatible.  Tables not generated");
+      PRNTERR("The options GOTO_DEFAULT and NT_CHECK are incompatible.  Tables not generated");
     } else {
       int state_no;
 

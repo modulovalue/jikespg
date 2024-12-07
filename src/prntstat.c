@@ -38,7 +38,7 @@ void ptstats(void) {
       max_size = MAX(max_size, strlen(temp));
     }
 
-    struct goto_header_type go_to = statset[state_no].go_to;
+    const struct goto_header_type go_to = statset[state_no].go_to;
     for (i = 1; i <= go_to.size; i++) {
       symbol = go_to.map[i].symbol;
       restore_symbol(temp, RETRIEVE_STRING(symbol));

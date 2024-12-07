@@ -9,7 +9,7 @@ static char hostfile[] = __FILE__;
 static const char digits[] = "0123456789";
 
 /*                           PRNT_SHORTS:                                 */
-void prnt_shorts(const char *title, int init, int bound, int perline, const short *array) {
+void prnt_shorts(const char *title, const int init, const int bound, const int perline, const int *array) {
   mystrcpy(title);
 
   padline();
@@ -39,7 +39,7 @@ void prnt_shorts(const char *title, int init, int bound, int perline, const shor
 
 
 /*                              PRNT_INTS:                                */
-void prnt_ints(const char *title, int init, int bound, int perline, const int *array) {
+void prnt_ints(const char *title, const int init, const int bound, const int perline, const int *array) {
   mystrcpy(title);
 
   padline();
@@ -88,7 +88,7 @@ void padline(void) {
 /* most 11 digits which is converted into a character string and placed in  */
 /* the iobuffer.  Leading zeros are eliminated and if the number is        */
 /* negative, a leading "-" is added.                                       */
-void itoc(int num) {
+void itoc(const int num) {
   char tmp[12];
 
   register int val = ABS(num);
@@ -116,7 +116,7 @@ void itoc(int num) {
 /* string and placed in the iobuffer.                                      */
 /* Leading zeros are replaced by blanks and if the number is negative,  a  */
 /* leading "-" is added.                                                   */
-void field(int num, int len) {
+void field(const int num, const int len) {
   register int val = ABS(num);
   register char *p = output_ptr + len;
   do {
@@ -144,9 +144,8 @@ void field(int num, int len) {
 /* based on the values of the elements of COUNT. Knowing that the maximum  */
 /* value of the elements of count cannot exceed MAX and cannot be lower    */
 /* than zero, we can use a bucket sort technique.                          */
-void sortdes(int array[], int count[], int low, int high, int max) {
+void sortdes(int array[], int count[], const long low, const long high, const long max) {
   register int element;
-  register int i;
   register int k;
 
   /* BUCKET is used to hold the roots of lists that contain the    */
@@ -154,8 +153,9 @@ void sortdes(int array[], int count[], int low, int high, int max) {
   short *bucket = Allocate_short_array(max + 1);
   short *list = Allocate_short_array(high - low + 1);
 
-  for (i = 0; i <= max; i++)
+  for (register int i = 0; i <= max; i++) {
     bucket[i] = NIL;
+  }
 
   /* We now partition the elements to be sorted and place them in their*/
   /* respective buckets.  We iterate backward over ARRAY and COUNT to  */
@@ -164,7 +164,7 @@ void sortdes(int array[], int count[], int low, int high, int max) {
   /*                                                                   */
   /*   NOTE that it is known that the values of the elements of ARRAY  */
   /* also lie in the range LOW..HIGH.                                  */
-  for (i = high; i >= low; i--) {
+  for (register int i = high; i >= low; i--) {
     k = count[i];
     element = array[i];
     list[element - low] = bucket[k];
@@ -175,9 +175,8 @@ void sortdes(int array[], int count[], int low, int high, int max) {
   /* in sorted order.  The iteration is done backward because we want  */
   /* the arrays sorted in descending order.                            */
   k = low;
-  for (i = max; i >= 0; i--) {
-    for (element = bucket[i];
-         element != NIL; element = list[element - low], k++) {
+  for (register int i = max; i >= 0; i--) {
+    for (element = bucket[i]; element != NIL; element = list[element - low], k++) {
       array[k] = element;
       count[k] = i;
     }
@@ -192,16 +191,13 @@ void sortdes(int array[], int count[], int low, int high, int max) {
 /* enough.  A new table is allocated, the information from the old table   */
 /* is copied, and the old space is released.                               */
 void reallocate(void) {
-  register int
-      i;
-
   if (table_size == MAX_TABLE_SIZE) {
     sprintf(msg_line, "Table has exceeded maximum limit of %ld", MAX_TABLE_SIZE);
     PRNTERR(msg_line);
     exit(12);
   }
 
-  register int old_size = table_size;
+  const register int old_size = table_size;
   table_size = MIN(table_size + increment_size, MAX_TABLE_SIZE);
 
   if (verbose_bit) {
@@ -220,8 +216,8 @@ void reallocate(void) {
   int *n = Allocate_int_array(table_size + 1);
   int *p = Allocate_int_array(table_size + 1);
 
-  for (i = 1; i <= old_size; i++) /* Copy old information */
-  {
+  /* Copy old information */
+  for (register int i = 1; i <= old_size; i++) {
     n[i] = next[i];
     p[i] = previous[i];
   }
@@ -241,7 +237,7 @@ void reallocate(void) {
   }
 
   next[old_size + 1] = old_size + 2;
-  for (i = old_size + 2; i < (int) table_size; i++) {
+  for (register int i = old_size + 2; i < (int) table_size; i++) {
     next[i] = i + 1;
     previous[i] = i - 1;
   }
@@ -264,7 +260,7 @@ void reallocate(void) {
 /*      question: TRANSITION_STATES                                          */
 /*                                                                           */
 void process_error_maps(void) {
-  short *state_start,
+  int *state_start,
       *state_stack,
       *temp,
       *original = NULL,
@@ -298,11 +294,11 @@ void process_error_maps(void) {
                            ? num_symbols
                            : num_non_terminals);
 
-  symbol_root = Allocate_short_array(num_symbols + 1);
-  symbol_count = Allocate_short_array(num_symbols + 1);
-  state_start = Allocate_short_array(num_states + 2);
-  state_stack = Allocate_short_array(num_states + 1);
-  term_list = Allocate_short_array(num_symbols + 1);
+  symbol_root = Allocate_int_array(num_symbols + 1);
+  symbol_count = Allocate_int_array(num_symbols + 1);
+  state_start = Allocate_int_array(num_states + 2);
+  state_stack = Allocate_int_array(num_states + 1);
+  term_list = Allocate_int_array(num_symbols + 1);
 
   PRNT("\nError maps storage:");
 
@@ -324,14 +320,16 @@ void process_error_maps(void) {
   }
 
   for ALL_NON_TERMINALS(lhs_symbol) {
-    if (table_opt == OPTIMIZE_TIME)
+    if (table_opt == OPTIMIZE_TIME) {
       symbol = symbol_map[lhs_symbol];
-    else
+    } else {
       symbol = symbol_map[lhs_symbol] - num_terminals;
+    }
     symbol_root[symbol] = lhs_symbol;
     for ALL_TERMINALS(i) {
-      if (IS_IN_SET(follow, lhs_symbol + 1, i + 1))
+      if (IS_IN_SET(follow, lhs_symbol + 1, i + 1)) {
         symbol_count[symbol]++;
+      }
     }
   }
 
@@ -421,7 +419,7 @@ void process_error_maps(void) {
   /* We now write a vector parallel to SORTED_STATE that gives us the */
   /* original number associated with the state: ORIGINAL_STATE.       */
   k = 0;
-  for (i = 1; i <= (int) num_states; i++) {
+  for (i = 1; i <= num_states; i++) {
     field(state_list[i], 6);
     k++;
     if (k == 12) {
@@ -445,10 +443,10 @@ void process_error_maps(void) {
   /* We now construct a bit map for the set of terminal symbols that  */
   /* may appear in each state. Then, we invoke PARTSET to apply the   */
   /* Partition Heuristic and print it.                                */
-  as_size = Allocate_short_array(num_states + 1);
+  as_size = Allocate_int_array(num_states + 1);
 
   if (table_opt == OPTIMIZE_TIME) {
-    original = Allocate_short_array(num_symbols + 1);
+    original = Allocate_int_array(num_symbols + 1);
 
     /* In a compressed TIME table, the terminal and non-terminal */
     /* symbols are mixed together when they are remapped.        */
@@ -514,7 +512,7 @@ void process_error_maps(void) {
   BUFFER_CHECK(systab);
 
   /* Compute and write out the range of the ACTION_SYMBOLS map. */
-  action_symbols_range = Allocate_short_array(offset);
+  action_symbols_range = Allocate_int_array(offset);
 
   compute_action_symbols_range(state_start, state_stack,
                                state_list, action_symbols_range);
@@ -593,7 +591,7 @@ void process_error_maps(void) {
   BUFFER_CHECK(systab);
 
   /* Compute and write out the range of the NACTION_SYMBOLS map.*/
-  naction_symbols_range = Allocate_short_array(offset);
+  naction_symbols_range = Allocate_int_array(offset);
 
   compute_naction_symbols_range(state_start, state_stack,
                                 state_list, naction_symbols_range);
@@ -646,7 +644,7 @@ void process_error_maps(void) {
     symbol_count[symbol] = 0;
   }
 
-  for (state_no = 2; state_no <= (int) num_states; state_no++) {
+  for (state_no = 2; state_no <= num_states; state_no++) {
     struct node *q;
 
     q = statset[state_no].kernel_items;
@@ -795,20 +793,20 @@ void process_error_maps(void) {
       tok[0] = escape; /* replace initial marker with escape. */
     name_len = strlen(tok);
     num_bytes += name_len;
-    if (max_len < name_len)
+    if (max_len < name_len) {
       max_len = name_len;
+    }
 
     field(name_len, 4);
 
-    if (name_len <= 68)
+    if (name_len <= 68) {
       strcpy(output_ptr, tok);
-    else {
+    } else {
       memcpy(output_ptr, tok, 68);
       output_ptr += 68;
       *output_ptr++ = '\n';
-      BUFFER_CHECK(systab);;
+      BUFFER_CHECK(systab);
       strcpy(tok, tok+68);
-
       for (name_len = strlen(tok); name_len > 72; name_len = strlen(tok)) {
         memcpy(output_ptr, tok, 72);
         output_ptr += 72;
@@ -827,7 +825,7 @@ void process_error_maps(void) {
   /* is used to remap the NAME_INDEX values based on the new symbol    */
   /* numberings. If time tables are requested, the terminals and non-  */
   /* terminals are mixed together.                                     */
-  temp = Allocate_short_array(num_symbols + 1);
+  temp = Allocate_int_array(num_symbols + 1);
 
   if (table_opt == OPTIMIZE_TIME) {
     for ALL_SYMBOLS(symbol)
@@ -1107,10 +1105,10 @@ void process_error_maps(void) {
 /* is organized as a circular list where the smallest sets appear    */
 /* first in the list.                                                */
 /*                                                                   */
-void compute_action_symbols_range(const short *state_start,
-                                  const short *state_stack,
+void compute_action_symbols_range(const int *state_start,
+                                  const int *state_stack,
                                   const int *state_list,
-                                  short *action_symbols_range) {
+                                  int *action_symbols_range) {
   int i,
       j,
       state,
@@ -1122,11 +1120,12 @@ void compute_action_symbols_range(const short *state_start,
   /* Recall that if STATE_START has a negative value, then the set in  */
   /* question is sharing elements and does not need to be processed.   */
   int k = 0;
-  for ALL_SYMBOLS(j)
+  for ALL_SYMBOLS(j) {
     symbol_list[j] = OMEGA; /* Initialize all links to OMEGA */
+  }
 
   for ALL_STATES(i) {
-    int state_no = state_list[i];
+    const int state_no = state_list[i];
     if (state_start[state_no] > 0) {
       int symbol_root = 0; /* Add "fence" element: 0 to list */
       symbol_list[symbol_root] = NIL;
@@ -1174,14 +1173,14 @@ void compute_action_symbols_range(const short *state_start,
 /*                   COMPUTE_NACTION_SYMBOLS_RANGE:                  */
 /* This procedure computes the range of the NACTION_SYMBOLS map. It  */
 /* organization is analoguous to COMPUTE_ACTION_SYMBOLS_RANGE.       */
-void compute_naction_symbols_range(const short *state_start,
-                                   const short *state_stack,
+void compute_naction_symbols_range(const int *state_start,
+                                   const int *state_stack,
                                    const int *state_list,
-                                   short *naction_symbols_range) {
-  int i,
-      j,
-      state,
-      symbol;
+                                   int *naction_symbols_range) {
+  int i;
+  int j;
+  int state;
+  int symbol;
 
   short *symbol_list = Allocate_short_array(num_symbols + 1);
 
@@ -1193,7 +1192,7 @@ void compute_naction_symbols_range(const short *state_start,
     symbol_list[j] = OMEGA; /* Initialize all links to OMEGA */
 
   for ALL_STATES(i) {
-    int state_no = state_list[i];
+    const int state_no = state_list[i];
     if (state_start[state_no] > 0) {
       int symbol_root = 0; /* Add "fence" element: 0 to list */
       symbol_list[symbol_root] = NIL;

@@ -93,12 +93,11 @@ static void free_action_elements(struct action_element *head,
 /*   2) As a side effect, it uses the ordering above to order all     */
 /*      the SP rules.                                                 */
 /*                                                                    */
-static void compute_sp_map(int symbol) {
-  int
-      rule_no;
+static void compute_sp_map(const int symbol) {
+  int rule_no;
 
   stack[++top] = symbol;
-  int indx = top;
+  const int indx = top;
   index_of[symbol] = indx;
 
   /* In this instantiation of the digraph algorithm, two symbols (A, B) */
@@ -106,7 +105,7 @@ static void compute_sp_map(int symbol) {
   /* some other SP rule.                                                */
   for (rule_no = sp_rules[symbol];
        rule_no != NIL; rule_no = next_rule[rule_no]) {
-    int lhs_symbol = rules[rule_no].lhs;
+    const int lhs_symbol = rules[rule_no].lhs;
     if (IS_SP_RHS(lhs_symbol)) {
       if (index_of[lhs_symbol] == OMEGA)
         compute_sp_map(lhs_symbol);
@@ -161,14 +160,13 @@ static void compute_sp_map(int symbol) {
 /* transition on SYMBOL is a lookahead-shift, indicating that the     */
 /* parser requires extra lookahead on a particular symbol, the set of */
 /* reduce actions for that symbol is calculated as the empty set.     */
-static void compute_sp_action(short state_no, short symbol, short action) {
-  int
-      rule_no,
-      lhs_symbol,
-      i,
-      k;
+static void compute_sp_action(const short state_no, const short symbol, const short action) {
+  int rule_no;
+  int lhs_symbol;
+  int i;
+  int k;
 
-  struct goto_header_type go_to = statset[state_no].go_to;
+  const struct goto_header_type go_to = statset[state_no].go_to;
 
   if (sp_action[symbol] == NULL)
     sp_action[symbol] = Allocate_short_array(num_terminals + 1);
@@ -184,9 +182,9 @@ static void compute_sp_action(short state_no, short symbol, short action) {
   else if (action > 0) /* transition action (shift or goto) */
   {
     struct node *p;
-    for (struct node *item_ptr = statset[action].complete_items;
+    for (const struct node *item_ptr = statset[action].complete_items;
          item_ptr != NULL; item_ptr = item_ptr->next) {
-      int item_no = item_ptr->value;
+      const int item_no = item_ptr->value;
       rule_no = item_table[item_no].rule_number;
       lhs_symbol = rules[rule_no].lhs;
       if (RHS_SIZE(rule_no) == 1 && lhs_symbol != accept_image) {
@@ -247,18 +245,17 @@ static void compute_sp_action(short state_no, short symbol, short action) {
 
 /*                           SP_DEFAULT_ACTION:                       */
 /* Sp_default_action takes as parameter a state, state_no and a rule, */
-/* rule_no that may be reduce when the parser enters state_no.        */
+/* rule_no that may be reduced when the parser enters state_no.        */
 /* Sp_default_action tries to determine the highest rule that may be  */
 /* reached via a sequence of SP reductions.                           */
-static short sp_default_action(short state_no, short rule_no) {
-  int
-      i;
+static short sp_default_action(const short state_no, short rule_no) {
+  int i;
 
-  struct goto_header_type go_to = statset[state_no].go_to;
+  const struct goto_header_type go_to = statset[state_no].go_to;
 
   /* While the rule we have at hand is a single production, ...         */
   while (IS_SP_RULE(rule_no)) {
-    int lhs_symbol = rules[rule_no].lhs;
+    const int lhs_symbol = rules[rule_no].lhs;
     for (i = 1; go_to.map[i].symbol != lhs_symbol; i++) {
     }
     int action = go_to.map[i].action;
@@ -274,7 +271,7 @@ static short sp_default_action(short state_no, short rule_no) {
 
       /* Enter the state action and look for preferably a SP rule   */
       /* or some rule with right-hand size 1.                       */
-      struct reduce_header_type red = reduce[action];
+      const struct reduce_header_type red = reduce[action];
       for (i = 1; i <= red.size; i++) {
         action = red.map[i].rule_number;
         if (IS_SP_RULE(action)) {
@@ -302,19 +299,19 @@ static short sp_default_action(short state_no, short rule_no) {
 /* be processed after taking the transition. It returns the reduce    */
 /* action that follows the transition if an action on la_symbol is    */
 /* found, otherwise it returns the most suitable default action.      */
-static short sp_nt_action(short state_no, short lhs_symbol, short la_symbol) {
+static short sp_nt_action(const short state_no, const short lhs_symbol, const short la_symbol) {
   int i;
-  struct goto_header_type go_to = statset[state_no].go_to;
+  const struct goto_header_type go_to = statset[state_no].go_to;
   for (i = 1; go_to.map[i].symbol != lhs_symbol; i++) {
   }
   int action = go_to.map[i].action;
   if (action < 0) {
     action = -action;
   } else {
-    struct reduce_header_type red = reduce[action];
+    const struct reduce_header_type red = reduce[action];
     action = OMEGA;
     for (i = 1; i <= red.size; i++) {
-      int rule_no = red.map[i].rule_number;
+      const int rule_no = red.map[i].rule_number;
       if (red.map[i].symbol == la_symbol) {
         action = rule_no;
         break;
@@ -336,9 +333,9 @@ static short sp_nt_action(short state_no, short lhs_symbol, short la_symbol) {
 /* is also executed ending with RULE2.                                */
 /* The goal of this function is to find the greatest ancestor of      */
 /* BASE_RULE that is also a descendant of both RULE1 and RULE2.       */
-static short greatest_common_ancestor(short base_rule, short la_symbol,
-                                      short state1, short rule1,
-                                      short state2, short rule2) {
+static short greatest_common_ancestor(const short base_rule, const short la_symbol,
+                                      const short state1, const short rule1,
+                                      const short state2, const short rule2) {
   int
       rule_no;
 
@@ -349,7 +346,7 @@ static short greatest_common_ancestor(short base_rule, short la_symbol,
     if (act1 == rule1 || act2 == rule2)
       break;
 
-    int lhs_symbol = rules[rule_no].lhs;
+    const int lhs_symbol = rules[rule_no].lhs;
 
     act1 = sp_nt_action(state1, lhs_symbol, la_symbol);
     act2 = sp_nt_action(state2, lhs_symbol, la_symbol);
@@ -364,8 +361,8 @@ static short greatest_common_ancestor(short base_rule, short la_symbol,
 /* SYMBOL is the right-hand side of a SP rule and the global map      */
 /* sp_action[SYMBOL] yields a set of update reduce actions that may   */
 /* follow the transition on SYMBOL into STATE_NO.                     */
-static void compute_update_actions(short source_state,
-                                   short state_no, short symbol) {
+static void compute_update_actions(const short source_state,
+                                   const short state_no, const short symbol) {
   struct update_action_element *p;
 
   const struct reduce_header_type red = reduce[state_no];
@@ -423,9 +420,9 @@ static void compute_update_actions(short source_state,
 /* map sp_symbol[SYMBOL]. The value SP_RULE_COUNT is the number of    */
 /* rules in the list. The value SP_ACTION_COUNT is the number of      */
 /* actions in the map sp_symbol[SYMBOL].                              */
-static short sp_state_map(int rule_head, short item_no,
-                          short sp_rule_count,
-                          short sp_action_count, short symbol) {
+static short sp_state_map(const int rule_head, const short item_no,
+                          const short sp_rule_count,
+                          const short sp_action_count, const short symbol) {
   struct sp_state_element *state;
   struct node *p;
 
@@ -1109,7 +1106,7 @@ void remove_single_productions(void) {
         index_of[red.map[i].symbol] = i;
 
       for (p = update_action[state_no]; p != NULL; p = p->next)
-        red.map[index_of[p -> symbol]].rule_number = p->action;
+        red.map[index_of[p->symbol]].rule_number = p->action;
     }
 
     /* Update initial automaton with transitions into new SP      */

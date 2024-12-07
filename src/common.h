@@ -54,10 +54,10 @@ static const int BC_OFFSET = SIZEOF_BC - 1;
 /* if the bit is on. Otherwise, the value FALSE is obtained.       */
 /* Recall that in C, one cannot shift (left or right) by 0. This   */
 /* is why the ? is used here.                                      */
-static bool IS_IN_SET(const SET_PTR set, const int i, const short b) {
+static bool IS_IN_SET(const SET_PTR set, const int i, const int b) {
   /* is b in set[i] ? */
   return set[i * term_set_size + (b - 1) / SIZEOF_BC] &
-         ((b + BC_OFFSET) % SIZEOF_BC ? (BOOLEAN_CELL) 1 << ((b + BC_OFFSET) % SIZEOF_BC) : (BOOLEAN_CELL) 1);
+         ((b + BC_OFFSET) % SIZEOF_BC ? (BOOLEAN_CELL) 1 << (b + BC_OFFSET) % SIZEOF_BC : (BOOLEAN_CELL) 1);
 }
 
 /* The macro SET_UNION takes as argument two arrays of sets:       */
@@ -178,13 +178,13 @@ static bool IS_ELEMENT(const SET_PTR set, const int b) {
          ((b + BC_OFFSET) % SIZEOF_BC ? (BOOLEAN_CELL) 1 << (b + BC_OFFSET) % SIZEOF_BC : (BOOLEAN_CELL) 1);
 }
 
-static void B_ASSIGN_SET(const SET_PTR s1, const int dest, const SET_PTR s2, const int source, int bound) {
+static void B_ASSIGN_SET(const SET_PTR s1, const int dest, const SET_PTR s2, const int source, const int bound) {
   for (int j = 0; j < bound; j++) {
     s1[dest * bound + j] = s2[source * bound + j];
   }
 }
 
-static void B_SET_UNION(const SET_PTR s1, const int dest, const SET_PTR s2, const int source, int bound) {
+static void B_SET_UNION(const SET_PTR s1, const int dest, const SET_PTR s2, const int source, const int bound) {
   for (int j = 0; j < bound; j++) {
     s1[dest * bound + j] |= s2[source * bound + j];
   }
@@ -192,7 +192,7 @@ static void B_SET_UNION(const SET_PTR s1, const int dest, const SET_PTR s2, cons
 
 /*                               EQUAL_SETS:                                */
 /* EQUAL_SETS checks to see if two sets are equal and returns True or False */
-static bool equal_sets(const SET_PTR set1, int indx1, const SET_PTR set2, int indx2, int bound) {
+static bool equal_sets(const SET_PTR set1, const int indx1, const SET_PTR set2, const int indx2, const int bound) {
   for (register int i = 0; i < bound; i++) {
     if (set1[indx1 * bound + i] != set2[indx2 * bound + i])
       return false;
@@ -386,10 +386,9 @@ extern FILE *syslis,
     *sysprs,
     *sysdef;
 
-
 /*  The variables below are global counters.          */
 extern long num_items;
-extern long num_states;
+extern int num_states;
 extern int max_la_state;
 
 extern int num_symbols,
@@ -402,11 +401,11 @@ extern int num_symbols,
     num_single_productions,
     gotodom_size;
 
-static bool IS_A_TERMINAL(int i) {
+static bool IS_A_TERMINAL(const int i) {
   return i <= num_terminals;
 }
 
-static bool IS_A_NON_TERMINAL(int i) {
+static bool IS_A_NON_TERMINAL(const int i) {
   return i > num_terminals;
 }
 
@@ -489,7 +488,7 @@ extern short *rhs_sym;
 
 extern struct ruletab_type *rules;
 
-static int RHS_SIZE(int rule_no) {
+static int RHS_SIZE(const int rule_no) {
   return rules[rule_no + 1].rhs - rules[rule_no].rhs;
 }
 
@@ -574,8 +573,8 @@ extern struct scope_type {
       state_set;
 } *scope;
 
-extern short *scope_right_side,
-    *scope_state;
+extern int *scope_right_side;
+extern short *scope_state;
 
 /**                                                               **/
 /**                        OUTPUT DECLARATIONS                    **/
@@ -688,8 +687,8 @@ void nospace(char *, long);
 
 int number_len(int state_no);
 
-void partset(SET_PTR collection, const short *element_size, const int *list,
-             short *start, short *stack, int set_size, int from_process_scopes);
+void partset(SET_PTR collection, const int *element_size, const int *list,
+             int *start, int *stack, int set_size, int from_process_scopes);
 
 void print_item(int item_no);
 
@@ -697,21 +696,21 @@ void print_large_token(char *line, char *token, const char *indent, int len);
 
 void print_state(int state_no);
 
-void compute_action_symbols_range(const short *state_start,
-                                  const short *state_stack,
+void compute_action_symbols_range(const int *state_start,
+                                  const int *state_stack,
                                   const int *state_list,
-                                  short *action_symbols_range);
+                                  int *action_symbols_range);
 
-void compute_naction_symbols_range(const short *state_start,
-                                   const short *state_stack,
+void compute_naction_symbols_range(const int *state_start,
+                                   const int *state_stack,
                                    const int *state_list,
-                                   short *naction_symbols_range);
+                                   int *naction_symbols_range);
 
 void produce(void);
 
 void process_error_maps(void);
 
-void prnt_shorts(const char *title, int init, int bound, int perline, const short *array);
+void prnt_shorts(const char *title, int init, int bound, int perline, const int *array);
 
 void prnt_ints(const char *title, int init, int bound, int perline, const int *array);
 
@@ -725,7 +724,7 @@ void ptstats(void);
 
 void remvsp(void);
 
-void sortdes(int array[], int count[], int low, int high, int max);
+void sortdes(int array[], int count[], long low, long high, long max);
 
 void reallocate(void);
 
@@ -747,27 +746,27 @@ static struct node *Allocate_node() {
   return allocate_node(hostfile, __LINE__);
 }
 
-static int *Allocate_int_array(long n) {
+static int *Allocate_int_array(const long n) {
   return allocate_int_array(n, hostfile, __LINE__);
 }
 
-static short *Allocate_short_array(long n) {
+static short *Allocate_short_array(const long n) {
   return allocate_short_array(n, hostfile, __LINE__);
 }
 
-static bool *Allocate_boolean_array(long n) {
+static bool *Allocate_boolean_array(const long n) {
   return allocate_boolean_array(n, hostfile, __LINE__);
 }
 
-static struct goto_header_type Allocate_goto_map(long n) {
+static struct goto_header_type Allocate_goto_map(const long n) {
   return allocate_goto_map(n, hostfile, __LINE__);
 }
 
-static struct shift_header_type Allocate_shift_map(long n) {
+static struct shift_header_type Allocate_shift_map(const long n) {
   return allocate_shift_map(n, hostfile, __LINE__);
 }
 
-static struct reduce_header_type Allocate_reduce_map(long n) {
+static struct reduce_header_type Allocate_reduce_map(const long n) {
   return allocate_reduce_map(n, hostfile, __LINE__);
 }
 
@@ -780,7 +779,7 @@ static void ffree(void *y) {
   return free(y); /* { free(x); x = (void *) ULONG_MAX; } */
 }
 
-static int TOUPPER(int c) {
+static int TOUPPER(const int c) {
   return islower(c) ? toupper(c) : c;
 }
 

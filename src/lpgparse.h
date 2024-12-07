@@ -172,15 +172,15 @@ struct hash_type /* structure used to hash grammar symbols */
 
 extern char *string_table;
 
-static const char *EXTRACT_STRING(int indx) {
+static const char *EXTRACT_STRING(const int indx) {
   return &string_table[indx];
 }
 
-static char* RETRIEVE_STRING(int indx) {
+static char* RETRIEVE_STRING(const int indx) {
     return &string_table[symno[indx].ptr];
 }
 
-static const char* RETRIEVE_NAME(int indx) {
+static const char* RETRIEVE_NAME(const int indx) {
     return &string_table[name[indx]];
 }
 

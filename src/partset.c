@@ -48,9 +48,9 @@ static char hostfile[] = __FILE__;
 /*    being constructed, remove it from the partition, and push it   */
 /*    into the stack. Repeat step 2 until the partition is empty.    */
 /*                                                                   */
-void partset(SET_PTR collection,
-             const short *element_size, const int *list,
-             short *start, short *stack, int set_size, const int from_scope_processing) {
+void partset(const SET_PTR collection,
+             const int *element_size, const int *list,
+             int *start, int *stack, int set_size, const int from_process_scopes) {
   int
       base_set,
       size,
@@ -61,7 +61,7 @@ void partset(SET_PTR collection,
 
   int collection_size = num_states;
 
-  if (from_scope_processing) {
+  if (from_process_scopes) {
     bctype = num_states / SIZEOF_BC
              + (num_states % SIZEOF_BC ? 1 : 0);
     collection_size = set_size;
@@ -80,7 +80,7 @@ void partset(SET_PTR collection,
   short *head = Allocate_short_array(collection_size + 1);
   short *next = Allocate_short_array(collection_size + 1);
   bool *is_a_base = Allocate_boolean_array(collection_size + 1);
-  SET_PTR temp_set = calloc(1, bctype * sizeof(BOOLEAN_CELL));
+  const SET_PTR temp_set = calloc(1, bctype * sizeof(BOOLEAN_CELL));
   if (temp_set == NULL)
     nospace(__FILE__, __LINE__);
 
