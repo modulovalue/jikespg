@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.30)
+
 project(jikespg C)
 
 set(CMAKE_C_STANDARD 11)
@@ -9,7 +10,6 @@ add_executable(
         src/common.h
         src/ctabs.c
         src/bitset.h
-        src/globals.c
         src/lpgact.h
         src/lpgact.c
         src/lpgdcl.h

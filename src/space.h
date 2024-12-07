@@ -3,25 +3,25 @@
 
 struct new_state_type {
   struct reduce_header_type reduce;
-  short shift_number,
-      link,
-      thread,
-      image;
+  short shift_number;
+  short link;
+  short thread;
+  short image;
 };
 
-extern struct new_state_type *new_state_element;
+static struct new_state_type *new_state_element;
 
-extern short *shift_image,
-    *real_shift_number;
+static short *shift_image = NULL;
+static short *real_shift_number = NULL;
 
-extern int *term_state_index,
-    *shift_check_index;
+static int *term_state_index = NULL;
+static int *shift_check_index = NULL;
 
-extern int shift_domain_count,
-    num_terminal_states,
-    check_size,
-    term_check_size,
-    term_action_size,
-    shift_check_size;
+static int shift_domain_count;
+static int num_terminal_states;
+static int check_size;
+static int term_check_size;
+static int term_action_size;
+static int shift_check_size;
 
 #endif /* SPACE_INCLUDED */

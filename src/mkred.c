@@ -49,7 +49,7 @@ struct node *lpgaccess(const int state_no, const int item_no) {
     free_nodes(head, tail); /* free previous list */
   }
 
-  return (access_root);
+  return access_root;
 }
 
 
@@ -178,9 +178,9 @@ static void compute_read(void) {
     la_base[i] = OMEGA;
 
   for ALL_STATES(state_no) {
-    for (const struct node *p = ((lalr_level <= 1 && single_complete_item[state_no])
-                                   ? NULL
-                                   : statset[state_no].complete_items);
+    for (const struct node *p = lalr_level <= 1 && single_complete_item[state_no]
+                                  ? NULL
+                                  : statset[state_no].complete_items;
          p != NULL; p = p->next) {
       item_no = p->value;
       rule_no = item_table[item_no].rule_number;
@@ -338,7 +338,7 @@ void la_traverse(const int state_no, const int goto_indx, int *stack_top) {
   s->next = stack_root;
   stack_root = s;
 
-  const int indx = ++(*stack_top); /* one element was pushed into the stack */
+  const int indx = ++*stack_top; /* one element was pushed into the stack */
   la_index[la_ptr] = indx;
 
   /* Compute STATE, action to perform on Goto symbol in question. If    */
@@ -773,9 +773,9 @@ void mkrdcts(void) {
         rule_no = item_table[item_no].rule_number;
         symbol = rules[rule_no].lhs;
         reduce_size += rule_count[rule_no];
-        if ((rule_count[rule_no] > n) &&
-            (no_shift_on_error_sym[state_no]) &&
-            (symbol != accept_image)) {
+        if (rule_count[rule_no] > n &&
+            no_shift_on_error_sym[state_no] &&
+            symbol != accept_image) {
           n = rule_count[rule_no];
           default_rule = rule_no;
         }

@@ -90,10 +90,10 @@ static const int IOBUFFER_SIZE = 655360;
 
 #define ENTIRE_RHS(indx, rule_no) (indx = rules[rule_no].rhs; indx < rules[(rule_no) + 1].rhs; indx++)
 
-extern const char HEADER_INFO[];
-extern const char VERSION[];
-extern const char BLANK[];
-extern const long MAX_TABLE_SIZE;
+static const char HEADER_INFO[] = "IBM Research Jikes Parser Generator";
+static const char VERSION[] = "1.2";
+static const char BLANK[] = " ";
+static const long MAX_TABLE_SIZE = (USHRT_MAX < INT_MAX ? USHRT_MAX : INT_MAX) - 1;
 
 struct node {
   struct node *next;
@@ -160,50 +160,49 @@ struct statset_type {
   short shift_number;
 };
 
-extern char *timeptr;
+static char *timeptr;
 
-extern long output_line_no;
+static long output_line_no = 0;
 
-extern char grm_file[],
-    lis_file[],
-    act_file[],
-    hact_file[],
-    tab_file[],
-    prs_file[],
-    sym_file[],
-    def_file[],
-    dcl_file[],
-    file_prefix[],
-    prefix[],
-    suffix[],
-    parm[],
-    msg_line[];
+static char grm_file[80];
+static char lis_file[80];
+static char act_file[80];
+static char hact_file[80];
+static char tab_file[80];
+static char prs_file[80] = "";
+static char sym_file[80] = "";
+static char def_file[80] = "";
+static char dcl_file[80] = "";
+static char file_prefix[80] = "";
+static char prefix[MAX_PARM_SIZE] = "";
+static char suffix[MAX_PARM_SIZE] = "";
+static char parm[256] = "";
+static char msg_line[MAX_MSG_SIZE];
 
-extern FILE *syslis,
-    *sysgrm,
-    *sysact,
-    *syshact,
-    *systab,
-    *syssym,
-    *sysprs,
-    *sysdcl,
-    *sysprs,
-    *sysdef;
+static FILE *syslis;
+static FILE *sysgrm;
+static FILE *sysact;
+static FILE *syshact;
+static FILE *systab;
+static FILE *syssym;
+static FILE *sysprs;
+static FILE *sysdcl;
+static FILE *sysprs;
+static FILE *sysdef;
 
-/*  The variables below are global counters.          */
-extern long num_items;
-extern int num_states;
-extern int max_la_state;
+static long num_items = 0;
+static int num_states = 0;
+static int max_la_state;
 
-extern int num_symbols,
-    symno_size, /* NUM_SYMBOLS + 1 */
-    num_names,
-    num_terminals,
-    num_non_terminals,
-    num_rules,
-    num_conflict_elements,
-    num_single_productions,
-    gotodom_size;
+static int num_symbols = 0;
+static int symno_size;
+static int num_names = 0;
+static int num_terminals;
+static int num_non_terminals;
+static int num_rules = 0;
+static int num_conflict_elements = 0;
+static int num_single_productions = 0;
+static int gotodom_size = 0;
 
 static bool IS_A_TERMINAL(const int i) {
   return i <= num_terminals;
@@ -214,82 +213,81 @@ static bool IS_A_NON_TERMINAL(const int i) {
 }
 
 /*  The variables below are used for options setting. */
-extern bool list_bit,
-    slr_bit,
-    verbose_bit,
-    first_bit,
-    follow_bit,
-    action_bit,
-    edit_bit,
-    states_bit,
-    xref_bit,
-    nt_check_bit,
-    conflicts_bit,
-    read_reduce_bit,
-    goto_default_bit,
-    shift_default_bit,
-    byte_bit,
-    warnings_bit,
-    single_productions_bit,
-    error_maps_bit,
-    debug_bit,
-    deferred_bit,
-    c_bit,
-    cpp_bit,
-    java_bit,
-    scopes_bit;
+static bool list_bit = false;
+static bool slr_bit = false;
+static bool verbose_bit = false;
+static bool first_bit = false;
+static bool follow_bit = false;
+static bool action_bit = false;
+static bool edit_bit = false;
+static bool states_bit = false;
+static bool xref_bit = false;
+static bool nt_check_bit = false;
+static bool conflicts_bit = true;
+static bool read_reduce_bit = true;
+static bool goto_default_bit = true;
+static bool shift_default_bit = false;
+static bool byte_bit = true;
+static bool warnings_bit = true;
+static bool single_productions_bit = false;
+static bool error_maps_bit = false;
+static bool debug_bit = false;
+static bool deferred_bit = true;
+static bool c_bit = false;
+static bool cpp_bit = false;
+static bool java_bit = false;
+static bool scopes_bit = false;
 
-extern int lalr_level,
-    default_opt,
-    trace_opt,
-    table_opt,
-    names_opt,
-    increment,
-    maximum_distance,
-    minimum_distance,
-    stack_size;
+static int lalr_level = 1;
+static int default_opt = 5;
+static int trace_opt = TRACE_CONFLICTS;
+static int names_opt = OPTIMIZE_PHRASES;
+static int table_opt = 0;
+static int increment = 30;
+static int maximum_distance = 30;
+static int minimum_distance = 3;
+static int stack_size = 128;
 
-extern char escape,
-    ormark,
-    record_format;
+static char escape = '%';
+static char ormark = '|';
+static char record_format = 'V';
 
-extern char blockb[],
-    blocke[],
-    hblockb[],
-    hblocke[],
-    errmsg[],
-    gettok[],
-    smactn[],
-    tkactn[];
+static char blockb[MAX_PARM_SIZE] = {'/', '.'};
+static char blocke[MAX_PARM_SIZE] = {'.', '/'};
+static char hblockb[MAX_PARM_SIZE] = {'/', ':'};
+static char hblocke[MAX_PARM_SIZE] = {':', '/'};
+static char errmsg[MAX_PARM_SIZE] = "errmsg";
+static char gettok[MAX_PARM_SIZE] = "gettok";
+static char smactn[MAX_PARM_SIZE] = "smactn";
+static char tkactn[MAX_PARM_SIZE] = "tkactn";
 
 /*   The variables below are used to hold information about special  */
 /* grammar symbols.                                                  */
-extern int accept_image;
-extern int eoft_image;
-extern int eolt_image;
-extern int empty;
-extern int error_image;
+static int accept_image;
+static int eoft_image;
+static int eolt_image;
+static int empty;
+static int error_image;
 
 /* Miscellaneous counters. */
+static int num_first_sets;
+static int num_shift_maps = 0;
+static int page_no = 0;
 
-extern int num_first_sets,
-    num_shift_maps,
-    page_no;
+static long string_offset = 0;
+static long string_size = 0;
+static long num_shifts = 0;
+static long num_shift_reduces = 0;
+static long num_gotos = 0;
+static long num_goto_reduces = 0;
+static long num_reductions = 0;
+static long num_sr_conflicts = 0;
+static long num_rr_conflicts = 0;
+static long num_entries;
 
-extern long string_offset,
-    string_size,
-    num_shifts,
-    num_shift_reduces,
-    num_gotos,
-    num_goto_reduces,
-    num_reductions,
-    num_sr_conflicts,
-    num_rr_conflicts,
-    num_entries;
+static short *rhs_sym = NULL;
 
-extern short *rhs_sym;
-
-extern struct ruletab_type *rules;
+static struct ruletab_type *rules = NULL;
 
 static int RHS_SIZE(const int rule_no) {
   return rules[rule_no + 1].rhs - rules[rule_no].rhs;
@@ -307,32 +305,32 @@ static int RHS_SIZE(const int rule_no) {
 /* number one can retrieve the rule the item belongs to, the position  */
 /* of the dot,  the symbol following the dot, and FIRST of the suffix  */
 /* following the "dot symbol".                                         */
-extern struct node **closure,
-    **clitems,
-    **adequate_item;
+static struct node **closure = NULL;
+static struct node **clitems = NULL;
+static struct node **adequate_item = NULL;
 
-extern struct itemtab {
+static  struct itemtab {
   short symbol,
       rule_number,
       suffix_index,
       dot;
-} *item_table;
+} *item_table = NULL;
 
 /* SYMNO is an array that maps symbol numbers to actual symbols.       */
-extern struct symno_type {
-  int ptr,
-      name_index;
-} *symno;
+static struct symno_type {
+  int ptr;
+  int name_index;
+} *symno = NULL;
 
 /* NULL_NT is a boolean vector that indicates whether or not a given   */
 /* non-terminal is nullable.                                           */
-extern bool *null_nt;
+static bool *null_nt = NULL;
 
 /* FOLLOW is a mapping from non-terminals to a set of terminals that   */
 /* may appear immediately after the non-terminal.                      */
-extern SET_PTR nt_first,
-    first,
-    follow;
+static SET_PTR nt_first = NULL;
+static SET_PTR first = NULL;
+static SET_PTR follow = NULL;
 
 /* NAME is an array containing names to be associated with symbols.    */
 /* REDUCE is a mapping from each state to reduce actions in that state.*/
@@ -343,76 +341,78 @@ extern SET_PTR nt_first,
 /* because if the user requests that certain single productions be     */
 /* removed, a Shift map containing actions involving such productions  */
 /* cannot be shared.                                                   */
-extern struct shift_header_type *shift;
+static struct shift_header_type *shift = NULL;
 
-extern struct reduce_header_type *reduce;
+static struct reduce_header_type *reduce = NULL;
 
-extern short *gotodef,
-    *shiftdf,
-    *gd_index,
-    *gd_range;
+static short *shiftdf = NULL;
+static short *gotodef = NULL;
+static short *gd_index = NULL;
+static short *gd_range = NULL;
 
-extern int *name;
+static int *name;
 
 /* STATSET is a mapping from state number to state information.        */
 /* LASTATS is a similar mapping for look-ahead states.                 */
 /* IN_STAT is a mapping from each state to the set of states that have */
 /* a transition into the state in question.                            */
-extern struct statset_type *statset;
+static struct statset_type *statset = NULL;
 
-extern struct lastats_type *lastats;
-extern struct node **in_stat;
+static struct lastats_type *lastats = NULL;
 
-extern int num_scopes,
-    scope_rhs_size,
-    scope_state_size,
-    num_error_rules;
+static struct node **in_stat = NULL;
 
-extern struct scope_type {
+static int num_scopes = 0;
+static int scope_rhs_size = 0;
+static int scope_state_size = 0;
+static int num_error_rules = 0;
+
+static struct scope_type {
   short prefix,
       suffix,
       lhs_symbol,
       look_ahead,
       state_set;
-} *scope;
+} *scope = NULL;
 
-extern int *scope_right_side;
-extern short *scope_state;
+static int *scope_right_side = NULL;
+static short *scope_state = NULL;
 
 /**                                                               **/
 /**                        OUTPUT DECLARATIONS                    **/
 /**                                                               **/
 /* The following external variables are used only in processing    */
 /* output.                                                         */
-extern char *output_ptr;
-extern char *output_buffer;
+static char *output_ptr = NULL;
+static char *output_buffer = NULL;
 
-extern int *symbol_map;
-extern int *ordered_state;
-extern long *state_list;
+static int *symbol_map = NULL;
+static int *ordered_state = NULL;
+static long *state_list = NULL;
 
-extern long *next;
-extern long *previous;
-extern long *state_index;
+static long *next = NULL;
+static long *previous = NULL;
+static long *state_index = NULL;
 
-extern long table_size;
-extern long action_size;
-extern long increment_size;
+static long table_size;
+static long action_size;
+static long increment_size;
 
-extern int last_non_terminal;
-extern int last_terminal;
 
-extern long accept_act;
-extern long error_act;
-extern int first_index;
-extern long last_index;
-extern int last_symbol;
-extern int max_name_length;
+static int last_non_terminal = 0;
+static int last_terminal = 0;
 
-extern SET_PTR naction_symbols,
-    action_symbols;
+static long accept_act;
+static long error_act;
+static int first_index;
+static long last_index;
+static int last_symbol;
+static int max_name_length = 0;
 
-extern bool byte_terminal_range;
+static SET_PTR naction_symbols = NULL;
+static SET_PTR action_symbols = NULL;
+
+static bool byte_terminal_range = true;
 
 /**   The following declarations are specifications for all global    **/
 /**   procedures and functions used in the program.                   **/

@@ -1,15 +1,12 @@
 CC = gcc $(CPPFLAGS) $(CFLAGS)
 
-jikespg: ctabs.o globals.o lpgparse.o lpgutil.o main.o mkfirst.o mkred.o mkstates.o partset.o prntstat.o produce.o ptables.o remsp.o resolve.o spacetab.o tabutil.o timetab.o
-	$(CC) $(LDFLAGS) -o jikespg ctabs.o globals.o lpgparse.o lpgutil.o main.o \
+jikespg: ctabs.o lpgparse.o lpgutil.o main.o mkfirst.o mkred.o mkstates.o partset.o prntstat.o produce.o ptables.o remsp.o resolve.o spacetab.o tabutil.o timetab.o
+	$(CC) $(LDFLAGS) -o jikespg ctabs.o lpgparse.o lpgutil.o main.o \
 	    mkfirst.o mkred.o mkstates.o partset.o prntstat.o produce.o \
 	    ptables.o remsp.o resolve.o spacetab.o tabutil.o timetab.o
 
 main.o:	main.c common.h
 	$(CC) -c main.c
-
-globals.o: globals.c common.h
-	$(CC) -c globals.c
 
 lpgparse.o: lpgprs.h lpgdcl.h lpgdef.h lpgact.h lpgact.c lpgsym.h common.h lpgparse.h lpgparse.c
 	$(CC) -c lpgparse.c
@@ -59,8 +56,7 @@ ctabs.o: ctabs.c common.h space.h
 clean:
 	rm -f jikespg
 	rm -f ctabs.o 
-	rm -f globals.o
-	rm -f lpgparse.o 
+	rm -f lpgparse.o
 	rm -f lpgutil.o 
 	rm -f main.o 
 	rm -f mkfirst.o 

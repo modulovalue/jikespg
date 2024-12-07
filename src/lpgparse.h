@@ -169,7 +169,7 @@ struct hash_type /* structure used to hash grammar symbols */
   int st_ptr;
 };
 
-extern char *string_table;
+static char *string_table = NULL;
 
 static const char *EXTRACT_STRING(const int indx) {
   return &string_table[indx];

@@ -5,9 +5,9 @@
 
 /* These variables hold the number of BOOLEAN_CELLS required to form a */
 /* set of terminals, non-terminals and states, respectively.           */
-extern int term_set_size;
-extern int non_term_set_size;
-extern int state_set_size;
+static int term_set_size;
+static int non_term_set_size;
+static int state_set_size;
 
 /**                      GLOBAL DECLARATIONS                      **/
 typedef unsigned int BOOLEAN_CELL;
