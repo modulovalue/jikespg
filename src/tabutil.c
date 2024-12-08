@@ -113,17 +113,14 @@ void field(const long num, const int len) {
     *p = digits[val % 10];
     val /= 10;
   } while (val > 0 && p > output_ptr);
-
   if (num < 0 && p > output_ptr) {
     p--;
     *p = '-';
   }
-
   while (p > output_ptr) {
     p--;
     *p = ' ';
   }
-
   output_ptr += len;
 }
 
@@ -131,7 +128,7 @@ void field(const long num, const int len) {
 /* based on the values of the elements of COUNT. Knowing that the maximum  */
 /* value of the elements of count cannot exceed MAX and cannot be lower    */
 /* than zero, we can use a bucket sort technique.                          */
-void sortdes(int array[], int count[], const long low, const long high, const long max) {
+void sortdes(long array[], int count[], const long low, const long high, const long max) {
   register int element;
   register long k;
 

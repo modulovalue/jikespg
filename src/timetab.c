@@ -18,13 +18,13 @@ static void remap_symbols(void) {
   struct shift_header_type sh;
   struct reduce_header_type red;
 
-  int symbol;
+  long symbol;
   int state_no;
 
-  ordered_state = Allocate_int_array(max_la_state + 1);
+  ordered_state = Allocate_long_array(max_la_state + 1);
   symbol_map = Allocate_int_array(num_symbols + 1);
   is_terminal = Allocate_boolean_array(num_symbols + 1);
-  int *frequency_symbol = Allocate_int_array(num_symbols + 1);
+  long *frequency_symbol = Allocate_long_array(num_symbols + 1);
   int *frequency_count = Allocate_int_array(num_symbols + 1);
   int *row_size = Allocate_int_array(max_la_state + 1);
 
@@ -227,7 +227,7 @@ static void overlap_tables(void) {
   /* indicated by the variable STATE_NO, and determine an "overlap"    */
   /* position for them.                                                */
   for (int k = 1; k <= max_la_state; k++) {
-    const int state_no = ordered_state[k];
+    const long state_no = ordered_state[k];
 
     /* First, we iterate over all actions defined in STATE_NO, and       */
     /* create a set with all the symbols involved.                       */
@@ -587,7 +587,7 @@ static void print_tables(void) {
       tok = RETRIEVE_STRING(symbol);
       if (tok[0] == '\n') /* We're dealing with special symbol?  */
         tok[0] = escape; /* replace initial marker with escape. */
-      int len = strlen(tok);
+      unsigned long len = strlen(tok);
       field(symbol_map[symbol], 4);
       field(len, 4);
       if (len <= 64)
@@ -622,7 +622,7 @@ static void print_tables(void) {
       tok = RETRIEVE_STRING(symbol);
       if (tok[0] == '\n') /* we're dealing with special symbol?  */
         tok[0] = escape; /* replace initial marker with escape. */
-      int len = strlen(tok);
+      unsigned long len = strlen(tok);
       field(symbol_map[symbol], 4);
       field(len, 4);
       if (len <= 64)
@@ -740,23 +740,21 @@ static void print_tables(void) {
     }
   }
 
-  /* We first sort the new state numbers.  A bucket sort technique     */
-  /* is used using the ACTION vector as a base to simulate the         */
+  /* We first sort the new state numbers. A bucket sort technique     */
+  /* is using the ACTION vector as a base to simulate the         */
   /* buckets.  NOTE: the iteration over the buckets is done backward   */
   /* because we also construct a list of the original state numbers    */
   /* that reflects the permutation of the new state numbers.           */
   /* During the backward iteration,  we construct the list as a stack. */
   if (error_maps_bit || states_bit) {
-    int max_indx;
-
-    max_indx = accept_act - num_rules - 1;
+    long max_indx = accept_act - num_rules - 1;
     for (int i = 1; i <= max_indx; i++)
       action[i] = OMEGA;
     for ALL_STATES(state_no)
       action[state_index[state_no]] = state_no;
 
     j = num_states + 1;
-    for (int i = max_indx; i >= 1; i--) {
+    for (long i = max_indx; i >= 1; i--) {
       state_no = action[i];
       if (state_no != OMEGA) {
         j--;

@@ -207,8 +207,8 @@ static void compute_sp_action(const short state_no, const short symbol, const sh
 
     /* Remove all lookahead symbols on which conflicts were       */
     /* detected from consideration.                               */
-    for (bool end_node = ((p = conflict_symbols[action]) == NULL);
-         !end_node; end_node = (p == conflict_symbols[action])) {
+    for (bool end_node = (p = conflict_symbols[action]) == NULL;
+         !end_node; end_node = p == conflict_symbols[action]) {
       p = p->next;
       sp_action[symbol][p->value] = OMEGA;
     }
@@ -384,8 +384,8 @@ static void compute_update_actions(const short source_state,
         p->symbol = red.map[i].symbol;
         p->action = rule_no;
         p->state = source_state;
-      } else if ((rule_no != p->action) &&
-                 (p->action != red.map[i].rule_number)) {
+      } else if (rule_no != p->action &&
+                 p->action != red.map[i].rule_number) {
         p->action = greatest_common_ancestor(red.map[i].rule_number,
                                              red.map[i].symbol,
                                              source_state,
@@ -758,8 +758,8 @@ void remove_single_productions(void) {
 
       for ALL_TERMINALS(i)
         is_conflict_symbol[i] = false;
-      for (end_node = ((p = conflict_symbols[state_no]) == NULL);
-           !end_node; end_node = (p == conflict_symbols[state_no])) {
+      for (end_node = (p = conflict_symbols[state_no]) == NULL;
+           !end_node; end_node = p == conflict_symbols[state_no]) {
         p = p->next;
         is_conflict_symbol[p->value] = true;
       }
@@ -876,8 +876,8 @@ void remove_single_productions(void) {
           {
             item_ptr = statset[action].kernel_items;
             item_no = item_ptr->value;
-            if ((item_ptr->next == NULL) &&
-                (item_table[item_no].symbol == empty))
+            if (item_ptr->next == NULL &&
+                item_table[item_no].symbol == empty)
               rule_no = item_table[item_no].rule_number;
             else {
               compute_update_actions(state_no, action, symbol);
@@ -996,11 +996,11 @@ void remove_single_productions(void) {
 
   for (state_no = num_states + 1; state_no <= max_la_state; state_no++) {
     if (lastats[state_no].in_state > num_states)
-      lastats[state_no].in_state += (max_sp_state - num_states);
+      lastats[state_no].in_state += max_sp_state - num_states;
   }
 
-  lastats -= (max_sp_state - num_states);
-  max_la_state += (max_sp_state - num_states);
+  lastats -= max_sp_state - num_states;
+  max_la_state += max_sp_state - num_states;
   SHORT_CHECK(max_la_state);
 
   /* We now permanently construct all the new SP states.            */

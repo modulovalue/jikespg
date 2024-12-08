@@ -342,12 +342,10 @@ void process_tables(void) {
   /* of the states.                                                    */
   if (states_bit) {
     PR_HEADING();
-    fprintf(syslis,
-            "\nMapping of new state numbers into "
-            "original numbers:\n");
-    for ALL_STATES(i)
-      fprintf(syslis,
-              "\n%5d  ==>>  %5ld", ordered_state[i], state_list[i]);
+    fprintf(syslis, "\nMapping of new state numbers into original numbers:\n");
+    for ALL_STATES(i) {
+      fprintf(syslis, "\n%5ld  ==>>  %5ld", ordered_state[i], state_list[i]);
+    }
     fprintf(syslis, "\n");
   }
 }

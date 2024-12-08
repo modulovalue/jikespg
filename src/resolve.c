@@ -1810,9 +1810,7 @@ void create_lastats(void) {
     nospace(__FILE__, __LINE__);
   lastats -= num_states + 1;
 
-  shift = (struct shift_header_type *)
-      realloc(shift,
-              (max_la_state + 1) * sizeof(struct shift_header_type));
+  shift = (struct shift_header_type *) realloc(shift, (max_la_state + 1) * sizeof(struct shift_header_type));
   if (shift == NULL)
     nospace(__FILE__, __LINE__);
 

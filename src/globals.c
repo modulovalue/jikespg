@@ -181,7 +181,7 @@ char *output_ptr = NULL;
 char *output_buffer = NULL;
 
 int *symbol_map = NULL;
-int *ordered_state = NULL;
+long *ordered_state = NULL;
 long *state_list = NULL;
 
 long *next = NULL;
@@ -197,7 +197,7 @@ int last_terminal = 0;
 
 long accept_act;
 long error_act;
-int first_index;
+long first_index;
 long last_index;
 int last_symbol;
 int max_name_length = 0;

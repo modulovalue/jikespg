@@ -416,7 +416,7 @@ static void process_scopes(void) {
       k,
       n;
 
-  short max_prefix_length = 0,
+  int max_prefix_length = 0,
       dot_symbol,
       nt,
       symbol,

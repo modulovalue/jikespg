@@ -18,7 +18,7 @@ static int top,
     multi_root;
 
 static int *row_size;
-static int *frequency_symbol;
+static long *frequency_symbol;
 static int *frequency_count;
 
 static bool *shift_on_error_symbol;
@@ -36,7 +36,7 @@ static void remap_non_terminals(void) {
   /* in the grammar, and  FREQUENCY_COUNT is used correspondingly to    */
   /* hold the number of actions defined on each non-terminal.           */
   /* ORDERED_STATE and ROW_SIZE are used in a similar fashion for states*/
-  int *frequency_symbol = Allocate_int_array(num_non_terminals);
+  long  *frequency_symbol = Allocate_long_array(num_non_terminals);
   frequency_symbol -= num_terminals + 1;
   int *frequency_count = Allocate_int_array(num_non_terminals);
   frequency_count -= num_terminals + 1;
@@ -426,7 +426,7 @@ static void merge_similar_t_rows(void) {
 /* for the Goto actions.                                             */
 static void merge_shift_domains(void) {
   short *shift_domain_link;
-  int *ordered_shift;
+  long *ordered_shift;
   short *terminal_list;
   short *temp_shift_default;
 
@@ -477,7 +477,7 @@ static void merge_shift_domains(void) {
   /* The arrays ORDERED_SHIFT and ROW_SIZE are also initialized here.  */
   /* They are used to sort the rows of the shift actions map later...  */
   shift_domain_link = Allocate_short_array(num_terminal_states + 1);
-  ordered_shift = Allocate_int_array(num_shift_maps + 1);
+  ordered_shift = Allocate_long_array(num_shift_maps + 1);
   terminal_list = Allocate_short_array(num_terminals + 1);
   shift_image = Allocate_short_array(max_la_state + 1);
   real_shift_number = Allocate_short_array(num_shift_maps + 1);
@@ -978,7 +978,7 @@ static void overlay_sim_t_rows(void) {
 
   num_terminal_states = top;
 
-  frequency_symbol = Allocate_int_array(num_terminals + 1);
+  frequency_symbol = Allocate_long_array(num_terminals + 1);
   frequency_count = Allocate_int_array(num_terminals + 1);
   row_size = Allocate_int_array(max_la_state + 1);
 
@@ -1811,7 +1811,7 @@ static void print_tables(void) {
 
 void cmprspa(void) {
   state_index = Allocate_long_array(max_la_state + 1);
-  ordered_state = Allocate_int_array(max_la_state + 1);
+  ordered_state = Allocate_long_array(max_la_state + 1);
   symbol_map = Allocate_int_array(num_symbols + 1);
   state_list = Allocate_long_array(max_la_state + 1);
   shift_on_error_symbol = Allocate_boolean_array(max_la_state + 1);

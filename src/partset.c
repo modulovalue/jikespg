@@ -47,7 +47,7 @@ static char hostfile[] = __FILE__;
 /*    being constructed, remove it from the partition, and push it   */
 /*    into the stack. Repeat step 2 until the partition is empty.    */
 void partset(const SET_PTR collection,
-             long *element_size, long *list,
+             const long *element_size, const long *list,
              long *start, long *stack, long set_size, const long from_process_scopes) {
   int base_set;
   int size;

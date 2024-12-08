@@ -104,7 +104,7 @@ struct node {
 /* Every rule of the grammar is mapped into an integer, and given  */
 /* rule, and we have access to a value RHS which is the index      */
 /* location in the vector RHS where the right-hand-side of the rule*/
-/* begins.  The right hand side of a certain rule represented by an*/
+/* begins. The right hand side of a certain rule represented by an */
 /* integer I starts at index location RULES[I].RHS in RHS, and     */
 /* ends at index location RULES[I + 1].RHS - 1.  An extra          */
 /* NUM_RULES + 1 element is used as a "fence" for the last rule.   */
@@ -386,7 +386,7 @@ extern char *output_ptr;
 extern char *output_buffer;
 
 extern int *symbol_map;
-extern int *ordered_state;
+extern long *ordered_state;
 extern long *state_list;
 
 extern long *next;
@@ -402,7 +402,7 @@ extern int last_terminal;
 
 extern long accept_act;
 extern long error_act;
-extern int first_index;
+extern long first_index;
 extern long last_index;
 extern int last_symbol;
 extern int max_name_length;
@@ -490,7 +490,7 @@ void nospace(char *, long);
 
 int number_len(int state_no);
 
-void partset(SET_PTR collection, long *element_size, long *list,
+void partset(SET_PTR collection, const long *element_size, const long *list,
              long *start, long *stack, long set_size, long from_process_scopes);
 
 void print_item(int item_no);
@@ -527,7 +527,7 @@ void ptstats(void);
 
 void remvsp(void);
 
-void sortdes(int array[], int count[], long low, long high, long max);
+void sortdes(long array[], int count[], long low, long high, long max);
 
 void reallocate(void);
 
