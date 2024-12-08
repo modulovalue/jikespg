@@ -28,7 +28,7 @@ static const int SYMBOL_SIZE = 256;
 static const int MAX_MSG_SIZE = 256 + SYMBOL_SIZE;
 static const int PRINT_LINE_SIZE = 80;
 static const int PARSER_LINE_SIZE = 80;
-static const int MAX_LINE_SIZE = 256;
+static const int MAX_LINE_SIZE = 512;
 
 static const int PAGE_SIZE = 55;
 static const int OPTIMIZE_TIME = 1;
@@ -527,7 +527,7 @@ void ptstats(void);
 
 void remvsp(void);
 
-void sortdes(long array[], int count[], long low, long high, long max);
+void sortdes(long array[], long count[], long low, long high, long max);
 
 void reallocate(void);
 
@@ -611,6 +611,10 @@ static void PRNT(char *msg) {
   fprintf(syslis, "%s\n", msg);
   ENDPAGE_CHECK();
 }
+
+#define PRNT2(msg, ...) \
+  sprintf(msg, __VA_ARGS__); \
+  PRNT(msg); \
 
 static void PRNTWNG(char *msg) {
   printf("***WARNING: %s\n", msg);

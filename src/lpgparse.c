@@ -31,8 +31,8 @@ static bool IsAlpha(const int c) {
   return code[c] == ALPHA_CODE;
 }
 
-static int output_size = 80,
-    line_no = 0;
+static int output_size = 5000;
+static int line_no = 0;
 
 /* This procedure opens all relevant files and processes the input grammar.*/
 void process_input(void) {
@@ -68,9 +68,7 @@ void process_input(void) {
     }
   } else {
     if (strrchr(grm_file, '.') == NULL) {
-      sprintf(msg_line,
-              "A file named \"%s\" with no extension "
-              "is being opened", grm_file);
+      sprintf(msg_line, "A file named \"%s\" with no extension is being opened", grm_file);
       PRNTWNG(msg_line);
     }
   }
@@ -448,9 +446,7 @@ static void options(void) {
         xref_bit = flag;
       else if (strcmp(token, "D") == 0 ||
                strcmp(token, "DE") == 0) {
-        sprintf(msg_line,
-                "\"%s\" is an ambiguous option: "
-                "DEBUG, DEFAULT, DEFERRED ?", temp);
+        sprintf(msg_line, "\"%s\" is an ambiguous option: DEBUG, DEFAULT, DEFERRED ?", temp);
         PRNTERR(msg_line);
       } else if (strcmp(token, "DEF") == 0) {
         PRNTERR("\"DEF\" is an ambiguous option: "
@@ -483,9 +479,7 @@ static void options(void) {
       i++;
       if (IsSpace(parm[i]) || parm[i] == '\0') /* no value specified */
       {
-        sprintf(msg_line,
-                "Null string or blank is invalid for parameter %s",
-                token);
+        sprintf(msg_line, "Null string or blank is invalid for parameter %s", token);
         PRNTERR(msg_line);
         continue;
       }
@@ -512,9 +506,7 @@ static void options(void) {
         if (verify(temp))
           default_opt = MIN(atoi(temp), 5);
         else {
-          sprintf(msg_line,
-                  "\"%s\" is an invalid value for %s",
-                  temp, token);
+          sprintf(msg_line, "\"%s\" is an invalid value for %s", temp, token);
           PRNTERR(msg_line);
         }
       } else if (len >= 2 && memcmp(token, oescape, len) == 0)
@@ -557,9 +549,7 @@ static void options(void) {
         }
 
         if (invalid_language) {
-          sprintf(msg_line,
-                  "\"%s\" is an invalid value for %s",
-                  temp, token);
+          sprintf(msg_line, "\"%s\" is an invalid value for %s", temp, token);
           PRNTERR(msg_line);
         }
       } else if (strcmp(token, "HN") == 0 ||
@@ -578,9 +568,7 @@ static void options(void) {
           temp[MAX_PARM_SIZE - 1] = '\0';
         if (!verify(temp) &&
             memcmp(translate(temp, len), omax, len) != 0) {
-          sprintf(msg_line,
-                  "\"%s\" is an invalid value for %s",
-                  temp, token);
+          sprintf(msg_line, "\"%s\" is an invalid value for %s", temp, token);
           PRNTERR(msg_line);
         } else {
           slr_bit = false;
@@ -589,10 +577,7 @@ static void options(void) {
           else {
             lalr_level = atoi(temp);
             if (lalr_level > MAXIMUM_LA_LEVEL) {
-              sprintf(msg_line,
-                      "\"%s\" exceeds maximum value "
-                      "of %d allowed for %s",
-                      temp, MAXIMUM_LA_LEVEL, token);
+              sprintf(msg_line, "\"%s\" exceeds maximum value of %d allowed for %s", temp, MAXIMUM_LA_LEVEL, token);
               PRNTWNG(msg_line);
               lalr_level = MAXIMUM_LA_LEVEL;
             }
@@ -605,9 +590,7 @@ static void options(void) {
         if (verify(temp))
           maximum_distance = atoi(temp);
         else {
-          sprintf(msg_line,
-                  "\"%s\" is an invalid value for %s",
-                  temp, token);
+          sprintf(msg_line, "\"%s\" is an invalid value for %s", temp, token);
           PRNTERR(msg_line);
         }
       } else if (len >= 2 &&
@@ -617,9 +600,7 @@ static void options(void) {
         if (verify(temp))
           minimum_distance = atoi(temp);
         else {
-          sprintf(msg_line,
-                  "\"%s\" is an invalid value for %s",
-                  temp, token);
+          sprintf(msg_line, "\"%s\" is an invalid value for %s", temp, token);
           PRNTERR(msg_line);
         }
       } else if (memcmp(onames, token, len) == 0) {
@@ -633,37 +614,31 @@ static void options(void) {
           names_opt = OPTIMIZE_PHRASES;
         else if ((temp[0] == 'm' || temp[0] == 'M') &&
                  temp[1] != '\0') {
-          sprintf(msg_line,
-                  "\"M\" is an ambiguous value for %s: "
-                  "MAXIMUM, MINIMUM?", token);
+          sprintf(msg_line, "\"M\" is an ambiguous value for %s: MAXIMUM, MINIMUM?", token);
           PRNTERR(msg_line);
         } else {
-          sprintf(msg_line,
-                  "\"%s\" is an invalid value for %s",
-                  temp, token);
+          sprintf(msg_line, "\"%s\" is an invalid value for %s", temp, token);
           PRNTERR(msg_line);
         }
-      } else if (len >= 2 && memcmp(token, oormark, len) == 0)
+      } else if (len >= 2 && memcmp(token, oormark, len) == 0) {
         ormark = temp[0];
-      else if (len >= 2 &&
-               (strcmp(token, "OS") == 0 ||
-                memcmp(token, ooutputsize, len) == 0 ||
-                memcmp(token, ooutputsize2, len) == 0 ||
-                memcmp(token, ooutputsize3, len) == 0)) {
-        if (verify(temp)) {
-          const int tmpval = atoi(temp);
-          if (tmpval > MAX_LINE_SIZE) {
-            sprintf(msg_line, "OUTPUT_SIZE cannot exceed %d",
-                    MAX_LINE_SIZE);
-            PRNTERR(msg_line);
-          } else
-            output_size = tmpval;
-        } else {
-          sprintf(msg_line,
-                  "\"%s\" is an invalid value for %s",
-                  temp, token);
-          PRNTERR(msg_line);
-        }
+      // } else if (len >= 2 &&
+      //            (strcmp(token, "OS") == 0 ||
+      //             memcmp(token, ooutputsize, len) == 0 ||
+      //             memcmp(token, ooutputsize2, len) == 0 ||
+      //             memcmp(token, ooutputsize3, len) == 0)) {
+      //   if (verify(temp)) {
+      //     const int tmpval = atoi(temp);
+      //     if (tmpval > MAX_LINE_SIZE) {
+      //       sprintf(msg_line, "OUTPUT_SIZE cannot exceed %d", MAX_LINE_SIZE);
+      //       PRNTERR(msg_line);
+      //     } else {
+      //       output_size = tmpval;
+      //     }
+      //   } else {
+      //     sprintf(msg_line, "\"%s\" is an invalid value for %s", temp, token);
+      //     PRNTERR(msg_line);
+      //   }
       } else if (memcmp(token, oprefix, len) == 0)
         strcpy(prefix, temp);
       else if (strcmp(token, "SS") == 0 ||
@@ -673,9 +648,7 @@ static void options(void) {
         if (verify(temp))
           stack_size = atoi(temp);
         else {
-          sprintf(msg_line,
-                  "\"%s\" is an invalid value for %s",
-                  temp, token);
+          sprintf(msg_line, "\"%s\" is an invalid value for %s", temp, token);
           PRNTERR(msg_line);
         }
       } else if (len >= 2 && memcmp(token, osuffix, len) == 0)
@@ -690,9 +663,7 @@ static void options(void) {
         else if (memcmp(translate(temp, len), otime, len) == 0)
           table_opt = OPTIMIZE_TIME;
         else {
-          sprintf(msg_line,
-                  "\"%s\" is an invalid value for %s",
-                  temp, token);
+          sprintf(msg_line, "\"%s\" is an invalid value for %s", temp, token);
           PRNTERR(msg_line);
         }
       } else if (len >= 2 && memcmp(token, otrace, len) == 0) {
@@ -705,9 +676,7 @@ static void options(void) {
         else if (memcmp(translate(temp, len), ofull, len) == 0)
           trace_opt = TRACE_FULL;
         else {
-          sprintf(msg_line,
-                  "\"%s\" is an invalid value for %s",
-                  temp, token);
+          sprintf(msg_line, "\"%s\" is an invalid value for %s", temp, token);
           PRNTERR(msg_line);
         }
       } else if (strcmp(token, "BLOCK") == 0) {
@@ -720,9 +689,7 @@ static void options(void) {
       } else if (strcmp(token, "HBLOCK") == 0) {
         PRNTERR("Option \"HBLOCK\" is ambiguous: HBLOCKB, HBLOCKE ?");
       } else if (strcmp("M", token) == 0 || strcmp("MD", token) == 0) {
-        sprintf(msg_line,
-                "Option \"%s\" is ambiguous: "
-                "MAX-DISTANCE, MIN-DISTANCE?", token);
+        sprintf(msg_line, "Option \"%s\" is ambiguous: MAX-DISTANCE, MIN-DISTANCE?", token);
         PRNTERR(msg_line);
       } else if (strcmp("O", token) == 0) {
         PRNTERR("Option \"O\" is ambiguous: OUTPUT-SIZE, ORMARK ?");
@@ -747,11 +714,11 @@ static void options(void) {
 /* processed.  Then, we process user-supplied options if there are any.  In */
 /* any case, the options in effect are printed.                             */
 static void process_options_lines(void) {
-  char old_parm[MAX_LINE_SIZE + 1],
-      output_line[PRINT_LINE_SIZE + 1],
-      opt_string[60][OUTPUT_PARM_SIZE + 1],
-      *line_end,
-      temp[SYMBOL_SIZE + 1];
+  char old_parm[MAX_LINE_SIZE + 1];
+  char output_line[PRINT_LINE_SIZE + 1];
+  char opt_string[60][OUTPUT_PARM_SIZE + 1];
+  char *line_end;
+  char temp[SYMBOL_SIZE + 1];
 
   static char ooptions[9] = " OPTIONS";
 
@@ -2318,12 +2285,13 @@ next_line: {
 
   /* If text is greater than output size, print error message and truncate     */
   /* line.                                                                     */
-  if (strlen(text) > output_size) {
-    for (j = strlen(text) - 1; j >= output_size; j--) {
+  const unsigned long l = strlen(text);
+  if (l > output_size) {
+    for (j = l - 1; j >= output_size; j--) {
       if (text[j] != ' ') {
         sprintf(msg_line,
                 "Size of output line \"%s\""
-                " is greater than OUTPUT_SIZE", text);
+                " is greater than OUTPUT_SIZE (%d), it was %lu", text, output_size, strlen(text));
         PRNTERR(msg_line);
         break;
       }

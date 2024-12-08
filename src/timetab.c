@@ -25,8 +25,8 @@ static void remap_symbols(void) {
   symbol_map = Allocate_int_array(num_symbols + 1);
   is_terminal = Allocate_boolean_array(num_symbols + 1);
   long *frequency_symbol = Allocate_long_array(num_symbols + 1);
-  int *frequency_count = Allocate_int_array(num_symbols + 1);
-  int *row_size = Allocate_int_array(max_la_state + 1);
+  long *frequency_count = Allocate_long_array(num_symbols + 1);
+  long *row_size = Allocate_long_array(max_la_state + 1);
 
   fprintf(syslis, "\n");
 
@@ -68,9 +68,7 @@ static void remap_symbols(void) {
         default_saves++;
     }
   }
-  sprintf(msg_line,
-          "Number of Reductions saved by default: %d", default_saves);
-  PRNT(msg_line);
+  PRNT2(msg_line, "Number of Reductions saved by default: %d", default_saves);
 
   for ALL_LA_STATES(state_no) {
     ordered_state[state_no] = state_no;
@@ -323,18 +321,14 @@ static void overlap_tables(void) {
       break;
 
   printf("\n");
-  sprintf(msg_line, "Length of Check table: %ld", table_size);
-  PRNT(msg_line);
+  PRNT2(msg_line, "Length of Check table: %ld", table_size);
 
-  sprintf(msg_line, "Length of Action table: %ld", action_size);
-  PRNT(msg_line);
+  PRNT2(msg_line, "Length of Action table: %ld", action_size);
 
-  sprintf(msg_line, "Number of entries in Action Table: %ld", num_entries);
-  PRNT(msg_line);
+  PRNT2(msg_line, "Number of entries in Action Table: %ld", num_entries);
 
   const long percentage = (action_size - num_entries) * 1000 / num_entries;
-  sprintf(msg_line, "Percentage of increase: %ld.%ld%%", percentage / 10, percentage % 10);
-  PRNT(msg_line);
+  PRNT2(msg_line, "Percentage of increase: %ld.%ld%%", percentage / 10, percentage % 10);
 
   if (byte_bit) {
     num_bytes = 2 * action_size + table_size;
@@ -342,8 +336,7 @@ static void overlap_tables(void) {
       for (; last_symbol >= 1 && !is_terminal[last_symbol];
              last_symbol--);
     }
-    sprintf(msg_line, "Highest symbol in Check Table: %d", last_symbol);
-    PRNT(msg_line);
+    PRNT2(msg_line, "Highest symbol in Check Table: %d", last_symbol);
     if (last_symbol > 255)
       num_bytes += table_size;
   } else
@@ -354,8 +347,7 @@ static void overlap_tables(void) {
 
   const long k_bytes = num_bytes / 1024 + 1;
 
-  sprintf(msg_line, "Storage Required for Tables: %ld Bytes, %ldK", num_bytes, k_bytes);
-  PRNT(msg_line);
+  PRNT2(msg_line, "Storage Required for Tables: %ld Bytes, %ldK", num_bytes, k_bytes);
 
   num_bytes = (long) 4 * num_rules;
   if (byte_bit) {
@@ -363,8 +355,7 @@ static void overlap_tables(void) {
     if (num_symbols < 256)
       num_bytes -= num_rules;
   }
-  sprintf(msg_line, "Storage Required for Rules: %ld Bytes", num_bytes);
-  PRNT(msg_line);
+  PRNT2(msg_line, "Storage Required for Rules: %ld Bytes", num_bytes);
 }
 
 /* We now write out the tables to the SYSTAB file.                   */
@@ -515,30 +506,22 @@ static void print_tables(void) {
   }
 
   PRNT("\n\nActions in Compressed Tables:");
-  sprintf(msg_line, "     Number of Shifts: %d", shift_count);
-  PRNT(msg_line);
 
-  sprintf(msg_line, "     Number of Shift/Reduces: %d", shift_reduce_count);
-  PRNT(msg_line);
+  PRNT2(msg_line, "     Number of Shifts: %d", shift_count);
+
+  PRNT2(msg_line, "     Number of Shift/Reduces: %d", shift_reduce_count);
 
   if (max_la_state > num_states) {
-    sprintf(msg_line,
-            "     Number of Look-Ahead Shifts: %d", la_shift_count);
-    PRNT(msg_line);
+    PRNT2(msg_line, "     Number of Look-Ahead Shifts: %d", la_shift_count);
   }
 
-  sprintf(msg_line, "     Number of Gotos: %d", goto_count);
-  PRNT(msg_line);
+  PRNT2(msg_line, "     Number of Gotos: %d", goto_count);
 
-  sprintf(msg_line,
-          "     Number of Goto/Reduces: %d", goto_reduce_count);
-  PRNT(msg_line);
+  PRNT2(msg_line, "     Number of Goto/Reduces: %d", goto_reduce_count);
 
-  sprintf(msg_line, "     Number of Reduces: %d", reduce_count);
-  PRNT(msg_line);
+  PRNT2(msg_line, "     Number of Reduces: %d", reduce_count);
 
-  sprintf(msg_line, "     Number of Defaults: %d", default_count);
-  PRNT(msg_line);
+  PRNT2(msg_line, "     Number of Defaults: %d", default_count);
 
   /* Prepare Header with proper information, and write it out.         */
   output_buffer[0] = 'T';

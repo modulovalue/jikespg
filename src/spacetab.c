@@ -17,9 +17,9 @@ static int top,
     single_root,
     multi_root;
 
-static int *row_size;
+static long *row_size;
 static long *frequency_symbol;
-static int *frequency_count;
+static long *frequency_count;
 
 static bool *shift_on_error_symbol;
 
@@ -38,9 +38,9 @@ static void remap_non_terminals(void) {
   /* ORDERED_STATE and ROW_SIZE are used in a similar fashion for states*/
   long  *frequency_symbol = Allocate_long_array(num_non_terminals);
   frequency_symbol -= num_terminals + 1;
-  int *frequency_count = Allocate_int_array(num_non_terminals);
+  long *frequency_count = Allocate_long_array(num_non_terminals);
   frequency_count -= num_terminals + 1;
-  int *row_size = Allocate_int_array(num_states + 1);
+  long *row_size = Allocate_long_array(num_states + 1);
 
   for ALL_NON_TERMINALS(i) {
     frequency_symbol[i] = i;
@@ -88,9 +88,7 @@ static void remap_non_terminals(void) {
       if (frequency_count[last_symbol] != 0)
         break;
     last_symbol -= num_terminals;
-    sprintf(msg_line, "Number of non-terminals eliminated: %d",
-            num_non_terminals - last_symbol);
-    PRNT(msg_line);
+    PRNT2(msg_line, "Number of non-terminals eliminated: %d", num_non_terminals - last_symbol);
 
     /* Remap the GOTO-DEFAULT map.                                */
     /* to hold the original map.                                  */
@@ -228,8 +226,7 @@ static void overlap_nt_rows(void) {
 
   printf("\n");
   if (goto_default_bit || nt_check_bit) {
-    sprintf(msg_line, "Length of base Check Table: %d", check_size);
-    PRNT(msg_line);
+    PRNT2(msg_line, "Length of base Check Table: %d", check_size);
   }
 
   sprintf(msg_line, "Length of base Action Table: %ld", action_size);
@@ -979,8 +976,8 @@ static void overlay_sim_t_rows(void) {
   num_terminal_states = top;
 
   frequency_symbol = Allocate_long_array(num_terminals + 1);
-  frequency_count = Allocate_int_array(num_terminals + 1);
-  row_size = Allocate_int_array(max_la_state + 1);
+  frequency_count = Allocate_long_array(num_terminals + 1);
+  row_size = Allocate_long_array(max_la_state + 1);
 
   if (shift_default_bit)
     merge_shift_domains();

@@ -110,22 +110,17 @@ int main(const int argc, char *argv[]) {
       mkfirst();
     }
     PR_HEADING();
-    sprintf(msg_line, "\nNumber of Terminals: %d", num_terminals - 1); /*-1 for %empty */
-    PRNT(msg_line);
+    PRNT2(msg_line, "\nNumber of Terminals: %d", num_terminals - 1); /*-1 for %empty */
 
-    sprintf(msg_line, "Number of Nonterminals: %d", num_non_terminals - 1); /* -1 for %ACC */
-    PRNT(msg_line);
+    PRNT2(msg_line, "Number of Nonterminals: %d", num_non_terminals - 1); /* -1 for %ACC */
 
-    sprintf(msg_line, "Number of Productions: %d", num_rules + 1);
-    PRNT(msg_line);
+    PRNT2(msg_line, "Number of Productions: %d", num_rules + 1);
 
     if (single_productions_bit) {
-      sprintf(msg_line, "Number of Single Productions: %d", num_single_productions);
-      PRNT(msg_line);
+      PRNT2(msg_line, "Number of Single Productions: %d", num_single_productions);
     }
 
-    sprintf(msg_line, "Number of Items: %ld", num_items);
-    PRNT(msg_line);
+    PRNT2(msg_line, "Number of Items: %ld", num_items);
 
     fclose(syslis); /* close listing file */
     return 0;
@@ -139,27 +134,19 @@ int main(const int argc, char *argv[]) {
 
   /*                  Print more relevant statistics.                         */
   PR_HEADING();
-  sprintf(msg_line, "\nNumber of Terminals: %d", num_terminals - 1);
-  PRNT(msg_line);
+  PRNT2(msg_line, "\nNumber of Terminals: %d", num_terminals - 1);
 
-  sprintf(msg_line, "Number of Nonterminals: %d", num_non_terminals - 1);
-  PRNT(msg_line);
+  PRNT2(msg_line, "Number of Nonterminals: %d", num_non_terminals - 1);
 
-  sprintf(msg_line, "Number of Productions: %d", num_rules + 1);
-  PRNT(msg_line);
+  PRNT2(msg_line, "Number of Productions: %d", num_rules + 1);
 
   if (single_productions_bit) {
-    sprintf(msg_line,
-            "Number of Single Productions: %d",
-            num_single_productions);
-    PRNT(msg_line);
+    PRNT2(msg_line, "Number of Single Productions: %d", num_single_productions);
   }
 
-  sprintf(msg_line, "Number of Items: %ld", num_items);
-  PRNT(msg_line);
+  PRNT2(msg_line, "Number of Items: %ld", num_items);
   if (scopes_bit) {
-    sprintf(msg_line, "Number of Scopes: %d", num_scopes);
-    PRNT(msg_line);
+    PRNT2(msg_line, "Number of Scopes: %d", num_scopes);
   }
 
   sprintf(msg_line, "Number of States: %d", num_states);

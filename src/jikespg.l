@@ -1,8 +1,9 @@
 
 
- IBM Research Jikes Parser Generator    1.2 Sat Dec  7 14:22:23 2024       Page 1
+ IBM Research Jikes Parser Generator    1.2 Sun Dec  8 01:58:34 2024       Page 1
 
 %OPTIONS nogoto-default,esc=$,os=100,action,actfile=lpgact.c,noem
+***ERROR: "OS" is an invalid option
 %OPTIONS fp=lpg,gp,nodefer,suffix=_TK,stack_size=21,hactfile=lpgact.h
 
 Options in effect:
@@ -11,7 +12,7 @@ Options in effect:
     FILE-PREFIX=lpg  NOFIRST  NOFOLLOW  GENERATE-PARSER=C  NOGOTO-DEFAULT  
     HACTFILE-NAME=lpgact.h  HBLOCKB=/:  HBLOCKE=:/  LALR=1  NOLIST  
     MAX-DISTANCE=30  MIN-DISTANCE=3  NAMES=OPTIMIZED  NONT-CHECK  ORMARK=|  
-    OUTPUT-SIZE=100  PREFIX=  READ-REDUCE  NOSCOPES  NOSHIFT-DEFAULT  
+    OUTPUT-SIZE=5000  PREFIX=  READ-REDUCE  NOSCOPES  NOSHIFT-DEFAULT  
     NOSINGLE-PRODUCTIONS  STACK-SIZE=21  NOSTATES  SUFFIX=_TK  NOTABLE  
     TRACE=CONFLICTS  NOVERBOSE  WARNINGS  NOXREF  
 
@@ -20,7 +21,7 @@ Options in effect:
 This grammar is LALR(1).
 
 
- IBM Research Jikes Parser Generator    1.2 Sat Dec  7 14:22:23 2024       Page 2
+ IBM Research Jikes Parser Generator    1.2 Sun Dec  8 01:58:34 2024       Page 2
 
 
 Number of Terminals: 19

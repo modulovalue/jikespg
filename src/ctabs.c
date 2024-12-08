@@ -538,8 +538,7 @@ static void print_c_names(void) {
   }
 
   /* Compute and list space required for STRING_BUFFER map.        */
-  sprintf(msg_line, "    Storage required for STRING_BUFFER map: %ld Bytes", num_bytes);
-  PRNT(msg_line);
+  PRNT2(msg_line, "    Storage required for STRING_BUFFER map: %ld Bytes", num_bytes);
 
   /* Write out NAME_START array */
   mystrcpy("\nconst unsigned short CLASS_HEADER name_start[] = {0,\n");
@@ -571,14 +570,13 @@ static void print_c_names(void) {
   }
 
   /* Compute and list space required for NAME_START map.           */
-  sprintf(msg_line, "    Storage required for NAME_START map: %d Bytes", 2 * num_names);
-  PRNT(msg_line);
+  PRNT2(msg_line, "    Storage required for NAME_START map: %d Bytes", 2 * num_names);
+
   /* Write out NAME_LENGTH array */
   prnt_shorts("\nconst unsigned char  CLASS_HEADER name_length[] = {0,\n",
               1, num_names, 10, name_len);
   /* Compute and list space required for NAME_LENGTH map.          */
-  sprintf(msg_line, "    Storage required for NAME_LENGTH map: %d Bytes", num_names);
-  PRNT(msg_line);
+  PRNT2(msg_line, "    Storage required for NAME_LENGTH map: %d Bytes", num_names);
 
   ffree(name_len);
 }
@@ -635,8 +633,7 @@ static void print_java_names(void) {
   }
 
   /* Compute and list space required for STRING_BUFFER map.        */
-  sprintf(msg_line, "    Storage required for STRING_BUFFER map: %ld Bytes", num_bytes);
-  PRNT(msg_line);
+  PRNT2(msg_line, "    Storage required for STRING_BUFFER map: %ld Bytes", num_bytes);
 }
 
 static void print_error_maps(void) {
@@ -763,8 +760,7 @@ static void print_error_maps(void) {
     }
   }
   num_bytes = 2 * num_states;
-  sprintf(msg_line, "    Storage required for ACTION_SYMBOLS_BASE map: %ld Bytes", num_bytes);
-  PRNT(msg_line);
+  PRNT2(msg_line, "    Storage required for ACTION_SYMBOLS_BASE map: %ld Bytes", num_bytes);
   if (table_opt == OPTIMIZE_TIME && last_terminal <= (java_bit ? 127 : 255)) {
     num_bytes = offset - 1;
   } else if (table_opt != OPTIMIZE_TIME && num_terminals <= (java_bit ? 127 : 255)) {
@@ -772,8 +768,7 @@ static void print_error_maps(void) {
   } else {
     num_bytes = 2 * (offset - 1);
   }
-  sprintf(msg_line, "    Storage required for ACTION_SYMBOLS_RANGE map: %ld Bytes", num_bytes);
-  PRNT(msg_line);
+  PRNT2(msg_line, "    Storage required for ACTION_SYMBOLS_RANGE map: %ld Bytes", num_bytes);
   ffree(action_symbols_range);
   /* We now repeat the same process for the domain of the GOTO table.    */
   for ALL_STATES(state_no) {
@@ -821,11 +816,9 @@ static void print_error_maps(void) {
   }
 
   num_bytes = 2 * num_states;
-  sprintf(msg_line, "    Storage required for NACTION_SYMBOLS_BASE map: %ld Bytes", num_bytes);
-  PRNT(msg_line);
+  PRNT2(msg_line, "    Storage required for NACTION_SYMBOLS_BASE map: %ld Bytes", num_bytes);
   num_bytes = 2 * (offset - 1);
-  sprintf(msg_line, "    Storage required for NACTION_SYMBOLS_RANGE map: %ld Bytes", (long) 2 * (offset - 1));
-  PRNT(msg_line);
+  PRNT2(msg_line, "    Storage required for NACTION_SYMBOLS_RANGE map: %ld Bytes", (long) 2 * (offset - 1));
 
   ffree(naction_symbols_range);
 
@@ -863,10 +856,7 @@ static void print_error_maps(void) {
       num_bytes = 2 * num_terminals;
     }
     /* Compute and list space required for TERMINAL_INDEX map.       */
-    sprintf(msg_line,
-            "    Storage required for TERMINAL_INDEX map: %ld Bytes",
-            num_bytes);
-    PRNT(msg_line);
+    PRNT2(msg_line, "    Storage required for TERMINAL_INDEX map: %ld Bytes", num_bytes);
 
     /* We write the name_index of each non_terminal symbol. The array */
     /* TEMP is used to remap the NAME_INDEX values based on the new   */
@@ -902,10 +892,7 @@ static void print_error_maps(void) {
       num_bytes = 2 * num_non_terminals;
     }
     /* Compute and list space required for NON_TERMINAL_INDEX map.   */
-    sprintf(msg_line,
-            "    Storage required for NON_TERMINAL_INDEX map: %ld Bytes",
-            num_bytes);
-    PRNT(msg_line);
+    PRNT2(msg_line, "    Storage required for NON_TERMINAL_INDEX map: %ld Bytes", num_bytes);
   } else {
     for ALL_SYMBOLS(symbol)
       temp[symbol_map[symbol]] = symno[symbol].name_index;
@@ -949,10 +936,7 @@ static void print_error_maps(void) {
       num_bytes = 2 * num_symbols;
     }
     /* Compute and list space required for SYMBOL_INDEX map.         */
-    sprintf(msg_line,
-            "    Storage required for SYMBOL_INDEX map: %ld Bytes",
-            num_bytes);
-    PRNT(msg_line);
+    PRNT2(msg_line, "    Storage required for SYMBOL_INDEX map: %ld Bytes", num_bytes);
   }
   if (num_scopes > 0) {
     int j;
@@ -1269,8 +1253,7 @@ static void print_symbols(void) {
 
     if (tok[0] == '\n' || tok[0] == escape) {
       tok[0] = escape;
-      sprintf(line, "Escaped symbol %s is an invalid C variable.\n", tok);
-      PRNT(line);
+      PRNT2(line, "Escaped symbol %s is an invalid C variable.\n", tok);
     } else if (strpbrk(tok, "!%^&*()-+={}[];:\"`~|\\,.<>/?\'") != NULL) {
       sprintf(line, "%s may be an invalid variable name.\n", tok);
       PRNT(line);

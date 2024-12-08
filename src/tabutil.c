@@ -128,14 +128,14 @@ void field(const long num, const int len) {
 /* based on the values of the elements of COUNT. Knowing that the maximum  */
 /* value of the elements of count cannot exceed MAX and cannot be lower    */
 /* than zero, we can use a bucket sort technique.                          */
-void sortdes(long array[], int count[], const long low, const long high, const long max) {
-  register int element;
+void sortdes(long array[], long count[], const long low, const long high, const long max) {
+  register long element;
   register long k;
 
   /* BUCKET is used to hold the roots of lists that contain the    */
   /* elements of each bucket.  LIST is used to hold these lists.   */
-  short *bucket = Allocate_short_array(max + 1);
-  short *list = Allocate_short_array(high - low + 1);
+  long *bucket = Allocate_long_array(max + 1);
+  long *list = Allocate_long_array(high - low + 1);
 
   for (register int i = 0; i <= max; i++) {
     bucket[i] = NIL;
@@ -159,7 +159,7 @@ void sortdes(long array[], int count[], const long low, const long high, const l
   /* in sorted order.  The iteration is done backward because we want  */
   /* the arrays sorted in descending order.                            */
   k = low;
-  for (register int i = max; i >= 0; i--) {
+  for (register long i = max; i >= 0; i--) {
     for (element = bucket[i]; element != NIL; element = list[element - low], k++) {
       array[k] = element;
       count[k] = i;
@@ -184,13 +184,9 @@ void reallocate(void) {
 
   if (verbose_bit) {
     if (table_opt == OPTIMIZE_TIME) {
-      sprintf(msg_line,
-              "Reallocating storage for TIME table, "
-              "adding %ld entries", table_size - old_size);
+      sprintf(msg_line, "Reallocating storage for TIME table, adding %ld entries", table_size - old_size);
     } else {
-      sprintf(msg_line,
-              "Reallocating storage for SPACE table, "
-              "adding %ld entries", table_size - old_size);
+      sprintf(msg_line, "Reallocating storage for SPACE table, adding %ld entries", table_size - old_size);
     }
     PRNT(msg_line);
   }
@@ -367,10 +363,7 @@ void process_error_maps(void) {
         num_bytes = num_bytes - offset + 1;
     }
   }
-  sprintf(msg_line,
-          "    Storage required for FOLLOW map: %ld Bytes",
-          num_bytes);
-  PRNT(msg_line);
+  PRNT2(msg_line, "    Storage required for FOLLOW map: %ld Bytes", num_bytes);
 
   /* We now write out the states in sorted order: SORTED_STATE. */
   k = 0;
@@ -390,10 +383,7 @@ void process_error_maps(void) {
 
   /* Compute and list space required for SORTED_STATE map.         */
   num_bytes = 2 * num_states;
-  sprintf(msg_line,
-          "    Storage required for SORTED_STATE map: %ld Bytes",
-          num_bytes);
-  PRNT(msg_line);
+  PRNT2(msg_line, "    Storage required for SORTED_STATE map: %ld Bytes", num_bytes);
 
   /* We now write a vector parallel to SORTED_STATE that gives us the */
   /* original number associated with the state: ORIGINAL_STATE.       */
@@ -414,10 +404,7 @@ void process_error_maps(void) {
 
   /* Compute and list space required for ORIGINAL_STATE map.       */
   num_bytes = 2 * num_states;
-  sprintf(msg_line,
-          "    Storage required for ORIGINAL_STATE map: %ld Bytes",
-          num_bytes);
-  PRNT(msg_line);
+  PRNT2(msg_line, "    Storage required for ORIGINAL_STATE map: %ld Bytes", num_bytes);
 
   /* We now construct a bit map for the set of terminal symbols that  */
   /* may appear in each state. Then, we invoke PARTSET to apply the   */
@@ -520,10 +507,7 @@ void process_error_maps(void) {
         (table_opt != OPTIMIZE_TIME && num_terminals <= 255))
       num_bytes -= offset - 1;
   }
-  sprintf(msg_line,
-          "    Storage required for ACTION_SYMBOLS map: "
-          "%ld Bytes", num_bytes);
-  PRNT(msg_line);
+  PRNT2(msg_line, "    Storage required for ACTION_SYMBOLS map: %ld Bytes", num_bytes);
 
   ffree(action_symbols_range);
 
@@ -599,10 +583,7 @@ void process_error_maps(void) {
         (table_opt != OPTIMIZE_TIME && num_non_terminals <= 255))
       num_bytes -= offset - 1;
   }
-  sprintf(msg_line,
-          "    Storage required for NACTION_SYMBOLS map: "
-          "%ld Bytes", num_bytes);
-  PRNT(msg_line);
+  PRNT2(msg_line, "    Storage required for NACTION_SYMBOLS map: %ld Bytes", num_bytes);
 
   ffree(naction_symbols_range);
 
@@ -688,16 +669,10 @@ void process_error_maps(void) {
   /* OFFSET - 1 elements.                                              */
   if (table_opt == OPTIMIZE_TIME) {
     num_bytes = 2 * (num_symbols + offset);
-    sprintf(msg_line,
-            "    Storage required for TRANSITION_STATES map: %ld Bytes",
-            num_bytes);
-    PRNT(msg_line);
+    PRNT2(msg_line, "    Storage required for TRANSITION_STATES map: %ld Bytes", num_bytes);
   } else {
     num_bytes = 2 * (num_terminals + offset);
-    sprintf(msg_line,
-            "    Storage required for SHIFT_STATES map: %ld Bytes",
-            num_bytes);
-    PRNT(msg_line);
+    PRNT2(msg_line, "    Storage required for SHIFT_STATES map: %ld Bytes", num_bytes);
 
     /* We now compute and write the starting location for each  */
     /* non-terminal symbol...                                   */
@@ -743,9 +718,7 @@ void process_error_maps(void) {
     /* base vector contains NUM_NON_TERMINALS+ 1 elements, and the vector*/
     /* containing the range elements has size OFFSET - 1                 */
     num_bytes = 2 * (num_non_terminals + offset);
-    sprintf(msg_line, "    Storage required for GOTO_STATES map: %ld Bytes",
-            num_bytes);
-    PRNT(msg_line);
+    PRNT2(msg_line, "    Storage required for GOTO_STATES map: %ld Bytes", num_bytes);
   }
 
   /* Write the number associated with the ERROR symbol.                */
@@ -874,15 +847,13 @@ void process_error_maps(void) {
   else
     offset = num_symbols;
 
-  if (num_bytes > 255)
+  if (num_bytes > 255) {
     offset += 2 * num_symbols;
-  else
+  } else {
     offset += num_symbols;
+  }
 
-  sprintf(msg_line,
-          "    Storage required for direct NAME map: %ld Bytes",
-          num_bytes + offset);
-  PRNT(msg_line);
+  PRNT2(msg_line, "    Storage required for direct NAME map: %ld Bytes", num_bytes + offset);
 
   if (max_len > 255)
     offset = 2 * num_names;
@@ -899,10 +870,7 @@ void process_error_maps(void) {
   else
     offset += num_symbols;
 
-  sprintf(msg_line,
-          "    Storage required for indirect NAME map: %ld Bytes",
-          num_bytes + offset);
-  PRNT(msg_line);
+  PRNT2(msg_line, "    Storage required for indirect NAME map: %ld Bytes", num_bytes + offset);
 
   if (scopes_bit) {
     for (i = 1; i <= scope_rhs_size; i++) {
@@ -1053,10 +1021,7 @@ void process_error_maps(void) {
       num_bytes += 2 * num_scopes;
     if (scope_state_size > 255)
       num_bytes += num_scopes;
-    sprintf(msg_line,
-            "    Storage required for SCOPE map: %ld Bytes",
-            num_bytes);
-    PRNT(msg_line);
+    PRNT2(msg_line, "    Storage required for SCOPE map: %ld Bytes", num_bytes);
   }
 
   if (original != NULL) {
