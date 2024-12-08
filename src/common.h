@@ -68,43 +68,72 @@ static const int IOBUFFER_SIZE = 655360;
 
 /**                         ITERATION MACROS                      **/
 /* The following macros (ALL_) are used to iterate over a sequence.*/
+// TODO remove
 #define ALL_LA_STATES2 (int state_no = num_states + 1; state_no <= max_la_state; state_no++)
 
-// TODO • replace with no param
-#define ALL_TERMINALS(indx) (indx = 1; indx <= num_terminals; indx++)
+#define ALL_LA_STATES3(x) (int x = num_states + 1; x <= max_la_state; x++)
 
-#define ALL_TERMINALS2 (int symbol = 1; symbol <= num_terminals; symbol++)
 
-#define ALL_TERMINALS_BACKWARDS (int symbol = num_terminals; symbol >= 1; symbol--)
 
-// TODO • replace with no param
-#define ALL_NON_TERMINALS(indx) (indx = num_terminals + 1; indx <= num_symbols; indx++)
+// TODO remove
+#define ALL_TERMINALS3(x) (int x = 1; x <= num_terminals; x++)
 
+#define ALL_TERMINALS_BACKWARDS3(x) (int x = num_terminals; x >= 1; x--)
+
+
+
+// TODO remove
 #define ALL_NON_TERMINALS2 (int symbol = num_terminals + 1; symbol <= num_symbols; symbol++)
 
+#define ALL_NON_TERMINALS3(x) (int x = num_terminals + 1; x <= num_symbols; x++)
+
+
+
+// TODO remove
 #define ALL_NON_TERMINALS_BACKWARDS (int symbol = num_symbols; symbol >= num_terminals + 1; symbol--)
 
-// TODO • replace with no param
-#define ALL_SYMBOLS(indx) (indx = 1; indx <= num_symbols; indx++)
+#define ALL_NON_TERMINALS_BACKWARDS3(x) (int x = num_symbols; x >= num_terminals + 1; x--)
 
+
+
+// TODO remove
 #define ALL_SYMBOLS2 (int symbol = 1; symbol <= num_symbols; symbol++)
 
-// TODO • replace with no param
+#define ALL_SYMBOLS3(x) (int x = 1; x <= num_symbols; x++)
+
+
+
+// TODO remove
 #define ALL_ITEMS(indx) (indx = 1; indx <= num_items; indx++)
 
-#define ALL_ITEMS2 (int item_no = 1; item_no <= num_items; item_no++)
+#define ALL_ITEMS3(x) (int x = 1; x <= num_items; x++)
 
+
+
+// TODO remove
 #define ALL_STATES2 (int state_no = 1; state_no <= num_states; state_no++)
 
-// TODO • replace with no param
-#define ALL_RULES(indx) (indx = 0; indx <= num_rules; indx++)
+#define ALL_STATES3(x) (int x = 1; x <= num_states; x++)
 
+
+
+// TODO remove
 #define ALL_RULES2 (int rule_no = 0; rule_no <= num_rules; rule_no++)
 
+#define ALL_RULES3(x) (int x = 0; x <= num_rules; x++)
+
+
+
+// TODO remove
 #define ALL_RULES_BACKWARDS2 (int rule_no = num_rules; rule_no >= 0; rule_no--)
 
-// TODO • replace with no param
+#define ALL_RULES_BACKWARDS3(x) (int x = num_rules; x >= 0; x--)
+
+
+// TODO remove
 #define ENTIRE_RHS(symbol, rule_no) (symbol = rules[rule_no].rhs; symbol < rules[(rule_no) + 1].rhs; symbol++)
+
+#define ENTIRE_RHS3(rule_no, x) (int x = rules[rule_no].rhs; x < rules[(rule_no) + 1].rhs; x++)
 
 extern const char HEADER_INFO[];
 extern const char VERSION[];
@@ -635,6 +664,10 @@ static void PRNTWNG(char *msg) {
   fprintf(syslis, "***WARNING: %s\n", msg);
   ENDPAGE_CHECK();
 }
+
+#define PRNTWNG2(msg, ...) \
+  sprintf(msg, __VA_ARGS__); \
+  PRNTWNG(msg); \
 
 static void PRNTERR(char *msg) {
   printf("***ERROR: %s\n", msg);
