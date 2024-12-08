@@ -1835,20 +1835,17 @@ static void process_actions(void) {
 /*  Construct the NAME map, and update the elements of SYMNO with their */
 /* names.                                                               */
 static void make_names_map(void) {
-  register int
-      symbol;
-
   symno[accept_image].name_index = name_map("");
 
   if (error_image == DEFAULT_SYMBOL)
     symno[DEFAULT_SYMBOL].name_index = symno[accept_image].name_index;
 
-  for ALL_TERMINALS(symbol) {
+  for ALL_TERMINALS2 {
     if (symno[symbol].name_index == OMEGA)
       symno[symbol].name_index = name_map(RETRIEVE_STRING(symbol));
   }
 
-  for ALL_NON_TERMINALS(symbol) {
+  for ALL_NON_TERMINALS2 {
     if (symno[symbol].name_index == OMEGA) {
       if (names_opt == MAXIMUM_NAMES)
         symno[symbol].name_index = name_map(RETRIEVE_STRING(symbol));

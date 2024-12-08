@@ -197,12 +197,11 @@ int main(const int argc, char *argv[]) {
       /* needed).                                                */
       ffree(rhs_sym);
       if (adequate_item != NULL) {
-        int rule_no;
-
-        for ALL_RULES(rule_no) {
+        for ALL_RULES2 {
           struct node *q = adequate_item[rule_no];
-          if (q != NULL)
+          if (q != NULL) {
             free_nodes(q, q);
+          }
         }
         ffree(adequate_item);
       }

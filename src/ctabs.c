@@ -1234,7 +1234,6 @@ static void print_error_maps(void) {
 }
 
 static void print_symbols(void) {
-  int symbol;
   char line[SYMBOL_SIZE + /* max length of a token symbol  */
             2 * MAX_PARM_SIZE + /* max length of prefix + suffix */
             64]; /* +64 for error messages lines  */
@@ -1247,21 +1246,16 @@ static void print_symbols(void) {
     strcpy(line, "enum {\n");
 
   /* We write the terminal symbols map.                    */
-  for ALL_TERMINALS(symbol) {
+  for ALL_TERMINALS2 {
     char *tok = RETRIEVE_STRING(symbol);
-
     fprintf(syssym, "%s", line);
-
     if (tok[0] == '\n' || tok[0] == escape) {
       tok[0] = escape;
       PRNT2(line, "Escaped symbol %s is an invalid C variable.\n", tok);
     } else if (strpbrk(tok, "!%^&*()-+={}[];:\"`~|\\,.<>/?\'") != NULL) {
       PRNT2(line, "%s may be an invalid variable name.\n", tok);
     }
-
-    sprintf(line, "      %s%s%s = %i,\n",
-            prefix, tok, suffix, symbol_map[symbol]);
-
+    sprintf(line, "      %s%s%s = %i,\n", prefix, tok, suffix, symbol_map[symbol]);
     if (c_bit || cpp_bit) {
       while (strlen(line) > PARSER_LINE_SIZE) {
         fwrite(line, sizeof(char), PARSER_LINE_SIZE - 2, syssym);
@@ -2227,7 +2221,6 @@ static void print_time_tables(void) {
   int i;
   int j;
   int k;
-  int symbol;
 
   short default_rule;
 
@@ -2279,7 +2272,7 @@ static void print_time_tables(void) {
     } else {
       struct goto_header_type go_to = statset[state_no].go_to;
       for (j = 1; j <= go_to.size; j++) {
-        symbol = go_to.map[j].symbol;
+        int symbol = go_to.map[j].symbol;
         i = indx + symbol;
         if (goto_default_bit || nt_check_bit) {
           check[i] = symbol;
@@ -2300,7 +2293,7 @@ static void print_time_tables(void) {
     }
 
     for (j = 1; j <= sh.size; j++) {
-      symbol = sh.map[j].symbol;
+      int symbol = sh.map[j].symbol;
       i = indx + symbol;
       check[i] = symbol;
       act = sh.map[j].action;
@@ -2328,7 +2321,7 @@ static void print_time_tables(void) {
     default_rule = red.map[0].rule_number;
     for (j = 1; j <= red.size; j++) {
       if (red.map[j].rule_number != default_rule) {
-        symbol = red.map[j].symbol;
+        int symbol = red.map[j].symbol;
         i = indx + symbol;
         check[i] = symbol;
         act = red.map[j].rule_number;
@@ -2574,7 +2567,7 @@ static void print_time_tables(void) {
     for (i = 0; i <= num_symbols; i++)
       default_map[i] = error_act;
 
-    for ALL_NON_TERMINALS(symbol) {
+    for ALL_NON_TERMINALS2 {
       act = gotodef[symbol];
       if (act < 0)
         result_act = -act;
@@ -2585,7 +2578,7 @@ static void print_time_tables(void) {
       default_map[symbol_map[symbol]] = result_act;
     }
 
-    for (symbol = 1; symbol <= num_symbols; symbol++) {
+    for (int symbol = 1; symbol <= num_symbols; symbol++) {
       itoc(default_map[symbol]);
       *output_ptr++ = COMMA;
       k++;

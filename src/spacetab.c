@@ -28,8 +28,7 @@ static bool *shift_on_error_symbol;
 static void remap_non_terminals(void) {
   struct goto_header_type go_to;
 
-  int i,
-      symbol;
+  int i;
 
   /*   The variable FREQUENCY_SYMBOL is used to hold the non-terminals  */
   /* in the grammar, and  FREQUENCY_COUNT is used correspondingly to    */
@@ -51,7 +50,7 @@ static void remap_non_terminals(void) {
     go_to = statset[state_no].go_to;
     for (i = 1; i <= go_to.size; i++) {
       row_size[state_no]++;
-      symbol = go_to.map[i].symbol;
+      int symbol = go_to.map[i].symbol;
       frequency_count[symbol]++;
     }
   }
@@ -91,8 +90,9 @@ static void remap_non_terminals(void) {
 
     /* Remap the GOTO-DEFAULT map.                                */
     /* to hold the original map.                                  */
-    for ALL_NON_TERMINALS(symbol)
+    for ALL_NON_TERMINALS2 {
       temp_goto_default[symbol_map[symbol]] = gotodef[symbol];
+    }
     gotodef += num_terminals + 1;
     ffree(gotodef);
     gotodef = temp_goto_default;
@@ -436,8 +436,7 @@ static void merge_shift_domains(void) {
       k,
       percentage,
       shift_size,
-      shift_no,
-      symbol;
+      shift_no;
 
   long num_bytes;
 
@@ -487,7 +486,7 @@ static void merge_shift_domains(void) {
     shift_size = sh.size;
     hash_address = shift_size;
     for (i = 1; i <= shift_size; i++) {
-      symbol = sh.map[i].symbol;
+      int symbol = sh.map[i].symbol;
       hash_address += symbol;
       shift_symbols[symbol] = true;
     }
@@ -523,7 +522,7 @@ static void merge_shift_domains(void) {
 
   /*   Compute the frequencies, and remap the terminal symbols         */
   /* accordingly.                                                      */
-  for ALL_TERMINALS(symbol) {
+  for ALL_TERMINALS2 {
     frequency_symbol[symbol] = symbol;
     frequency_count[symbol] = 0;
   }
@@ -532,7 +531,7 @@ static void merge_shift_domains(void) {
     shift_no = real_shift_number[i];
     sh = shift[shift_no];
     for (j = 1; j <= sh.size; j++) {
-      symbol = sh.map[j].symbol;
+      int symbol = sh.map[j].symbol;
       frequency_count[symbol]++;
     }
   }
@@ -540,8 +539,9 @@ static void merge_shift_domains(void) {
   sortdes(frequency_symbol, frequency_count, 1, num_terminals,
           shift_domain_count);
 
-  for ALL_TERMINALS(symbol)
+  for ALL_TERMINALS2 {
     symbol_map[frequency_symbol[symbol]] = symbol;
+  }
 
   symbol_map[DEFAULT_SYMBOL] = DEFAULT_SYMBOL;
   eoft_image = symbol_map[eoft_image];
@@ -574,8 +574,9 @@ static void merge_shift_domains(void) {
 
   /* Remap the SHIFT_DEFAULT map.                             */
   temp_shift_default = Allocate_short_array(num_terminals + 1);
-  for ALL_TERMINALS(symbol)
+  for ALL_TERMINALS2 {
     temp_shift_default[symbol_map[symbol]] = shiftdf[symbol];
+  }
   ffree(shiftdf);
   shiftdf = temp_shift_default;
 
@@ -620,7 +621,7 @@ static void merge_shift_domains(void) {
     if (indx + num_terminals > (int) table_size)
       reallocate();
     for (i = 1; i <= sh.size; i++) {
-      symbol = sh.map[i].symbol;
+      int symbol = sh.map[i].symbol;
       if (next[indx + symbol] == OMEGA) {
         indx = next[indx];
         goto look_for_match_in_sh_chk_tab;
@@ -633,7 +634,7 @@ static void merge_shift_domains(void) {
     /* of a Shift row that was previously processed, and that element    */
     /* has already been removed from the list of available positions.    */
     for (j = 1; j <= sh.size; j++) {
-      symbol = sh.map[j].symbol;
+      int symbol = sh.map[j].symbol;
       i = indx + symbol;
       if (next[i] != 0) {
         if (i == last_index) {
@@ -679,14 +680,13 @@ static void merge_shift_domains(void) {
 
   PRNT2(msg_line, "Number of entries in Shift Check Table: %ld", num_table_entries);
 
-  for (k = shift_check_size; k >= max_indx; k--)
-    if (next[k] == OMEGA)
+  for (k = shift_check_size; k >= max_indx; k--) {
+    if (next[k] == OMEGA) {
       break;
-  percentage = ((long) k - num_table_entries) * 1000
-               / num_table_entries;
-
+    }
+  }
+  percentage = ((long) k - num_table_entries) * 1000 / num_table_entries;
   PRNT2(msg_line, "Percentage of increase: %d.%d%%", percentage/10, percentage % 10);
-
   if (byte_bit) {
     num_bytes = shift_check_size;
     if (num_terminals > 255)
@@ -718,7 +718,6 @@ static void overlay_sim_t_rows(void) {
       k,
       i,
       rule_no,
-      symbol,
       default_rule,
       state_subset_root,
       state_set_root,
@@ -799,7 +798,7 @@ static void overlay_sim_t_rows(void) {
         red = reduce[state_no];
       }
       for (j = 1; j <= red.size; j++) {
-        symbol = red.map[j].symbol;
+        int symbol = red.map[j].symbol;
         if (reduce_action[symbol] != OMEGA && reduce_action[symbol] != red.map[j].rule_number) {
           break;
         }
@@ -815,7 +814,7 @@ static void overlay_sim_t_rows(void) {
         state_list[state_no] = state_subset_root;
         state_subset_root = state_no;
         for (j = 1; j <= red.size; j++) {
-          symbol = red.map[j].symbol;
+          int symbol = red.map[j].symbol;
           if (reduce_action[symbol] == OMEGA) {
             rule_no = red.map[j].rule_number;
             if (rules[rule_no].lhs == accept_image)
@@ -876,7 +875,7 @@ static void overlay_sim_t_rows(void) {
     new_red = Allocate_reduce_map(reduce_size);
     new_red.map[0].symbol = DEFAULT_SYMBOL;
     new_red.map[0].rule_number = default_rule;
-    for ALL_TERMINALS(symbol) {
+    for ALL_TERMINALS2 {
       if (reduce_action[symbol] != OMEGA) {
         if (reduce_action[symbol] != default_rule) {
           new_red.map[reduce_size].symbol = symbol;
@@ -926,7 +925,7 @@ static void overlay_sim_t_rows(void) {
           red = reduce[state_no];
         }
         for (j = 1; j <= red.size; j++) {
-          symbol = red.map[j].symbol;
+          int symbol = red.map[j].symbol;
           if (reduce_action[symbol] == OMEGA) {
             reduce_action[symbol] = rule_no;
             default_saves++;
@@ -967,7 +966,7 @@ static void overlay_sim_t_rows(void) {
   /* We now reorder the terminal states based on the number of actions */
   /* in them, and remap the terminal symbols if they were not already  */
   /* remapped in the previous block for the SHIFT_CHECK vector.        */
-  for ALL_TERMINALS(symbol) {
+  for ALL_TERMINALS2 {
     frequency_symbol[symbol] = symbol;
     frequency_count[symbol] = 0;
   }
@@ -977,7 +976,7 @@ static void overlay_sim_t_rows(void) {
     row_size[i] = 0;
     sh = shift[new_state_element[i].shift_number];
     for (j = 1; j <= sh.size; j++) {
-      symbol = sh.map[j].symbol;
+      int symbol = sh.map[j].symbol;
       if (!shift_default_bit ||
           sh.map[j].action != shiftdf[symbol]) {
         row_size[i]++;
@@ -993,7 +992,7 @@ static void overlay_sim_t_rows(void) {
     /* Note that the Default action is skipped !!! */
     red = new_state_element[i].reduce;
     for (j = 1; j <= red.size; j++) {
-      symbol = red.map[j].symbol;
+      int symbol = red.map[j].symbol;
       row_size[i]++;
       frequency_count[symbol]++;
     }
@@ -1010,8 +1009,9 @@ static void overlay_sim_t_rows(void) {
 
   if (!shift_default_bit) {
     sortdes(frequency_symbol, frequency_count, 1, num_terminals, num_terminal_states);
-    for ALL_TERMINALS(symbol)
+    for ALL_TERMINALS2 {
       symbol_map[frequency_symbol[symbol]] = symbol;
+    }
     symbol_map[DEFAULT_SYMBOL] = DEFAULT_SYMBOL;
     eoft_image = symbol_map[eoft_image];
     if (error_maps_bit) {
@@ -1227,22 +1227,21 @@ static void print_tables(void) {
   int *check,
       *action;
 
-  int la_state_offset,
-      i,
-      j,
-      k,
-      indx,
-      act,
-      result_act,
-      default_count = 0,
-      goto_count = 0,
-      goto_reduce_count = 0,
-      reduce_count = 0,
-      la_shift_count = 0,
-      shift_count = 0,
-      shift_reduce_count = 0,
-      rule_no,
-      symbol;
+  int la_state_offset;
+  int i;
+  int j;
+  int k;
+  int indx;
+  int act;
+  long result_act;
+  int default_count = 0;
+  int goto_count = 0;
+  int goto_reduce_count = 0;
+  int reduce_count = 0;
+  int la_shift_count = 0;
+  int shift_count = 0;
+  int shift_reduce_count = 0;
+  int rule_no;
 
   char *tok;
 
@@ -1292,13 +1291,11 @@ static void print_tables(void) {
   *output_ptr++ = '\n';
 
   /* We write the terminal symbols map.                    */
-  for ALL_TERMINALS(symbol) {
-    int len;
-
+  for ALL_TERMINALS2 {
     tok = RETRIEVE_STRING(symbol);
     if (tok[0] == '\n') /* we're dealing with special symbol?  */
       tok[0] = escape; /* replace initial marker with escape. */
-    len = strlen(tok);
+    int len = strlen(tok);
     field(symbol_map[symbol], 4);
     field(len, 4);
     if (len <= 64)
@@ -1325,9 +1322,8 @@ static void print_tables(void) {
   }
 
   /* We write the non-terminal symbols map.                */
-  for ALL_NON_TERMINALS(symbol) {
+  for ALL_NON_TERMINALS2 {
     int len;
-
     tok = RETRIEVE_STRING(symbol);
     if (tok[0] == '\n') /* we're dealing with special symbol?  */
       tok[0] = escape; /* replace initial marker with escape. */
@@ -1395,7 +1391,7 @@ static void print_tables(void) {
     indx = state_index[state_no];
     go_to = statset[state_no].go_to;
     for (j = 1; j <= go_to.size; j++) {
-      symbol = go_to.map[j].symbol;
+      int symbol = go_to.map[j].symbol;
       i = indx + symbol;
       if (goto_default_bit || nt_check_bit)
         check[i] = symbol;
@@ -1478,7 +1474,7 @@ static void print_tables(void) {
     indx = term_state_index[state_no];
     sh = shift[new_state_element[state_no].shift_number];
     for (j = 1; j <= sh.size; j++) {
-      symbol = sh.map[j].symbol;
+      int symbol = sh.map[j].symbol;
       act = sh.map[j].action;
       if (!shift_default_bit || act != shiftdf[symbol]) {
         i = indx + symbol;
@@ -1506,7 +1502,7 @@ static void print_tables(void) {
 
     red = new_state_element[state_no].reduce;
     for (j = 1; j <= red.size; j++) {
-      symbol = red.map[j].symbol;
+      int symbol = red.map[j].symbol;
       rule_no = red.map[j].rule_number;
       i = indx + symbol;
       check[i] = symbol;
@@ -1578,7 +1574,7 @@ static void print_tables(void) {
   /* If GOTO_DEFAULT is requested, we print out the GOTODEF vector.   */
   if (goto_default_bit) {
     k = 0;
-    for ALL_NON_TERMINALS(symbol) {
+    for ALL_NON_TERMINALS2 {
       act = gotodef[symbol];
       if (act < 0)
         result_act = -act;
@@ -1662,7 +1658,7 @@ static void print_tables(void) {
       indx = shift_check_index[i];
       sh = shift[real_shift_number[i]];
       for (j = 1; j <= sh.size; j++) {
-        symbol = sh.map[j].symbol;
+        int symbol = sh.map[j].symbol;
         check[indx + symbol] = symbol;
       }
     }
@@ -1683,22 +1679,21 @@ static void print_tables(void) {
     }
 
     k = 0;
-    for ALL_TERMINALS(symbol) {
+    for ALL_TERMINALS2 {
       act = shiftdf[symbol];
-      if (act < 0)
+      if (act < 0) {
         result_act = -act + error_act;
-      else if (act == 0)
+      } else if (act == 0) {
         result_act = error_act;
-      else if (act > num_states)
+      } else if (act > num_states) {
         result_act = state_index[act];
-      else
+      } else {
         result_act = state_index[act] + num_rules;
-
+      }
       if (result_act > MAX_TABLE_SIZE + 1) {
         PRNTERR2(msg_line, "Table contains look-ahead shift entry that is >%ld; Processing stopped.", MAX_TABLE_SIZE + 1);
         return;
       }
-
       field(result_act, 6);
       k++;
       if (k == 12) {

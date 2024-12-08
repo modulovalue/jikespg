@@ -651,9 +651,8 @@ static void conflicts_initialization(void) {
   nt_items -= num_terminals + 1;
   item_list = Allocate_short_array(num_items + 1);
 
-  int i = (PRINT_LINE_SIZE - 11) / 2 - 1;
   PR_HEADING();
-  fill_in(msg_line, i, '-');
+  fill_in(msg_line, (PRINT_LINE_SIZE - 11) / 2 - 1, '-');
   fprintf(syslis, "\n%s CONFLICTS %s\n", msg_line, msg_line);
   output_line_no += 2;
 
@@ -670,13 +669,14 @@ static void conflicts_initialization(void) {
   /* of the form [x .A y] where x and y are arbitrary strings, and A is  */
   /* a non-terminal. This map is also used in retracing a path from the  */
   /* Start item to any other item.                                       */
-  for ALL_NON_TERMINALS(i)
-    nt_items[i] = NIL;
+  for ALL_NON_TERMINALS2 {
+    nt_items[symbol] = NIL;
+  }
 
-  for ALL_ITEMS(i) {
-    if (IS_A_NON_TERMINAL(item_table[i].symbol)) {
-      item_list[i] = nt_items[item_table[i].symbol];
-      nt_items[item_table[i].symbol] = i;
+  for ALL_ITEMS2 {
+    if (IS_A_NON_TERMINAL(item_table[item_no].symbol)) {
+      item_list[item_no] = nt_items[item_table[item_no].symbol];
+      nt_items[item_table[item_no].symbol] = item_no;
     }
   }
 }
@@ -1138,7 +1138,6 @@ static struct state_element *state_to_resolve_conflicts
       default_rule,
       count,
       i,
-      symbol,
       act;
 
   new_sources = allocate_sources();
@@ -1219,16 +1218,15 @@ static struct state_element *state_to_resolve_conflicts
     /* If new conflicts are detected and we are already at the     */
     /* lookahead level requested, we terminate the computation...  */
     count = 0;
-    for ALL_TERMINALS(symbol) {
+    for ALL_TERMINALS2 {
       if (IS_ELEMENT(look_ahead, symbol)) {
         count++;
-
         if (action[symbol] == NULL) {
           symbol_list[symbol] = symbol_root;
           symbol_root = symbol;
-        } else if (level == lalr_level)
+        } else if (level == lalr_level) {
           goto clean_up_and_return;
-
+        }
         p = Allocate_node();
         p->value = act;
         p->next = action[symbol];
@@ -1248,8 +1246,7 @@ static struct state_element *state_to_resolve_conflicts
   /* update the counts and create two lists: a list of symbols on    */
   /* which shift actions are defined and a list of symbols on which  */
   /* reduce actions are defined.                                     */
-  for (symbol = symbol_root;
-       symbol != NIL; symbol = symbol_list[symbol]) {
+  for (int symbol = symbol_root; symbol != NIL; symbol = symbol_list[symbol]) {
     /* We have four cases to consider:                             */
     /*    1. There are conflicts on SYMBOL                         */
     /*    2. The action on SYMBOL is a shift-reduce                */
@@ -1363,8 +1360,7 @@ static struct state_element *state_to_resolve_conflicts
     /* For all Shift actions to look-ahead states, the IN_STATE    */
     /* field of these look-ahead target states are updated.        */
     hash_address = num_shift_actions; /* Initialize hash address */
-    for (symbol = shift_root;
-         symbol != NIL; symbol = action_list[symbol]) {
+    for (int symbol = shift_root; symbol != NIL; symbol = action_list[symbol]) {
       hash_address += symbol;
 
       if (action[symbol]->value < 0)
@@ -1402,16 +1398,12 @@ static struct state_element *state_to_resolve_conflicts
     /* insert it into the table.                                   */
     if (p_inner == NULL) {
       num_shift_maps++;
-
       sh = Allocate_shift_map(num_shift_actions);
-
       state->shift = sh;
       state->shift_number = num_shift_maps;
       state->next_shift = shift_table[hash_address];
       shift_table[hash_address] = state;
-
-      for (symbol = shift_root, i = 1;
-           symbol != NIL; symbol = action_list[symbol], i++) {
+      for (int symbol = shift_root, i = 1; symbol != NIL; symbol = action_list[symbol], i++) {
         sh.map[i].symbol = symbol;
         sh.map[i].action = action[symbol]->value;
       }
@@ -1437,9 +1429,7 @@ Build_reduce_map: {
 
     red = Allocate_reduce_map(num_reduce_actions);
     state->reduce = red;
-    int i_inner;
-    for (symbol = reduce_root, i_inner = 1;
-         symbol != NIL; symbol = action_list[symbol]) {
+    for (int symbol = reduce_root, i_inner = 1; symbol != NIL; symbol = action_list[symbol]) {
       if (default_opt == 0 ||
           action[symbol]->value != default_rule ||
           table_opt == OPTIMIZE_TIME ||
@@ -1463,7 +1453,7 @@ Build_reduce_map: {
   /* return.                                                         */
 clean_up_and_return:
   free_sources(new_sources);
-  for (symbol = symbol_root; symbol != NIL; symbol = symbol_list[symbol]) {
+  for (int symbol = symbol_root; symbol != NIL; symbol = symbol_list[symbol]) {
     for (p = action[symbol]; p != NULL; tail = p, p = p->next) {
     }
     if (action[symbol] != NULL)
@@ -1516,15 +1506,13 @@ void init_lalrk_process(void) {
   not_lrk = false;
 
   if (lalr_level > 1) {
-    int symbol;
-    shift_table = (struct state_element **)
-        calloc(SHIFT_TABLE_SIZE,
-               sizeof(struct state_element *));
+    shift_table = (struct state_element **) calloc(SHIFT_TABLE_SIZE, sizeof(struct state_element *));
     if (shift_table == NULL)
       nospace(__FILE__, __LINE__);
 
-    for ALL_NON_TERMINALS(symbol)
+    for ALL_NON_TERMINALS2 {
       not_lrk = not_lrk || rmpself[symbol];
+    }
 
     cyclic = Allocate_boolean_array(num_states + 1);
     index_of = Allocate_short_array(num_states + 1);
@@ -1793,12 +1781,7 @@ void resolve_conflicts(const int state_no, struct node **action,
 /* array LASTATS and update the original automaton with the relevant   */
 /* transitions into the lookahead states.                              */
 void create_lastats(void) {
-  struct state_element
-      *p;
-
-  int
-      i,
-      symbol;
+  struct state_element *p;
 
   /* Allocate LASTATS structure to permanently construct lookahead   */
   /* states and reallocate SHIFT map as we may have to construct     */
@@ -1829,11 +1812,11 @@ void create_lastats(void) {
   /* for a given state. It is initialized here to the empty map.     */
   /* The array shift_count is used to count how many references      */
   /* there are to each shift map.                                    */
-  for ALL_TERMINALS(symbol) {
+  for ALL_TERMINALS2 {
     shift_action[symbol] = OMEGA;
   }
 
-  for (i = 0; i <= max_la_state; i++) {
+  for (int i = 0; i <= max_la_state; i++) {
     shift_count[i] = 0;
   }
 
@@ -1873,8 +1856,8 @@ void create_lastats(void) {
     const int shift_no = statset[state_no].shift_number;
     struct shift_header_type sh = shift[shift_no];
     int shift_root = NIL;
-    for (i = 1; i <= sh.size; i++) {
-      symbol = sh.map[i].symbol;
+    for (int i = 1; i <= sh.size; i++) {
+      int symbol = sh.map[i].symbol;
       shift_action[symbol] = sh.map[i].action;
       shift_list[symbol] = shift_root;
       shift_root = symbol;
@@ -1898,7 +1881,7 @@ void create_lastats(void) {
     }
 
     /* There are two conditions under which we have to construct   */
-    /* a brand new shift map:                                      */
+    /* a new shift map:                                            */
     /*     1. The initial shift map was shared with other states.  */
     /*     2. The updated shift map contains more elements than    */
     /*        the initial one.                                     */
@@ -1914,9 +1897,7 @@ void create_lastats(void) {
     }
 
     /* Reconstruct the relevant shift map.                         */
-    for (symbol = shift_root, i = 1;
-         symbol != NIL;
-         shift_action[symbol] = OMEGA, symbol = shift_list[symbol], i++) {
+    for (int symbol = shift_root, i = 1; symbol != NIL; shift_action[symbol] = OMEGA, symbol = shift_list[symbol], i++) {
       sh.map[i].symbol = symbol;
       sh.map[i].action = shift_action[symbol];
     }

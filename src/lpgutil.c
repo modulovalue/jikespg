@@ -540,8 +540,8 @@ void print_state(const int state_no) {
     state_seen[state_no] = false;
   }
 
-  for ALL_ITEMS(i) {
-    item_seen[i] = false;
+  for ALL_ITEMS2 {
+    item_seen[item_no] = false;
   }
 
   int kernel_size = 0;

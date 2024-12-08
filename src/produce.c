@@ -81,7 +81,6 @@ void produce(void) {
 
   int item_no,
       rule_no,
-      symbol,
       nt,
       i;
 
@@ -131,7 +130,7 @@ void produce(void) {
          !end_node; end_node = p == clitems[nt]) {
       p = p->next;
       item_no = p->value;
-      symbol = item_table[item_no].symbol;
+      int symbol = item_table[item_no].symbol;
       if (IS_A_NON_TERMINAL(symbol)) {
         i = item_table[item_no].suffix_index;
         if (IS_IN_SET(first, i, empty) &&
@@ -186,8 +185,9 @@ void produce(void) {
   /* We make sure that each non-terminal A is not present in its own  */
   /* PRODUCES set since we are interested in the non-reflexive        */
   /* (positive) transitive closure.                                   */
-  for ALL_SYMBOLS(i)
-    index_of[i] = OMEGA;
+  for ALL_SYMBOLS2 {
+    index_of[symbol] = OMEGA;
+  }
 
   top = 0;
   for ALL_NON_TERMINALS(nt) {
@@ -221,7 +221,7 @@ void produce(void) {
     INIT_NTSET(set);
 
     for (i = 1; i <= go_to.size; i++) {
-      symbol = go_to.map[i].symbol;
+      int symbol = go_to.map[i].symbol;
       const int state = go_to.map[i].action;
       if (state < 0)
         rule_no = -state;
@@ -241,7 +241,7 @@ void produce(void) {
     }
 
     goto_domain[state_no] = NULL;
-    for (symbol = nt_root; symbol != NIL; symbol = nt_list[symbol]) {
+    for (int symbol = nt_root; symbol != NIL; symbol = nt_list[symbol]) {
       if (!IS_ELEMENT(set, symbol - num_terminals)) {
         q = Allocate_node();
         q->value = symbol;
@@ -276,7 +276,7 @@ void produce(void) {
     /* if a nullable nonterminal was assigned a name by default      */
     /* (nonterminals that were "named" by default are identified     */
     /* with negative indices), that name is also removed.            */
-    for ALL_NON_TERMINALS(symbol) {
+    for ALL_NON_TERMINALS2 {
       if (nt_list[symbol] == OMEGA)
         symno[symbol].name_index = symno[accept_image].name_index;
       else if (symno[symbol].name_index < 0) {
@@ -292,8 +292,9 @@ void produce(void) {
     for (i = 1; i <= num_names; i++)
       name_used[i] = false;
 
-    for ALL_SYMBOLS(symbol)
+    for ALL_SYMBOLS2 {
       name_used[symno[symbol].name_index] = true;
+    }
 
     n = 0;
     for (i = 1; i <= num_names; i++) {
@@ -304,8 +305,9 @@ void produce(void) {
     }
     num_names = n;
 
-    for ALL_SYMBOLS(symbol)
+    for ALL_SYMBOLS2 {
       symno[symbol].name_index = names_map[symno[symbol].name_index];
+    }
   }
 
   /* If the option LIST_BIT is ON, print the name map.                */
@@ -314,14 +316,15 @@ void produce(void) {
     fprintf(syslis, "\nName map:\n");
     output_line_no += 2;
 
-    for ALL_SYMBOLS(symbol) {
-      if (symno[symbol].name_index != symno[accept_image].name_index)
+    for ALL_SYMBOLS2 {
+      if (symno[symbol].name_index != symno[accept_image].name_index) {
         print_name_map(symbol);
+      }
     }
-    for ALL_SYMBOLS(symbol) {
-      if (symbol != accept_image &&
-          symno[symbol].name_index == symno[accept_image].name_index)
+    for ALL_SYMBOLS2 {
+      if (symbol != accept_image && symno[symbol].name_index == symno[accept_image].name_index) {
         print_name_map(symbol);
+      }
     }
   }
 
@@ -420,7 +423,6 @@ static void process_scopes(void) {
       nt,
       symbol,
       item_root,
-      item_no,
       rule_no,
       nt_root;
 
@@ -481,7 +483,7 @@ static void process_scopes(void) {
     for (end_node = (p = clitems[nt]) == NULL;
          !end_node; end_node = p == clitems[nt]) {
       p = p->next;
-      for (item_no = p->value;
+      for (int item_no = p->value;
            IS_A_NON_TERMINAL(item_table[item_no].symbol);
            item_no++) {
         symbol = item_table[item_no].symbol;
@@ -532,7 +534,7 @@ static void process_scopes(void) {
     for (end_node = (p = clitems[nt]) == NULL;
          !end_node; end_node = p == clitems[nt]) {
       p = p->next;
-      for (item_no = p->value;
+      for (int item_no = p->value;
            item_table[item_no].symbol != empty; item_no++) {
         symbol = item_table[item_no].symbol;
         if (IS_A_NON_TERMINAL(symbol)) {
@@ -553,8 +555,9 @@ static void process_scopes(void) {
   /*                                                              */
   /* Since $ACC =>* x A y for all nonterminal A in the grammar, a */
   /* single call to COMPUTE_PRODUCES does the trick.              */
-  for ALL_NON_TERMINALS(nt)
+  for ALL_NON_TERMINALS(nt) {
     index_of[nt] = OMEGA;
+  }
   top = 0;
   compute_produces(accept_image);
 
@@ -563,7 +566,7 @@ static void process_scopes(void) {
   for ALL_NON_TERMINALS(nt)
     item_of[nt] = NIL;
 
-  for ALL_ITEMS(item_no) {
+  for ALL_ITEMS2 {
     dot_symbol = item_table[item_no].symbol;
     if (IS_A_NON_TERMINAL(dot_symbol)) {
       next_item[item_no] = item_of[dot_symbol];
@@ -581,11 +584,12 @@ static void process_scopes(void) {
   /* longest prefix encountered.  This is subsequently used to        */
   /* bucket sort the scoped items in descending order of the length    */
   /* of their prefixes.                                               */
-  for ALL_ITEMS(item_no)
+  for ALL_ITEMS2 {
     item_list[item_no] = OMEGA;
+  }
 
   item_root = NIL;
-  for ALL_ITEMS(item_no) {
+  for ALL_ITEMS2 {
     dot_symbol = item_table[item_no].symbol;
     if (dot_symbol == error_image) {
       if (item_table[item_no].dot != 0 &&
@@ -637,13 +641,11 @@ static void process_scopes(void) {
   for ALL_NON_TERMINALS(nt)
     symbol_seen[nt] = false;
 
-  for (item_no = item_root; item_no != NIL; item_no = item_list[item_no]) {
+  for (int item_no = item_root; item_no != NIL; item_no = item_list[item_no]) {
     rule_no = item_table[item_no].rule_number;
     symbol = rules[rule_no].lhs;
     num_scopes = num_scopes + 1;
-
     symbol_seen[symbol] = true;
-
     prefix_index[item_no] = insert_prefix(item_no);
     suffix_index[item_no] = insert_suffix(item_no);
   }
@@ -790,18 +792,17 @@ process_scope_states: {
     /*                                                                     */
     /* and both of them are applicable in a given context with similar     */
     /* result, then we always want A ::= x . y to be used.                 */
-    for (i = 1; i <= max_prefix_length; i++)
+    for (i = 1; i <= max_prefix_length; i++) {
       bucket[i] = NIL;
-
-    for (item_no = item_root;
-         item_no != NIL; item_no = item_list[item_no]) {
+    }
+    for (int item_no = item_root; item_no != NIL; item_no = item_list[item_no]) {
       int tail;
-
       k = item_table[item_no].dot;
       for (i = bucket[k]; i != NIL; tail = i, i = next_item[i]) {
         if (RHS_SIZE(item_table[item_no].rule_number) >=
-            RHS_SIZE(item_table[i].rule_number))
+            RHS_SIZE(item_table[i].rule_number)) {
           break;
+        }
       }
 
       next_item[item_no] = i;
@@ -816,8 +817,7 @@ process_scope_states: {
     /* bucket in LIFO order in ITEM_LIST.                                */
     item_root = NIL;
     for (k = 1; k <= max_prefix_length; k++) {
-      for (item_no = bucket[k];
-           item_no != NIL; item_no = next_item[item_no]) {
+      for (int item_no = bucket[k]; item_no != NIL; item_no = next_item[item_no]) {
         item_list[item_no] = item_root;
         item_root = item_no;
       }
@@ -834,7 +834,7 @@ process_scope_states: {
   } /* End PROCESS_SCOPE_STATES */
 
   /* Next, we initialize the remaining fields of the SCOPE structure.  */
-  item_no = item_root;
+  int item_no = item_root;
   for (i = 1; item_no != NIL; i++) {
     scope[i].prefix = prefix_index[item_no];
     scope[i].suffix = suffix_index[item_no];

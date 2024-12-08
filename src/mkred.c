@@ -484,15 +484,13 @@ static void build_in_stat(void) {
 /* For a complete description of the lookahead algorithm used in this        */
 /* program, see Charles, PhD thesis, NYU 1991.                               */
 void mkrdcts(void) {
-  int item_no,
-      rule_no,
-      symbol,
-      i,
-      n;
+  int item_no;
+  int rule_no;
+  int i;
+  int n;
 
-  struct node
-      *q,
-      *item_ptr;
+  struct node *q;
+  struct node *item_ptr;
   /* Set up a pool of temporary space. If LALR(k), k > 1 is requested,  */
   /* INIT_LALRK_PROCESS sets up the necessary environment for the       */
   /* computation of multiple lookahead.                                 */
@@ -663,7 +661,7 @@ void mkrdcts(void) {
       /* default reductions are never taken on the ACCEPT rule.             */
       item_no = item_ptr->value;
       rule_no = item_table[item_no].rule_number;
-      symbol = rules[rule_no].lhs;
+      int symbol = rules[rule_no].lhs;
       if (single_complete_item[state_no] && symbol != accept_image) {
         default_rule = rule_no;
         item_ptr = NULL; /* No need to check for conflicts */
@@ -682,8 +680,8 @@ void mkrdcts(void) {
         } else
           compute_la(state_no, item_no, look_ahead);
 
-        for ALL_TERMINALS(symbol) /* for all symbols in la set */
-        {
+        for ALL_TERMINALS2 {
+        /* for all symbols in la set */
           if (IS_ELEMENT(look_ahead, symbol)) {
             struct node *p = Allocate_node();
             p->value = item_no;
@@ -755,7 +753,7 @@ void mkrdcts(void) {
            q != NULL; q = q->next) {
         item_no = q->value;
         rule_no = item_table[item_no].rule_number;
-        symbol = rules[rule_no].lhs;
+        int symbol = rules[rule_no].lhs;
         reduce_size += rule_count[rule_no];
         if (rule_count[rule_no] > n &&
             no_shift_on_error_sym[state_no] &&
@@ -799,8 +797,7 @@ void mkrdcts(void) {
 
     red.map[0].symbol = DEFAULT_SYMBOL;
     red.map[0].rule_number = default_rule;
-    for (symbol = symbol_root;
-         symbol != NIL; symbol = symbol_list[symbol]) {
+    for (int symbol = symbol_root; symbol != NIL; symbol = symbol_list[symbol]) {
       if (action[symbol] != NULL) {
         rule_no = item_table[action[symbol]->value].rule_number;
         if (rule_no != default_rule ||

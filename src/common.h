@@ -92,16 +92,19 @@ static const int IOBUFFER_SIZE = 655360;
 // TODO • replace with no param
 #define ALL_ITEMS(indx) (indx = 1; indx <= num_items; indx++)
 
+#define ALL_ITEMS2 (int item_no = 1; item_no <= num_items; item_no++)
+
 #define ALL_STATES2 (int state_no = 1; state_no <= num_states; state_no++)
 
 // TODO • replace with no param
 #define ALL_RULES(indx) (indx = 0; indx <= num_rules; indx++)
 
-// TODO • replace with no param
-#define ALL_RULES_BACKWARDS(indx) (indx = num_rules; indx >= 0; indx--)
+#define ALL_RULES2 (int rule_no = 0; rule_no <= num_rules; rule_no++)
+
+#define ALL_RULES_BACKWARDS2 (int rule_no = num_rules; rule_no >= 0; rule_no--)
 
 // TODO • replace with no param
-#define ENTIRE_RHS(indx, rule_no) (indx = rules[rule_no].rhs; indx < rules[(rule_no) + 1].rhs; indx++)
+#define ENTIRE_RHS(symbol, rule_no) (symbol = rules[rule_no].rhs; symbol < rules[(rule_no) + 1].rhs; symbol++)
 
 extern const char HEADER_INFO[];
 extern const char VERSION[];

@@ -44,8 +44,7 @@ static void process_shift_actions(struct action_element **action_count,
 /* the grammar. Its task is to assign to each element of SHIFTDF, the action*/
 /* most frequently defined on the symbol in question.                       */
 static void compute_shift_default(void) {
-  int symbol,
-      shift_count = 0,
+  int shift_count = 0,
       shift_reduce_count = 0;
 
   /* Set up a pool of temporary space.                            */
@@ -70,17 +69,15 @@ static void compute_shift_default(void) {
   /* We now iterate over the ACTION_COUNT mapping, and for each        */
   /* terminal t, initialize SHIFTDF[t] to the action that is most      */
   /* frequently defined on t.                                          */
-  for ALL_TERMINALS(symbol) {
+  for ALL_TERMINALS2 {
     int max_count = 0;
     int default_action = 0;
-
     for (const struct action_element *q = action_count[symbol]; q != NULL; q = q->next) {
       if (q->count > max_count) {
         max_count = q->count;
         default_action = q->action;
       }
     }
-
     shiftdf[symbol] = default_action;
     if (default_action > 0) /* A state number ? */
       shift_count += max_count;
@@ -106,11 +103,9 @@ static void compute_shift_default(void) {
 static void compute_goto_default(void) {
   struct goto_header_type go_to;
 
-  struct action_element
-      *q;
+  struct action_element *q;
 
-  int symbol,
-      i,
+  int i,
       goto_count = 0,
       goto_reduce_count = 0;
 
@@ -134,7 +129,7 @@ static void compute_goto_default(void) {
   for ALL_STATES2 {
     go_to = statset[state_no].go_to;
     for (i = 1; i <= go_to.size; i++) {
-      symbol = go_to.map[i].symbol;
+      int symbol = go_to.map[i].symbol;
       const int act = go_to.map[i].action;
       for (q = action_count[symbol]; q != NULL; q = q->next) {
         if (q->action == act)
@@ -159,7 +154,7 @@ static void compute_goto_default(void) {
   /* We now iterate over the mapping created above and for each      */
   /* non-terminal A, initialize GOTODEF(A) to the action that is     */
   /* most frequently defined on A.                                   */
-  for ALL_NON_TERMINALS(symbol) {
+  for ALL_NON_TERMINALS2 {
     int max_count = 0;
     int default_action = 0;
 
@@ -254,31 +249,35 @@ void process_tables(void) {
   }
 
   for (int i = 1; i <= scope_rhs_size; i++) {
-    if (scope_right_side[i] != 0)
+    if (scope_right_side[i] != 0) {
       scope_right_side[i]--;
+    }
   }
 
   /* Remap all symbols in the domain of the Shift maps.              */
   for (int i = 1; i <= num_shift_maps; i++) {
     const struct shift_header_type sh = shift[i];
-    for (int j = 1; j <= sh.size; j++)
+    for (int j = 1; j <= sh.size; j++) {
       sh.map[j].symbol--;
+    }
   }
 
   /* Remap the left-hand side of all the rules.                      */
-  for ALL_RULES(rule_no)
+  for ALL_RULES(rule_no) {
     rules[rule_no].lhs--;
+  }
 
   /* Remap the dot symbols in ITEM_TABLE.                            */
   if (error_maps_bit) {
-    int i;
-    for ALL_ITEMS(i)
-      item_table[i].symbol--;
+    for ALL_ITEMS2 {
+      item_table[item_no].symbol--;
+    }
   }
 
   /* We update the SYMNO map.                                        */
-  for ALL_SYMBOLS(symbol)
+  for ALL_SYMBOLS2 {
     symno[symbol] = symno[symbol + 1];
+  }
 
   /* If Goto Default and/or Shift Default were requested, process    */
   /* appropriately.                                                  */

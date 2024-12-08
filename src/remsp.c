@@ -574,7 +574,6 @@ void remove_single_productions(void) {
       lhs_symbol,
       action,
       item_no,
-      i,
       j;
 
   bool end_node;
@@ -645,14 +644,14 @@ void remove_single_productions(void) {
   rule_root = NIL;
   symbol_root = NIL;
 
-  for ALL_RULES(i) {
-    rule_list[i] = OMEGA;
+  for ALL_RULES2 {
+    rule_list[rule_no] = OMEGA;
   }
 
-  for ALL_SYMBOLS(i) {
-    symbol_list[i] = OMEGA;
-    sp_rules[i] = NIL;
-    sp_action[i] = NULL;
+  for ALL_SYMBOLS2 {
+    symbol_list[symbol] = OMEGA;
+    sp_rules[symbol] = NIL;
+    sp_action[symbol] = NULL;
   }
 
   /* Construct a set of all symbols used in the right-hand side of  */
@@ -663,7 +662,7 @@ void remove_single_productions(void) {
   /* relevant sets are stored in the vector next_rule.              */
   for ALL_RULES(rule_no) {
     if (rules[rule_no].sp) {
-      i = rhs_sym[rules[rule_no].rhs];
+      int i = rhs_sym[rules[rule_no].rhs];
       next_rule[rule_no] = sp_rules[i];
       sp_rules[i] = rule_no;
       if (symbol_list[i] == OMEGA) {
@@ -680,10 +679,10 @@ void remove_single_productions(void) {
   /* well as their associated rules. (See compute_sp_map for detail)*/
   /* As the list of rules is constructed as a circular list to keep */
   /* it in proper order, it is turned into a linear list here.      */
-  for (i = symbol_root; i != NIL; i = symbol_list[i])
+  for (int i = symbol_root; i != NIL; i = symbol_list[i])
     index_of[i] = OMEGA;
   top = 0;
-  for (i = symbol_root; i != NIL; i = symbol_list[i]) {
+  for (int i = symbol_root; i != NIL; i = symbol_list[i]) {
     if (index_of[i] == OMEGA)
       compute_sp_map(i);
   }
@@ -701,7 +700,7 @@ void remove_single_productions(void) {
   /* removing single productions in an automaton containing         */
   /* conflicts. If an automaton does not contain any conflict, the  */
   /* new set of SP rules is always the same as the initial set.     */
-  for (i = symbol_root; i != NIL; i = symbol_list[i])
+  for (int i = symbol_root; i != NIL; i = symbol_list[i])
     sp_rules[i] = NIL;
 
   top = 0;
@@ -709,7 +708,7 @@ void remove_single_productions(void) {
        rule_no != NIL; rule_no = rule_list[rule_no]) {
     top++;
 
-    i = rhs_sym[rules[rule_no].rhs];
+    int i = rhs_sym[rules[rule_no].rhs];
     sp_rules[i] = OMEGA;
   }
 
@@ -723,8 +722,9 @@ void remove_single_productions(void) {
   /* never involved in conflicts.                                   */
   /* Initialize the set/list (symbol_root, symbol_list) to the      */
   /* empty set/list.                                                */
-  for (i = 0; i < STATE_TABLE_SIZE; i++)
+  for (int i = 0; i < STATE_TABLE_SIZE; i++) {
     sp_table[i] = NULL;
+  }
 
   sp_state_root = NULL;
   max_sp_state = num_states;
@@ -733,13 +733,13 @@ void remove_single_productions(void) {
     update_action[state_no] = NULL;
   }
 
-  for ALL_NON_TERMINALS(i) {
-    is_conflict_symbol[i] = false;
+  for ALL_NON_TERMINALS2 {
+    is_conflict_symbol[symbol] = false;
   }
 
   symbol_root = NIL;
-  for ALL_SYMBOLS(i) {
-    symbol_list[i] = OMEGA;
+  for ALL_SYMBOLS2 {
+    symbol_list[symbol] = OMEGA;
   }
 
   /* Traverse all regular states and process the relevant ones.     */
@@ -755,13 +755,13 @@ void remove_single_productions(void) {
     /* presume that symbol_list is initialized to the empty set.  */
     if (go_to.size > 0) {
       struct node *item_ptr;
-      for ALL_SYMBOLS(i)
-        index_of[i] = OMEGA;
-
-      for ALL_TERMINALS(i)
-        is_conflict_symbol[i] = false;
-      for (end_node = (p = conflict_symbols[state_no]) == NULL;
-           !end_node; end_node = p == conflict_symbols[state_no]) {
+      for ALL_SYMBOLS2 {
+        index_of[symbol] = OMEGA;
+      }
+      for ALL_TERMINALS2 {
+        is_conflict_symbol[symbol] = false;
+      }
+      for (end_node = (p = conflict_symbols[state_no]) == NULL; !end_node; end_node = p == conflict_symbols[state_no]) {
         p = p->next;
         is_conflict_symbol[p->value] = true;
       }
@@ -773,7 +773,7 @@ void remove_single_productions(void) {
       /* before we process the next loop, because index_of is   */
       /* a global variable that is used in the routine          */
       /* compute_sp_action.                                     */
-      for (i = 1; i <= go_to.size; i++) {
+      for (int i = 1; i <= go_to.size; i++) {
         index_of[go_to.map[i].symbol] = i;
       }
 
@@ -782,7 +782,7 @@ void remove_single_productions(void) {
       /* production on which there is a transition, compute the */
       /* lookahead set that can follow this transition and add  */
       /* the symbol to the set of candidates (in symbol_list).  */
-      for (i = 1; i <= go_to.size; i++) {
+      for (int i = 1; i <= go_to.size; i++) {
         symbol = go_to.map[i].symbol;
         if (IS_SP_RHS(symbol)) {
           compute_sp_action(state_no, symbol, go_to.map[i].action);
@@ -791,7 +791,7 @@ void remove_single_productions(void) {
         }
       }
 
-      for (i = 1; i <= sh.size; i++) {
+      for (int i = 1; i <= sh.size; i++) {
         symbol = sh.map[i].symbol;
         index_of[symbol] = i;
         if (IS_SP_RHS(symbol)) {
@@ -831,11 +831,10 @@ void remove_single_productions(void) {
             /* it is an indication that after the transition on   */
             /* symbol, the action on i is a lookahead shift. In   */
             /* that case, no action is copied.                    */
-            for ALL_TERMINALS(i) {
-              if (sp_action[lhs_symbol][i] != OMEGA &&
-                  sp_action[symbol][i] != OMEGA)
-                sp_action[symbol][i] =
-                    sp_action[lhs_symbol][i];
+            for ALL_TERMINALS2 {
+              if (sp_action[lhs_symbol][symbol] != OMEGA && sp_action[symbol][symbol] != OMEGA) {
+                sp_action[symbol][symbol] = sp_action[lhs_symbol][symbol];
+              }
             }
           }
         }
@@ -905,13 +904,11 @@ void remove_single_productions(void) {
               sp_rule_count = 0;
               sp_action_count = 0;
               rule_head = NIL;
-
-              for ALL_RULES(i) {
-                next_rule[i] = OMEGA;
+              for ALL_RULES2 {
+                next_rule[rule_no] = OMEGA;
               }
-
-              for ALL_TERMINALS(i) {
-                rule_no = sp_action[symbol][i];
+              for ALL_TERMINALS2 {
+                rule_no = sp_action[symbol][rule_no];
                 if (rule_no != OMEGA) {
                   sp_action_count++;
                   if (next_rule[rule_no] == OMEGA) {
@@ -921,7 +918,6 @@ void remove_single_productions(void) {
                   }
                 }
               }
-
               if (sp_rule_count == 1 && IS_SP_RULE(rule_head)) {
                 lhs_symbol = rules[rule_head].lhs;
                 action = go_to.map[index_of[lhs_symbol]].action;
@@ -990,7 +986,7 @@ void remove_single_productions(void) {
   /* number of new SP states that were added.                       */
   for (j = 1; j <= num_shift_maps; j++) {
     sh = shift[j];
-    for (i = 1; i <= sh.size; i++) {
+    for (int i = 1; i <= sh.size; i++) {
       if (sh.map[i].action > num_states)
         sh.map[i].action += max_sp_state - num_states;
     }
@@ -1069,7 +1065,7 @@ void remove_single_productions(void) {
   /* of shift_table to NIL. Shift_table will be used as the base of */
   /* a hash table for the new shift maps.                           */
   top = 0;
-  for (i = 0; i <= SHIFT_TABLE_UBOUND; i++)
+  for (int i = 0; i <= SHIFT_TABLE_UBOUND; i++)
     shift_table[i] = NIL;
 
   /* At most, the shift array contains 1..num_states elements. As,  */
@@ -1088,12 +1084,10 @@ void remove_single_productions(void) {
     /* that are in non-final states.                              */
     if (update_action[state_no] != NULL) {
       struct update_action_element *p_inner;
-
       red = reduce[state_no];
-      for (i = 1; i <= red.size; i++) {
+      for (int i = 1; i <= red.size; i++) {
         index_of[red.map[i].symbol] = i;
       }
-
       for (p_inner = update_action[state_no]; p_inner != NULL; p_inner = p_inner->next) {
         red.map[index_of[p_inner->symbol]].rule_number = p_inner->action;
       }
@@ -1109,12 +1103,12 @@ void remove_single_productions(void) {
       /* transition and copy the shift map into the vector      */
       /* shift_transition.                                      */
       go_to = statset[state_no].go_to;
-      for (i = 1; i <= go_to.size; i++) {
+      for (int i = 1; i <= go_to.size; i++) {
         index_of[go_to.map[i].symbol] = i;
       }
 
       sh = shift[statset[state_no].shift_number];
-      for (i = 1; i <= sh.size; i++) {
+      for (int i = 1; i <= sh.size; i++) {
         index_of[sh.map[i].symbol] = i;
         shift_transition[sh.map[i].symbol] = sh.map[i].action;
       }
@@ -1152,8 +1146,10 @@ void remove_single_productions(void) {
         unsigned long hash_address;
 
         hash_address = sh.size;
-        for (i = 1; i <= sh.size; i++) /* Compute Hash location */
+        for (int i = 1; i <= sh.size; i++) {
+          /* Compute Hash location */
           hash_address += sh.map[i].symbol;
+        }
         hash_address %= SHIFT_TABLE_SIZE;
 
         /* Search HASH_ADDRESS location for shift map that matches    */
@@ -1165,9 +1161,11 @@ void remove_single_productions(void) {
              j != NIL; j = new_shift[j].link) {
           sh2 = shift[new_shift[j].shift_number];
           if (sh.size == sh2.size) {
+            int i;
             for (i = 1; i <= sh.size; i++)
-              if (sh2.map[i].action != shift_transition[sh2.map[i].symbol])
+              if (sh2.map[i].action != shift_transition[sh2.map[i].symbol]) {
                 break;
+              }
             if (i > sh.size)
               break; /* for (j = shift_table[ ... */
           }
@@ -1179,24 +1177,20 @@ void remove_single_productions(void) {
         /* inserted that matches its shift map.                       */
         if (j == NIL) {
           sh2 = Allocate_shift_map(sh.size);
-          for (i = 1; i <= sh.size; i++) {
+          for (int i = 1; i <= sh.size; i++) {
             symbol = sh.map[i].symbol;
             sh2.map[i].symbol = symbol;
             sh2.map[i].action = shift_transition[symbol];
           }
           num_shift_maps++;
           shift[num_shift_maps] = sh2;
-
           statset[state_no].shift_number = num_shift_maps;
-
           top++;
           new_shift[top].shift_number = num_shift_maps;
-
           new_shift[top].link = shift_table[hash_address];
           shift_table[hash_address] = top;
         } else {
-          statset[state_no].shift_number =
-              new_shift[j].shift_number;
+          statset[state_no].shift_number = new_shift[j].shift_number;
         }
       }
     }
@@ -1227,9 +1221,9 @@ void remove_single_productions(void) {
   ffree(rule_count);
   ffree(new_shift);
   ffree(look_ahead);
-  for ALL_SYMBOLS(i) {
-    if (sp_action[i] != NULL) {
-      ffree(sp_action[i]);
+  for ALL_SYMBOLS2 {
+    if (sp_action[symbol] != NULL) {
+      ffree(sp_action[symbol]);
     }
   }
   ffree(sp_action);

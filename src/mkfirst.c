@@ -153,13 +153,13 @@ void mkfirst(void) {
   if (item_table == NULL)
     nospace(__FILE__, __LINE__);
 
-  int i;
-  for ALL_NON_TERMINALS(i) /* Initialize LHS_RULE to NIL */
-    lhs_rule[i] = NIL;
+  for ALL_NON_TERMINALS2 {
+    lhs_rule[symbol] = NIL;
+  }
 
   /* In this loop, we construct the LHS_RULE map which maps     */
   /* each non-terminal symbol into the set of rules it produces */
-  for ALL_RULES(rule_no) {
+  for ALL_RULES2 {
     symbol = rules[rule_no].lhs;
     if (lhs_rule[symbol] == NIL)
       next_rule[rule_no] = rule_no;
@@ -182,8 +182,9 @@ void mkfirst(void) {
     nospace(__FILE__, __LINE__);
   closure -= num_terminals + 1;
 
-  for ALL_NON_TERMINALS(i)
-    index_of[i] = OMEGA;
+  for ALL_NON_TERMINALS2 {
+    index_of[symbol] = OMEGA;
+  }
 
   top = 0;
   for ALL_NON_TERMINALS(nt) {
@@ -202,8 +203,8 @@ void mkfirst(void) {
 
   /* Construct the FIRST map for non-terminals and also a list */
   /* of non-terminals whose first set is empty.                */
-  for ALL_NON_TERMINALS(i) /* Initialize INDEX_OF to OMEGA */
-    index_of[i] = OMEGA;
+  for ALL_NON_TERMINALS2
+    index_of[symbol] = OMEGA;
   top = 0;
   for ALL_NON_TERMINALS(nt) {
     if (index_of[nt] == OMEGA)
@@ -236,8 +237,8 @@ void mkfirst(void) {
   first_element[first_of_empty].suffix_root = 1;
   first_element[first_of_empty].suffix_tail = 0;
 
-  for ALL_NON_TERMINALS(i) /* Initialize NT_ITEMS to NIL */
-    nt_items[i] = NIL;
+  for ALL_NON_TERMINALS2
+    nt_items[symbol] = NIL;
 
   int item_no = 0;
   item_table[item_no].rule_number = 0;
@@ -249,6 +250,7 @@ void mkfirst(void) {
     first_item_of[rule_no] = item_no + 1;
     int j = 0;
     const int k = LAST_RHS_INDEX(rule_no);
+    int i;
     for ENTIRE_RHS(i, rule_no) {
       item_no++;
       symbol = rhs_sym[i];
@@ -302,13 +304,13 @@ void mkfirst(void) {
       calloc(num_first_sets + 1, term_set_size * sizeof(BOOLEAN_CELL));
   if (first == NULL)
     nospace(__FILE__, __LINE__);
-  for (i = 1; i <= top; i++) {
+  for (int i = 1; i <= top; i++) {
     s_first(first_element[i].suffix_root,
             first_element[i].suffix_tail, i);
   }
 
   rule_no = lhs_rule[accept_image];
-  for (i = top + 1; i <= num_first_sets; i++) {
+  for (int i = top + 1; i <= num_first_sets; i++) {
     rule_no = next_rule[rule_no];
     item_no = first_item_of[rule_no];
     item_table[item_no].suffix_index = i;
@@ -395,7 +397,7 @@ void mkfirst(void) {
         item_no = p->value;
         symbol = item_table[item_no].symbol;
         if (IS_A_NON_TERMINAL(symbol)) {
-          i = item_table[item_no].suffix_index;
+          int i = item_table[item_no].suffix_index;
           if (IS_IN_SET(first, i, empty) && !IS_IN_NTSET(produces, nt, symbol - num_terminals)) {
             NTSET_BIT_IN(produces, nt, symbol - num_terminals);
             struct node *q = Allocate_node();
@@ -442,8 +444,8 @@ void mkfirst(void) {
 
     SET_BIT_IN(follow, accept_image, eoft_image);
 
-    for ALL_NON_TERMINALS(i) /* Initialize INDEX_OF to OMEGA */
-      index_of[i] = OMEGA;
+    for ALL_NON_TERMINALS2
+      index_of[symbol] = OMEGA;
 
     index_of[accept_image] = INFINITY; /* mark computed */
     top = 0;
@@ -460,7 +462,7 @@ void mkfirst(void) {
     if (next_rule[rule_no] != rule_no) {
       rule_no = next_rule[rule_no]; /* first rule */
       top = item_table[first_item_of[rule_no]].suffix_index;
-      for (i = top + 1; i <= num_first_sets; i++) {
+      for (int i = top + 1; i <= num_first_sets; i++) {
         rule_no = next_rule[rule_no];
         item_no = first_item_of[rule_no];
         symbol = item_table[item_no].symbol;
@@ -512,18 +514,18 @@ void mkfirst(void) {
 
 static void no_rules_produced(void) {
   int
-      nt_last,
-      symbol;
+      nt_last;
 
   /* Build a list of all non-terminals that do not produce any */
   /* rules.                                                    */
   int nt_root = NIL;
-  for ALL_NON_TERMINALS(symbol) {
+  for ALL_NON_TERMINALS2 {
     if (lhs_rule[symbol] == NIL) {
-      if (nt_root == NIL)
+      if (nt_root == NIL) {
         nt_root = symbol;
-      else
+      } else {
         nt_list[nt_last] = symbol;
+      }
       nt_last = symbol;
     }
   }
@@ -541,7 +543,7 @@ static void no_rules_produced(void) {
     }
     strcpy(line, "        ");
 
-    for (symbol = nt_root; symbol != NIL; symbol = nt_list[symbol]) {
+    for (int symbol = nt_root; symbol != NIL; symbol = nt_list[symbol]) {
       char tok[SYMBOL_SIZE + 1];
       restore_symbol(tok, RETRIEVE_STRING(symbol));
       if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE) {
@@ -1201,20 +1203,19 @@ static void print_unreachables(void) {
 /* sorted, since they are inserted in STACK fashion in the lists:  Last-in,  */
 /* First out.                                                                */
 static void print_xref(void) {
-  int rule_no;
   int item_no;
 
   /* SORT_SYM is used to sort the symbols for cross_reference listing. */
   short *sort_sym = Allocate_short_array(num_symbols + 1);
   short *t_items = Allocate_short_array(num_terminals + 1);
 
-  int symbol;
-  for ALL_TERMINALS(symbol) {
+  for ALL_TERMINALS2 {
     t_items[symbol] = NIL;
   }
 
-  for ALL_RULES_BACKWARDS(rule_no) {
+  for ALL_RULES_BACKWARDS2 {
     item_no = first_item_of[rule_no];
+    int symbol;
     for ENTIRE_RHS(symbol, rule_no) {
       symbol = rhs_sym[symbol];
       if (IS_A_TERMINAL(symbol)) {
@@ -1245,6 +1246,7 @@ static void print_xref(void) {
       strcat(line, "  ==>> ");
       const int offset = strlen(line) - 1;
       if (IS_A_NON_TERMINAL(symbol)) {
+        int rule_no;
         for (bool end_node = (rule_no = lhs_rule[symbol]) == NIL;
              !end_node;
              end_node = rule_no == lhs_rule[symbol]) {
@@ -1267,7 +1269,7 @@ static void print_xref(void) {
       } else {
         for (item_no = t_items[symbol];
              item_no != NIL; item_no = next_item[item_no]) {
-          rule_no = item_table[item_no].rule_number;
+          int rule_no = item_table[item_no].rule_number;
           sprintf(tok, "%d", rule_no);
           if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE) {
             fprintf(syslis, "\n%s", line);
