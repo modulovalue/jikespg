@@ -1,6 +1,5 @@
 %OPTIONS la=2,gp=java,act,an=bnfact.java,hn=bnfhdr.java,tab=space,fp=bnf,prefix=TK_,
-%OPTIONS nogoto-default,output-size=125,names=max,error-maps
-***ERROR: "OUTPUT-SIZE" is an invalid option
+%OPTIONS nogoto-default,names=max,error-maps
 
 Options in effect:
     ACTION  ACTFILE-NAME=bnfact.java  BLOCKB=/.  BLOCKE=./  BYTE  CONFLICTS  

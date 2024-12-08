@@ -1,4 +1,4 @@
-%Options nogoto-default,esc=$,os=100,action,actfile=lpgact.c,noem
+%Options nogoto-default,esc=$,action,actfile=lpgact.c,noem
 %Options fp=lpg,gp,nodefer,suffix=_TK,stack_size=21,hactfile=lpgact.h
 -- $Id: jikespg.g,v 1.2 1999/11/04 14:02:22 shields Exp $
 -- This software is subject to the terms of the IBM Jikes Compiler

@@ -1,5 +1,4 @@
-%OPTIONS nogoto-default,esc=$,os=100,action,actfile=lpgact.c,noem
-***ERROR: "OS" is an invalid option
+%OPTIONS nogoto-default,esc=$,action,actfile=lpgact.c,noem
 %OPTIONS fp=lpg,gp,nodefer,suffix=_TK,stack_size=21,hactfile=lpgact.h
 
 Options in effect:
