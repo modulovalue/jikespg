@@ -1,8 +1,7 @@
-#include <stdlib.h>
-
-#include "lpgparse.h"
 static char hostfile[] = __FILE__;
 
+#include <stdlib.h>
+#include "lpgparse.h"
 #include <string.h>
 #include "common.h"
 #include "space.h"
@@ -14,7 +13,6 @@ static char dcl_tag[SYMBOL_SIZE],
 
 static bool byte_check_bit = true;
 
-/*                         NON_TERMINAL_TIME_ACTION:                 */
 static void non_terminal_time_action(void) {
   if (c_bit)
     fprintf(sysprs,
@@ -40,8 +38,6 @@ static void non_terminal_time_action(void) {
             "    }\n\n");
 }
 
-
-/*            NON_TERMINAL_NO_GOTO_DEFAULT_TIME_ACTION:              */
 static void non_terminal_no_goto_default_time_action(void) {
   if (c_bit)
     fprintf(sysprs,
@@ -56,8 +52,6 @@ static void non_terminal_no_goto_default_time_action(void) {
             "    {\n        return action[state + sym];\n    }\n\n");
 }
 
-
-/*                        NON_TERMINAL_SPACE_ACTION:                 */
 static void non_terminal_space_action(void) {
   if (c_bit)
     fprintf(sysprs,
@@ -83,8 +77,6 @@ static void non_terminal_space_action(void) {
             "    }\n\n");
 }
 
-
-/*              NON_TERMINAL_NO_GOTO_DEFAULT_SPACE_ACTION:           */
 static void non_terminal_no_goto_default_space_action(void) {
   if (c_bit)
     fprintf(sysprs,
@@ -100,8 +92,6 @@ static void non_terminal_no_goto_default_space_action(void) {
             "    {\n        return base_action[state + sym];\n    }\n\n");
 }
 
-
-/*                          TERMINAL_TIME_ACTION:                    */
 static void terminal_time_action(void) {
   if (c_bit)
     fprintf(sysprs,
@@ -124,8 +114,6 @@ static void terminal_time_action(void) {
             "    }\n");
 }
 
-
-/*                          TERMINAL_SPACE_ACTION:                   */
 static void terminal_space_action(void) {
   if (c_bit)
     fprintf(sysprs,
@@ -152,8 +140,6 @@ static void terminal_space_action(void) {
             "    }\n");
 }
 
-
-/*               TERMINAL_SHIFT_DEFAULT_SPACE_ACTION:                */
 static void terminal_shift_default_space_action(void) {
   if (c_bit)
     fprintf(sysprs,
@@ -197,8 +183,6 @@ static void terminal_shift_default_space_action(void) {
             "    }\n");
 }
 
-
-/*                          TERMINAL_TIME_LALR_K:                    */
 static void terminal_time_lalr_k(void) {
   if (c_bit)
     fprintf(sysprs,
@@ -267,8 +251,6 @@ static void terminal_time_lalr_k(void) {
             "    }\n\n");
 }
 
-
-/*                       TERMINAL_SPACE_LALR_K:                      */
 static void terminal_space_lalr_k(void) {
   if (c_bit)
     fprintf(sysprs,
@@ -340,8 +322,6 @@ static void terminal_space_lalr_k(void) {
             "    }\n");
 }
 
-
-/*                TERMINAL_SHIFT_DEFAULT_SPACE_LALR_K:               */
 static void terminal_shift_default_space_lalr_k(void) {
   if (c_bit)
     fprintf(sysprs,
@@ -467,8 +447,6 @@ static void terminal_shift_default_space_lalr_k(void) {
             "    }\n");
 }
 
-
-/*                            INIT_FILE:                             */
 static void init_file(FILE **file, char *file_name, char *file_tag) {
   const char *p = strrchr(file_name, '.');
   if ((*file = fopen(file_name, "w")) == NULL) {
@@ -487,8 +465,6 @@ static void init_file(FILE **file, char *file_name, char *file_tag) {
   }
 }
 
-
-/*                        INIT_PARSER_FILES:                         */
 static void init_parser_files(void) {
   init_file(&sysdcl, dcl_file, dcl_tag);
   init_file(&syssym, sym_file, sym_tag);
@@ -496,8 +472,6 @@ static void init_parser_files(void) {
   init_file(&sysprs, prs_file, prs_tag);
 }
 
-
-/*                            EXIT_FILE:                             */
 static void exit_file(FILE **file, char *file_tag) {
   if (c_bit || cpp_bit) {
     fprintf(*file, "\n#endif /* %s_INCLUDED */\n", file_tag);
@@ -505,8 +479,6 @@ static void exit_file(FILE **file, char *file_tag) {
   fclose(*file);
 }
 
-
-/*                            EXIT_PRS_FILE:                         */
 static void exit_parser_files(void) {
   exit_file(&sysdcl, dcl_tag);
   exit_file(&syssym, sym_tag);
@@ -514,8 +486,6 @@ static void exit_parser_files(void) {
   exit_file(&sysprs, prs_tag);
 }
 
-
-/*                              PRINT_C_NAMES:                            */
 static void print_c_names(void) {
   int *name_len = Allocate_int_array(num_names + 1);
   long num_bytes = 0;
@@ -613,8 +583,6 @@ static void print_c_names(void) {
   ffree(name_len);
 }
 
-
-/*                             PRINT_JAVA_NAMES:                          */
 static void print_java_names(void) {
   long num_bytes = 0;
 
@@ -671,8 +639,6 @@ static void print_java_names(void) {
   PRNT(msg_line);
 }
 
-
-/*                          PRINT_ERROR_MAPS:                             */
 static void print_error_maps(void) {
   long *state_start;
   long *state_stack;
@@ -1282,8 +1248,6 @@ static void print_error_maps(void) {
   }
 }
 
-
-/*                               PRINT_SYMBOLS:                             */
 static void print_symbols(void) {
   int symbol;
   char line[SYMBOL_SIZE + /* max length of a token symbol  */
@@ -1329,8 +1293,6 @@ static void print_symbols(void) {
   fprintf(syssym, "%s%s", line, java_bit ? ";\n}\n" : "\n     };\n");
 }
 
-
-/*                            PRINT_DEFINITIONS:                            */
 static void print_definitions(void) {
   if (java_bit)
     fprintf(sysdef, "interface %s\n{\n    public final static int\n\n",
@@ -1440,8 +1402,6 @@ static void print_definitions(void) {
             error_act);
 }
 
-
-/*                               PRINT_EXTERNS:                             */
 static void print_externs(void) {
   if (c_bit || cpp_bit) {
     fprintf(sysprs,
@@ -1673,8 +1633,6 @@ static void print_externs(void) {
     fprintf(sysprs, "}\n");
 }
 
-
-/*                           PRINT_SPACE_TABLES:                          */
 static void print_space_tables(void) {
   int *check,
       *action;
@@ -2281,8 +2239,6 @@ static void print_space_tables(void) {
          output_ptr - &output_buffer[0], sysdcl);
 }
 
-
-/*                         PRINT_TIME_TABLES:                             */
 static void print_time_tables(void) {
   long *action;
   long *check;
@@ -2722,8 +2678,6 @@ static void print_time_tables(void) {
          output_ptr - &output_buffer[0], sysdcl);
 }
 
-
-/*                         PRINT_SPACE_PARSER:                       */
 void print_space_parser(void) {
   init_parser_files();
 
@@ -2735,8 +2689,6 @@ void print_space_parser(void) {
   exit_parser_files();
 }
 
-
-/*                         PRINT_TIME_PARSER:                        */
 void print_time_parser(void) {
   init_parser_files();
 

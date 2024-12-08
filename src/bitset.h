@@ -5,14 +5,14 @@
 
 /* These variables hold the number of BOOLEAN_CELLS required to form a */
 /* set of terminals, non-terminals and states, respectively.           */
-static int term_set_size;
-static int non_term_set_size;
-static int state_set_size;
+extern int term_set_size;
+extern int non_term_set_size;
+extern int state_set_size;
 
 /**                      GLOBAL DECLARATIONS                      **/
 typedef unsigned int BOOLEAN_CELL;
-/* Basic unit used to represent */
-/* Bit sets                     */
+
+/* Basic unit used to represent bit sets                           */
 typedef BOOLEAN_CELL *SET_PTR;
 
 /**                         BIT SET MACROS                        **/
@@ -184,7 +184,6 @@ static void B_SET_UNION(const SET_PTR s1, const int dest, const SET_PTR s2, cons
   }
 }
 
-/*                               EQUAL_SETS:                                */
 /* EQUAL_SETS checks to see if two sets are equal and returns True or False */
 static bool equal_sets(const SET_PTR set1, const int indx1, const SET_PTR set2, const int indx2, const int bound) {
   for (register int i = 0; i < bound; i++) {

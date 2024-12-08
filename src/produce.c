@@ -54,7 +54,6 @@ static void print_scopes(void);
 
 static int get_shift_symbol(int lhs_symbol);
 
-/*                              PRODUCE:                                    */
 /* This procedure computes for each state the set of non-terminal symbols   */
 /* that are required as candidates for secondary error recovery.  If the    */
 /* option NAMES=OPTIMIZED is requested, the NAME map is optimized and SYMNO */
@@ -344,8 +343,6 @@ void produce(void) {
   ffree(goto_domain);
 }
 
-
-/*                     COMPUTE_PRODUCES:                          */
 /* This procedure is used to compute the transitive closure of    */
 /* the PRODUCES, LEFT_PRODUCES and RIGHT_MOST_PRODUCES maps.      */
 static void compute_produces(const int symbol) {
@@ -380,8 +377,6 @@ static void compute_produces(const int symbol) {
   }
 }
 
-
-/*                       PRINT_NAME_MAP:                          */
 /* This procedure prints the name associated with a given symbol. */
 /* The same format that was used in the procedure DISPLAY_INPUT   */
 /* to print aliases is used to print name mappings.               */
@@ -407,8 +402,6 @@ static void print_name_map(const int symbol) {
   ENDPAGE_CHECK();
 }
 
-
-/*                         PROCESS_SCOPES:                        */
 /* Compute set of "scopes" and use it to construct SCOPE map.     */
 static void process_scopes(void) {
   short *prefix_index,
@@ -903,9 +896,7 @@ process_scope_states: {
   ffree(scope_element);
 }
 
-
-/*                              IS_SCOPE:                            */
-/* This procedure checks whether an item of the form:         */
+/* This procedure checks whether an item of the form:                */
 /* [A  ->  w B x  where  B ->* y A z  is a valid scope.              */
 /*                                                                   */
 /* Such an item is a valid scope if the following conditions hold:   */
@@ -954,7 +945,6 @@ static bool is_scope(const int item_no) {
 /*                               and                                 */
 /*                                                                   */
 /*                     SOURCE ->rm+ TARGET                           */
-/*                                                                   */
 static bool scope_check(const int lhs_symbol, const int target, const int source) {
   symbol_seen[source] = true;
 
@@ -980,8 +970,6 @@ static bool scope_check(const int lhs_symbol, const int target, const int source
   return false;
 }
 
-
-/*                       INSERT_PREFIX:                              */
 /* This procedure takes as argument an item and inserts the string   */
 /* prefix of the item preceeding the "dot" into the scope table, if  */
 /* that string is not already there.  In any case, the index  number */
@@ -1015,8 +1003,6 @@ static int insert_prefix(const int item_no) {
   return scope_element[scope_top].index;
 }
 
-
-/*                      IS_PREFIX_EQUAL:                          */
 /* This boolean function takes two items as arguments and checks  */
 /* whether they have the same prefix.                      */
 static bool is_prefix_equal(const int item_no, const int item_no2) {
@@ -1043,8 +1029,6 @@ static bool is_prefix_equal(const int item_no, const int item_no2) {
   return true;
 }
 
-
-/*                            INSERT_SUFFIX:                         */
 /* This procedure is analoguous to INSERT_PREFIX.  It takes as       */
 /* argument an item, and inserts the suffix string following the dot */
 /* in the item into the scope table, if it is not already there.     */
@@ -1089,8 +1073,6 @@ static int insert_suffix(const int item_no) {
   return scope_element[scope_top].index;
 }
 
-
-/*                        IS_SUFFIX_EQUAL:                        */
 /* This boolean function takes two items as arguments and checks  */
 /* whether they have the same suffix.                      */
 static bool is_suffix_equal(const int item_no1, const int item_no2) {
@@ -1153,8 +1135,6 @@ static bool is_suffix_equal(const int item_no1, const int item_no2) {
   return true;
 }
 
-
-/*                         PRINT_SCOPES:                          */
 /* This procedure is similar to the global procedure PTITEM.      */
 static void print_scopes(void) {
   PR_HEADING();
@@ -1212,8 +1192,6 @@ static void print_scopes(void) {
   }
 }
 
-
-/*                           GET_SHIFT_SYMBOL:                       */
 /* This procedure takes as parameter a nonterminal, LHS_SYMBOL, and  */
 /* determines whether there is a terminal symbol t such that  */
 /* LHS_SYMBOL can rightmost produce a string tX.  If so, t is        */

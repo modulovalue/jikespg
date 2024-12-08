@@ -5,11 +5,10 @@ static char hostfile[] = __FILE__;
 
 struct action_element {
   struct action_element *next;
-  short count,
-      action;
+  short count;
+  short action;
 };
 
-/*                            PROCESS_SHIFT_ACTIONS:                        */
 /* The array ACTION_COUNT is used to construct a map from each terminal     */
 /* into the set (list) of actions defined on that terminal. A count of the  */
 /* number of occurences of each action in the automaton is kept.            */
@@ -41,8 +40,6 @@ static void process_shift_actions(struct action_element **action_count,
   }
 }
 
-
-/*                            COMPUTE_SHIFT_DEFAULT:                        */
 /* This procedure updates the vector SHIFTDF, indexable by the terminals in */
 /* the grammar. Its task is to assign to each element of SHIFTDF, the action*/
 /* most frequently defined on the symbol in question.                       */
@@ -111,8 +108,6 @@ static void compute_shift_default(void) {
   ffree(action_count);
 }
 
-
-/*                             COMPUTE_GOTO_DEFAULT:                         */
 /*   COMPUTE_GOTO_DEFAULT constructs the vector GOTODEF, which is indexed by */
 /* the non-terminals in the grammar. Its task is to assign to each element   */
 /* of the array the Action which is most frequently defined on the symbol in */
@@ -224,8 +219,6 @@ static void compute_goto_default(void) {
   ffree(action_count);
 }
 
-
-/*                        PROCESS_TABLES:                              */
 /* Remap symbols, apply transition default actions  and call           */
 /* appropriate table compression routine.                              */
 void process_tables(void) {

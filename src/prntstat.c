@@ -4,7 +4,6 @@ static char hostfile[] = __FILE__;
 #include <string.h>
 #include "common.h"
 
-/*                                 PTSTATS:                                  */
 /*          PT_STATS prints all the states of the parser.                    */
 void ptstats(void) {
   int max_size;

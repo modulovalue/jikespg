@@ -85,23 +85,19 @@ static SET_PTR produces;
 /*                                                                          */
 /* Since these sets are simply partitions of the set of items, they are kept*/
 /* all in a sequential list in the array NEXT_ITEM.  The roots of the lists */
-/* are placed in the arrats T_ITEMS and NT_ITEMS.                           */
+/* are placed in the arrays T_ITEMS and NT_ITEMS.                           */
 static short *stack,
     *index_of,
-
     *lhs_rule,
     *next_rule,
-
     *first_table,
     *first_item_of,
-
     *next_item,
     *nt_items,
     *nt_list;
 
 static int top;
 
-/*                               MKFIRST:                                    */
 /*    MKFIRST constructs the FIRST and FOLLOW maps, the CLOSURE map,         */
 /* ADEQUATE_ITEM and ITEM_TABLE maps and all other basic maps.               */
 void mkfirst(void) {
@@ -514,8 +510,6 @@ void mkfirst(void) {
   ffree(first_item_of);
 }
 
-
-/*                           NO_RULES_PRODUCED:                              */
 static void no_rules_produced(void) {
   int
       nt_last,
@@ -562,8 +556,6 @@ static void no_rules_produced(void) {
   }
 }
 
-
-/*                            COMPUTE_CLOSURE:                               */
 /*  This function computes the closure of a non-terminal LHS_SYMBOL passed   */
 /* to it as an argument using the digraph algorithm.                         */
 /*  The closure of a non-terminal A is the set of all non-terminals Bi that  */
@@ -672,8 +664,6 @@ static void compute_closure(const int lhs_symbol) {
   ffree(nont_list);
 }
 
-
-/*                           NULLABLES_COMPUTATION:                          */
 /*   This procedure computes the set of non-terminal symbols that can        */
 /* generate the empty string.  Such non-terminals are said to be nullable.   */
 /*                                                                           */
@@ -731,8 +721,6 @@ static void nullables_computation(void) {
   ffree(rhs_start);
 }
 
-
-/*                            IS_NULLABLE_RHS:                               */
 /*   This procedure tries to advance the RHS_START pointer.  If the current  */
 /* symbol identified by the RHS_START element is a terminal it returns FALSE */
 /* to indicate that it cannot go any further.  If it encounters a  non-null- */
@@ -752,8 +740,6 @@ static bool is_nullable_rhs(short *rhs_start, const int rule_no) {
   return true;
 }
 
-
-/*                             COMPUTE_FIRST:                                */
 /* This subroutine computes FIRST(NT) for some non-terminal NT using the     */
 /* digraph algorithm.                                                        */
 /* FIRST(NT) is the set of all terminals Ti that may start a string generated*/
@@ -823,9 +809,7 @@ static void compute_first(const int nt) {
   ffree(temp_set);
 }
 
-
-/*                            CHECK_NON_TERMINALS:                           */
-/* This procedure checks whether or not any non-terminal symbols can fail to */
+/* This procedure checks whether any non-terminal symbols can fail to */
 /* generate a string of terminals.                                           */
 /*                                                                           */
 /* A non-terminal "A" can generate a terminal string if the grammar in       */
@@ -934,8 +918,6 @@ static void check_non_terminals(void) {
   ffree(rhs_start);
 }
 
-
-/*                          IS_TERMINAL_RHS:                                 */
 /*   This procedure tries to advance the RHS_START pointer.  If the current  */
 /* symbol identified by the RHS_START element is a bad non-terminal it       */
 /* returns FALSE.  Otherwise, the whole right-hand side is traversed, and it */
@@ -955,8 +937,6 @@ static bool is_terminal_rhs(short *rhs_start,
   return true;
 }
 
-
-/*                             FIRST_MAP:                                    */
 /*  FIRST_MAP takes as arguments two pointers, ROOT and TAIL, to a sequence  */
 /* of symbols in RHS which it inserts in FIRST_TABLE.  The vector FIRST_TABLE*/
 /* is used as the base for a hashed table where collisions are resolved by   */
@@ -990,7 +970,6 @@ static short first_map(const int root, const int tail) {
   return top;
 }
 
-/*                              S_FIRST:                                     */
 /* S_FIRST takes as argument, two pointers: ROOT and TAIL to a sequence of   */
 /* symbols in the vector RHS, and INDEX which is the index of a first set.   */
 /* It computes the set of all terminals that can appear as the first symbol  */
@@ -1016,8 +995,6 @@ static void s_first(const int root, const int tail, const int index) {
   }
 }
 
-
-/*                     COMPUTE_PRODUCES:                          */
 /* For a given symbol, complete the computation of                */
 /* PRODUCES[symbol].                                              */
 static void compute_produces(const int symbol) {
@@ -1050,8 +1027,6 @@ static void compute_produces(const int symbol) {
   }
 }
 
-
-/*                          COMPUTE_FOLLOW:                                  */
 /* COMPUTE_FOLLOW computes FOLLOW[nt] for some non-terminal NT using the     */
 /* digraph algorithm.  FOLLOW[NT] is the set of all terminals Ti that        */
 /* may immediately follow a string X generated by NT. I.e., if NT *::= X     */
@@ -1096,8 +1071,6 @@ static void compute_follow(int nt) {
   ffree(temp_set);
 }
 
-
-/*                           PRINT_UNREACHABLES:                             */
 static void print_unreachables(void) {
   int
       rule_no,
@@ -1221,8 +1194,6 @@ static void print_unreachables(void) {
   ffree(symbol_list);
 }
 
-
-/*                               PRINT_XREF:                                 */
 /* PRINT_XREF prints out the Cross-reference map. We build a map from each   */
 /* terminal into the set of items whose Dot-symbol (symbol immediately       */
 /* following the dot ) is the terminal in question.  Note that we iterate    */
@@ -1319,8 +1290,6 @@ static void print_xref(void) {
   ffree(sort_sym);
 }
 
-
-/*                              QUICK_SYM:                                   */
 /* QUICK_SYM takes as arguments an array of pointers whose elements point to */
 /* nodes and two integer arguments: L, H. L and H indicate respectively the  */
 /* lower and upper bound of a section in the array.                          */
@@ -1367,7 +1336,6 @@ static void quick_sym(short array[], const int h) {
   }
 }
 
-/*                             PRINT_NT_FIRST:                               */
 /* PRINT_NT_FIRST prints the first set for each non-terminal.                */
 static void print_nt_first(void) {
   int nt;
@@ -1401,8 +1369,6 @@ static void print_nt_first(void) {
   }
 }
 
-
-/*                           PRINT_FOLLOW_MAP:                               */
 /* PRINT_FOLLOW_MAP prints the follow map.                                   */
 static void print_follow_map(void) {
   int nt;

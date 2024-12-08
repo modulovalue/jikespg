@@ -11,7 +11,6 @@ static short default_rule;
 
 static bool *is_terminal;
 
-/*                            REMAP_SYMBOLS:                         */
 /* We now remap the symbols in the unified Table based on frequency. */
 /* We also remap the states based on frequency.                      */
 static void remap_symbols(void) {
@@ -181,8 +180,6 @@ static void remap_symbols(void) {
   ffree(row_size);
 }
 
-
-/*                          OVERLAP_TABLES:                          */
 /* We now overlap the State automaton table, or more precisely,  we  */
 /* compute the starting position in a vector where each of its rows  */
 /* may be placed without clobbering elements in another row.         */
@@ -370,8 +367,6 @@ static void overlap_tables(void) {
   PRNT(msg_line);
 }
 
-
-/*                         PRINT_TABLES:                             */
 /* We now write out the tables to the SYSTAB file.                   */
 static void print_tables(void) {
   long *action;
@@ -793,8 +788,6 @@ static void print_tables(void) {
          output_ptr - &output_buffer[0], systab);
 }
 
-
-/*                            CMPRTIM:                               */
 /* In this routine we compress the State tables and write them out   */
 /* to a file.  The emphasis here is in generating tables that allow  */
 /* fast access. The terminal and non-terminal tables are compressed  */

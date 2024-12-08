@@ -1,14 +1,13 @@
-#include <stdlib.h>
-
-#include "lpgparse.h"
 static char hostfile[] = __FILE__;
+
+#include <stdlib.h>
+#include "lpgparse.h"
 
 #include <string.h>
 #include "common.h"
 
 static const char digits[] = "0123456789";
 
-/*                           PRNT_SHORTS:                                 */
 void prnt_shorts(const char *title, const int init, const int bound, const int perline, const int *array) {
   mystrcpy(title);
 
@@ -37,8 +36,6 @@ void prnt_shorts(const char *title, const int init, const int bound, const int p
   }
 }
 
-
-/*                              PRNT_INTS:                                */
 void prnt_ints(const char *title, const int init, const int bound, const int perline, const int *array) {
   mystrcpy(title);
 
@@ -65,8 +62,6 @@ void prnt_ints(const char *title, const int init, const int bound, const int per
   else mystrcpy("                 };\n");
 }
 
-
-/*                               MYSTRCPY:                                 */
 void mystrcpy(const char *str) {
   while (*str != '\0')
     *output_ptr++ = *str++;
@@ -75,15 +70,11 @@ void mystrcpy(const char *str) {
   BUFFER_CHECK(syssym);
 }
 
-
-/*                               PADLINE:                                  */
 void padline(void) {
   for (register int i = 0; i < 12; i++)
     *output_ptr++ = ' ';
 }
 
-
-/*                                 ITOC:                                   */
 /* ITOC takes as arguments an integer NUM. NUM is an integer containing at */
 /* most 11 digits which is converted into a character string and placed in  */
 /* the iobuffer.  Leading zeros are eliminated and if the number is        */
@@ -109,8 +100,6 @@ void itoc(const int num) {
     *output_ptr++ = *p++;
 }
 
-
-/*                                 FIELD:                                  */
 /* FIELD takes as arguments two integers: NUM and LEN.  NUM is an integer  */
 /* containing at most LEN digits which is converted into a character       */
 /* string and placed in the iobuffer.                                      */
@@ -138,8 +127,6 @@ void field(const long num, const int len) {
   output_ptr += len;
 }
 
-
-/*                            SORTDES:                                     */
 /*  SORTDES sorts the elements of ARRAY and COUNT in the range LOW..HIGH   */
 /* based on the values of the elements of COUNT. Knowing that the maximum  */
 /* value of the elements of count cannot exceed MAX and cannot be lower    */
@@ -185,8 +172,6 @@ void sortdes(int array[], int count[], const long low, const long high, const lo
   ffree(list);
 }
 
-
-/*                              REALLOCATE:                                */
 /*   This procedure is invoked when the TABLE being used is not large      */
 /* enough.  A new table is allocated, the information from the old table   */
 /* is copied, and the old space is released.                               */
@@ -246,8 +231,6 @@ void reallocate(void) {
   previous[last_index] = last_index - 1;
 }
 
-
-/*                            PROCESS_ERROR_MAPS:                            */
 /* if ERROR_MAPS are requested, we print them out in the following order:    */
 /*                                                                           */
 /*   1) The FOLLOW map (NEWFOLL)                                             */
@@ -258,7 +241,6 @@ void reallocate(void) {
 /*   5) The map from each symbol into the set of staes that can              */
 /*      possibly be reached after a transition on the symbol in              */
 /*      question: TRANSITION_STATES                                          */
-/*                                                                           */
 void process_error_maps(void) {
   long *state_start;
   long *state_stack;
@@ -1091,9 +1073,6 @@ void process_error_maps(void) {
   ffree(term_list);
 }
 
-
-/*                   COMPUTE_ACTION_SYMBOLS_RANGE:                   */
-/*                                                                   */
 /* This procedure computes the range of the ACTION_SYMBOLS map after */
 /* Optimal Partitioning has been used to compress that map.  Its     */
 /* first argument is an array, STATE_START, that indicates the       */
@@ -1104,7 +1083,6 @@ void process_error_maps(void) {
 /* the partition created by PARTSET.  Each element of the partition  */
 /* is organized as a circular list where the smallest sets appear    */
 /* first in the list.                                                */
-/*                                                                   */
 void compute_action_symbols_range(const long *state_start,
                                   const long *state_stack,
                                   const long *state_list,
@@ -1169,8 +1147,6 @@ void compute_action_symbols_range(const long *state_start,
   ffree(symbol_list);
 }
 
-
-/*                   COMPUTE_NACTION_SYMBOLS_RANGE:                  */
 /* This procedure computes the range of the NACTION_SYMBOLS map. It  */
 /* organization is analoguous to COMPUTE_ACTION_SYMBOLS_RANGE.       */
 void compute_naction_symbols_range(const long *state_start,

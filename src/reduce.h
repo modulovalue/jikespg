@@ -23,12 +23,12 @@
 /* lookahead that was necessary to resolve all conflicts for a given       */
 /* grammar. If we can detect that the grammar is not LALR(k), we set       */
 /* HIGHEST_LEVEL to INFINITY.                                              */
-static struct node **conflict_symbols = NULL;
-static SET_PTR la_set = NULL;
-static SET_PTR read_set = NULL;
-static int highest_level = 0;
-static long la_top = 0;
-static short *la_index = NULL;
-static bool not_lrk;
+extern struct node **conflict_symbols;
+extern BOOLEAN_CELL *read_set;
+extern BOOLEAN_CELL *la_set;
+extern int highest_level;
+extern long la_top;
+extern short *la_index;
+extern bool not_lrk;
 
 #endif /* REDUCE_INCLUDED */

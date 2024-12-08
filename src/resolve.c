@@ -154,7 +154,6 @@ static short *stack,
 
 static struct state_element **shift_table;
 
-/*                     ALLOCATE_CONFLICT_ELEMENT:                  */
 /* This function allocates a conflict_element (sr or rr) structure */
 /* & returns a pointer to it. If there are nodes in the free pool, */
 /* one of them is returned. Otherwise, a new node is allocated     */
@@ -173,8 +172,6 @@ static void *allocate_conflict_element(void) {
   return p;
 }
 
-
-/*                         FREE_CONFLICT_ELEMENTS:                    */
 /* This routine returns a list of conflict_element (sr/rr)structures  */
 /* to the free pool.                                                  */
 static void free_conflict_elements(void *head, void *tail) {
@@ -183,8 +180,6 @@ static void free_conflict_elements(void *head, void *tail) {
   conflict_element_pool = head;
 }
 
-
-/*                      ALLOCATE_STACK_ELEMENT:                    */
 /* This function allocates a stack_element structure and returns a */
 /* pointer to it. If there are nodes in the free pool, one of them */
 /* is returned. Otherwise, a new node is allocated from the        */
@@ -203,8 +198,6 @@ static struct stack_element *allocate_stack_element(void) {
   return p;
 }
 
-
-/*                           FREE_STACK_ELEMENTS:                     */
 /* This routine returns a list of stack_element structures to the     */
 /* free pool.                                                         */
 static void free_stack_elements(struct stack_element *head,
@@ -213,8 +206,6 @@ static void free_stack_elements(struct stack_element *head,
   stack_pool = head;
 }
 
-
-/*                        ADD_DANGLING_STACK_ELEMENT:                      */
 /* When an allocated stack_element structure is not directly associated    */
 /* with an action, it is added to a circular list of dangling stack_element*/
 /* nodes so that its space can be reclaimed.                               */
@@ -228,8 +219,6 @@ static void add_dangling_stack_element(struct stack_element *s) {
   dangling_stacks = s;
 }
 
-
-/*                       FREE_DANGLING_STACK_ELEMENTS:                     */
 /* This function is invoked to free up all dangling stack_element nodes    */
 /* and reset the dangling stack list.                                      */
 /* Recall that the dangling stack list is circular.                        */
@@ -242,8 +231,6 @@ static void free_dangling_stack_elements(void) {
   }
 }
 
-
-/*                              ALLOCATE_SOURCES:                          */
 /* This function allocates and initializes a SOURCE_ELEMENT map.           */
 /* See definition of SOURCE_ELEMENT above.                                 */
 static struct sources_element allocate_sources(void) {
@@ -262,8 +249,7 @@ static struct sources_element allocate_sources(void) {
   if (sources.stack_seen == NULL)
     nospace(__FILE__, __LINE__);
 
-  sources.list =
-      Allocate_short_array(num_rules + num_rules + num_states + 1);
+  sources.list = Allocate_short_array(num_rules + num_rules + num_states + 1);
   sources.list += num_rules;
 
   sources.root = NIL;
@@ -271,8 +257,6 @@ static struct sources_element allocate_sources(void) {
   return sources;
 }
 
-
-/*                               CLEAR_SOURCES:                            */
 /* This function takes as argument a SOURCES_ELEMENT structure which it    */
 /* resets to the empty map.                                                */
 /* See definition of SOURCE_ELEMENT above.                                 */
@@ -288,8 +272,6 @@ static struct sources_element clear_sources(struct sources_element sources) {
   return sources;
 }
 
-
-/*                               FREE_SOURCES:                             */
 /* This function takes as argument a SOURCES_ELEMENT structure. First, it  */
 /* clears it to reclaim all space that was used by STACK_ELEMENTs and then */
 /* it frees the array space used as a base to construct the map.           */
@@ -305,8 +287,6 @@ static void free_sources(struct sources_element sources) {
   ffree(sources.list);
 }
 
-
-/*                             UNION_CONFIG_SETS:                          */
 /* This function takes as argument two pointers to sorted lists of stacks. */
 /* It merges the lists in the proper order and returns the resulting list. */
 static struct stack_element *union_config_sets(struct stack_element *root1,
@@ -384,8 +364,6 @@ static struct stack_element *union_config_sets(struct stack_element *root1,
   return root;
 }
 
-
-/*                                ADD_CONFIGS:                             */
 /* This function takes as argument a SOURCES_ELEMENT map, an ACTION and a  */
 /* set (sorted list) of configurations. It adds the set of configurations  */
 /* to the previous set of configurations associated with the ACTION in the */
@@ -404,8 +382,6 @@ static struct sources_element add_configs(struct sources_element sources,
   return sources;
 }
 
-
-/*                               CLEAR_VISITED:                            */
 /* This function clears out all external space used by the VISITED set and */
 /* resets VISITED to the empty set.                                        */
 static void clear_visited(void) {
@@ -421,7 +397,6 @@ static void clear_visited(void) {
   visited.root = NIL;
 }
 
-/*                                WAS_VISITED:                             */
 /* This boolean function checks whether a given pair [state, symbol]*/
 /* was already inserted in the VISITED set.                                */
 static bool was_visited(const int state_no, const int symbol) {
@@ -435,8 +410,6 @@ static bool was_visited(const int state_no, const int symbol) {
   return p != NULL;
 }
 
-
-/*                               MARK_VISITED:                             */
 /* This function inserts a given pair [state, symbol] into the VISITED set.*/
 static void mark_visited(const int state_no, const int symbol) {
   if (visited.map[state_no] == NULL) /* 1st time we see state_no? */
@@ -451,8 +424,6 @@ static void mark_visited(const int state_no, const int symbol) {
   visited.map[state_no] = p;
 }
 
-
-/*                             COMPUTE_CYCLIC:                         */
 /* This procedure is a modified instantiation of the digraph algorithm */
 /* to compute the CYCLIC set of states.                                */
 static void compute_cyclic(const short state_no) {
@@ -487,8 +458,6 @@ static void compute_cyclic(const short state_no) {
   }
 }
 
-
-/*                           TRACE_ROOT:                               */
 /*    In tracing an error, we will be moving backward in the state     */
 /* automaton looking for items with the conflict symbol as look-ahead. */
 /* In the case of SLR, we may have to analoguously look at an          */
@@ -519,8 +488,6 @@ static bool trace_root(const int lhs_symbol) {
   return false;
 }
 
-
-/*                             PRINT_ROOT_PATH:                        */
 /* The procedure below is invoked to retrace a path from the initial   */
 /* item to a given item (ITEM_NO) passed to it as argument.            */
 static void print_root_path(const int item_no) {
@@ -536,8 +503,6 @@ static void print_root_path(const int item_no) {
   ffree(symbol_seen);
 }
 
-
-/*                          LALR_PATH_RETRACED:                        */
 /* This procedure takes as argument, a state number, STATE_NO, an      */
 /* index into the goto map of state_no, GOTO_INDX, which identifies a  */
 /* starting point for a search for the CONFLICT_SYMBOL. It attempts to */
@@ -597,8 +562,6 @@ static bool lalr_path_retraced(const int state_no,
   return found;
 }
 
-
-/*                      PRINT_RELEVANT_LALR_ITEMS:                     */
 /*   In this procedure, we attempt to retrace an LALR conflict path    */
 /* (there may be more than one) of CONFLICT_SYMBOL in the state        */
 /* automaton that led to ITEM_NO in state STATE_NO.                    */
@@ -634,8 +597,6 @@ static void print_relevant_lalr_items(const int state_no,
   ffree(lalr_visited);
 }
 
-
-/*                              SLR_TRACE:                             */
 /* The procedure below is invoked to retrace a path that may have      */
 /* introduced the CONFLICT_SYMBOL in the FOLLOW set of the nonterminal */
 /* that produces ITEM_NO.  Note that such a path must exist.           */
@@ -668,8 +629,6 @@ static bool slr_trace(const int lhs_symbol, const int conflict_symbol) {
   }
 }
 
-
-/*                           PRINT_RELEVANT_SLR_ITEMS:                 */
 /* This procedure is invoked to print an SLR path of items that leads  */
 /* to the conflict symbol.                                             */
 static void print_relevant_slr_items(const int item_no, const int conflict_symbol) {
@@ -682,7 +641,6 @@ static void print_relevant_slr_items(const int item_no, const int conflict_symbo
   ffree(slr_visited);
 }
 
-/*                       CONFLICTS_INITIALIZATION:                     */
 /* This routine is invoked when a grammar contains conflicts, and the  */
 /* first conflict is detected.                                         */
 static void conflicts_initialization(void) {
@@ -723,8 +681,6 @@ static void conflicts_initialization(void) {
   }
 }
 
-
-/*                            PROCESS_CONFLICTS:                       */
 /*   If conflicts are detected, tehy are placed in two lists headed by */
 /* SR_CONFLICT_ROOT and RR_CONFLICT_ROOT.  We scan these lists, and    */
 /* report the conflicts.                                               */
@@ -807,8 +763,6 @@ static void process_conflicts(const int state_no) {
   }
 }
 
-
-/*                           ADD_CONFLICT_SYMBOL:                      */
 /* Add SYMBOL to the set of symbols CONFLICT_SYMBOLS[STATE_NO].        */
 static void add_conflict_symbol(const int state_no, const int symbol) {
   struct node *p = Allocate_node();
@@ -822,8 +776,6 @@ static void add_conflict_symbol(const int state_no, const int symbol) {
   conflict_symbols[state_no] = p;
 }
 
-
-/*                             FOLLOW_SOURCES:                         */
 /* This function takes as argument a configuration STACK, a SYMBOL on  */
 /* which a transition can be made in the configuration and a terminal  */
 /* lookahead symbol, LA_SYMBOL. It executes the transition on SYMBOL   */
@@ -1004,8 +956,6 @@ static struct stack_element *follow_sources(struct stack_element *stack,
   return configs;
 }
 
-
-/*                                NEXT_LA:                             */
 /* This function has a similar structure as FOLLOW_SOURCES.  But,      */
 /* instead of computing configurations that can be reached, it         */
 /* computes lookahead symbols that can be reached.  It takes as        */
@@ -1121,8 +1071,6 @@ static void next_la(struct stack_element *stack,
   }
 }
 
-
-/*                              STACK_WAS_SEEN:                        */
 /* This function takes as argument an array, STACK_SEEN, with          */
 /* STATE_TABLE_SIZE elements (indexable in the range                   */
 /* 0..STATE_TABLE_SIZE-1) which is the base of a hash table and a      */
@@ -1159,8 +1107,6 @@ static bool stack_was_seen(struct stack_element **stack_seen,
   return false;
 }
 
-
-/*                      STATE_TO_RESOLVE_CONFLICTS:                    */
 /* STATE_TO_RESOLVE_CONFLICTS is a function that attempts to resolve   */
 /* conflicts by doing more look-ahead.  If the conflict resolution     */
 /* is successful, then a new state is created and returned; otherwise, */
@@ -1533,8 +1479,6 @@ clean_up_and_return:
   return state;
 }
 
-
-/*                              INIT_RMPSELF:                          */
 /* This procedure is invoked when LALR_LEVEL > 1 to construct the      */
 /* RMPSELF set which identifies the nonterminals that can right-most   */
 /* produce themselves. It takes as argumen the map PRODUCES which      */
@@ -1555,8 +1499,6 @@ void init_rmpself(const SET_PTR produces) {
     rmpself[nt] = IS_IN_NTSET(produces, nt, nt - num_terminals);
 }
 
-
-/*                          INIT_LALRK_PROCESS:                        */
 /* If LALR(k), k > 1, is requested, we may have to create more shift   */
 /* maps. Initialize SHIFT_TABLE. Note that each element of SHIFT_TABLE */
 /* is automatically initialized to NULL by CALLOC.                     */
@@ -1612,7 +1554,6 @@ void init_lalrk_process(void) {
   }
 }
 
-/*                        EXIT_LALRK_PROCESS:                          */
 /* Free all support structures that were allocated to help compute     */
 /* additional lookahead.                                               */
 void exit_lalrk_process(void) {
@@ -1629,8 +1570,6 @@ void exit_lalrk_process(void) {
   }
 }
 
-
-/*                            FREE_CONFLICT_SPACE                      */
 /* If we had to report conflicts, free the SLR support structures.     */
 void free_conflict_space(void) {
   if (nt_items != NULL) {
@@ -1640,8 +1579,6 @@ void free_conflict_space(void) {
   }
 }
 
-
-/*                           RESOLVE_CONFLICTS:                        */
 /* If conflicts were detected and LALR(k) processing was requested,    */
 /* where k > 1, then we attempt to resolve the conflicts by computing  */
 /* more lookaheads. Shift-Reduce conflicts are processed first,        */
@@ -1851,8 +1788,6 @@ void resolve_conflicts(const int state_no, struct node **action,
   free_dangling_stack_elements();
 }
 
-
-/*                           CREATE_LASTATS:                           */
 /* Transfer the look-ahead states to their permanent destination, the  */
 /* array LASTATS and update the original automaton with the relevant   */
 /* transitions into the lookahead states.                              */

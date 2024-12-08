@@ -41,13 +41,14 @@ static short *sp_rules,
     *rule_list,
     **sp_action;
 
-bool IS_SP_RHS(long symbol) {
+bool IS_SP_RHS(const long symbol) {
   return sp_rules[symbol] != NIL;
 }
 
-bool IS_SP_RULE(long rule_no) {
+bool IS_SP_RULE(const long rule_no) {
   return rule_list[rule_no] != OMEGA;
 }
+
 static bool *is_conflict_symbol;
 
 static SET_PTR look_ahead;
@@ -56,7 +57,6 @@ static int top,
     symbol_root,
     rule_root;
 
-/*                        ALLOCATE_ACTION_ELEMENT:                    */
 /* This function first tries to recycle an action_element node from a */
 /* free list. If the list is empty a new node is allocated from       */
 /* temporary storage.                                                 */
@@ -74,8 +74,6 @@ static struct action_element *allocate_action_element(void) {
   return p;
 }
 
-
-/*                          FREE_ACTION_ELEMENTS:                     */
 /* This routine returns a list of action_element structures to the    */
 /* free list.                                                         */
 static void free_action_elements(struct action_element *head,
@@ -84,8 +82,6 @@ static void free_action_elements(struct action_element *head,
   action_element_pool = head;
 }
 
-
-/*                             COMPUTE_SP_MAP:                        */
 /* Compute_sp_map is an instantiation of the digraph algorithm. It    */
 /* is invoked repeatedly by remove_single_productions to:             */
 /*                                                                    */
@@ -152,8 +148,6 @@ static void compute_sp_map(const int symbol) {
   }
 }
 
-
-/*                         COMPUTE_SP_ACTION:                         */
 /* When the parser enters STATE_NO and it is processing SYMBOL, its   */
 /* next move is ACTION. Given these 3 parameters, compute_sp_action   */
 /* computes the set of reduce actions that may be executed after      */
@@ -213,8 +207,8 @@ static void compute_sp_action(const short state_no, const short symbol, const sh
 
     /* Remove all lookahead symbols on which conflicts were       */
     /* detected from consideration.                               */
-    for (bool end_node = (p = conflict_symbols[action]) == NULL;
-         !end_node; end_node = p == conflict_symbols[action]) {
+    for (bool end_node = ((p = conflict_symbols[action]) == NULL);
+         !end_node; end_node = (p == conflict_symbols[action])) {
       p = p->next;
       sp_action[symbol][p->value] = OMEGA;
     }
@@ -245,8 +239,6 @@ static void compute_sp_action(const short state_no, const short symbol, const sh
   }
 }
 
-
-/*                           SP_DEFAULT_ACTION:                       */
 /* Sp_default_action takes as parameter a state, state_no and a rule, */
 /* rule_no that may be reduced when the parser enters state_no.        */
 /* Sp_default_action tries to determine the highest rule that may be  */
@@ -294,7 +286,6 @@ static short sp_default_action(const short state_no, short rule_no) {
   return rule_no;
 }
 
-/*                              SP_NT_ACTION:                         */
 /* This routine takes as parameter a state, state_no, a nonterminal,  */
 /* lhs_symbol (that is the right-hand side of a SP or a rule with     */
 /* right-hand size 1, but not identified as a SP) on which there is   */
@@ -326,8 +317,6 @@ static int sp_nt_action(const short state_no, const int lhs_symbol, const short 
   return action;
 }
 
-
-/*                       GREATEST_COMMON_ANCESTOR:                    */
 /* Let BASE_RULE be a rule  A -> X.  The item [A -> .X] is in STATE1  */
 /* and STATE2.  After shifting on X (in STATE1 and STATE2), if the    */
 /* lookahead is LA_SYMBOL then BASE_RULE is reduced. In STATE1, a     */
@@ -356,8 +345,6 @@ static int greatest_common_ancestor(const short base_rule, const short la_symbol
   return rule_no;
 }
 
-
-/*                       COMPUTE_UPDATE_ACTION:                       */
 /* In SOURCE_STATE there is a transition on SYMBOL into STATE_NO.     */
 /* SYMBOL is the right-hand side of a SP rule and the global map      */
 /* sp_action[SYMBOL] yields a set of update reduce actions that may   */
@@ -397,8 +384,8 @@ static void compute_update_actions(const short source_state,
         p->symbol = red.map[i].symbol;
         p->action = rule_no;
         p->state = source_state;
-      } else if (rule_no != p->action &&
-                 p->action != red.map[i].rule_number) {
+      } else if ((rule_no != p->action) &&
+                 (p->action != red.map[i].rule_number)) {
         p->action = greatest_common_ancestor(red.map[i].rule_number,
                                              red.map[i].symbol,
                                              source_state,
@@ -410,8 +397,6 @@ static void compute_update_actions(const short source_state,
   }
 }
 
-
-/*                             SP_STATE_MAP:                          */
 /* Sp_state_map is invoked to create a new state using the reduce map */
 /* sp_symbol[SYMBOL]. The new state will be entered via a transition  */
 /* on SYMBOL which is the right-hand side of the SP rule of which     */
@@ -570,8 +555,6 @@ static short sp_state_map(const int rule_head, const int item_no,
   return state->state_number;
 }
 
-
-/*                       REMOVE_SINGLE_PRODUCTIONS:                          */
 /* This program is invoked to remove as many single production actions as    */
 /* possible for a conflict-free automaton.                                   */
 void remove_single_productions(void) {
@@ -775,8 +758,8 @@ void remove_single_productions(void) {
 
       for ALL_TERMINALS(i)
         is_conflict_symbol[i] = false;
-      for (end_node = (p = conflict_symbols[state_no]) == NULL;
-           !end_node; end_node = p == conflict_symbols[state_no]) {
+      for (end_node = ((p = conflict_symbols[state_no]) == NULL);
+           !end_node; end_node = (p == conflict_symbols[state_no])) {
         p = p->next;
         is_conflict_symbol[p->value] = true;
       }
@@ -893,8 +876,8 @@ void remove_single_productions(void) {
           {
             item_ptr = statset[action].kernel_items;
             item_no = item_ptr->value;
-            if (item_ptr->next == NULL &&
-                item_table[item_no].symbol == empty)
+            if ((item_ptr->next == NULL) &&
+                (item_table[item_no].symbol == empty))
               rule_no = item_table[item_no].rule_number;
             else {
               compute_update_actions(state_no, action, symbol);
@@ -1013,11 +996,11 @@ void remove_single_productions(void) {
 
   for (state_no = num_states + 1; state_no <= max_la_state; state_no++) {
     if (lastats[state_no].in_state > num_states)
-      lastats[state_no].in_state += max_sp_state - num_states;
+      lastats[state_no].in_state += (max_sp_state - num_states);
   }
 
-  lastats -= max_sp_state - num_states;
-  max_la_state += max_sp_state - num_states;
+  lastats -= (max_sp_state - num_states);
+  max_la_state += (max_sp_state - num_states);
   SHORT_CHECK(max_la_state);
 
   /* We now permanently construct all the new SP states.            */

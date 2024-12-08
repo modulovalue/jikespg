@@ -30,9 +30,6 @@ void process_input(void);
 /*                          and diagnostics.                         */
 /*    3) SYSACT           - Output file used for semantic actions.   */
 /*    4) SYSTAB           - Output file used for Parsing tables.     */
-/*                                                                   */
-
-/*                          MAIN PROGRAM  MAIN:                             */
 int main(const int argc, char *argv[]) {
   int i;
 
@@ -262,8 +259,6 @@ int main(const int argc, char *argv[]) {
   return 0;
 }
 
-
-/*                              PRINT_OPTS:                                 */
 static void print_opts(void) {
   printf("\n%s"
          "\n(C) Copyright IBM Corp. 1983, 1999.\n"

@@ -22,5 +22,4 @@ enum {
   ERROR_ACTION = 251
 };
 
-
 #endif /* lpgdef_INCLUDED */

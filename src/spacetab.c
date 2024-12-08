@@ -1,7 +1,7 @@
-#include <stdlib.h>
-
-#include "lpgparse.h"
 static char hostfile[] = __FILE__;
+
+#include <stdlib.h>
+#include "lpgparse.h"
 
 #include <string.h>
 #include "common.h"
@@ -23,7 +23,6 @@ static int *frequency_count;
 
 static bool *shift_on_error_symbol;
 
-/*                            REMAP_NON_TERMINALS:                          */
 /*  REMAP_NON_TERMINALS remaps the non-terminal symbols and states based on */
 /* frequency of entries.                                                    */
 static void remap_non_terminals(void) {
@@ -115,7 +114,6 @@ static void remap_non_terminals(void) {
   ffree(row_size);
 }
 
-/*                           OVERLAP_NT_ROWS:                               */
 /* We now overlap the non-terminal table, or more precisely, we compute the */
 /* starting position in a vector where each of its rows may be placed       */
 /* without clobbering elements in another row.  The starting positions are  */
@@ -275,8 +273,6 @@ static void overlap_nt_rows(void) {
   PRNT(msg_line);
 }
 
-
-/*                        MERGE_SIMILAR_T_ROWS:                      */
 /* We now try to merge states in the terminal table that are similar.*/
 /* Two states S1 and S2 are said to be similar if they contain the   */
 /* same shift actions, and they reduce to the same set of rules.  In  */
@@ -420,8 +416,6 @@ static void merge_similar_t_rows(void) {
   ffree(table);
 }
 
-
-/*                       MERGE_SHIFT_DOMAINS:                        */
 /*    If shift-default actions are requested, the shift actions      */
 /* associated with each state are factored out of the Action matrix  */
 /* and all identical rows are merged.  This merged matrix is used to */
@@ -733,8 +727,6 @@ static void merge_shift_domains(void) {
   ffree(shift_domain_link);
 }
 
-
-/*                         OVERLAY_SIM_T_ROWS:                       */
 /* By now, similar states have been grouped together, and placed in  */
 /* one of three linear linked lists headed by the root pointers:     */
 /* MULTI_ROOT, SINGLE_ROOT, and EMPTY_ROOT.                          */
@@ -1090,8 +1082,6 @@ static void overlay_sim_t_rows(void) {
   ffree(new_state_element_reduce_nodes);
 }
 
-
-/*                           OVERLAP_T_ROWS:                         */
 /* We now compute the starting position for each terminal state just */
 /* as we did for the non-terminal states.                            */
 /* The starting positions are stored in the vector TERM_STATE_INDEX. */
@@ -1275,8 +1265,6 @@ static void overlap_t_rows(void) {
   ffree(previous);
 }
 
-
-/*                         PRINT_TABLES:                             */
 /* We now write out the tables to the SYSTAB file.                   */
 static void print_tables(void) {
   int *check,
@@ -1821,8 +1809,6 @@ static void print_tables(void) {
          output_ptr - &output_buffer[0], systab);
 }
 
-
-/*                             CMPRSPA:                              */
 void cmprspa(void) {
   state_index = Allocate_long_array(max_la_state + 1);
   ordered_state = Allocate_int_array(max_la_state + 1);

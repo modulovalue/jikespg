@@ -1,6 +1,7 @@
 bin_PROGRAMS = jikespg
 
 jikespg_SOURCES = ctabs.c \
+                  globals.c \
                   lpgparse.c \
                   lpgutil.c \
                   main.c \

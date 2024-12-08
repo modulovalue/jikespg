@@ -34,8 +34,7 @@ static bool IsAlpha(const int c) {
 static int output_size = 80,
     line_no = 0;
 
-/*                             PROCESS_INPUT:                               */
-/* This procedures opens all relevant files and processes the input grammar.*/
+/* This procedure opens all relevant files and processes the input grammar.*/
 void process_input(void) {
   time_t ltime;
   unsigned c;
@@ -122,8 +121,6 @@ void process_input(void) {
   exit_process();
 }
 
-
-/*                          READ_INPUT:                             */
 /*         READ_INPUT fills the buffer from p1 to the end.          */
 static void read_input(void) {
   long num_read = input_buffer + IOBUFFER_SIZE - bufend;
@@ -138,8 +135,6 @@ static void read_input(void) {
   *bufend = '\0';
 }
 
-
-/*                              INIT_PROCESS:                                */
 /* This routine is invoked to allocate space for the global structures       */
 /* needed to process the input grammar.                                      */
 static void init_process(void) {
@@ -210,8 +205,6 @@ static void init_process(void) {
   keolt[0] = escape;
 }
 
-
-/*                              EXIT_PROCESS:                                */
 /* This routine is invoked to free all space used to process the input that  */
 /* is no longer needed. Note that for the string_table, only the unused      */
 /* space is released.                                                        */
@@ -231,19 +224,16 @@ static void exit_process(void) {
   ffree(rulehdr); /* allocated in action LPGACT when grammar is not empty */
 }
 
-
-/*                                 VERIFY:                                   */
-/* VERIFY takes as argument a character string and checks whether or not each*/
+/* VERIFY takes as argument a character string and checks whether each       */
 /* character is a digit. If all are digits, then 1 is returned; if not, then */
 /* 0 is returned.                                                            */
 static bool verify(const char *item) {
-  while (IsDigit(*item))
+  while (IsDigit(*item)) {
     item++;
+  }
   return *item == '\0';
 }
 
-
-/*                              TRANSLATE:                                   */
 /* TRANSLATE takes as arguments a character array, which it folds to upper   */
 /* to uppercase and returns.                                                 */
 static char *translate(char *str, const int len) {
@@ -253,8 +243,6 @@ static char *translate(char *str, const int len) {
   return str;
 } /* end translate */
 
-
-/*                             STRXEQ:                                */
 /* Compare two character strings s1 and s2 to check whether or not s2 */
 /* is a substring of s1.  The string s2 is assumed to be in lowercase */
 /* and NULL terminated. However, s1 does not have to (indeed, may not)*/
@@ -264,7 +252,6 @@ static char *translate(char *str, const int len) {
 /*                  if (tolower(s1[i]) != s2[i])  ?                   */
 /* because tolower(ch) is sometimes implemented as (ch-'A'+'a') which */
 /* does not work when "ch" is already a lower case character.         */
-/*                                                                    */
 static bool strxeq(char *s1, char *s2) {
   for (; *s2 != '\0'; s1++, s2++) {
     if (*s1 != *s2 && *s1 != toupper(*s2))
@@ -274,8 +261,6 @@ static bool strxeq(char *s1, char *s2) {
   return true;
 }
 
-
-/*                              OPTIONS:                                     */
 /*   OPTION handles the decoding of options passed by the user and resets    */
 /* them appropriately. "options" may be called twice: when a parameter line  */
 /* is passed to the main program and when the user codes an %OPTIONS line in */
@@ -757,8 +742,6 @@ static void options(void) {
   }
 }
 
-
-/*                       PROCESS_OPTIONS_LINES:                             */
 /*    In this function, we read the first line(s) of the input text to see  */
 /* if they are (it is an) "options" line(s).  If so, the options are        */
 /* processed.  Then, we process user-supplied options if there are any.  In */
@@ -1107,7 +1090,6 @@ static void process_options_lines(void) {
   }
 }
 
-/*                                 HASH:                                     */
 /*    HASH takes as argument a symbol and hashes it into a location in       */
 /* HASH_TABLE.                                                               */
 static int hash(const char *symbl) {
@@ -1124,8 +1106,6 @@ static int hash(const char *symbl) {
   return hash_value % HT_SIZE;
 }
 
-
-/*                           INSERT_STRING:                                  */
 /*   INSERT_STRING takes as an argument a pointer to a ht_elemt structure and*/
 /* a character string.  It inserts the string into the string table and sets */
 /* the value of node to the index into the string table.                     */
@@ -1146,8 +1126,6 @@ static void insert_string(struct hash_type *q, const char *string) {
   /* is copied.      */
 }
 
-
-/*                             ASSIGN_SYMBOL_NO:                             */
 /* PROCESS_SYMBOL takes as an argument a pointer to the most recent token    */
 /* which would be either a symbol or a macro name and then processes it. If  */
 /* the token is a a macro name then a check is made to see if it is a pre-   */
@@ -1185,8 +1163,6 @@ static void assign_symbol_no(const char *string_ptr, const int image) {
   hash_table[i] = p;
 }
 
-
-/*                              ALIAS_MAP:                                   */
 /* ALIAS_MAP takes as input a symbol and an image. It searcheds the hash     */
 /* table for stringptr and if it finds it, it turns it into an alias of the  */
 /* symbol whose number is IMAGE. Otherwise, it invokes PROCESS_SYMBOL and    */
@@ -1202,8 +1178,6 @@ static void alias_map(const char *stringptr, const int image) {
   assign_symbol_no(stringptr, image);
 }
 
-
-/*                              SYMBOL_IMAGE:                                */
 /*    SYMBOL_IMAGE takes as argument a symbol.  It searches for that symbol  */
 /* in the HASH_TABLE, and if found, it returns its image; otherwise, it      */
 /* returns OMEGA.                                                            */
@@ -1216,8 +1190,6 @@ static int symbol_image(const char *item) {
   return OMEGA;
 }
 
-
-/*                                NAME_MAP:                                  */
 /* NAME_MAP takes as input a symbol and inserts it into the HASH_TABLE if it */
 /* is not yet in the table. If it was already in the table then it is        */
 /* assigned a NAME_INDEX number if it did not yet have one.  The name index  */
@@ -1252,8 +1224,6 @@ static int name_map(const char *symb) {
   return num_names;
 }
 
-
-/*                            PROCESS_GRAMMAR:                               */
 /*    PROCESS_GRAMMAR is invoked to process the source input. It uses an     */
 /* LALR(1) parser table generated by LPG to recognize the grammar which it   */
 /* places in the rulehdr structure.                                          */
@@ -1302,8 +1272,6 @@ process_non_terminal:
   goto process_terminal;
 }
 
-
-/*                                SCANNER:                                   */
 /* SCANNER scans the input stream and returns the next input token.          */
 static void scanner(void) {
   register int i;
@@ -1657,8 +1625,6 @@ check_symbol_length:
   }
 }
 
-
-/*                             TOKEN_ACTION:                                */
 /*    This function, TOKEN_ACTION, pushes the current token onto the        */
 /* parse stack called TERMINAL. Note that in case of a BLOCK_, the name of  */
 /* the token is not copied since blocks are processed separately on a       */
@@ -1681,7 +1647,6 @@ static void token_action(void) {
   }
 }
 
-/*                              ERROR_ACTION:                               */
 /*  Error messages to be printed if an error is encountered during parsing. */
 static void error_action(void) {
   ct_ptr[ct_length] = '\0';
@@ -1712,8 +1677,6 @@ static void error_action(void) {
   exit(12);
 }
 
-
-/*                            ACCEPT_ACTION:                                */
 /*          Actions to be taken if grammar is successfully parsed.          */
 static void accept_action(void) {
   if (rulehdr == NULL) {
@@ -1745,8 +1708,6 @@ static void accept_action(void) {
   }
 }
 
-
-/*                             BUILD_SYMNO:                                  */
 /* BUILD_SYMNO constructs the SYMNO table which is a mapping from each       */
 /* symbol number into that symbol.                                           */
 static void build_symno(void) {
@@ -1770,8 +1731,6 @@ static void build_symno(void) {
   }
 }
 
-
-/*                              PROCESS_ACTIONS:                            */
 /*     Process all semantic actions and generate action file.               */
 static void process_actions(void) {
   register int i,
@@ -1969,8 +1928,6 @@ static void process_actions(void) {
   fclose(syshact);
 }
 
-
-/*                          MAKE_NAMES_MAP:                             */
 /*  Construct the NAME map, and update the elements of SYMNO with their */
 /* names.                                                               */
 static void make_names_map(void) {
@@ -2011,8 +1968,6 @@ static void make_names_map(void) {
   }
 }
 
-
-/*                             MAKE_RULES_MAP:                               */
 /*   Construct the rule table.  At this stage, NUM_ITEMS is equal to the sum */
 /* of the right-hand side lists of symbols.  It is used in the declaration of*/
 /* RULE_TAB.  After RULE_TAB is allocated, we increase NUM_ITEMS to its      */
@@ -2091,8 +2046,6 @@ static void make_rules_map(void) {
   rules[num_rules + 1].rhs = rhs_ct; /* Fence !! */
 }
 
-
-/*                             ALLOC_LINE:                                  */
 /*  This function allocates a line_elemt structure and returns a pointer    */
 /* to it.                                                                   */
 static struct line_elemt *alloc_line(void) {
@@ -2108,8 +2061,6 @@ static struct line_elemt *alloc_line(void) {
   return p;
 }
 
-
-/*                              FREE_LINE:                                  */
 /*  This function frees a line_elemt structure which is returned to a free  */
 /* pool.                                                                    */
 static void free_line(struct line_elemt *p) {
@@ -2117,8 +2068,6 @@ static void free_line(struct line_elemt *p) {
   line_pool_root = p;
 }
 
-
-/*                            PROCESS_ACTION_LINE:                           */
 /* PROCESS_ACTION_LINE takes as arguments a line of text from an action      */
 /* block and the rule number with which thwe block is associated.            */
 /* It first scans the text for predefined macro names and then for           */
@@ -2396,7 +2345,6 @@ next_line: {
   }
 }
 
-/*                                MAPMACRO:                                 */
 /* This procedure takes as argument a macro definition.  If the name of the */
 /* macro is one of the predefined names, it issues an error.  Otherwise, it */
 /* inserts the macro definition into the table headed by MACRO_TABLE.       */
@@ -2436,13 +2384,11 @@ static void mapmacro(const int def_index) {
   macro_table[i] = def_index;
 }
 
-
-/*                                FIND_MACRO:                                */
 /* FIND_MACRO takes as argument a pointer to a macro name. It searches for   */
 /* the macro name in the hash table based on MACRO_TABLE. If the macro name  */
 /* is found then the macro definition associated with it is returned.        */
 /* If the name is not found, then a message is printed, a new definition is  */
-/* entered so as to avoid more messages and NULL is returned.                */
+/* entered to avoid more messages and NULL is returned.                      */
 static struct line_elemt *find_macro(char *name) {
   register char *ptr;
 
@@ -2508,8 +2454,6 @@ static struct line_elemt *find_macro(char *name) {
   return NULL;
 }
 
-
-/*                            PROCESS_ALIASES:                           */
 /* Aliases are placed in a separate linked list.  NOTE!! After execution */
 /* of this loop the hash_table is destroyed because the LINK field of    */
 /* alias symbols is used to construct a list of the alias symbols.       */
@@ -2527,8 +2471,6 @@ static void process_aliases(void) {
   }
 }
 
-
-/*                             DISPLAY_INPUT:                                */
 /*   If a listing is requested, this prints all the macros(if any), followed */
 /* by the aliases(if any), followed by the terminal symbols, followed by the */
 /* rules.                                                                    */

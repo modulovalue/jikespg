@@ -1,6 +1,6 @@
-#include <stdlib.h>
 static char hostfile[] = __FILE__;
 
+#include <stdlib.h>
 #include "common.h"
 
 static void mklr0(void);
@@ -14,15 +14,15 @@ static struct state_element *lr0_state_map(struct node *kernel);
 /*   LINK is used to resolve collisions in hashing the states.              */
 /* NEXT_SHIFT is used to resolve collisions in hashing SHIFT maps.          */
 struct state_element {
-  struct state_element *link,
-      *queue,
-      *next_shift;
-  struct node *kernel_items,
-      *complete_items;
+  struct state_element *link;
+  struct state_element *queue;
+  struct state_element *next_shift;
+  struct node *kernel_items;
+  struct node *complete_items;
   struct shift_header_type lr0_shift;
   struct goto_header_type lr0_goto;
-  short shift_number,
-      state_number;
+  short shift_number;
+  short state_number;
 };
 
 static struct state_element **state_table,
@@ -35,7 +35,6 @@ static short *shift_action;
 static struct goto_header_type no_gotos_ptr;
 static struct shift_header_type no_shifts_ptr;
 
-/*                              MKSTATS:                                     */
 /* In this procedure, we first construct the LR(0) automaton.                */
 void mkstats(void) {
   int j;
@@ -75,8 +74,6 @@ void mkstats(void) {
   ffree(clitems);
 }
 
-
-/*                               MKLR0:                                      */
 /* This procedure constructs an LR(0) automaton.                             */
 static void mklr0(void) {
   /* STATE_TABLE is the array used to hash the states. States are  */
@@ -518,8 +515,6 @@ static void mklr0(void) {
   ffree(shift_table);
 }
 
-
-/*                            LR0_STATE_MAP:                                 */
 /* LR0_STATE_MAP takes as an argument a pointer to a kernel set of items. If */
 /* no state based on that kernel set already exists, then a new one is       */
 /* created and added to STATE_TABLE. In any case, a pointer to the STATE of  */

@@ -15,7 +15,6 @@ static struct node *stack_root = NULL;
 static bool *single_complete_item;
 static int *la_base;
 
-/*                                 LPGACCESS:                                */
 /* Given a STATE_NO and an ITEM_NO, ACCESS computes the set of states where  */
 /* the rule from which ITEM_NO is derived was introduced through closure.    */
 struct node *lpgaccess(const int state_no, const int item_no) {
@@ -52,8 +51,6 @@ struct node *lpgaccess(const int state_no, const int item_no) {
   return access_root;
 }
 
-
-/*                              TRACE_LALR_PATH:                             */
 /* Given an item of the form: [x .A y], where x and y are arbitrary strings, */
 /* and A is a non-terminal, we pretrace the path(s) in the automaton  that   */
 /* will be followed in computing the look-ahead set for that item in         */
@@ -123,8 +120,6 @@ static void trace_lalr_path(const int state_no, const int goto_indx) {
     la_base[state] = go_to.map[goto_indx].laptr;
 }
 
-
-/*                               COMPUTE_READ:                               */
 /* COMPUTE_READ computes the number of intermediate look-ahead sets that     */
 /* will be needed (in LA_TOP), allocates space for the sets(LA_SET), and    */
 /* initializes them.                                                         */
@@ -178,9 +173,9 @@ static void compute_read(void) {
     la_base[i] = OMEGA;
 
   for ALL_STATES(state_no) {
-    for (const struct node *p = lalr_level <= 1 && single_complete_item[state_no]
-                                  ? NULL
-                                  : statset[state_no].complete_items;
+    for (const struct node *p = ((lalr_level <= 1 && single_complete_item[state_no])
+                                   ? NULL
+                                   : statset[state_no].complete_items);
          p != NULL; p = p->next) {
       item_no = p->value;
       rule_no = item_table[item_no].rule_number;
@@ -312,8 +307,6 @@ static void compute_read(void) {
   ffree(la_base);
 }
 
-
-/*                                LA_TRAVERSE:                               */
 /* LA_TRAVERSE takes two major arguments: STATE_NO, and an index (GOTO_INDX) */
 /* that points to the GOTO_ELEMENT array in STATE_NO for the non-terminal    */
 /* left hand side of an item for which look-ahead is to be computed. The     */
@@ -324,7 +317,6 @@ static void compute_read(void) {
 /* GOTO_ELEMENT array.                                                       */
 /*                                                                           */
 /* The same digraph algorithm used in MKFIRST is used for this computation.  */
-/*                                                                           */
 void la_traverse(const int state_no, const int goto_indx, int *stack_top) {
   int i;
 
@@ -338,7 +330,7 @@ void la_traverse(const int state_no, const int goto_indx, int *stack_top) {
   s->next = stack_root;
   stack_root = s;
 
-  const int indx = ++*stack_top; /* one element was pushed into the stack */
+  const int indx = ++(*stack_top); /* one element was pushed into the stack */
   la_index[la_ptr] = indx;
 
   /* Compute STATE, action to perform on Goto symbol in question. If    */
@@ -396,7 +388,6 @@ void la_traverse(const int state_no, const int goto_indx, int *stack_top) {
   }
 }
 
-/*                               COMPUTE_LA:                                 */
 /* COMPUTE_LA takes as argument a state number (STATE_NO), an item number    */
 /* (ITEM_NO), and a set (LOOK_AHEAD).  It computes the look-ahead set of     */
 /* terminals for the given item in the given state and places the answer in  */
@@ -437,8 +428,6 @@ void compute_la(const int state_no, const int item_no, const SET_PTR look_ahead)
   free_nodes(v, r);
 }
 
-
-/*                            BUILD_IN_STAT:                          */
 /* We construct the IN_STAT map which is the inverse of the transition*/
 /* map formed by GOTO and SHIFT maps.                                 */
 /* This map is implemented as a table of pointers that can be indexed */
@@ -487,8 +476,6 @@ static void build_in_stat(void) {
   }
 }
 
-
-/*                                MKRDCTS:                                   */
 /* MKRDCTS constructs the REDUCE map and detects conflicts in the grammar.   */
 /* When constructing an LALR parser, the subroutine COMPUTE_LA is invoked to */
 /* compute the lalr look-ahead sets.  For an SLR parser, the FOLLOW map      */
@@ -773,9 +760,9 @@ void mkrdcts(void) {
         rule_no = item_table[item_no].rule_number;
         symbol = rules[rule_no].lhs;
         reduce_size += rule_count[rule_no];
-        if (rule_count[rule_no] > n &&
-            no_shift_on_error_sym[state_no] &&
-            symbol != accept_image) {
+        if ((rule_count[rule_no] > n) &&
+            (no_shift_on_error_sym[state_no]) &&
+            (symbol != accept_image)) {
           n = rule_count[rule_no];
           default_rule = rule_no;
         }
