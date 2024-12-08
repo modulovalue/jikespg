@@ -167,13 +167,11 @@ void produce(void) {
   /* If WARNINGS_BIT is on and some error rules are in the wrong,      */
   /* format, report them.                                              */
   if (warnings_bit && item_root != NIL) {
-    PR_HEADING();
-    if (item_list[item_root] == NIL)
-      fprintf(syslis,
-              "*** This error rule is not in manual format:\n\n");
-    else
-      fprintf(syslis,
-              "*** These error rules are not in manual format:\n\n");
+    if (item_list[item_root] == NIL) {
+      fprintf(syslis, "*** This error rule is not in manual format:\n\n");
+    } else {
+      fprintf(syslis, "*** These error rules are not in manual format:\n\n");
+    }
     for (item_no = item_root;
          item_no != NIL; item_no = item_list[item_no]) {
       print_item(item_no);
@@ -312,10 +310,7 @@ void produce(void) {
 
   /* If the option LIST_BIT is ON, print the name map.                */
   if (list_bit) {
-    PR_HEADING();
     fprintf(syslis, "\nName map:\n");
-    output_line_no += 2;
-
     for ALL_SYMBOLS3(symbol) {
       if (symno[symbol].name_index != symno[accept_image].name_index) {
         print_name_map(symbol);
@@ -394,14 +389,12 @@ static void print_name_map(const int symbol) {
   restore_symbol(tok, RETRIEVE_NAME(symno[symbol].name_index));
   if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 1) {
     fprintf(syslis, "\n%s", line);
-    ENDPAGE_CHECK();
     len = PRINT_LINE_SIZE - 4;
     print_large_token(line, tok, "    ", len);
-  } else
+  } else {
     strcat(line, tok);
-
+  }
   fprintf(syslis, "\n%s", line);
-  ENDPAGE_CHECK();
 }
 
 /* Compute set of "scopes" and use it to construct SCOPE map.     */
@@ -1137,10 +1130,7 @@ static bool is_suffix_equal(const int item_no1, const int item_no2) {
 
 /* This procedure is similar to the global procedure PTITEM.      */
 static void print_scopes(void) {
-  PR_HEADING();
   fprintf(syslis, "\nScopes:\n");
-  output_line_no += 2;
-
   for (int k = 1; k <= num_scopes; k++) {
     char tmp[PRINT_LINE_SIZE];
     char tok[SYMBOL_SIZE + 1];
@@ -1162,14 +1152,13 @@ static void print_scopes(void) {
       restore_symbol(tok, RETRIEVE_STRING(symbol));
       if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 4) {
         fprintf(syslis, "\n%s", line);
-        ENDPAGE_CHECK();
         fill_in(tmp, offset, ' ');
         print_large_token(line, tok, tmp, len);
-      } else
+      } else {
         strcat(line, tok);
+      }
       strcat(line, BLANK);
     }
-
     /* We now add a dot "." to the output line, and print the remaining  */
     /* symbols in the right hand side.                                   */
     strcat(line, " .");
@@ -1180,15 +1169,14 @@ static void print_scopes(void) {
       restore_symbol(tok, RETRIEVE_STRING(symbol));
       if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 1) {
         fprintf(syslis, "\n%s", line);
-        ENDPAGE_CHECK();
         fill_in(tmp, offset, ' ');
         print_large_token(line, tok, tmp, len);
-      } else
+      } else {
         strcat(line, tok);
+      }
       strcat(line, BLANK);
     }
     fprintf(syslis, "\n%s", line);
-    ENDPAGE_CHECK();
   }
 }
 

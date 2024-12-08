@@ -326,7 +326,6 @@ void process_tables(void) {
   /* If printing of the states was requested,  print the new mapping   */
   /* of the states.                                                    */
   if (states_bit) {
-    PR_HEADING();
     fprintf(syslis, "\nMapping of new state numbers into original numbers:\n");
     for ALL_STATES3(state_no) {
       fprintf(syslis, "\n%5ld  ==>>  %5ld", ordered_state[state_no], state_list[state_no]);

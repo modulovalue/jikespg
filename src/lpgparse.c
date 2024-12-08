@@ -105,7 +105,6 @@ void process_input(void) {
 
   /*          Print heading on terminal and in listing file                   */
   printf("\n %s \n", HEADER_INFO);
-  PR_HEADING();
 
   init_process();
 
@@ -2390,59 +2389,42 @@ static void display_input(void) {
 
   /* Print the Macro definitions, if any.   */
   if (num_defs > 0) {
-    PR_HEADING();
     fprintf(syslis, "\nDefined Symbols:\n\n");
-    output_line_no += 3;
     for (j = 0; j < num_defs; j++) {
       fill_in(line, PRINT_LINE_SIZE - (strlen(blockb) + 1), '-');
       fprintf(syslis, "\n\n%s\n%s%s\n", defelmt[j].name, blockb, line);
-
-      output_line_no += 4;
-
       for (const char *ptr = defelmt[j].macro; *ptr != '\0'; ptr++) {
         for (; *ptr != '\n'; ptr++) {
           putc(*ptr, syslis);
         }
         putc(*ptr, syslis);
-        ENDPAGE_CHECK();
       }
-
       fill_in(line, PRINT_LINE_SIZE - (strlen(blocke) + 1), '-');
       fprintf(syslis, "%s%s\n", blocke, line);
-      ENDPAGE_CHECK();
     }
   }
-
-
   /*   Print the Aliases, if any.   */
   if (alias_root != NULL) {
-    PR_HEADING();
     if (alias_root->link == NULL) {
       fprintf(syslis, "\nAlias:\n\n");
-      output_line_no += 3;
     } else {
       fprintf(syslis, "\nAliases:\n\n");
-      output_line_no += 3;
     }
-
     for (const struct hash_type *p = alias_root; p != NULL; p = p->link) {
       restore_symbol(temp, EXTRACT_STRING(p->st_ptr));
-
       len = PRINT_LINE_SIZE - 5;
       print_large_token(line, temp, "", len);
       strcat(line, " ::= ");
       symb = -p->number;
       restore_symbol(temp, RETRIEVE_STRING(symb));
-
       if (strlen(line) + strlen(temp) > PRINT_LINE_SIZE) {
         fprintf(syslis, "%s\n", line);
-        ENDPAGE_CHECK();
         len = PRINT_LINE_SIZE - 4;
         print_large_token(line, temp, "    ", len);
-      } else
+      } else {
         strcat(line, temp);
+      }
       fprintf(syslis, "%s\n", line);
-      ENDPAGE_CHECK();
     }
   }
 
@@ -2450,36 +2432,26 @@ static void display_input(void) {
   /*   The first symbol (#1) represents the empty string.  The last terminal */
   /* declared by the user is followed by EOFT which may be followed by the   */
   /* ERROR symbol.  See LPG GRAMMAR for more details.                        */
-  PR_HEADING();
   fprintf(syslis, "\nTerminals:\n\n");
-  output_line_no += 3;
   strcpy(line, "        "); /* 8 spaces */
   len = PRINT_LINE_SIZE - 4;
-
   for (symb = 2; symb <= num_terminals; symb++) {
     restore_symbol(temp, RETRIEVE_STRING(symb));
-
     if (strlen(line) + strlen(temp) > PRINT_LINE_SIZE) {
       fprintf(syslis, "\n%s", line);
-      ENDPAGE_CHECK();
       print_large_token(line, temp, "    ", len);
-    } else
+    } else {
       strcat(line, temp);
-
+    }
     if (strlen(line) < PRINT_LINE_SIZE) {
       strcat(line, BLANK);
     }
   }
   fprintf(syslis, "\n%s", line);
-  ENDPAGE_CHECK();
-
   /*    Print the Rules     */
-  PR_HEADING();
   fprintf(syslis, "\nRules:\n\n");
-  output_line_no += 3;
   for (register int rule_no = 0; rule_no <= num_rules; rule_no++) {
     register int i;
-
     symb = rules[rule_no].lhs;
     sprintf(line, "%-4d  ", rule_no);
     if (symb != OMEGA) {
@@ -2487,17 +2459,16 @@ static void display_input(void) {
       if (strlen(temp) > PRINT_LINE_SIZE - 12) {
         strncat(line, temp, PRINT_LINE_SIZE - 12);
         fprintf(syslis, "\n%s", line);
-        ENDPAGE_CHECK();
         memmove(temp, temp + (PRINT_LINE_SIZE - 12),
                 sizeof(temp) - (PRINT_LINE_SIZE - 12));
         i = PRINT_LINE_SIZE - 12;
         print_large_token(line, temp, "       ", i);
-      } else
+      } else {
         strcat(line, temp);
-
-      if (rules[rule_no].sp)
+      }
+      if (rules[rule_no].sp) {
         strcat(line, " -> ");
-      else
+      } else
         strcat(line, " ::= ");
 
       i = PRINT_LINE_SIZE / 2 + 1;
@@ -2511,9 +2482,7 @@ static void display_input(void) {
         if (strlen(temp) > PRINT_LINE_SIZE - 12) {
           strncat(line, temp, PRINT_LINE_SIZE - 12);
           fprintf(syslis, "\n%s", line);
-          ENDPAGE_CHECK();
-          memmove(temp, temp + (PRINT_LINE_SIZE - 12),
-                  sizeof(temp) - (PRINT_LINE_SIZE - 12));
+          memmove(temp, temp + (PRINT_LINE_SIZE - 12), sizeof(temp) - (PRINT_LINE_SIZE - 12));
           i = PRINT_LINE_SIZE - 12;
           print_large_token(line, temp, "       ", i);
         } else
@@ -2530,18 +2499,17 @@ static void display_input(void) {
       restore_symbol(temp, RETRIEVE_STRING(rhs_sym[i]));
       if (strlen(temp) + strlen(line) > PRINT_LINE_SIZE - 1) {
         char tempbuffer1[SYMBOL_SIZE + 1];
-
         fprintf(syslis, "\n%s", line);
-        ENDPAGE_CHECK();
         strcpy(tempbuffer1, BLANK);
-        for (j = 1; j < offset + 1; j++)
+        for (j = 1; j < offset + 1; j++) {
           strcat(tempbuffer1, BLANK);
+        }
         print_large_token(line, temp, tempbuffer1, len);
-      } else
+      } else {
         strcat(line, temp);
+      }
       strcat(line, BLANK);
     }
     fprintf(syslis, "\n%s", line);
-    ENDPAGE_CHECK();
   }
 }

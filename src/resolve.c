@@ -493,12 +493,9 @@ static bool trace_root(const int lhs_symbol) {
 static void print_root_path(const int item_no) {
   symbol_seen = Allocate_boolean_array(num_non_terminals);
   symbol_seen -= num_terminals + 1;
-
   if (trace_root(rules[item_table[item_no].rule_number].lhs)) {
     fprintf(syslis, "\n"); /* Leave one blank line after root trace. */
-    ENDPAGE_CHECK();
   }
-
   symbol_seen += num_terminals + 1;
   ffree(symbol_seen);
 }
@@ -650,12 +647,8 @@ static void conflicts_initialization(void) {
   nt_items = Allocate_short_array(num_non_terminals);
   nt_items -= num_terminals + 1;
   item_list = Allocate_short_array(num_items + 1);
-
-  PR_HEADING();
   fill_in(msg_line, (PRINT_LINE_SIZE - 11) / 2 - 1, '-');
   fprintf(syslis, "\n%s CONFLICTS %s\n", msg_line, msg_line);
-  output_line_no += 2;
-
   /*   SLR conflicts may be caused by a symbol in the FOLLOW set of a    */
   /* left hand side, which is not actually in the LALR look-ahead set in */
   /* that context.  Therefore, there may not exist a path in the state   */
@@ -741,7 +734,6 @@ static void process_conflicts(const int state_no) {
               "\n*** Reduce/reduce conflict "
               "on \"%s\" between rule %d and %d\n",
               temp, n, rule_no);
-      output_line_no += 2;
       if (trace_opt != NOTRACE) {
         if (!slr_bit)
           print_relevant_lalr_items(state_no, p->item1, symbol);
@@ -750,11 +742,11 @@ static void process_conflicts(const int state_no) {
         print_item(p->item1);
         fill_in(msg_line, PRINT_LINE_SIZE - 3, '-');
         fprintf(syslis, "\n%s", msg_line);
-        ENDPAGE_CHECK();
-        if (!slr_bit)
+        if (!slr_bit) {
           print_relevant_lalr_items(state_no, p->item2, symbol);
-        else
+        } else {
           print_relevant_slr_items(p->item2, symbol);
+        }
         print_item(p->item2);
       }
     }

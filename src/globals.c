@@ -9,8 +9,6 @@ const char VERSION[] = "1.2";
 const char BLANK[] = " ";
 const long MAX_TABLE_SIZE = (USHRT_MAX < INT_MAX ? USHRT_MAX : INT_MAX) - 1;
 
-long output_line_no = 0;
-
 char grm_file[80];
 char lis_file[80];
 char act_file[80];
@@ -63,7 +61,6 @@ int error_image;
 
 int num_first_sets;
 int num_shift_maps = 0;
-int page_no = 0;
 
 long string_offset = 0;
 long string_size = 0;

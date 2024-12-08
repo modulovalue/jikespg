@@ -160,8 +160,6 @@ struct statset_type {
   short shift_number;
 };
 
-extern long output_line_no;
-
 extern char grm_file[],
     lis_file[],
     act_file[],
@@ -271,8 +269,7 @@ extern int error_image;
 /* Miscellaneous counters. */
 
 extern int num_first_sets,
-    num_shift_maps,
-    page_no;
+    num_shift_maps;
 
 extern long string_offset,
     string_size,
@@ -575,11 +572,6 @@ static struct reduce_header_type Allocate_reduce_map(const long n) {
   return allocate_reduce_map(n, hostfile, __LINE__);
 }
 
-static void PR_HEADING() {
-  fprintf(syslis, "\f\n\n %-39s%s Page %d\n\n", HEADER_INFO, VERSION, ++page_no);
-  output_line_no = 4;
-}
-
 static void ffree(void *y) {
   return free(y); /* { free(x); x = (void *) ULONG_MAX; } */
 }
@@ -600,14 +592,9 @@ static int ABS(const long x) {
   return x < 0 ? -x : x;
 }
 
-static void ENDPAGE_CHECK() {
-  if (++output_line_no >= PAGE_SIZE) PR_HEADING();
-}
-
 static void PRNT(char *msg) {
   printf("%s\n", msg);
   fprintf(syslis, "%s\n", msg);
-  ENDPAGE_CHECK();
 }
 
 #define PRNT2(msg, ...) \
@@ -617,7 +604,6 @@ static void PRNT(char *msg) {
 static void PRNTWNG(char *msg) {
   printf("***WARNING: %s\n", msg);
   fprintf(syslis, "***WARNING: %s\n", msg);
-  ENDPAGE_CHECK();
 }
 
 #define PRNTWNG2(msg, ...) \
@@ -627,7 +613,6 @@ static void PRNTWNG(char *msg) {
 static void PRNTERR(char *msg) {
   printf("***ERROR: %s\n", msg);
   fprintf(syslis, "***ERROR: %s\n", msg);
-  ENDPAGE_CHECK();
 }
 
 #define PRNTERR2(msg, ...) \

@@ -530,7 +530,6 @@ static void no_rules_produced(void) {
   /* is not empty, signal error and stop.                      */
   if (nt_root != NIL) {
     char line[PRINT_LINE_SIZE + 1];
-    PR_HEADING();
     nt_list[nt_last] = NIL;
     if (nt_list[nt_root] == NIL) {
       PRNTERR("The following Non-terminal does not produce any rules: ");
@@ -887,11 +886,10 @@ static void check_non_terminals(void) {
   if (nt_root != NIL) {
     char line[PRINT_LINE_SIZE + 1];
     nt_list[nt_last] = NIL; /* mark end of list */
-    PR_HEADING();
     strcpy(line, "*** ERROR: The following Non-terminal");
-    if (nt_list[nt_root] == NIL)
+    if (nt_list[nt_root] == NIL) {
       strcat(line, " does not generate any terminal strings: ");
-    else {
+    } else {
       strcat(line, "s do not generate any terminal strings: ");
       PRNT(line);
       strcpy(line, "        "); /* 8 spaces */
@@ -1127,14 +1125,13 @@ static void print_unreachables(void) {
     }
   }
   if (t_root != NIL) {
-    PR_HEADING();
     if (symbol_list[t_root] != NIL) {
       PRNT("*** The following Terminals are useless: ");
       fprintf(syslis, "\n\n");
       strcpy(line, "        "); /* 8 spaces */
-    } else
+    } else {
       strcpy(line, "*** The following Terminal is useless: ");
-
+    }
     for (int symbol = t_root; symbol != NIL; symbol = symbol_list[symbol]) {
       restore_symbol(tok, RETRIEVE_STRING(symbol));
       if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE) {
@@ -1163,14 +1160,13 @@ static void print_unreachables(void) {
   }
 
   if (nt_root != NIL) {
-    PR_HEADING();
     if (symbol_list[nt_root] != NIL) {
       PRNT("*** The following Non-Terminals are useless: ");
       fprintf(syslis, "\n\n");
       strcpy(line, "        "); /* 8 spaces */
-    } else
+    } else {
       strcpy(line, "*** The following Non-Terminal is useless: ");
-
+    }
     for (int symbol = nt_root; symbol != NIL; symbol = symbol_list[symbol]) {
       restore_symbol(tok, RETRIEVE_STRING(symbol));
       if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE) {
@@ -1218,10 +1214,7 @@ static void print_xref(void) {
     sort_sym[symbol] = symbol;
   }
   quick_sym(sort_sym, num_symbols);
-
-  PR_HEADING();
   fprintf(syslis, "\n\nCross-reference table:\n");
-  output_line_no += 3;
   for ALL_SYMBOLS3(symbol) {
     symbol = sort_sym[symbol];
     if (symbol != accept_image && symbol != eoft_image
@@ -1229,7 +1222,6 @@ static void print_xref(void) {
       char line[PRINT_LINE_SIZE + 1];
       char tok[SYMBOL_SIZE + 1];
       fprintf(syslis, "\n");
-      ENDPAGE_CHECK();
       restore_symbol(tok, RETRIEVE_STRING(symbol));
       print_large_token(line, tok, "", PRINT_LINE_SIZE - 7);
       strcat(line, "  ==>> ");
@@ -1243,17 +1235,16 @@ static void print_xref(void) {
           sprintf(tok, "%d", rule_no);
           if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE) {
             fprintf(syslis, "\n%s", line);
-            ENDPAGE_CHECK();
             strcpy(line, BLANK);
-            for (int j = 1; j <= offset; j++)
+            for (int j = 1; j <= offset; j++) {
               strcat(line, BLANK);
+            }
           }
           strcat(line, tok);
           if (strlen(line) < PRINT_LINE_SIZE)
             strcat(line, BLANK);
         }
         fprintf(syslis, "\n%s", line);
-        ENDPAGE_CHECK();
         item_no = nt_items[symbol];
       } else {
         for (item_no = t_items[symbol];
@@ -1262,22 +1253,21 @@ static void print_xref(void) {
           sprintf(tok, "%d", rule_no);
           if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE) {
             fprintf(syslis, "\n%s", line);
-            ENDPAGE_CHECK();
             strcpy(line, BLANK);
-            for (int j = 1; j <= offset; j++)
+            for (int j = 1; j <= offset; j++) {
               strcat(line, BLANK);
+            }
           }
           strcat(line, tok);
-          if (strlen(line) < PRINT_LINE_SIZE)
+          if (strlen(line) < PRINT_LINE_SIZE) {
             strcat(line, BLANK);
+          }
         }
         fprintf(syslis, "\n%s", line);
-        ENDPAGE_CHECK();
       }
     }
   }
   fprintf(syslis, "\n\n");
-  output_line_no += 2;
   ffree(t_items);
   ffree(sort_sym);
 }
@@ -1332,11 +1322,7 @@ static void quick_sym(short array[], const int h) {
 static void print_nt_first(void) {
   int nt;
   int t;
-
-  PR_HEADING();
   fprintf(syslis, "\nFirst map for non-terminals:\n\n");
-  output_line_no += 3;
-
   for ALL_NON_TERMINALS3(nt) {
     char tok[SYMBOL_SIZE + 1];
     char line[PRINT_LINE_SIZE + 1];
@@ -1348,16 +1334,14 @@ static void print_nt_first(void) {
         restore_symbol(tok, RETRIEVE_STRING(t));
         if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 1) {
           fprintf(syslis, "\n%s", line);
-          ENDPAGE_CHECK();
           print_large_token(line, tok, "    ", LEN);
-        } else
+        } else {
           strcat(line, tok);
+        }
         strcat(line, BLANK);
       }
     }
     fprintf(syslis, "\n%s\n", line);
-    output_line_no++;
-    ENDPAGE_CHECK();
   }
 }
 
@@ -1365,11 +1349,7 @@ static void print_nt_first(void) {
 static void print_follow_map(void) {
   int nt;
   int t;
-
-  PR_HEADING();
   fprintf(syslis, "\nFollow Map:\n\n");
-  output_line_no += 3;
-
   for ALL_NON_TERMINALS3(nt) {
     char tok[SYMBOL_SIZE + 1];
     char line[PRINT_LINE_SIZE + 1];
@@ -1381,15 +1361,13 @@ static void print_follow_map(void) {
         restore_symbol(tok, RETRIEVE_STRING(t));
         if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 2) {
           fprintf(syslis, "\n%s", line);
-          ENDPAGE_CHECK();
           print_large_token(line, tok, "    ", LEN);
-        } else
+        } else {
           strcat(line, tok);
+        }
         strcat(line, BLANK);
       }
     }
     fprintf(syslis, "\n%s\n", line);
-    output_line_no++;
-    ENDPAGE_CHECK();
   }
 }

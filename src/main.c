@@ -109,7 +109,6 @@ int main(const int argc, char *argv[]) {
     if (first_bit || follow_bit || xref_bit) {
       mkfirst();
     }
-    PR_HEADING();
     PRNT2(msg_line, "\nNumber of Terminals: %d", num_terminals - 1); /*-1 for %empty */
 
     PRNT2(msg_line, "Number of Nonterminals: %d", num_non_terminals - 1); /* -1 for %ACC */
@@ -133,7 +132,6 @@ int main(const int argc, char *argv[]) {
   mkrdcts(); /* Build Reduce map, and detect conflicts if any */
 
   /*                  Print more relevant statistics.                         */
-  PR_HEADING();
   PRNT2(msg_line, "\nNumber of Terminals: %d", num_terminals - 1);
 
   PRNT2(msg_line, "Number of Nonterminals: %d", num_non_terminals - 1);
@@ -176,9 +174,6 @@ int main(const int argc, char *argv[]) {
   /* If STATE_BIT is on, we print the states.               */
   if (states_bit) {
     ptstats();
-    if (table_opt != 0) {
-      PR_HEADING();
-    }
   }
 
   /* If the tables are requested, we process them.          */
