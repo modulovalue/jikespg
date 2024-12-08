@@ -160,13 +160,16 @@ struct statset_type {
   short shift_number;
 };
 
+struct OutputFiles {
+  char prs_file[80];
+  char sym_file[80];
+  char def_file[80];
+  char dcl_file[80];
+};
+
 extern char act_file[],
     hact_file[],
     tab_file[],
-    prs_file[],
-    sym_file[],
-    def_file[],
-    dcl_file[],
     file_prefix[],
     prefix[],
     suffix[],
@@ -437,9 +440,9 @@ struct shift_header_type allocate_shift_map(int size, char *file, long line);
 
 struct reduce_header_type allocate_reduce_map(int size, char *file, long line);
 
-void cmprtim(void);
+void cmprtim(struct OutputFiles output_files);
 
-void cmprspa(void);
+void cmprspa(struct OutputFiles output_files);
 
 void compute_la(int state_no, int item_no, SET_PTR look_ahead);
 
@@ -510,11 +513,13 @@ void prnt_shorts(const char *title, int init, int bound, int perline, const int 
 
 void prnt_ints(const char *title, int init, int bound, int perline, const int *array);
 
-void print_space_parser(void);
+void print_space_parser();
 
-void print_time_parser(void);
+void print_time_parser();
 
-void process_tables(void);
+void init_parser_files(struct OutputFiles output_files);
+
+void process_tables(struct OutputFiles output_files);
 
 void ptstats(void);
 

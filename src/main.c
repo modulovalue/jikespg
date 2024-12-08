@@ -6,7 +6,7 @@ static char hostfile[] = __FILE__;
 
 static void print_opts(void);
 
-void process_input(char* grm_file, char* lis_file);
+void process_input(char* grm_file, char* lis_file, const struct OutputFiles* output_files);
 
 /* Jikes PG is a parser generator capable of generating LALR(k) and  */
 /* SLR(1) tables.  It is organized as a main routine: MAIN, which    */
@@ -31,6 +31,12 @@ void process_input(char* grm_file, char* lis_file);
 /*    3) SYSACT           - Output file used for semantic actions.   */
 /*    4) SYSTAB           - Output file used for Parsing tables.     */
 int main(const int argc, char *argv[]) {
+  const struct OutputFiles output_files = {
+    .prs_file = "",
+    .sym_file = "",
+    .def_file = "",
+    .dcl_file = "",
+  };
   // process input
   {
     /* If only "jikespg" or "jikespg ?*" is typed, we display the help   */
@@ -75,7 +81,7 @@ int main(const int argc, char *argv[]) {
     } else {
       strcpy(tmpbuf, grm_file);
     }
-    char *dot = strrchr(tmpbuf, '.');
+    const char *dot = strrchr(tmpbuf, '.');
     /* if filename has no extension, copy it. */
     if (dot == NULL) {
       strcpy(lis_file, tmpbuf);
@@ -99,7 +105,7 @@ int main(const int argc, char *argv[]) {
     }
     strcat(lis_file, ".l"); /* add .l extension for listing file */
     strcat(tab_file, ".t"); /* add .t extension for table file */
-    process_input(grm_file, lis_file);
+    process_input(grm_file, lis_file, &output_files);
   }
 
   // process rest
@@ -157,9 +163,7 @@ int main(const int argc, char *argv[]) {
       if (goto_default_bit && nt_check_bit) {
         PRNTERR("The options GOTO_DEFAULT and NT_CHECK are incompatible. Tables not generated");
       } else {
-        num_entries = max_la_state + num_shifts + num_shift_reduces
-                      + num_gotos + num_goto_reduces
-                      + num_reductions;
+        num_entries = max_la_state + num_shifts + num_shift_reduces + num_gotos + num_goto_reduces + num_reductions;
         /* We release space used by RHS_SYM, the ADEQUATE_ITEM     */
         /* map, ITEM_TABLE (if we don't have to dump error maps),  */
         /* IN_STAT, FIRST, NULL_NT and FOLLOW (if it's no longer   */
@@ -194,7 +198,7 @@ int main(const int argc, char *argv[]) {
             ffree(follow);
           }
         }
-        process_tables();
+        process_tables(output_files);
       }
     }
     fclose(syslis); /* close listing file */

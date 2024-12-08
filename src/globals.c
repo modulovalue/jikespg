@@ -12,10 +12,7 @@ const long MAX_TABLE_SIZE = (USHRT_MAX < INT_MAX ? USHRT_MAX : INT_MAX) - 1;
 char act_file[80];
 char hact_file[80];
 char tab_file[80];
-char prs_file[80] = "";
-char sym_file[80] = "";
-char def_file[80] = "";
-char dcl_file[80] = "";
+
 char file_prefix[80] = "";
 char prefix[MAX_PARM_SIZE] = "";
 char suffix[MAX_PARM_SIZE] = "";

@@ -254,7 +254,7 @@ static int blockb_len,
 
 static int stack_top = -1;
 
-static void init_process(char* grm_file);
+static void init_process(char* grm_file, struct OutputFiles* output_files);
 
 static void exit_process(void);
 
@@ -264,7 +264,7 @@ static char *translate(char *str, int len);
 
 static void options(void);
 
-static void process_options_lines(char* grm_file);
+static void process_options_lines(char* grm_file, struct OutputFiles* output_files);
 
 static int hash(const char *symbl);
 

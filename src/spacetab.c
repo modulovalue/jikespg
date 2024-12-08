@@ -2,20 +2,19 @@ static char hostfile[] = __FILE__;
 
 #include <stdlib.h>
 #include "lpgparse.h"
-
 #include <string.h>
 #include "common.h"
 #include "space.h"
 
 static struct node **new_state_element_reduce_nodes;
 
-static long total_bytes,
-    num_table_entries;
+static long total_bytes;
+static long num_table_entries;
 
-static int top,
-    empty_root,
-    single_root,
-    multi_root;
+static int top;
+static int empty_root;
+static int single_root;
+static int multi_root;
 
 static long *row_size;
 static long *frequency_symbol;
@@ -27,7 +26,6 @@ static bool *shift_on_error_symbol;
 /* frequency of entries.                                                    */
 static void remap_non_terminals(void) {
   struct goto_header_type go_to;
-
   /*   The variable FREQUENCY_SYMBOL is used to hold the non-terminals  */
   /* in the grammar, and  FREQUENCY_COUNT is used correspondingly to    */
   /* hold the number of actions defined on each non-terminal.           */
@@ -37,7 +35,6 @@ static void remap_non_terminals(void) {
   long *frequency_count = Allocate_long_array(num_non_terminals);
   frequency_count -= num_terminals + 1;
   long *row_size = Allocate_long_array(num_states + 1);
-
   for ALL_NON_TERMINALS3(i) {
     frequency_symbol[i] = i;
     frequency_count[i] = 0;
@@ -93,12 +90,10 @@ static void remap_non_terminals(void) {
   } else {
     last_symbol = num_non_terminals;
   }
-
   /* The states are sorted in descending order based on the number of   */
   /* actions defined on them, and they are remapped based on the new    */
   /* arrangement obtained by the sorting.                               */
   sortdes(ordered_state, row_size, 1, num_states, last_symbol);
-
   frequency_symbol += num_terminals + 1;
   ffree(frequency_symbol);
   frequency_count += num_terminals + 1;
@@ -112,14 +107,10 @@ static void remap_non_terminals(void) {
 /* stored in the vector STATE_INDEX.                                        */
 static void overlap_nt_rows(void) {
   int indx;
-
   long num_bytes;
-
   num_table_entries = num_gotos + num_goto_reduces + num_states;
-  increment_size = MAX(num_table_entries / 100 * increment,
-                       last_symbol + 1);
+  increment_size = MAX(num_table_entries / 100 * increment, last_symbol + 1);
   table_size = MIN(num_table_entries + increment_size, MAX_TABLE_SIZE);
-
   /* Allocate space for table, and initlaize the AVAIL_POOL list.  The     */
   /* variable FIRST_INDEX keeps track of the first element in the doubly-  */
   /* linked list, and LAST_ELEMENT keeps track of the last element in the  */
@@ -128,7 +119,6 @@ static void overlap_nt_rows(void) {
   /* position for a row that has been used.                                */
   next = Allocate_long_array(table_size + 1);
   previous = Allocate_long_array(table_size + 1);
-
   first_index = 1;
   previous[first_index] = NIL;
   next[first_index] = first_index + 1;
@@ -139,15 +129,12 @@ static void overlap_nt_rows(void) {
   last_index = table_size;
   previous[last_index] = last_index - 1;
   next[last_index] = NIL;
-
   int max_indx = first_index;
-
   /* We now iterate over all the states in their new sorted order as */
   /* indicated by the variable STATE_NO, and determine an "overlap"  */
   /* position for them.                                              */
   for ALL_STATES3(state_no) {
     const int state_no__ = ordered_state[state_no];
-
     /* INDX is set to the beginning of the list of available slots  */
     /* and we try to determine if it might be a valid starting      */
     /* position.  If not, INDX is moved to the next element, and we */
@@ -167,7 +154,6 @@ static void overlap_nt_rows(void) {
         goto look_for_match_in_base_table;
       }
     }
-
     /* At this stage, a position(INDX), was found to overlay the row */
     /* in question.  Remove elements associated with all positions   */
     /* that will be taken by row from the doubly-linked list.        */
@@ -185,10 +171,9 @@ static void overlap_nt_rows(void) {
       }
       next[i] = OMEGA;
     }
-
-    if (first_index == last_index)
+    if (first_index == last_index) {
       first_index = NIL;
-    else if (indx == first_index) {
+    } else if (indx == first_index) {
       first_index = next[first_index];
       previous[first_index] = NIL;
     } else if (indx == last_index) {
@@ -199,54 +184,48 @@ static void overlap_nt_rows(void) {
       previous[next[indx]] = previous[indx];
     }
     next[indx] = OMEGA;
-    if (indx > max_indx)
+    if (indx > max_indx) {
       max_indx = indx;
+    }
     state_index[state_no__] = indx;
   }
-
-  if (goto_default_bit || nt_check_bit)
+  if (goto_default_bit || nt_check_bit) {
     check_size = max_indx + num_non_terminals;
-  else
+  } else {
     check_size = 0;
-
+  }
   for (action_size = max_indx + last_symbol;
-       action_size >= max_indx; action_size--)
-    if (next[action_size] == OMEGA)
+       action_size >= max_indx; action_size--) {
+    if (next[action_size] == OMEGA) {
       break;
-
+    }
+  }
   accept_act = max_indx + num_rules + 1;
   error_act = accept_act + 1;
-
   printf("\n");
   if (goto_default_bit || nt_check_bit) {
     PRNT2(msg_line, "Length of base Check Table: %d", check_size);
   }
-
   PRNT2(msg_line, "Length of base Action Table: %ld", action_size);
-
   PRNT2(msg_line, "Number of entries in base Action Table: %ld", num_table_entries);
-
-  const int percentage = (action_size - num_table_entries) * 1000
-                         / num_table_entries;
+  const int percentage = (action_size - num_table_entries) * 1000 / num_table_entries;
   PRNT2(msg_line, "Percentage of increase: %d.%d%%", percentage / 10, percentage % 10);
-
   if (byte_bit) {
     num_bytes = 2 * action_size + check_size;
     if (goto_default_bit || nt_check_bit) {
-      if (last_symbol > 255)
+      if (last_symbol > 255) {
         num_bytes += check_size;
+      }
     }
-  } else
+  } else {
     num_bytes = 2 * (action_size + check_size);
-
-  if (goto_default_bit)
+  }
+  if (goto_default_bit) {
     num_bytes += (long) 2 * num_non_terminals;
+  }
   total_bytes = num_bytes;
-
   const int k_bytes = num_bytes / 1024 + 1;
-
   PRNT2(msg_line, "Storage required for base Tables: %ld Bytes, %dK", num_bytes, k_bytes);
-
   num_bytes = (long) 4 * num_rules;
   if (byte_bit) {
     num_bytes -= num_rules;
@@ -1063,9 +1042,9 @@ static void overlap_t_rows(void) {
     ffree(next);
     next = Allocate_long_array(table_size + 1);
     previous = Allocate_long_array(table_size + 1);
-  } else
+  } else {
     table_size = old_size;
-
+  }
   first_index = 1;
   previous[first_index] = NIL;
   next[first_index] = first_index + 1;
@@ -1076,9 +1055,7 @@ static void overlap_t_rows(void) {
   last_index = table_size;
   previous[last_index] = last_index - 1;
   next[last_index] = NIL;
-
   int max_indx = first_index;
-
   for (int k = 1; k <= num_terminal_states; k++) {
     const int state_no = ordered_state[k];
     /* For the terminal table, we are dealing with two lists, the SHIFT  */
@@ -1095,34 +1072,30 @@ static void overlap_t_rows(void) {
         root_symbol = symbol;
       }
     }
-
     const struct reduce_header_type red = new_state_element[state_no].reduce;
     for (int i = 1; i <= red.size; i++) {
       terminal_list[red.map[i].symbol] = root_symbol;
       root_symbol = red.map[i].symbol;
     }
-
     /* Look for a suitable index where to overlay the state.             */
     indx = first_index;
-
   look_for_match_in_term_table:
-    if (indx == NIL)
+    if (indx == NIL) {
       indx = table_size + 1;
-    if (indx + num_terminals > (int) table_size)
+    }
+    if (indx + num_terminals > (int) table_size) {
       reallocate();
-    for (symbol = root_symbol;
-         symbol != NIL; symbol = terminal_list[symbol]) {
+    }
+    for (symbol = root_symbol; symbol != NIL; symbol = terminal_list[symbol]) {
       if (next[indx + symbol] == OMEGA) {
         indx = next[indx];
         goto look_for_match_in_term_table;
       }
     }
-
     /* INDX marks the starting position for the state, remove all the    */
     /* positions that are claimed by terminal actions in the state.      */
-    for (symbol = root_symbol;
-         symbol != NIL; symbol = terminal_list[symbol]) {
-      int i = indx + symbol;
+    for (symbol = root_symbol; symbol != NIL; symbol = terminal_list[symbol]) {
+      const int i = indx + symbol;
       if (i == last_index) {
         last_index = previous[last_index];
         next[last_index] = NIL;
@@ -1132,15 +1105,14 @@ static void overlap_t_rows(void) {
       }
       next[i] = OMEGA;
     }
-
     /* We now remove the starting position itself from the list, and     */
     /* mark it as taken(CHECK(INDX) = OMEGA)                             */
     /* MAX_INDX is updated if required.                                  */
     /* TERM_STATE_INDEX(STATE_NO) is properly set to INDX as the starting*/
     /* position of STATE_NO.                                             */
-    if (first_index == last_index)
+    if (first_index == last_index) {
       first_index = NIL;
-    else if (indx == first_index) {
+    } else if (indx == first_index) {
       first_index = next[first_index];
       previous[first_index] = NIL;
     } else if (indx == last_index) {
@@ -1150,59 +1122,48 @@ static void overlap_t_rows(void) {
       next[previous[indx]] = next[indx];
       previous[next[indx]] = previous[indx];
     }
-
     next[indx] = OMEGA;
-
-    if (indx > max_indx)
+    if (indx > max_indx) {
       max_indx = indx;
+    }
     term_state_index[state_no] = indx;
   }
-
   /* Update all counts, and report statistics.                         */
   term_check_size = max_indx + num_terminals;
   for (term_action_size = max_indx + num_terminals;
-       term_action_size >= max_indx; term_action_size--)
-    if (next[term_action_size] == OMEGA)
+       term_action_size >= max_indx; term_action_size--) {
+    if (next[term_action_size] == OMEGA) {
       break;
-
+    }
+  }
   printf("\n");
   PRNT2(msg_line, "Length of Terminal Check Table: %d", term_check_size);
-
   PRNT2(msg_line, "Length of Terminal Action Table: %d", term_action_size);
-
   PRNT2(msg_line, "Number of entries in Terminal Action Table: %ld", num_table_entries);
-
   const long percentage = (term_action_size - num_table_entries) * 1000 / num_table_entries;
-
   PRNT2(msg_line, "Percentage of increase: %ld.%ld%%", percentage / 10, percentage % 10);
-
   if (byte_bit) {
     num_bytes = 2 * term_action_size + term_check_size;
-    if (num_terminals > 255)
+    if (num_terminals > 255) {
       num_bytes += term_check_size;
-  } else
+    }
+  } else {
     num_bytes = 2 * (term_action_size + term_check_size);
-
-  if (shift_default_bit)
+  }
+  if (shift_default_bit) {
     num_bytes += 2 * num_terminal_states;
-
+  }
   long k_bytes = num_bytes / 1024 + 1;
-
   PRNT2(msg_line, "Storage required for Terminal Tables: %ld Bytes, %ldK", num_bytes, k_bytes);
-
   total_bytes += num_bytes;
-
   /* Report total number of storage used.                              */
   k_bytes = total_bytes / 1024 + 1;
   PRNT2(msg_line, "Total storage required for Tables: %ld Bytes, %ldK", total_bytes, k_bytes);
-
   /* We now write out the tables to the SYSTAB file.                   */
-
   table_size = MAX(check_size, term_check_size);
   table_size = MAX(table_size, shift_check_size);
   table_size = MAX(table_size, action_size);
   table_size = MAX(table_size, term_action_size);
-
   ffree(terminal_list);
   ffree(next);
   ffree(previous);
@@ -1210,9 +1171,8 @@ static void overlap_t_rows(void) {
 
 /* We now write out the tables to the SYSTAB file.                   */
 static void print_tables(void) {
-  int *check,
-      *action;
-
+  int *check;
+  int *action;
   int la_state_offset;
   int k;
   int indx;
@@ -1226,25 +1186,20 @@ static void print_tables(void) {
   int shift_count = 0;
   int shift_reduce_count = 0;
   int rule_no;
-
   char *tok;
-
   long offset;
-
   check = Allocate_int_array(table_size + 1);
   action = Allocate_int_array(table_size + 1);
-
   /* Prepare header card with proper information, and write it out. */
   offset = error_act;
-  if (read_reduce_bit)
+  if (read_reduce_bit) {
     offset += num_rules;
+  }
   la_state_offset = offset;
-
   if (offset > MAX_TABLE_SIZE + 1) {
     PRNTERR2(msg_line, "Table contains entries that are > %ld; Processing stopped.", MAX_TABLE_SIZE + 1);
     exit(12);
   }
-
   output_buffer[0] = 'S';
   output_buffer[1] = goto_default_bit ? '1' : '0';
   output_buffer[2] = nt_check_bit ? '1' : '0';
@@ -1256,7 +1211,6 @@ static void print_tables(void) {
   output_buffer[7] = error_maps_bit ? '1' : '0';
   output_buffer[8] = byte_bit && last_symbol <= 255 ? '1' : '0';
   output_buffer[9] = escape;
-
   output_ptr = output_buffer + 10;
   field(num_terminals, 5);
   field(num_non_terminals, 5);
@@ -1273,7 +1227,6 @@ static void print_tables(void) {
   field(la_state_offset, 5);
   field(lalr_level, 5);
   *output_ptr++ = '\n';
-
   /* We write the terminal symbols map.                    */
   for ALL_TERMINALS3(symbol) {
     tok = RETRIEVE_STRING(symbol);
@@ -1304,7 +1257,6 @@ static void print_tables(void) {
     *output_ptr++ = '\n';
     BUFFER_CHECK(systab);
   }
-
   /* We write the non-terminal symbols map.                */
   for ALL_NON_TERMINALS3(symbol) {
     int len;
@@ -1336,16 +1288,13 @@ static void print_tables(void) {
     *output_ptr++ = '\n';
     BUFFER_CHECK(systab);
   }
-
   /* Initialize TABLES with default actions.               */
   for (int i = 1; i <= check_size; i++) {
     check[i] = DEFAULT_SYMBOL;
   }
-
   for (int i = 1; i <= (int) action_size; i++) {
     action[i] = error_act;
   }
-
   /*    Update the default non-terminal action of each state with the */
   /* appropriate corresponding terminal state starting index.         */
   for (int i = 1; i <= num_terminal_states; i++) {
@@ -1369,7 +1318,6 @@ static void print_tables(void) {
       }
     }
   }
-
   /*  Now update the non-terminal tables with the non-terminal actions.*/
   for ALL_STATES3(state_no) {
     struct goto_header_type go_to;
@@ -1390,7 +1338,6 @@ static void print_tables(void) {
       }
     }
   }
-
   /* Write size of right hand side of rules followed by CHECK table.   */
   k = 0;
   for (int i = 1; i <= num_rules; i++) {
@@ -1402,7 +1349,6 @@ static void print_tables(void) {
       k = 0;
     }
   }
-
   for (int i = 1; i <= check_size; i++) {
     field(check[i], 4);
     k++;
@@ -1412,12 +1358,10 @@ static void print_tables(void) {
       k = 0;
     }
   }
-
   if (k != 0) {
     *output_ptr++ = '\n';
     BUFFER_CHECK(systab);
   }
-
   /* Write left hand side symbol of rules followed by ACTION table.    */
   k = 0;
   for (int i = 1; i <= num_rules; i++) {
@@ -1429,7 +1373,6 @@ static void print_tables(void) {
       k = 0;
     }
   }
-
   for (int i = 1; i <= (int) action_size; i++) {
     field(action[i], 6);
     k++;
@@ -1439,21 +1382,17 @@ static void print_tables(void) {
       k = 0;
     }
   }
-
   if (k != 0) {
     *output_ptr++ = '\n';
     BUFFER_CHECK(systab);
   }
-
   /* Initialize the terminal tables,and update with terminal actions. */
   for (int i = 1; i <= term_check_size; i++) {
     check[i] = DEFAULT_SYMBOL;
   }
-
   for (int i = 1; i <= term_action_size; i++) {
     action[i] = error_act;
   }
-
   for (int state_no = 1; state_no <= num_terminal_states; state_no++) {
     struct shift_header_type sh;
     struct reduce_header_type red;
@@ -1504,25 +1443,16 @@ static void print_tables(void) {
       action[indx] = rule_no;
     }
   }
-
   PRNT("\n\nActions in Compressed Tables:");
-
   PRNT2(msg_line, "     Number of Shifts: %d", shift_count);
-
   PRNT2(msg_line, "     Number of Shift/Reduces: %d", shift_reduce_count);
-
   if (max_la_state > num_states) {
     PRNT2(msg_line, "     Number of Look-Ahead Shifts: %d", la_shift_count);
   }
-
   PRNT2(msg_line, "     Number of Gotos: %d", goto_count);
-
   PRNT2(msg_line, "     Number of Goto/Reduces: %d", goto_reduce_count);
-
   PRNT2(msg_line, "     Number of Reduces: %d", reduce_count);
-
   PRNT2(msg_line, "     Number of Defaults: %d", default_count);
-
   /* Write Terminal Check Table.                                      */
   k = 0;
   for (int i = 1; i <= term_check_size; i++) {
@@ -1534,12 +1464,10 @@ static void print_tables(void) {
       k = 0;
     }
   }
-
   if (k != 0) {
     *output_ptr++ = '\n';
     BUFFER_CHECK(systab);
   }
-
   /* Write Terminal Action Table.                                      */
   k = 0;
   for (int i = 1; i <= term_action_size; i++) {
@@ -1551,12 +1479,10 @@ static void print_tables(void) {
       k = 0;
     }
   }
-
   if (k != 0) {
     *output_ptr++ = '\n';
     BUFFER_CHECK(systab);
   }
-
   /* If GOTO_DEFAULT is requested, we print out the GOTODEF vector.   */
   if (goto_default_bit) {
     k = 0;
@@ -1583,7 +1509,6 @@ static void print_tables(void) {
       BUFFER_CHECK(systab);
     }
   }
-
   /* If SHIFT_DEFAULT is requested, we print out the Default Reduce    */
   /* map, the Shift State map, the Shift Check vector, and the SHIFTDF */
   /* vector.                                                           */
@@ -1691,7 +1616,6 @@ static void print_tables(void) {
       BUFFER_CHECK(systab);
     }
   }
-
   /* We first sort the new state numbers.  A bucket sort technique     */
   /* is used using the ACTION vector as a base to simulate the         */
   /* buckets.  NOTE: the iteration over the buckets is done backward   */
@@ -1717,18 +1641,15 @@ static void print_tables(void) {
       }
     }
   }
-
   ffree(check);
   ffree(action);
-
-  if (error_maps_bit)
+  if (error_maps_bit) {
     process_error_maps();
-
-  fwrite(output_buffer, sizeof(char),
-         output_ptr - &output_buffer[0], systab);
+  }
+  fwrite(output_buffer, sizeof(char), output_ptr - &output_buffer[0], systab);
 }
 
-void cmprspa(void) {
+void cmprspa(struct OutputFiles output_files) {
   state_index = Allocate_long_array(max_la_state + 1);
   ordered_state = Allocate_long_array(max_la_state + 1);
   symbol_map = Allocate_int_array(num_symbols + 1);
@@ -1748,6 +1669,7 @@ void cmprspa(void) {
   overlay_sim_t_rows();
   overlap_t_rows();
   if (c_bit || cpp_bit || java_bit) {
+    init_parser_files(output_files);
     print_space_parser();
   } else {
     print_tables();
