@@ -996,7 +996,7 @@ static void insert_string(struct hash_type *q, const char *string) {
 
 /* PROCESS_SYMBOL takes as an argument a pointer to the most recent token    */
 /* which would be either a symbol or a macro name and then processes it. If  */
-/* the token is a a macro name then a check is made to see if it is a pre-   */
+/* the token is a macro name then a check is made to see if it is a pre-     */
 /* defined macro. If it is then an error message is printed and the program  */
 /* is halted. If not, or if the token is a symbol then it is hashed into the */
 /* hash_table and its string is copied into the string table.  A struct is   */
