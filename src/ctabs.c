@@ -13,6 +13,7 @@ char prs_tag[SYMBOL_SIZE];
 
 bool byte_check_bit = true;
 
+// TODO inline?
 void non_terminal_time_action(void) {
   if (c_bit)
     fprintf(sysprs,
@@ -38,6 +39,7 @@ void non_terminal_time_action(void) {
             "    }\n\n");
 }
 
+// TODO inline?
 void non_terminal_no_goto_default_time_action(void) {
   if (c_bit)
     fprintf(sysprs,
@@ -52,6 +54,7 @@ void non_terminal_no_goto_default_time_action(void) {
             "    {\n        return action[state + sym];\n    }\n\n");
 }
 
+// TODO inline?
 void non_terminal_space_action(void) {
   if (c_bit)
     fprintf(sysprs,
@@ -77,6 +80,7 @@ void non_terminal_space_action(void) {
             "    }\n\n");
 }
 
+// TODO inline?
 void non_terminal_no_goto_default_space_action(void) {
   if (c_bit)
     fprintf(sysprs,
@@ -92,6 +96,7 @@ void non_terminal_no_goto_default_space_action(void) {
             "    {\n        return base_action[state + sym];\n    }\n\n");
 }
 
+// TODO inline?
 void terminal_time_action(void) {
   if (c_bit)
     fprintf(sysprs,
@@ -114,6 +119,7 @@ void terminal_time_action(void) {
             "    }\n");
 }
 
+// TODO inline?
 void terminal_space_action(void) {
   if (c_bit)
     fprintf(sysprs,
@@ -140,6 +146,7 @@ void terminal_space_action(void) {
             "    }\n");
 }
 
+// TODO inline?
 void terminal_shift_default_space_action(void) {
   if (c_bit)
     fprintf(sysprs,
@@ -183,6 +190,7 @@ void terminal_shift_default_space_action(void) {
             "    }\n");
 }
 
+// TODO inline?
 void terminal_time_lalr_k(void) {
   if (c_bit)
     fprintf(sysprs,
@@ -251,6 +259,7 @@ void terminal_time_lalr_k(void) {
             "    }\n\n");
 }
 
+// TODO inline?
 void terminal_space_lalr_k(void) {
   if (c_bit)
     fprintf(sysprs,
@@ -322,6 +331,7 @@ void terminal_space_lalr_k(void) {
             "    }\n");
 }
 
+// TODO inline?
 void terminal_shift_default_space_lalr_k(void) {
   if (c_bit)
     fprintf(sysprs,
@@ -473,147 +483,6 @@ void exit_file(FILE **file, char *file_tag) {
     fprintf(*file, "\n#endif /* %s_INCLUDED */\n", file_tag);
   }
   fclose(*file);
-}
-
-void exit_parser_files(void) {
-  exit_file(&sysdcl, dcl_tag);
-  exit_file(&syssym, sym_tag);
-  exit_file(&sysdef, def_tag);
-  exit_file(&sysprs, prs_tag);
-}
-
-void print_c_names(void) {
-  int *name_len = Allocate_int_array(num_names + 1);
-  long num_bytes = 0;
-  max_name_length = 0;
-  mystrcpy("\nconst char  CLASS_HEADER string_buffer[] = {0,\n");
-  int n = 0;
-  padline();
-  for (int i = 1; i <= num_names; i++) {
-    char tok[SYMBOL_SIZE + 1];
-    strcpy(tok, RETRIEVE_NAME(i));
-    name_len[i] = strlen(tok);
-    num_bytes += name_len[i];
-    if (max_name_length < name_len[i]) {
-      max_name_length = name_len[i];
-    }
-    int k = 0;
-    for (int j = 0; j < name_len[i]; j++) {
-      *output_ptr++ = '\'';
-      if (tok[k] == '\'' || tok[k] == '\\') {
-        *output_ptr++ = '\\';
-      }
-      if (tok[k] == '\n') {
-        *output_ptr++ = escape;
-      } else {
-        *output_ptr++ = tok[k];
-      }
-      k++;
-      *output_ptr++ = '\'';
-      *output_ptr++ = ',';
-      n++;
-      if (n == 10 && !(i == num_names && j == name_len[i] - 1)) {
-        n = 0;
-        *output_ptr++ = '\n';
-        BUFFER_CHECK(sysdcl);
-        padline();
-      }
-    }
-  }
-  *(output_ptr - 1) = '\n'; /*overwrite last comma*/
-  BUFFER_CHECK(sysdcl);
-  if (java_bit) {
-    mystrcpy("    };\n");
-  } else {
-    mystrcpy("                          };\n");
-  }
-  /* Compute and list space required for STRING_BUFFER map.        */
-  PRNT2(msg_line, "    Storage required for STRING_BUFFER map: %ld Bytes", num_bytes);
-  /* Write out NAME_START array */
-  mystrcpy("\nconst unsigned short CLASS_HEADER name_start[] = {0,\n");
-  padline();
-  int j = 1;
-  int k = 0;
-  for (int i = 1; i <= num_names; i++) {
-    itoc(j);
-    *output_ptr++ = COMMA;
-    j += name_len[i];
-    k++;
-    if (k == 10 && i != num_names) {
-      *output_ptr++ = '\n';
-      BUFFER_CHECK(sysdcl);
-      padline();
-      k = 0;
-    }
-  }
-  if (k != 0) {
-    *(output_ptr - 1) = '\n';
-    BUFFER_CHECK(sysdcl);
-  }
-  if (java_bit) {
-    mystrcpy("    };\n");
-  } else {
-    mystrcpy("                          };\n");
-  }
-  /* Compute and list space required for NAME_START map.           */
-  PRNT2(msg_line, "    Storage required for NAME_START map: %d Bytes", 2 * num_names);
-  /* Write out NAME_LENGTH array */
-  prnt_shorts("\nconst unsigned char  CLASS_HEADER name_length[] = {0,\n", 1, num_names, 10, name_len);
-  /* Compute and list space required for NAME_LENGTH map.          */
-  PRNT2(msg_line, "    Storage required for NAME_LENGTH map: %d Bytes", num_names);
-  ffree(name_len);
-}
-
-void print_java_names(void) {
-  long num_bytes = 0;
-  max_name_length = 0;
-  mystrcpy("\n    public final static String name[] = { null,\n");
-  for (int i = 1; i <= num_names; i++) {
-    char tok[SYMBOL_SIZE + 1];
-    strcpy(tok, RETRIEVE_NAME(i));
-    const int len = strlen(tok);
-    num_bytes += len * 2;
-    if (max_name_length < len) {
-      max_name_length = len;
-    }
-    padline();
-    *output_ptr++ = '\"';
-    int k = 0;
-    for (int j = 0; j < len; j++) {
-      if (tok[j] == '\"' || tok[j] == '\\') {
-        *output_ptr++ = '\\';
-      }
-      if (tok[j] == '\n') {
-        *output_ptr++ = escape;
-      } else {
-        *output_ptr++ = tok[j];
-      }
-      k++;
-      if (k == 30 && j != len - 1) {
-        k = 0;
-        *output_ptr++ = '\"';
-        *output_ptr++ = ' ';
-        *output_ptr++ = '+';
-        *output_ptr++ = '\n';
-        BUFFER_CHECK(sysdcl);
-        padline();
-        *output_ptr++ = '\"';
-      }
-    }
-    *output_ptr++ = '\"';
-    if (i < num_names) {
-      *output_ptr++ = ',';
-    }
-    *output_ptr++ = '\n';
-    BUFFER_CHECK(sysdcl);
-  }
-  if (java_bit) {
-    mystrcpy("    };\n");
-  } else {
-    mystrcpy("                          };\n");
-  }
-  /* Compute and list space required for STRING_BUFFER map.        */
-  PRNT2(msg_line, "    Storage required for STRING_BUFFER map: %ld Bytes", num_bytes);
 }
 
 void print_error_maps(void) {
@@ -880,9 +749,138 @@ void print_error_maps(void) {
     ffree(list);
   }
   if (java_bit) {
-    print_java_names();
+    // Print java names.
+
+    long num_bytes = 0;
+    max_name_length = 0;
+    mystrcpy("\n    public final static String name[] = { null,\n");
+    for (int i = 1; i <= num_names; i++) {
+      char tok[SYMBOL_SIZE + 1];
+      strcpy(tok, RETRIEVE_NAME(i));
+      const int len = strlen(tok);
+      num_bytes += len * 2;
+      if (max_name_length < len) {
+        max_name_length = len;
+      }
+      padline();
+      *output_ptr++ = '\"';
+      int k = 0;
+      for (int j = 0; j < len; j++) {
+        if (tok[j] == '\"' || tok[j] == '\\') {
+          *output_ptr++ = '\\';
+        }
+        if (tok[j] == '\n') {
+          *output_ptr++ = escape;
+        } else {
+          *output_ptr++ = tok[j];
+        }
+        k++;
+        if (k == 30 && j != len - 1) {
+          k = 0;
+          *output_ptr++ = '\"';
+          *output_ptr++ = ' ';
+          *output_ptr++ = '+';
+          *output_ptr++ = '\n';
+          BUFFER_CHECK(sysdcl);
+          padline();
+          *output_ptr++ = '\"';
+        }
+      }
+      *output_ptr++ = '\"';
+      if (i < num_names) {
+        *output_ptr++ = ',';
+      }
+      *output_ptr++ = '\n';
+      BUFFER_CHECK(sysdcl);
+    }
+    if (java_bit) {
+      mystrcpy("    };\n");
+    } else {
+      mystrcpy("                          };\n");
+    }
+    /* Compute and list space required for STRING_BUFFER map.        */
+    PRNT2(msg_line, "    Storage required for STRING_BUFFER map: %ld Bytes", num_bytes);
   } else {
-    print_c_names();
+    // Print C names.
+    int *name_len = Allocate_int_array(num_names + 1);
+    long num_bytes = 0;
+    max_name_length = 0;
+    mystrcpy("\nconst char  CLASS_HEADER string_buffer[] = {0,\n");
+    int n = 0;
+    padline();
+    for (int i = 1; i <= num_names; i++) {
+      char tok[SYMBOL_SIZE + 1];
+      strcpy(tok, RETRIEVE_NAME(i));
+      name_len[i] = strlen(tok);
+      num_bytes += name_len[i];
+      if (max_name_length < name_len[i]) {
+        max_name_length = name_len[i];
+      }
+      int k = 0;
+      for (int j = 0; j < name_len[i]; j++) {
+        *output_ptr++ = '\'';
+        if (tok[k] == '\'' || tok[k] == '\\') {
+          *output_ptr++ = '\\';
+        }
+        if (tok[k] == '\n') {
+          *output_ptr++ = escape;
+        } else {
+          *output_ptr++ = tok[k];
+        }
+        k++;
+        *output_ptr++ = '\'';
+        *output_ptr++ = ',';
+        n++;
+        if (n == 10 && !(i == num_names && j == name_len[i] - 1)) {
+          n = 0;
+          *output_ptr++ = '\n';
+          BUFFER_CHECK(sysdcl);
+          padline();
+        }
+      }
+    }
+    *(output_ptr - 1) = '\n'; /*overwrite last comma*/
+    BUFFER_CHECK(sysdcl);
+    if (java_bit) {
+      mystrcpy("    };\n");
+    } else {
+      mystrcpy("                          };\n");
+    }
+    /* Compute and list space required for STRING_BUFFER map.        */
+    PRNT2(msg_line, "    Storage required for STRING_BUFFER map: %ld Bytes", num_bytes);
+    /* Write out NAME_START array */
+    mystrcpy("\nconst unsigned short CLASS_HEADER name_start[] = {0,\n");
+    padline();
+    int j = 1;
+    int k = 0;
+    for (int i = 1; i <= num_names; i++) {
+      itoc(j);
+      *output_ptr++ = COMMA;
+      j += name_len[i];
+      k++;
+      if (k == 10 && i != num_names) {
+        *output_ptr++ = '\n';
+        BUFFER_CHECK(sysdcl);
+        padline();
+        k = 0;
+      }
+    }
+    if (k != 0) {
+      *(output_ptr - 1) = '\n';
+      BUFFER_CHECK(sysdcl);
+    }
+    if (java_bit) {
+      mystrcpy("    };\n");
+    } else {
+      mystrcpy("                          };\n");
+    }
+    /* Compute and list space required for NAME_START map.           */
+    PRNT2(msg_line, "    Storage required for NAME_START map: %d Bytes", 2 * num_names);
+    /* Write out NAME_LENGTH array */
+    prnt_shorts("\nconst unsigned char  CLASS_HEADER name_length[] = {0,\n", 1, num_names, 10, name_len);
+    /* Compute and list space required for NAME_LENGTH map.          */
+    PRNT2(msg_line, "    Storage required for NAME_LENGTH map: %d Bytes", num_names);
+    ffree(name_len);
   }
   if (num_scopes > 0) {
     if (scope_rhs_size <= (java_bit ? 127 : 255)) {
@@ -1157,360 +1155,367 @@ void print_error_maps(void) {
   }
 }
 
-void print_symbols(void) {
-  char line[SYMBOL_SIZE + /* max length of a token symbol  */
-            2 * MAX_PARM_SIZE + /* max length of prefix + suffix */
-            64]; /* +64 for error messages lines  */
-  /* or other fillers(blank, =,...)*/
-  if (java_bit) {
-    strcpy(line, "interface ");
-    strcat(line, sym_tag);
-    strcat(line, "\n{\n    public final static int\n");
-  } else {
-    strcpy(line, "enum {\n");
-  }
-  /* We write the terminal symbols map.                    */
-  for ALL_TERMINALS3(symbol) {
-    char *tok = RETRIEVE_STRING(symbol);
-    fprintf(syssym, "%s", line);
-    if (tok[0] == '\n' || tok[0] == escape) {
-      tok[0] = escape;
-      PRNT2(line, "Escaped symbol %s is an invalid C variable.\n", tok);
-    } else if (strpbrk(tok, "!%^&*()-+={}[];:\"`~|\\,.<>/?\'") != NULL) {
-      PRNT2(line, "%s may be an invalid variable name.\n", tok);
+void common() {
+  // print symbols
+  {
+    char line[SYMBOL_SIZE + /* max length of a token symbol  */
+              2 * MAX_PARM_SIZE + /* max length of prefix + suffix */
+              64]; /* +64 for error messages lines  */
+    /* or other fillers(blank, =,...)*/
+    if (java_bit) {
+      strcpy(line, "interface ");
+      strcat(line, sym_tag);
+      strcat(line, "\n{\n    public final static int\n");
+    } else {
+      strcpy(line, "enum {\n");
     }
-    sprintf(line, "      %s%s%s = %i,\n", prefix, tok, suffix, symbol_map[symbol]);
-    if (c_bit || cpp_bit) {
-      while (strlen(line) > PARSER_LINE_SIZE) {
-        fwrite(line, sizeof(char), PARSER_LINE_SIZE - 2, syssym);
-        fprintf(syssym, "\\\n");
-        memmove(line, &line[PARSER_LINE_SIZE - 2],
-                strlen(&line[PARSER_LINE_SIZE - 2]) + 1);
+    /* We write the terminal symbols map.                    */
+    for ALL_TERMINALS3(symbol) {
+      char *tok = RETRIEVE_STRING(symbol);
+      fprintf(syssym, "%s", line);
+      if (tok[0] == '\n' || tok[0] == escape) {
+        tok[0] = escape;
+        PRNT2(line, "Escaped symbol %s is an invalid C variable.\n", tok);
+      } else if (strpbrk(tok, "!%^&*()-+={}[];:\"`~|\\,.<>/?\'") != NULL) {
+        PRNT2(line, "%s may be an invalid variable name.\n", tok);
+      }
+      sprintf(line, "      %s%s%s = %i,\n", prefix, tok, suffix, symbol_map[symbol]);
+      if (c_bit || cpp_bit) {
+        while (strlen(line) > PARSER_LINE_SIZE) {
+          fwrite(line, sizeof(char), PARSER_LINE_SIZE - 2, syssym);
+          fprintf(syssym, "\\\n");
+          memmove(line, &line[PARSER_LINE_SIZE - 2],
+                  strlen(&line[PARSER_LINE_SIZE - 2]) + 1);
+        }
       }
     }
+    line[strlen(line) - 2] = '\0'; /* remove the string ",\n" from last line */
+    fprintf(syssym, "%s%s", line, java_bit ? ";\n}\n" : "\n     };\n");
   }
-  line[strlen(line) - 2] = '\0'; /* remove the string ",\n" from last line */
-  fprintf(syssym, "%s%s", line, java_bit ? ";\n}\n" : "\n     };\n");
-}
 
-void print_definitions(void) {
-  if (java_bit) {
-    fprintf(sysdef, "interface %s\n{\n    public final static int\n\n", def_tag);
-  } else {
-    fprintf(sysdef, "enum {\n");
-  }
-  if (error_maps_bit) {
+  // print definitions
+  {
     if (java_bit) {
-      fprintf(sysdef,
-              "      ERROR_SYMBOL      = %d,\n"
-              "      MAX_NAME_LENGTH   = %d,\n"
-              "      NUM_STATES        = %d,\n\n",
-              error_image,
-              max_name_length,
-              num_states);
+      fprintf(sysdef, "interface %s\n{\n    public final static int\n\n", def_tag);
     } else {
-      fprintf(sysdef,
-              "      ERROR_SYMBOL      = %d,\n"
-              "      MAX_DISTANCE      = %d,\n"
-              "      MIN_DISTANCE      = %d,\n"
-              "      MAX_NAME_LENGTH   = %d,\n"
-              "      MAX_TERM_LENGTH   = %d,\n"
-              "      NUM_STATES        = %d,\n\n",
-
-              error_image,
-              maximum_distance,
-              minimum_distance,
-              max_name_length,
-              max_name_length,
-              num_states);
+      fprintf(sysdef, "enum {\n");
     }
-  }
-
-  if (java_bit)
-    fprintf(sysdef,
-            "      NT_OFFSET         = %d,\n"
-            "      SCOPE_UBOUND      = %d,\n"
-            "      SCOPE_SIZE        = %d,\n"
-            "      LA_STATE_OFFSET   = %ld,\n"
-            "      MAX_LA            = %d,\n"
-            "      NUM_RULES         = %d,\n"
-            "      NUM_TERMINALS     = %d,\n"
-            "      NUM_NON_TERMINALS = %d,\n"
-            "      NUM_SYMBOLS       = %d,\n"
-            "      START_STATE       = %ld,\n"
-            "      EOFT_SYMBOL       = %d,\n"
-            "      EOLT_SYMBOL       = %d,\n"
-            "      ACCEPT_ACTION     = %ld,\n"
-            "      ERROR_ACTION      = %ld;\n"
-            "};\n\n",
-            table_opt == OPTIMIZE_SPACE ? num_terminals : num_symbols,
-            num_scopes - 1,
-            num_scopes,
-            read_reduce_bit && lalr_level > 1
-              ? error_act + num_rules
-              : error_act,
-            lalr_level,
-            num_rules,
-            num_terminals,
-            num_non_terminals,
-            num_symbols,
-            state_index[1] + num_rules,
-            eoft_image,
-            eolt_image,
-            accept_act,
-            error_act);
-  else
-    fprintf(sysdef,
-            "      NT_OFFSET         = %d,\n"
-            "      BUFF_UBOUND       = %d,\n"
-            "      BUFF_SIZE         = %d,\n"
-            "      STACK_UBOUND      = %d,\n"
-            "      STACK_SIZE        = %d,\n"
-            "      SCOPE_UBOUND      = %d,\n"
-            "      SCOPE_SIZE        = %d,\n"
-            "      LA_STATE_OFFSET   = %ld,\n"
-            "      MAX_LA            = %d,\n"
-            "      NUM_RULES         = %d,\n"
-            "      NUM_TERMINALS     = %d,\n"
-            "      NUM_NON_TERMINALS = %d,\n"
-            "      NUM_SYMBOLS       = %d,\n"
-            "      START_STATE       = %ld,\n"
-            "      EOFT_SYMBOL       = %d,\n"
-            "      EOLT_SYMBOL       = %d,\n"
-            "      ACCEPT_ACTION     = %ld,\n"
-            "      ERROR_ACTION      = %ld\n"
-            "     };\n\n",
-            table_opt == OPTIMIZE_SPACE ? num_terminals : num_symbols,
-            maximum_distance + lalr_level - 1,
-            maximum_distance + lalr_level,
-            stack_size - 1,
-            stack_size,
-            num_scopes - 1,
-            num_scopes,
-            read_reduce_bit && lalr_level > 1
-              ? error_act + num_rules
-              : error_act,
-            lalr_level,
-            num_rules,
-            num_terminals,
-            num_non_terminals,
-            num_symbols,
-            state_index[1] + num_rules,
-            eoft_image,
-            eolt_image,
-            accept_act,
-            error_act);
-}
-
-void print_externs(void) {
-  if (c_bit || cpp_bit) {
-    fprintf(sysprs,
-            "%s SCOPE_REPAIR\n"
-            "%s DEFERRED_RECOVERY\n"
-            "%s FULL_DIAGNOSIS\n"
-            "%s SPACE_TABLES\n\n",
-            num_scopes > 0 ? "#define" : "#undef ",
-            deferred_bit ? "#define" : "#undef ",
-            error_maps_bit ? "#define" : "#undef ",
-            table_opt == OPTIMIZE_SPACE ? "#define" : "#undef ");
-  }
-
-  if (c_bit)
-    fprintf(sysprs,
-            "#define original_state(state) (-%s[state])\n"
-            "#define asi(state)            asb[original_state(state)]\n"
-            "#define nasi(state)           nasb[original_state(state)]\n"
-            "#define in_symbol(state)      in_symb[original_state(state)]\n\n",
-            table_opt == OPTIMIZE_TIME ? "check" : "base_check");
-  else if (cpp_bit) {
-    fprintf(sysprs,
-            "class LexStream;\n\n"
-            "class %s_table\n"
-            "{\n"
-            "public:\n",
-
-            prs_tag);
-
-    if (error_maps_bit || debug_bit)
-      fprintf(sysprs,
-              "    static int original_state(int state) "
-              "{ return -%s[state]; }\n",
-              table_opt == OPTIMIZE_TIME ? "check" : "base_check");
-
     if (error_maps_bit) {
-      fprintf(sysprs,
-              "    static int asi(int state) "
-              "{ return asb[original_state(state)]; }\n"
-              "    static int nasi(int state) "
-              "{ return nasb[original_state(state)]; }\n");
-      if (num_scopes > 0)
-        fprintf(sysprs,
-                "    static int in_symbol(int state) "
-                "{ return in_symb[original_state(state)]; }\n");
+      if (java_bit) {
+        fprintf(sysdef,
+                "      ERROR_SYMBOL      = %d,\n"
+                "      MAX_NAME_LENGTH   = %d,\n"
+                "      NUM_STATES        = %d,\n\n",
+                error_image,
+                max_name_length,
+                num_states);
+      } else {
+        fprintf(sysdef,
+                "      ERROR_SYMBOL      = %d,\n"
+                "      MAX_DISTANCE      = %d,\n"
+                "      MIN_DISTANCE      = %d,\n"
+                "      MAX_NAME_LENGTH   = %d,\n"
+                "      MAX_TERM_LENGTH   = %d,\n"
+                "      NUM_STATES        = %d,\n\n",
+
+                error_image,
+                maximum_distance,
+                minimum_distance,
+                max_name_length,
+                max_name_length,
+                num_states);
+      }
     }
+    if (java_bit)
+      fprintf(sysdef,
+              "      NT_OFFSET         = %d,\n"
+              "      SCOPE_UBOUND      = %d,\n"
+              "      SCOPE_SIZE        = %d,\n"
+              "      LA_STATE_OFFSET   = %ld,\n"
+              "      MAX_LA            = %d,\n"
+              "      NUM_RULES         = %d,\n"
+              "      NUM_TERMINALS     = %d,\n"
+              "      NUM_NON_TERMINALS = %d,\n"
+              "      NUM_SYMBOLS       = %d,\n"
+              "      START_STATE       = %ld,\n"
+              "      EOFT_SYMBOL       = %d,\n"
+              "      EOLT_SYMBOL       = %d,\n"
+              "      ACCEPT_ACTION     = %ld,\n"
+              "      ERROR_ACTION      = %ld;\n"
+              "};\n\n",
+              table_opt == OPTIMIZE_SPACE ? num_terminals : num_symbols,
+              num_scopes - 1,
+              num_scopes,
+              read_reduce_bit && lalr_level > 1
+                ? error_act + num_rules
+                : error_act,
+              lalr_level,
+              num_rules,
+              num_terminals,
+              num_non_terminals,
+              num_symbols,
+              state_index[1] + num_rules,
+              eoft_image,
+              eolt_image,
+              accept_act,
+              error_act);
+    else
+      fprintf(sysdef,
+              "      NT_OFFSET         = %d,\n"
+              "      BUFF_UBOUND       = %d,\n"
+              "      BUFF_SIZE         = %d,\n"
+              "      STACK_UBOUND      = %d,\n"
+              "      STACK_SIZE        = %d,\n"
+              "      SCOPE_UBOUND      = %d,\n"
+              "      SCOPE_SIZE        = %d,\n"
+              "      LA_STATE_OFFSET   = %ld,\n"
+              "      MAX_LA            = %d,\n"
+              "      NUM_RULES         = %d,\n"
+              "      NUM_TERMINALS     = %d,\n"
+              "      NUM_NON_TERMINALS = %d,\n"
+              "      NUM_SYMBOLS       = %d,\n"
+              "      START_STATE       = %ld,\n"
+              "      EOFT_SYMBOL       = %d,\n"
+              "      EOLT_SYMBOL       = %d,\n"
+              "      ACCEPT_ACTION     = %ld,\n"
+              "      ERROR_ACTION      = %ld\n"
+              "     };\n\n",
+              table_opt == OPTIMIZE_SPACE ? num_terminals : num_symbols,
+              maximum_distance + lalr_level - 1,
+              maximum_distance + lalr_level,
+              stack_size - 1,
+              stack_size,
+              num_scopes - 1,
+              num_scopes,
+              read_reduce_bit && lalr_level > 1
+                ? error_act + num_rules
+                : error_act,
+              lalr_level,
+              num_rules,
+              num_terminals,
+              num_non_terminals,
+              num_symbols,
+              state_index[1] + num_rules,
+              eoft_image,
+              eolt_image,
+              accept_act,
+              error_act);
+  }
 
-    fprintf(sysprs, "\n");
-  } else if (java_bit) {
-    fprintf(sysprs,
-            "abstract class %s extends %s implements %s\n{\n",
-            prs_tag, dcl_tag, def_tag);
-
-    if (error_maps_bit || debug_bit) {
+  // print externs
+  {
+    if (c_bit || cpp_bit) {
       fprintf(sysprs,
-              "    public final static int original_state(int state) "
-              "{ return -%s(state); }\n",
+              "%s SCOPE_REPAIR\n"
+              "%s DEFERRED_RECOVERY\n"
+              "%s FULL_DIAGNOSIS\n"
+              "%s SPACE_TABLES\n\n",
+              num_scopes > 0 ? "#define" : "#undef ",
+              deferred_bit ? "#define" : "#undef ",
+              error_maps_bit ? "#define" : "#undef ",
+              table_opt == OPTIMIZE_SPACE ? "#define" : "#undef ");
+    }
+    if (c_bit) {
+      fprintf(sysprs,
+              "#define original_state(state) (-%s[state])\n"
+              "#define asi(state)            asb[original_state(state)]\n"
+              "#define nasi(state)           nasb[original_state(state)]\n"
+              "#define in_symbol(state)      in_symb[original_state(state)]\n\n",
               table_opt == OPTIMIZE_TIME ? "check" : "base_check");
-
+    } else if (cpp_bit) {
+      fprintf(sysprs,
+              "class LexStream;\n\n"
+              "class %s_table\n"
+              "{\n"
+              "public:\n",
+              prs_tag);
+      if (error_maps_bit || debug_bit) {
+        fprintf(sysprs,
+                "    static int original_state(int state) "
+                "{ return -%s[state]; }\n",
+                table_opt == OPTIMIZE_TIME ? "check" : "base_check");
+      }
       if (error_maps_bit) {
         fprintf(sysprs,
-                "    public final static int asi(int state) "
+                "    static int asi(int state) "
                 "{ return asb[original_state(state)]; }\n"
                 "    static int nasi(int state) "
                 "{ return nasb[original_state(state)]; }\n");
-        if (num_scopes > 0)
+        if (num_scopes > 0) {
           fprintf(sysprs,
-                  "    public final static int in_symbol(int state) "
+                  "    static int in_symbol(int state) "
                   "{ return in_symb[original_state(state)]; }\n");
+        }
+      }
+      fprintf(sysprs, "\n");
+    } else if (java_bit) {
+      fprintf(sysprs,
+              "abstract class %s extends %s implements %s\n{\n",
+              prs_tag, dcl_tag, def_tag);
+      if (error_maps_bit || debug_bit) {
+        fprintf(sysprs,
+                "    public final static int original_state(int state) "
+                "{ return -%s(state); }\n",
+                table_opt == OPTIMIZE_TIME ? "check" : "base_check");
+        if (error_maps_bit) {
+          fprintf(sysprs,
+                  "    public final static int asi(int state) "
+                  "{ return asb[original_state(state)]; }\n"
+                  "    static int nasi(int state) "
+                  "{ return nasb[original_state(state)]; }\n");
+          if (num_scopes > 0)
+            fprintf(sysprs,
+                    "    public final static int in_symbol(int state) "
+                    "{ return in_symb[original_state(state)]; }\n");
+        }
+        fprintf(sysprs, "\n");
+      }
+    }
+    if (c_bit || cpp_bit) {
+      fprintf(sysprs, "%s const unsigned char  rhs[];\n", c_bit ? "extern" : "    static");
+      if (check_size > 0 || table_opt == OPTIMIZE_TIME) {
+        const bool small = byte_check_bit && !error_maps_bit;
+        fprintf(sysprs, "%s const %s check_table[];\n"
+                "%s const %s *%s;\n",
+                c_bit ? "extern" : "    static",
+                small ? "unsigned char " : "  signed short",
+                c_bit ? "extern" : "    static",
+                small ? "unsigned char " : "  signed short",
+                table_opt == OPTIMIZE_TIME ? "check" : "base_check");
+      }
+      fprintf(sysprs, "%s const unsigned short lhs[];\n"
+              "%s const unsigned short *%s;\n",
+              c_bit ? "extern" : "    static",
+              c_bit ? "extern" : "    static",
+              table_opt == OPTIMIZE_TIME ? "action" : "base_action");
+      if (goto_default_bit) {
+        fprintf(sysprs, "%s const unsigned short default_goto[];\n", c_bit ? "extern" : "    static");
+      }
+      if (table_opt == OPTIMIZE_SPACE) {
+        fprintf(sysprs, "%s const unsigned %s term_check[];\n", c_bit ? "extern" : "    static", num_terminals <= (java_bit ? 127 : 255) ? "char " : "short");
+        fprintf(sysprs, "%s const unsigned short term_action[];\n", c_bit ? "extern" : "    static");
+
+        if (shift_default_bit) {
+          fprintf(sysprs, "%s const unsigned short default_reduce[];\n", c_bit ? "extern" : "    static");
+          fprintf(sysprs, "%s const unsigned short shift_state[];\n", c_bit ? "extern" : "    static");
+          fprintf(sysprs, "%s const unsigned %s shift_check[];\n", c_bit ? "extern" : "    static", num_terminals <= (java_bit ? 127 : 255) ? "char " : "short");
+          fprintf(sysprs, "%s const unsigned short default_shift[];\n", c_bit ? "extern" : "    static");
+        }
+      }
+
+      if (error_maps_bit) {
+        fprintf(sysprs,
+                "\n"
+                "%s const unsigned short asb[];\n"
+                "%s const unsigned %s asr[];\n"
+                "%s const unsigned short nasb[];\n"
+                "%s const unsigned short nasr[];\n"
+                "%s const unsigned short name_start[];\n"
+                "%s const unsigned char  name_length[];\n"
+                "%s const          char  string_buffer[];\n",
+                c_bit ? "extern" : "    static",
+                c_bit ? "extern" : "    static",
+                byte_terminal_range <= (java_bit ? 127 : 255) ? "char " : "short",
+                c_bit ? "extern" : "    static",
+                c_bit ? "extern" : "    static",
+                c_bit ? "extern" : "    static",
+                c_bit ? "extern" : "    static",
+                c_bit ? "extern" : "    static");
+
+        if (table_opt == OPTIMIZE_SPACE) {
+          fprintf(sysprs,
+                  "%s const unsigned %s terminal_index[];\n"
+                  "%s const unsigned %s non_terminal_index[];\n",
+                  c_bit ? "extern" : "    static",
+                  num_names <= (java_bit ? 127 : 255) ? "char " : "short",
+                  c_bit ? "extern" : "    static",
+                  num_names <= (java_bit ? 127 : 255) ? "char " : "short");
+        } else {
+          fprintf(sysprs, "%s const unsigned %s symbol_index[];\n"
+                  "%s const unsigned %s *terminal_index;\n"
+                  "%s const unsigned %s *non_terminal_index;\n",
+                  c_bit ? "extern" : "    static",
+                  num_names <= (java_bit ? 127 : 255) ? "char " : "short",
+                  c_bit ? "extern" : "    static",
+                  num_names <= (java_bit ? 127 : 255) ? "char " : "short",
+                  c_bit ? "extern" : "    static",
+                  num_names <= (java_bit ? 127 : 255) ? "char " : "short");
+        }
+
+        if (num_scopes > 0) {
+          fprintf(sysprs, "%s const unsigned %s scope_prefix[];\n"
+                  "%s const unsigned %s scope_suffix[];\n"
+                  "%s const unsigned %s scope_lhs[];\n"
+                  "%s const unsigned %s scope_la[];\n"
+                  "%s const unsigned %s scope_state_set[];\n"
+                  "%s const unsigned %s scope_rhs[];\n"
+                  "%s const unsigned short scope_state[];\n"
+                  "%s const unsigned %s in_symb[];\n",
+                  c_bit ? "extern" : "    static",
+                  scope_rhs_size <= (java_bit ? 127 : 255) ? "char " : "short",
+                  c_bit ? "extern" : "    static",
+                  scope_rhs_size <= (java_bit ? 127 : 255) ? "char " : "short",
+                  c_bit ? "extern" : "    static",
+                  num_symbols <= (java_bit ? 127 : 255) ? "char " : "short",
+                  c_bit ? "extern" : "    static",
+                  num_terminals <= (java_bit ? 127 : 255) ? "char " : "short",
+                  c_bit ? "extern" : "    static",
+                  scope_state_size <= (java_bit ? 127 : 255) ? "char " : "short",
+                  c_bit ? "extern" : "    static",
+                  num_symbols <= (java_bit ? 127 : 255) ? "char " : "short",
+                  c_bit ? "extern" : "    static",
+                  c_bit ? "extern" : "    static",
+                  num_symbols <= (java_bit ? 127 : 255) ? "char " : "short");
+        }
       }
 
       fprintf(sysprs, "\n");
     }
-  }
-
-  if (c_bit || cpp_bit) {
-    fprintf(sysprs, "%s const unsigned char  rhs[];\n", c_bit ? "extern" : "    static");
-    if (check_size > 0 || table_opt == OPTIMIZE_TIME) {
-      const bool small = byte_check_bit && !error_maps_bit;
-      fprintf(sysprs, "%s const %s check_table[];\n"
-              "%s const %s *%s;\n",
-              c_bit ? "extern" : "    static",
-              small ? "unsigned char " : "  signed short",
-              c_bit ? "extern" : "    static",
-              small ? "unsigned char " : "  signed short",
-              table_opt == OPTIMIZE_TIME ? "check" : "base_check");
-    }
-    fprintf(sysprs, "%s const unsigned short lhs[];\n"
-            "%s const unsigned short *%s;\n",
-            c_bit ? "extern" : "    static",
-            c_bit ? "extern" : "    static",
-            table_opt == OPTIMIZE_TIME ? "action" : "base_action");
-    if (goto_default_bit) {
-      fprintf(sysprs, "%s const unsigned short default_goto[];\n", c_bit ? "extern" : "    static");
-    }
     if (table_opt == OPTIMIZE_SPACE) {
-      fprintf(sysprs, "%s const unsigned %s term_check[];\n", c_bit ? "extern" : "    static", num_terminals <= (java_bit ? 127 : 255) ? "char " : "short");
-      fprintf(sysprs, "%s const unsigned short term_action[];\n", c_bit ? "extern" : "    static");
-
-      if (shift_default_bit) {
-        fprintf(sysprs, "%s const unsigned short default_reduce[];\n", c_bit ? "extern" : "    static");
-        fprintf(sysprs, "%s const unsigned short shift_state[];\n", c_bit ? "extern" : "    static");
-        fprintf(sysprs, "%s const unsigned %s shift_check[];\n", c_bit ? "extern" : "    static", num_terminals <= (java_bit ? 127 : 255) ? "char " : "short");
-        fprintf(sysprs, "%s const unsigned short default_shift[];\n", c_bit ? "extern" : "    static");
-      }
-    }
-
-    if (error_maps_bit) {
-      fprintf(sysprs,
-              "\n"
-              "%s const unsigned short asb[];\n"
-              "%s const unsigned %s asr[];\n"
-              "%s const unsigned short nasb[];\n"
-              "%s const unsigned short nasr[];\n"
-              "%s const unsigned short name_start[];\n"
-              "%s const unsigned char  name_length[];\n"
-              "%s const          char  string_buffer[];\n",
-              c_bit ? "extern" : "    static",
-              c_bit ? "extern" : "    static",
-              byte_terminal_range <= (java_bit ? 127 : 255) ? "char " : "short",
-              c_bit ? "extern" : "    static",
-              c_bit ? "extern" : "    static",
-              c_bit ? "extern" : "    static",
-              c_bit ? "extern" : "    static",
-              c_bit ? "extern" : "    static");
-
-      if (table_opt == OPTIMIZE_SPACE) {
-        fprintf(sysprs,
-                "%s const unsigned %s terminal_index[];\n"
-                "%s const unsigned %s non_terminal_index[];\n",
-                c_bit ? "extern" : "    static",
-                num_names <= (java_bit ? 127 : 255) ? "char " : "short",
-                c_bit ? "extern" : "    static",
-                num_names <= (java_bit ? 127 : 255) ? "char " : "short");
+      if (goto_default_bit) {
+        non_terminal_space_action();
       } else {
-        fprintf(sysprs, "%s const unsigned %s symbol_index[];\n"
-                "%s const unsigned %s *terminal_index;\n"
-                "%s const unsigned %s *non_terminal_index;\n",
-                c_bit ? "extern" : "    static",
-                num_names <= (java_bit ? 127 : 255) ? "char " : "short",
-                c_bit ? "extern" : "    static",
-                num_names <= (java_bit ? 127 : 255) ? "char " : "short",
-                c_bit ? "extern" : "    static",
-                num_names <= (java_bit ? 127 : 255) ? "char " : "short");
+        non_terminal_no_goto_default_space_action();
       }
-
-      if (num_scopes > 0) {
-        fprintf(sysprs, "%s const unsigned %s scope_prefix[];\n"
-                "%s const unsigned %s scope_suffix[];\n"
-                "%s const unsigned %s scope_lhs[];\n"
-                "%s const unsigned %s scope_la[];\n"
-                "%s const unsigned %s scope_state_set[];\n"
-                "%s const unsigned %s scope_rhs[];\n"
-                "%s const unsigned short scope_state[];\n"
-                "%s const unsigned %s in_symb[];\n",
-                c_bit ? "extern" : "    static",
-                scope_rhs_size <= (java_bit ? 127 : 255) ? "char " : "short",
-                c_bit ? "extern" : "    static",
-                scope_rhs_size <= (java_bit ? 127 : 255) ? "char " : "short",
-                c_bit ? "extern" : "    static",
-                num_symbols <= (java_bit ? 127 : 255) ? "char " : "short",
-                c_bit ? "extern" : "    static",
-                num_terminals <= (java_bit ? 127 : 255) ? "char " : "short",
-                c_bit ? "extern" : "    static",
-                scope_state_size <= (java_bit ? 127 : 255) ? "char " : "short",
-                c_bit ? "extern" : "    static",
-                num_symbols <= (java_bit ? 127 : 255) ? "char " : "short",
-                c_bit ? "extern" : "    static",
-                c_bit ? "extern" : "    static",
-                num_symbols <= (java_bit ? 127 : 255) ? "char " : "short");
+      if (lalr_level > 1) {
+        if (shift_default_bit) {
+          terminal_shift_default_space_lalr_k();
+        } else {
+          terminal_space_lalr_k();
+        }
+      } else {
+        if (shift_default_bit) {
+          terminal_shift_default_space_action();
+        } else {
+          terminal_space_action();
+        }
       }
-    }
-
-    fprintf(sysprs, "\n");
-  }
-
-  if (table_opt == OPTIMIZE_SPACE) {
-    if (goto_default_bit)
-      non_terminal_space_action();
-    else
-      non_terminal_no_goto_default_space_action();
-
-    if (lalr_level > 1) {
-      if (shift_default_bit)
-        terminal_shift_default_space_lalr_k();
-      else
-        terminal_space_lalr_k();
     } else {
-      if (shift_default_bit)
-        terminal_shift_default_space_action();
-      else
-        terminal_space_action();
+      if (goto_default_bit) {
+        non_terminal_time_action();
+      } else {
+        non_terminal_no_goto_default_time_action();
+      }
+      if (lalr_level > 1) {
+        terminal_time_lalr_k();
+      } else {
+        terminal_time_action();
+      }
     }
-  } else {
-    if (goto_default_bit)
-      non_terminal_time_action();
-    else
-      non_terminal_no_goto_default_time_action();
-
-    if (lalr_level > 1)
-      terminal_time_lalr_k();
-    else
-      terminal_time_action();
+    if (cpp_bit) {
+      fprintf(sysprs, "};\n");
+    } else if (java_bit) {
+      fprintf(sysprs, "}\n");
+    }
   }
 
-  if (cpp_bit)
-    fprintf(sysprs, "};\n");
-  else if (java_bit)
-    fprintf(sysprs, "}\n");
+  // exit parser files
+  {
+    exit_file(&sysdcl, dcl_tag);
+    exit_file(&syssym, sym_tag);
+    exit_file(&sysdef, def_tag);
+    exit_file(&sysprs, prs_tag);
+  }
 }
 
 void print_space_parser() {
@@ -2071,14 +2076,7 @@ void print_space_parser() {
     }
     fwrite(output_buffer, sizeof(char), output_ptr - &output_buffer[0], sysdcl);
   }
-
-
-
-
-  print_symbols();
-  print_definitions();
-  print_externs();
-  exit_parser_files();
+  common();
 }
 
 void print_time_parser() {
@@ -2464,12 +2462,5 @@ void print_time_parser() {
     }
     fwrite(output_buffer, sizeof(char), output_ptr - &output_buffer[0], sysdcl);
   }
-
-
-
-
-  print_symbols();
-  print_definitions();
-  print_externs();
-  exit_parser_files();
+  common();
 }

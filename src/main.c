@@ -208,8 +208,7 @@ int main(const int argc, char *argv[]) {
 }
 
 static void print_opts(void) {
-  printf("\n%s"
-         "\n(C) Copyright IBM Corp. 1983, 1999.\n"
+  printf("(C) Copyright IBM Corp. 1983, 1999.\n"
          "Licensed Materials - Program Property of IBM - All Rights Reserved.\n\n"
          "Usage: jikespg [options] [filename[.extension]]\n\n"
          "Options                   Options                   Options\n"
@@ -272,6 +271,5 @@ static void print_opts(void) {
          "the first character of each word.  "
          "Options that are switches may benegated by\n"
          "prefixing them with the string \"no\".  "
-         "Default input file extension is \".g\"\n",
-         HEADER_INFO);
+         "Default input file extension is \".g\"\n");
 }

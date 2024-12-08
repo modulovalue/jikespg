@@ -90,7 +90,6 @@ static const int IOBUFFER_SIZE = 655360;
 
 #define ENTIRE_RHS3(x, rule_no) (int x = rules[rule_no].rhs; x < rules[(rule_no) + 1].rhs; x++)
 
-extern const char HEADER_INFO[];
 extern const char VERSION[];
 extern const char BLANK[];
 extern const long MAX_TABLE_SIZE;

@@ -91,8 +91,7 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles* output_fi
   code['\r'] = SPACE_CODE;
   code['\v'] = SPACE_CODE;
   code['\f'] = SPACE_CODE;
-  /*          Print heading on terminal and in listing file                   */
-  printf("\n %s \n", HEADER_INFO);
+
   init_process(grm_file, output_files);
   process_grammar(grm_file);
   exit_process();
