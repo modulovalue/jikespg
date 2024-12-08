@@ -173,8 +173,6 @@ struct statset_type {
   short shift_number;
 };
 
-extern char *timeptr;
-
 extern long output_line_no;
 
 extern char grm_file[],
@@ -591,7 +589,7 @@ static struct reduce_header_type Allocate_reduce_map(const long n) {
 }
 
 static void PR_HEADING() {
-  fprintf(syslis, "\f\n\n %-39s%s %-30.24s Page %d\n\n", HEADER_INFO, VERSION, timeptr, ++page_no);
+  fprintf(syslis, "\f\n\n %-39s%s Page %d\n\n", HEADER_INFO, VERSION, ++page_no);
   output_line_no = 4;
 }
 

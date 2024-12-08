@@ -1,7 +1,6 @@
 #include <stdlib.h>
 static char hostfile[] = __FILE__;
 
-#include <time.h>
 #include <string.h>
 #include <ctype.h>
 #include "common.h"
@@ -36,7 +35,6 @@ static int line_no = 0;
 
 /* This procedure opens all relevant files and processes the input grammar.*/
 void process_input(void) {
-  time_t ltime;
   unsigned c;
 
   /* Open input grammar file. If the file cannot be opened and that file name */
@@ -73,10 +71,6 @@ void process_input(void) {
     }
   }
 
-  /*               Assign timeptr to the local time.                          */
-  time(&ltime);
-  timeptr = ctime(&ltime);
-
   /*                Open listing file for output.                             */
   syslis = fopen(lis_file, "w");
   if (syslis == (FILE *) NULL) {
@@ -109,7 +103,7 @@ void process_input(void) {
 
 
   /*          Print heading on terminal and in listing file                   */
-  printf("\n %s %35.24s\n", HEADER_INFO, timeptr);
+  printf("\n %s \n", HEADER_INFO);
   PR_HEADING();
 
   init_process();
@@ -124,8 +118,7 @@ static void read_input(void) {
   long num_read = input_buffer + IOBUFFER_SIZE - bufend;
   if ((num_read = fread(bufend, 1, num_read, sysgrm)) == 0) {
     if (ferror(sysgrm) != 0) {
-      fprintf(stderr,
-              "*** Error reading input file \"%s\".\n", grm_file);
+      fprintf(stderr, "*** Error reading input file \"%s\".\n", grm_file);
       exit(12);
     }
   }

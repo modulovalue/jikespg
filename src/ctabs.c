@@ -2171,16 +2171,19 @@ static void print_space_tables(void) {
       *(output_ptr - 1) = '\n';
       BUFFER_CHECK(sysdcl);
     }
-    if (java_bit)
+    if (java_bit) {
       mystrcpy("    };\n");
-    else mystrcpy("                 };\n");
+    } else {
+      mystrcpy("                 };\n");
+    }
   }
 
   ffree(check);
   ffree(action);
 
-  if (error_maps_bit)
+  if (error_maps_bit) {
     print_error_maps();
+  }
 
   if (!byte_check_bit) {
     if (java_bit) {
@@ -2198,33 +2201,33 @@ static void print_space_tables(void) {
     }
   }
 
-  if (java_bit)
+  if (java_bit) {
     mystrcpy("}\n");
+  }
 
-  fwrite(output_buffer, sizeof(char),
-         output_ptr - &output_buffer[0], sysdcl);
+  fwrite(output_buffer, sizeof(char), output_ptr - &output_buffer[0], sysdcl);
 }
 
 static void print_time_tables(void) {
   long *action;
   long *check;
 
-  int la_shift_count = 0,
-      shift_count = 0,
-      goto_count = 0,
-      default_count = 0,
-      reduce_count = 0,
-      shift_reduce_count = 0,
-      goto_reduce_count = 0;
+  int la_shift_count = 0;
+  int shift_count = 0;
+  int goto_count = 0;
+  int default_count = 0;
+  int reduce_count = 0;
+  int shift_reduce_count = 0;
+  int goto_reduce_count = 0;
 
-  int indx,
-      la_state_offset,
-      act,
-      result_act,
-      i,
-      j,
-      k,
-      symbol;
+  int indx;
+  int la_state_offset;
+  int act;
+  int result_act;
+  int i;
+  int j;
+  int k;
+  int symbol;
 
   short default_rule;
 
@@ -2240,11 +2243,13 @@ static void print_time_tables(void) {
   offset = error_act;
 
   if (lalr_level > 1) {
-    if (read_reduce_bit)
+    if (read_reduce_bit) {
       offset += num_rules;
+    }
     la_state_offset = offset;
-  } else
+  } else {
     la_state_offset = error_act;
+  }
 
   if (offset > MAX_TABLE_SIZE + 1) {
     PRNTERR2(msg_line, "Table contains entries that are > %ld; Processing stopped.", MAX_TABLE_SIZE + 1);
@@ -2256,18 +2261,17 @@ static void print_time_tables(void) {
   indx = first_index;
   for (i = indx; i != NIL && i <= (int) action_size; i = indx) {
     indx = next[i];
-
     check[i] = DEFAULT_SYMBOL;
     action[i] = error_act;
   }
-  for (i = (int) action_size + 1; i <= (int) table_size; i++)
+  for (i = (int) action_size + 1; i <= (int) table_size; i++) {
     check[i] = DEFAULT_SYMBOL;
+  }
 
   /* We set the rest of the table with the proper table entries.       */
   for (int state_no = 1; state_no <= max_la_state; state_no++) {
     struct shift_header_type sh;
     struct reduce_header_type red;
-
     indx = state_index[state_no];
     if (state_no > num_states) {
       sh = shift[lastats[state_no].shift_number];
@@ -2277,10 +2281,11 @@ static void print_time_tables(void) {
       for (j = 1; j <= go_to.size; j++) {
         symbol = go_to.map[j].symbol;
         i = indx + symbol;
-        if (goto_default_bit || nt_check_bit)
+        if (goto_default_bit || nt_check_bit) {
           check[i] = symbol;
-        else
+        } else {
           check[i] = DEFAULT_SYMBOL;
+        }
         act = go_to.map[j].action;
         if (act > 0) {
           action[i] = state_index[act] + num_rules;

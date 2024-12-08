@@ -9,8 +9,6 @@ const char VERSION[] = "1.2";
 const char BLANK[] = " ";
 const long MAX_TABLE_SIZE = (USHRT_MAX < INT_MAX ? USHRT_MAX : INT_MAX) - 1;
 
-char *timeptr;
-
 long output_line_no = 0;
 
 char grm_file[80];

@@ -1209,8 +1209,9 @@ static void print_xref(void) {
   short *t_items = Allocate_short_array(num_terminals + 1);
 
   int symbol;
-  for ALL_TERMINALS(symbol)
+  for ALL_TERMINALS(symbol) {
     t_items[symbol] = NIL;
+  }
 
   for ALL_RULES_BACKWARDS(rule_no) {
     item_no = first_item_of[rule_no];

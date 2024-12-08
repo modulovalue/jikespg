@@ -1,6 +1,6 @@
 
 
- IBM Research Jikes Parser Generator    1.2 Sun Dec  8 02:39:46 2024       Page 1
+ IBM Research Jikes Parser Generator    1.2 Page 1
 
 %OPTIONS la=2,gp=java,act,an=bnfact.java,hn=bnfhdr.java,tab=space,fp=bnf,prefix=TK_,
 %OPTIONS nogoto-default,output-size=125,names=max,error-maps
@@ -21,7 +21,7 @@ Options in effect:
 This grammar is LALR(2).
 
 
- IBM Research Jikes Parser Generator    1.2 Sun Dec  8 02:39:46 2024       Page 2
+ IBM Research Jikes Parser Generator    1.2 Page 2
 
 
 Number of Terminals: 5
