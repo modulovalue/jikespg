@@ -414,7 +414,6 @@ static short sp_state_map(const int rule_head, const int item_no,
   struct node *p;
 
   int rule_no;
-  int i;
 
   /* These new SP states are defined by their reduce maps. Hash the */
   /* reduce map based on the set of rules in its range - simply add */

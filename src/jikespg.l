@@ -1,7 +1,3 @@
-
-
- IBM Research Jikes Parser Generator    1.2 Page 1
-
 %OPTIONS nogoto-default,esc=$,os=100,action,actfile=lpgact.c,noem
 ***ERROR: "OS" is an invalid option
 %OPTIONS fp=lpg,gp,nodefer,suffix=_TK,stack_size=21,hactfile=lpgact.h
@@ -19,10 +15,6 @@ Options in effect:
 
 
 This grammar is LALR(1).
-
-
- IBM Research Jikes Parser Generator    1.2 Page 2
-
 
 Number of Terminals: 19
 Number of Nonterminals: 37

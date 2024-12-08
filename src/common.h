@@ -618,6 +618,7 @@ static void PRNTERR(char *msg) {
 #define PRNTERR2(msg, ...) \
   sprintf(msg, __VA_ARGS__); \
   PRNTERR(msg);
+
 /* The following two macros check whether the value of an             */
 /* integer variable exceeds the maximum limit for a short or a long   */
 /* integer, respectively. Note that the user should declare the       */

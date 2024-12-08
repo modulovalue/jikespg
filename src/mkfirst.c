@@ -101,62 +101,41 @@ static int top;
 /*    MKFIRST constructs the FIRST and FOLLOW maps, the CLOSURE map,         */
 /* ADEQUATE_ITEM and ITEM_TABLE maps and all other basic maps.               */
 void mkfirst(void) {
-  int symbol,
-      nt,
-      rule_no;
-
+  int symbol;
+  int rule_no;
   bool end_node;
-
-  term_set_size = num_terminals / SIZEOF_BC
-                  + (num_terminals % SIZEOF_BC ? 1 : 0);
-  non_term_set_size = num_non_terminals / SIZEOF_BC
-                      + (num_non_terminals % SIZEOF_BC ? 1 : 0);
-
+  term_set_size = num_terminals / SIZEOF_BC + (num_terminals % SIZEOF_BC ? 1 : 0);
+  non_term_set_size = num_non_terminals / SIZEOF_BC + (num_non_terminals % SIZEOF_BC ? 1 : 0);
   /* allocate various arrays */
-
   lhs_rule = Allocate_short_array(num_non_terminals);
   lhs_rule -= num_terminals + 1;
-
   next_rule = Allocate_short_array(NEXT_RULE_SIZE());
   first_item_of = Allocate_short_array(NEXT_RULE_SIZE());
   stack = Allocate_short_array(num_non_terminals + 1);
-
   index_of = Allocate_short_array(num_non_terminals);
   index_of -= num_terminals + 1;
-
   /* NT_FIRST is used to construct a mapping from non-terminals to the */
   /* set of terminals that may appear first in a string derived from   */
   /* the non-terminal.                                                 */
-  nt_first = (SET_PTR)
-      calloc(num_non_terminals,
-             term_set_size * sizeof(BOOLEAN_CELL));
+  nt_first = (SET_PTR) calloc(num_non_terminals, term_set_size * sizeof(BOOLEAN_CELL));
   if (nt_first == NULL)
     nospace(__FILE__, __LINE__);
 
   nt_first -= (num_terminals + 1) * term_set_size;
-
   next_item = Allocate_short_array(num_items + 1);
-
   nt_items = Allocate_short_array(num_non_terminals);
   nt_items -= num_terminals + 1;
-
   nt_list = Allocate_short_array(num_non_terminals);
   nt_list -= num_terminals + 1;
-
-  first_element = (struct f_element_type *)
-      calloc(num_items + 1, sizeof(struct f_element_type));
+  first_element = (struct f_element_type *) calloc(num_items + 1, sizeof(struct f_element_type));
   if (first_element == NULL)
     nospace(__FILE__, __LINE__);
-
-  item_table = (struct itemtab *)
-      calloc(num_items + 1, sizeof(struct itemtab));
+  item_table = (struct itemtab *) calloc(num_items + 1, sizeof(struct itemtab));
   if (item_table == NULL)
     nospace(__FILE__, __LINE__);
-
   for ALL_NON_TERMINALS3(symbol) {
     lhs_rule[symbol] = NIL;
   }
-
   /* In this loop, we construct the LHS_RULE map which maps     */
   /* each non-terminal symbol into the set of rules it produces */
   for ALL_RULES3(rule_no) {
@@ -561,7 +540,6 @@ static void no_rules_produced(void) {
 static void compute_closure(const int lhs_symbol) {
   int symbol;
   int rule_no;
-  int i;
   struct node *p;
   struct node *q;
   bool end_node;
@@ -573,8 +551,9 @@ static void compute_closure(const int lhs_symbol) {
   const int indx = top;
   index_of[lhs_symbol] = indx;
 
-  for ALL_NON_TERMINALS3(i)
+  for ALL_NON_TERMINALS3(i) {
     nont_list[i] = OMEGA;
+  }
 
   nont_list[lhs_symbol] = NIL;
   int nt_root = lhs_symbol;
@@ -669,9 +648,7 @@ static void compute_closure(const int lhs_symbol) {
 /*          A ::= B1 B2 ... Bn     n >= 0,  1 <= i <= n                      */
 /* and Bi, for all i, is a nullable non-terminal.                            */
 static void nullables_computation(void) {
-  int rule_no,
-      nt;
-
+  int rule_no;
   bool changed = true;
 
   short *rhs_start = Allocate_short_array(NEXT_RULE_SIZE());
@@ -742,7 +719,6 @@ static bool is_nullable_rhs(short *rhs_start, const int rule_no) {
 /* FIRST(NT) is the set of all terminals Ti that may start a string generated*/
 /* by NT. That is, NT *::= Ti X where X is an arbitrary string.              */
 static void compute_first(const int nt) {
-  int i;
   int symbol;
   int rule_no;
   const SET_PTR temp_set = calloc(1, term_set_size * sizeof(BOOLEAN_CELL));
@@ -817,9 +793,7 @@ static void compute_first(const int nt) {
 /* string of terminals.                                                      */
 /* This routine is structurally identical to COMPUTE_NULLABLES.              */
 static void check_non_terminals(void) {
-  int rule_no,
-      nt_last,
-      nt;
+  int nt_last;
 
   bool changed = true;
 
@@ -856,6 +830,7 @@ static void check_non_terminals(void) {
     changed = false;
 
     for ALL_NON_TERMINALS3(nt) {
+      int rule_no;
       for (bool end_node = (rule_no = lhs_rule[nt]) == NIL;
            !produces_terminals[nt] && !end_node;
            end_node = rule_no == lhs_rule[nt]) {
@@ -1067,11 +1042,9 @@ static void compute_follow(const int nt) {
 }
 
 static void print_unreachables(void) {
-  int rule_no;
-  int i;
 
-  char line[PRINT_LINE_SIZE + 1],
-      tok[SYMBOL_SIZE + 1];
+  char line[PRINT_LINE_SIZE + 1];
+  char tok[SYMBOL_SIZE + 1];
 
   /* SYMBOL_LIST is used for two purposes:                       */
   /*  1) to mark symbols that are reachable from the Accepting   */
@@ -1098,6 +1071,7 @@ static void print_unreachables(void) {
   symbol_list[nt_root] = NIL;
   for (int nt = nt_root; nt != NIL; nt = nt_root) {
     nt_root = symbol_list[nt];
+    int rule_no;
     for (bool end_node = (rule_no = lhs_rule[nt]) == NIL;
          !end_node;
          end_node = rule_no == lhs_rule[nt]) {
@@ -1320,8 +1294,6 @@ static void quick_sym(short array[], const int h) {
 
 /* PRINT_NT_FIRST prints the first set for each non-terminal.                */
 static void print_nt_first(void) {
-  int nt;
-  int t;
   fprintf(syslis, "\nFirst map for non-terminals:\n\n");
   for ALL_NON_TERMINALS3(nt) {
     char tok[SYMBOL_SIZE + 1];
@@ -1347,8 +1319,6 @@ static void print_nt_first(void) {
 
 /* PRINT_FOLLOW_MAP prints the follow map.                                   */
 static void print_follow_map(void) {
-  int nt;
-  int t;
   fprintf(syslis, "\nFollow Map:\n\n");
   for ALL_NON_TERMINALS3(nt) {
     char tok[SYMBOL_SIZE + 1];

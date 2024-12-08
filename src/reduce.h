@@ -12,7 +12,7 @@
 /* is defined in state S. See COMPUTE_READ for more details.               */
 /* LA_TOP is used to compute the number of such sets needed.               */
 /*                                                                         */
-/* The boolean variable NOT_LRK is used to mark whether or not a grammar   */
+/* The boolean variable NOT_LRK is used to mark whether a grammar   */
 /* is not LR(k) for any k. NOT_LRK is marked true when either:             */
 /*    1. The grammar contains a nonterminal A such that A =>+rm A          */
 /*    2. The automaton contains a cycle with each of its edges labeled     */

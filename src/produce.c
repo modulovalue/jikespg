@@ -81,7 +81,6 @@ void produce(void) {
 
   int item_no,
       rule_no,
-      nt,
       i;
 
   struct node
@@ -413,7 +412,6 @@ static void process_scopes(void) {
 
   int max_prefix_length = 0,
       dot_symbol,
-      nt,
       symbol,
       item_root,
       rule_no,
@@ -901,7 +899,6 @@ process_scope_states: {
 /*    closure, it is introduced by a nonterminal C where C =>rm* A   */
 /*    and C =>rm+ B.                                                 */
 static bool is_scope(const int item_no) {
-  int nt;
   for (int i = item_no - item_table[item_no].dot; i < item_no; i++) {
     const int symbol = item_table[i].symbol;
     if (IS_A_TERMINAL(symbol)) {

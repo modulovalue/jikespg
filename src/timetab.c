@@ -730,7 +730,6 @@ static void print_tables(void) {
     for ALL_STATES3(state_no) {
       action[state_index[state_no]] = state_no;
     }
-
     j = num_states + 1;
     for (long i = max_indx; i >= 1; i--) {
       long state_no = action[i];

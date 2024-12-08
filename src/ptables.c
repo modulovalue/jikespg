@@ -202,11 +202,7 @@ static void compute_goto_default(void) {
 /* Remap symbols, apply transition default actions  and call           */
 /* appropriate table compression routine.                              */
 void process_tables(void) {
-  int rule_no,
-      symbol;
-
   struct reduce_header_type red;
-
   /*        First, we decrease by 1 the constants NUM_SYMBOLS        */
   /* and NUM_TERMINALS, remove the EMPTY symbol(1) and remap the     */
   /* other symbols beginning at 1.  If default reduction is          */

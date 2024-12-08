@@ -1467,8 +1467,6 @@ clean_up_and_return:
 /* identifies for each nonterminal the set of nonterminals that it can */
 /* right-most produce.                                                 */
 void init_rmpself(const SET_PTR produces) {
-  int nt;
-
   rmpself = Allocate_boolean_array(num_non_terminals);
   rmpself -= num_terminals + 1;
 

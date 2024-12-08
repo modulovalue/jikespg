@@ -37,8 +37,6 @@ static struct shift_header_type no_shifts_ptr;
 
 /* In this procedure, we first construct the LR(0) automaton.                */
 void mkstats(void) {
-  int j;
-
   no_gotos_ptr.size = 0; /* For states with no GOTOs */
   no_gotos_ptr.map = NULL;
 

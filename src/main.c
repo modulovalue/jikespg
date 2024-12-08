@@ -31,11 +31,9 @@ void process_input(void);
 /*    3) SYSACT           - Output file used for semantic actions.   */
 /*    4) SYSTAB           - Output file used for Parsing tables.     */
 int main(const int argc, char *argv[]) {
-  int i;
-
-  char *dot,
-      *slash,
-      tmpbuf[20];
+  char *dot;
+  char *slash;
+  char tmpbuf[20];
 
   /* If only "jikespg" or "jikespg ?*" is typed, we display the help   */
   /* screen.                                                           */
@@ -48,15 +46,14 @@ int main(const int argc, char *argv[]) {
     print_opts();
     return 4;
   }
-
   /*     If options are passed to the program, copy them into "parm".   */
   if (argc > 2) {
     int j = 0;
     parm[0] = '\0';
     while (j < argc - 2) {
-      if (*argv[++j] == '-')
+      if (*argv[++j] == '-') {
         strcat(parm, argv[j]+1);
-      else {
+      } else {
         strcat(parm, argv[j]);
         printf("***WARNING: Option \"%s\" is missing preceding '-'.\n",
                argv[j]);
@@ -64,34 +61,34 @@ int main(const int argc, char *argv[]) {
       strcat(parm, BLANK);
     }
   }
-
-
   /*               Create file names for output files                         */
   strcpy(grm_file, argv[argc - 1]);
-
 #if defined(DOS) || defined(OS2)
   slash = strrchr(grm_file, '\\');
 #else
   slash = strrchr(grm_file, '/');
 #endif
-  if (slash != NULL)
+  if (slash != NULL) {
     strcpy(tmpbuf, slash + 1);
-  else
+  } else {
     strcpy(tmpbuf, grm_file);
-
+  }
   dot = strrchr(tmpbuf, '.');
-
-  if (dot == NULL) /* if filename has no extension, copy it. */
-  {
+  /* if filename has no extension, copy it. */
+  if (dot == NULL) {
     strcpy(lis_file, tmpbuf);
     strcpy(tab_file, tmpbuf);
-    for (i = 0; i < 5; i++)
+    int i;
+    for (i = 0; i < 5; i++) {
       file_prefix[i] = tmpbuf[i];
+    }
     file_prefix[i] = '\0';
-  } else /* if file name contains an extension copy up to the dot */
-  {
-    for (i = 0; i < 5 && tmpbuf + i != dot; i++)
+  } else {
+    int i;
+    /* if file name contains an extension copy up to the dot */
+    for (i = 0; i < 5 && tmpbuf + i != dot; i++) {
       file_prefix[i] = tmpbuf[i];
+    }
     file_prefix[i] = '\0';
     memcpy(lis_file, tmpbuf, dot - tmpbuf);
     memcpy(tab_file, tmpbuf, dot - tmpbuf);
@@ -110,72 +107,48 @@ int main(const int argc, char *argv[]) {
       mkfirst();
     }
     PRNT2(msg_line, "\nNumber of Terminals: %d", num_terminals - 1); /*-1 for %empty */
-
     PRNT2(msg_line, "Number of Nonterminals: %d", num_non_terminals - 1); /* -1 for %ACC */
-
     PRNT2(msg_line, "Number of Productions: %d", num_rules + 1);
-
     if (single_productions_bit) {
       PRNT2(msg_line, "Number of Single Productions: %d", num_single_productions);
     }
-
     PRNT2(msg_line, "Number of Items: %ld", num_items);
-
     fclose(syslis); /* close listing file */
     return 0;
   }
-
   mkfirst(); /* Construct basic maps */
-
   mkstats(); /* Build State Automaton */
-
   mkrdcts(); /* Build Reduce map, and detect conflicts if any */
-
   /*                  Print more relevant statistics.                         */
   PRNT2(msg_line, "\nNumber of Terminals: %d", num_terminals - 1);
-
   PRNT2(msg_line, "Number of Nonterminals: %d", num_non_terminals - 1);
-
   PRNT2(msg_line, "Number of Productions: %d", num_rules + 1);
-
   if (single_productions_bit) {
     PRNT2(msg_line, "Number of Single Productions: %d", num_single_productions);
   }
-
   PRNT2(msg_line, "Number of Items: %ld", num_items);
   if (scopes_bit) {
     PRNT2(msg_line, "Number of Scopes: %d", num_scopes);
   }
-
   PRNT2(msg_line, "Number of States: %d", num_states);
-
   if (max_la_state > num_states) {
     PRNT2(msg_line, "Number of look-ahead states: %d", max_la_state - num_states);
   }
-
   PRNT2(msg_line, "Number of Shift actions: %ld", num_shifts);
-
   PRNT2(msg_line, "Number of Goto actions: %ld", num_gotos);
-
   if (read_reduce_bit) {
     PRNT2(msg_line, "Number of Shift/Reduce actions: %ld", num_shift_reduces);
-
     PRNT2(msg_line, "Number of Goto/Reduce actions: %ld", num_goto_reduces);
   }
-
   PRNT2(msg_line, "Number of Reduce actions: %ld", num_reductions);
-
   PRNT2(msg_line, "Number of Shift-Reduce conflicts: %ld", num_sr_conflicts);
-
   PRNT2(msg_line, "Number of Reduce-Reduce conflicts: %ld", num_rr_conflicts);
-
   /* If the removal of single productions is requested, do  */
   /* so now.                                                */
   /* If STATE_BIT is on, we print the states.               */
   if (states_bit) {
     ptstats();
   }
-
   /* If the tables are requested, we process them.          */
   if (table_opt != 0) {
     if (goto_default_bit && nt_check_bit) {
@@ -184,7 +157,6 @@ int main(const int argc, char *argv[]) {
       num_entries = max_la_state + num_shifts + num_shift_reduces
                     + num_gotos + num_goto_reduces
                     + num_reductions;
-
       /* We release space used by RHS_SYM, the ADEQUATE_ITEM     */
       /* map, ITEM_TABLE (if we don't have to dump error maps),  */
       /* IN_STAT, FIRST, NULL_NT and FOLLOW (if it's no longer   */
@@ -199,11 +171,9 @@ int main(const int argc, char *argv[]) {
         }
         ffree(adequate_item);
       }
-
       if (!error_maps_bit) {
         ffree(item_table);
       }
-
       for ALL_STATES3(state_no) {
         struct node *head = in_stat[state_no];
         if (head != NULL) {
@@ -221,11 +191,9 @@ int main(const int argc, char *argv[]) {
           ffree(follow);
         }
       }
-
       process_tables();
     }
   }
-
   fclose(syslis); /* close listing file */
   return 0;
 }
@@ -237,7 +205,7 @@ static void print_opts(void) {
          "Usage: jikespg [options] [filename[.extension]]\n\n"
          "Options                   Options                   Options\n"
          "=======                   =======                   =======\n"
-
+         ""
          "-action                   "
          "-actfile-name=string      "
          "-blockb=string\n"
@@ -273,10 +241,10 @@ static void print_opts(void) {
          "-verbose\n"
          "-warnings                 "
          "-xref\n\n"
-
+         ""
          "The following options are valid only if "
          "GENERATE-PARSER and TABLE are activated:\n"
-
+         ""
          "-debug                    "
          "-deferred                 "
          "-file-prefix=string\n"
@@ -285,7 +253,7 @@ static void print_opts(void) {
          "-prefix=string\n"
          "-stack-size=integer       "
          "-suffix=string\n\n"
-
+         ""
          "Options must be separated by a space.  "
          "Any non-ambiguous initial prefix of a\n"
          "valid option may be used as an abbreviation "
@@ -296,9 +264,5 @@ static void print_opts(void) {
          "Options that are switches may benegated by\n"
          "prefixing them with the string \"no\".  "
          "Default input file extension is \".g\"\n",
-
          HEADER_INFO);
-
-  printf("\nVersion %s (27 Jan 98) by Philippe Charles, IBM Research."
-         "\nAddress comments and questions to charles@watson.ibm.com.\n", VERSION);
 }
