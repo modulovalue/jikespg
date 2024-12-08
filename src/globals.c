@@ -161,7 +161,7 @@ struct node **in_stat = NULL;
 
 struct scope_type *scope = NULL;
 
-int *scope_right_side = NULL;
+long *scope_right_side = NULL;
 short *scope_state = NULL;
 
 char *output_ptr = NULL;

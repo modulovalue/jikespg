@@ -11,463 +11,18 @@ char sym_tag[SYMBOL_SIZE];
 char def_tag[SYMBOL_SIZE];
 char prs_tag[SYMBOL_SIZE];
 
-bool byte_check_bit = true;
-
-// TODO inline?
-void non_terminal_time_action(void) {
-  if (c_bit)
-    fprintf(sysprs,
-            "#define nt_action(state, sym) \\\n"
-            "           ((check[state+sym] == sym) ? \\\n"
-            "                   action[state + sym] : "
-            "default_goto[sym])\n\n");
-  else if (cpp_bit)
-    fprintf(sysprs,
-            "    static int nt_action(int state, int sym)\n"
-            "    {\n"
-            "        return (check[state + sym] == sym)\n"
-            "                                    ? action[state + sym]\n"
-            "                                    : default_goto[sym];\n"
-            "    }\n\n");
-  else if (java_bit)
-    fprintf(sysprs,
-            "    public final static int nt_action(int state, int sym)\n"
-            "    {\n"
-            "        return (check(state + sym) == sym)\n"
-            "                                    ? action[state + sym]\n"
-            "                                    : default_goto[sym];\n"
-            "    }\n\n");
-}
-
-// TODO inline?
-void non_terminal_no_goto_default_time_action(void) {
-  if (c_bit)
-    fprintf(sysprs,
-            "#define nt_action(state, sym) action[state + sym]\n\n");
-  else if (cpp_bit)
-    fprintf(sysprs,
-            "    static int nt_action(int state, int sym)\n"
-            "    {\n        return action[state + sym];\n    }\n\n");
-  else if (java_bit)
-    fprintf(sysprs,
-            "    public final static int nt_action(int state, int sym)\n"
-            "    {\n        return action[state + sym];\n    }\n\n");
-}
-
-// TODO inline?
-void non_terminal_space_action(void) {
-  if (c_bit)
-    fprintf(sysprs,
-            "#define nt_action(state, sym) \\\n"
-            "           ((base_check[state + sym] == sym) ? \\\n"
-            "               base_action[state + sym] : "
-            "default_goto[sym])\n\n");
-  else if (cpp_bit)
-    fprintf(sysprs,
-            "    static int nt_action(int state, int sym)\n"
-            "    {\n"
-            "        return (base_check[state + sym] == sym)\n"
-            "                             ? base_action[state + sym]\n"
-            "                             : default_goto[sym];\n"
-            "    }\n\n");
-  else if (java_bit)
-    fprintf(sysprs,
-            "    public final static int nt_action(int state, int sym)\n"
-            "    {\n"
-            "        return (base_check(state + sym) == sym)\n"
-            "                             ? base_action[state + sym]\n"
-            "                             : default_goto[sym];\n"
-            "    }\n\n");
-}
-
-// TODO inline?
-void non_terminal_no_goto_default_space_action(void) {
-  if (c_bit)
-    fprintf(sysprs,
-            "#define nt_action(state, sym) "
-            "base_action[state + sym]\n\n");
-  else if (cpp_bit)
-    fprintf(sysprs,
-            "    static int nt_action(int state, int sym)\n"
-            "    {\n        return base_action[state + sym];\n    }\n\n");
-  else if (java_bit)
-    fprintf(sysprs,
-            "    public final static int nt_action(int state, int sym)\n"
-            "    {\n        return base_action[state + sym];\n    }\n\n");
-}
-
-// TODO inline?
-void terminal_time_action(void) {
-  if (c_bit)
-    fprintf(sysprs,
-            "#define t_action(state, sym, next_tok) \\\n"
-            "   action[check[state + sym] == sym ? state + sym : state]\n\n");
-  else if (cpp_bit)
-    fprintf(sysprs,
-            "    static int t_action(int state, int sym, LexStream *stream)\n"
-            "    {\n"
-            "        return action[check[state + sym] == sym"
-            " ? state + sym : state];\n"
-            "    }\n");
-
-  else if (java_bit)
-    fprintf(sysprs,
-            "    public final static int t_action(int state, int sym, LexStream stream)\n"
-            "    {\n"
-            "        return action[check(state + sym) == sym"
-            " ? state + sym : state];\n"
-            "    }\n");
-}
-
-// TODO inline?
-void terminal_space_action(void) {
-  if (c_bit)
-    fprintf(sysprs,
-            "#define t_action(state, sym, next_tok) \\\n"
-            "  term_action[term_check[base_action[state]+sym] == sym ? \\\n"
-            "          base_action[state] + sym : base_action[state]]\n\n");
-  else if (cpp_bit)
-    fprintf(sysprs,
-            "    static int t_action(int state, int sym, LexStream *stream)\n"
-            "    {\n"
-            "        return term_action[term_check[base_action[state]"
-            "+sym] == sym\n"
-            "                               ? base_action[state] + sym\n"
-            "                               : base_action[state]];\n"
-            "    }\n");
-  else if (java_bit)
-    fprintf(sysprs,
-            "    public final static int t_action(int state, int sym, LexStream stream)\n"
-            "    {\n"
-            "        return term_action[term_check[base_action[state]"
-            "+sym] == sym\n"
-            "                               ? base_action[state] + sym\n"
-            "                               : base_action[state]];\n"
-            "    }\n");
-}
-
-// TODO inline?
-void terminal_shift_default_space_action(void) {
-  if (c_bit)
-    fprintf(sysprs,
-            "static int t_action(int state, int sym, TokenObject next_tok)\n"
-            "{\n"
-            "    int i;\n\n"
-            "    if (sym == 0)\n"
-            "        return ERROR_ACTION;\n"
-            "    i = base_action[state];\n"
-            "    if (term_check[i + sym] == sym)\n"
-            "        return term_action[i + sym];\n"
-            "    i = term_action[i];\n"
-            "    return ((shift_check[shift_state[i] + sym] == sym) ?\n"
-            "                 default_shift[sym] : default_reduce[i]);\n"
-            "}\n\n");
-  else if (cpp_bit)
-    fprintf(sysprs,
-            "    static int t_action(int state, int sym, LexStream *stream)\n"
-            "    {\n"
-            "        if (sym == 0)\n"
-            "            return ERROR_ACTION;\n"
-            "        int i = base_action[state];\n"
-            "        if (term_check[i + sym] == sym)\n"
-            "            return term_action[i + sym];\n"
-            "        i = term_action[i];\n"
-            "        return ((shift_check[shift_state[i] + sym] == sym) ?\n"
-            "                      default_shift[sym] : default_reduce[i]);\n"
-            "    }\n");
-  else if (java_bit)
-    fprintf(sysprs,
-            "    public final static int t_action(int state, int sym, LexStream stream)\n"
-            "    {\n"
-            "        if (sym == 0)\n"
-            "            return ERROR_ACTION;\n"
-            "        int i = base_action[state];\n"
-            "        if (term_check[i + sym] == sym)\n"
-            "            return term_action[i + sym];\n"
-            "        i = term_action[i];\n"
-            "        return ((shift_check[shift_state[i] + sym] == sym) ?\n"
-            "                      default_shift[sym] : default_reduce[i]);\n"
-            "    }\n");
-}
-
-// TODO inline?
-void terminal_time_lalr_k(void) {
-  if (c_bit)
-    fprintf(sysprs,
-            "static int t_action(int act, int sym, TokenObject next_tok)\n"
-            "{\n"
-            "    int i = act + sym;\n\n"
-            "    act = action[check[i] == sym ? i : act];\n\n"
-            "    if (act > LA_STATE_OFFSET)\n"
-            "    {\n"
-            "        for (;;)\n"
-            "        {\n"
-            "            act -= ERROR_ACTION;\n"
-            "            sym = Class(next_tok);\n"
-            "            i = act + sym;\n"
-            "            act = action[check[i] == sym ? i : act];\n"
-            "            if (act <= LA_STATE_OFFSET)\n"
-            "                break;\n"
-            "            next_tok = Next(next_tok);\n"
-            "        }\n"
-            "    }\n\n"
-            "    return act;\n"
-            "}\n\n");
-  else if (cpp_bit)
-    fprintf(sysprs,
-            "    static int t_action(int act, int sym, LexStream *stream)\n"
-            "    {\n"
-            "        int i = act + sym;\n\n"
-            "        act = action[check[i] == sym ? i : act];\n\n"
-            "        if (act > LA_STATE_OFFSET)\n"
-            "        {\n"
-            "            for (TokenObject tok = stream -> Peek();\n"
-            "                 ;\n"
-            "                 tok = stream -> Next(tok))\n"
-            "            {\n"
-            "                act -= ERROR_ACTION;\n"
-            "                sym = stream -> Kind(tok);\n"
-            "                i = act + sym;\n"
-            "                act = action[check[i] == sym ? i : act];\n"
-            "                if (act <= LA_STATE_OFFSET)\n"
-            "                    break;\n"
-            "            }\n"
-            "        }\n\n"
-            "        return act;\n"
-            "    }\n\n");
-  else if (java_bit)
-    fprintf(sysprs,
-            "    public final static int t_action(int act, int sym, LexStream stream)\n"
-            "    {\n"
-            "        int i = act + sym;\n\n"
-            "        act = action[check(i) == sym ? i : act];\n\n"
-            "        if (act > LA_STATE_OFFSET)\n"
-            "        {\n"
-            "            for (int tok = stream.Peek();\n"
-            "                 ;\n"
-            "                 tok = stream.Next(tok))\n"
-            "            {\n"
-            "                act -= ERROR_ACTION;\n"
-            "                sym = stream.Kind(tok);\n"
-            "                i = act + sym;\n"
-            "                act = action[check(i) == sym ? i : act];\n"
-            "                if (act <= LA_STATE_OFFSET)\n"
-            "                    break;\n"
-            "            }\n"
-            "        }\n\n"
-            "        return act;\n"
-            "    }\n\n");
-}
-
-// TODO inline?
-void terminal_space_lalr_k(void) {
-  if (c_bit)
-    fprintf(sysprs,
-            "static int t_action(int state, int sym, TokenObject next_tok)\n"
-            "{\n"
-            "    int act = base_action[state],\n"
-            "          i = act + sym;\n\n"
-            "    act = term_action[term_check[i] == sym ? i : act];\n\n"
-            "    if (act > LA_STATE_OFFSET)\n"
-            "    {\n"
-            "        for (;;)\n"
-            "        {\n"
-            "           act -= LA_STATE_OFFSET;\n"
-            "           sym = Class(next_tok);\n"
-            "           i = act + sym;\n"
-            "           act = term_action[term_check[i] == sym ? i : act];\n"
-            "           if (act <= LA_STATE_OFFSET)\n"
-            "               break;\n"
-            "           next_tok = Next(next_tok);\n"
-            "        }\n"
-            "    }\n\n"
-            "    return act;\n"
-            "}\n\n");
-  else if (cpp_bit)
-    fprintf(sysprs,
-            "    static int t_action(int act, int sym, LexStream *stream)\n"
-            "    {\n"
-            "        act = base_action[act];\n"
-            "        int i = act + sym;\n\n"
-            "        act = term_action[term_check[i] == sym ? i : act];\n\n"
-            "        if (act > LA_STATE_OFFSET)\n"
-            "        {\n"
-            "            for (TokenObject tok = stream -> Peek();\n"
-            "                 ;\n"
-            "                 tok = stream -> Next(tok))\n"
-            "            {\n"
-            "               act -= LA_STATE_OFFSET;\n"
-            "               sym = stream -> Kind(tok);\n"
-            "               i = act + sym;\n"
-            "               act = term_action[term_check[i] == sym ? i : act];\n"
-            "               if (act <= LA_STATE_OFFSET)\n"
-            "                   break;\n"
-            "            } \n"
-            "        }\n\n"
-            "        return act;\n"
-            "    }\n");
-  else if (java_bit)
-    fprintf(sysprs,
-            "    public final static int t_action(int act, int sym, LexStream stream)\n"
-            "    {\n"
-            "        act = base_action[act];\n"
-            "        int i = act + sym;\n\n"
-            "        act = term_action[term_check[i] == sym ? i : act];\n\n"
-            "        if (act > LA_STATE_OFFSET)\n"
-            "        {\n"
-            "            for (int tok = stream.Peek();\n"
-            "                 ;\n"
-            "                 tok = stream.Next(tok))\n"
-            "            {\n"
-            "               act -= LA_STATE_OFFSET;\n"
-            "               sym = stream.Kind(tok);\n"
-            "               i = act + sym;\n"
-            "               act = term_action[term_check[i] == sym ? i : act];\n"
-            "               if (act <= LA_STATE_OFFSET)\n"
-            "                   break;\n"
-            "            } \n"
-            "        }\n\n"
-            "        return act;\n"
-            "    }\n");
-}
-
-// TODO inline?
-void terminal_shift_default_space_lalr_k(void) {
-  if (c_bit)
-    fprintf(sysprs,
-            "static int t_action(int state, int sym, TokenObject next_tok)\n"
-            "{\n"
-            "    int act = base_action[state],\n"
-            "          i = act + sym;\n\n"
-            "    if (sym == 0)\n"
-            "        act = ERROR_ACTION;\n"
-            "    else if (term_check[i] == sym)\n"
-            "        act = term_action[i];\n"
-            "    else\n"
-            "    {\n"
-            "        act = term_action[act];\n"
-            "        i = shift_state[act] + sym;\n"
-            "        act = (shift_check[i] == sym ? default_shift[sym]\n"
-            "                                     : default_reduce[act]);\n"
-            "    }\n\n"
-            "    while (act > LA_STATE_OFFSET)\n"
-            "    {\n"
-            "         act -= LA_STATE_OFFSET;\n"
-            "         sym = Class(next_tok);\n"
-            "         i = act + sym;\n"
-            "         if (term_check[i] == sym)\n"
-            "             act = term_action[i];\n"
-            "         else\n"
-            "         {\n"
-            "             act = term_action[act];\n"
-            "             i = shift_state[act] + sym;\n"
-            "             act = (shift_check[i] == sym\n"
-            "                                    ? default_shift[sym]\n"
-            "                                    : default_reduce[act]);\n"
-            "         }\n"
-            "         if (act <= LA_STATE_OFFSET)\n"
-            "             break;\n"
-            "         next_tok = Next(next_tok);\n"
-            "    }\n\n"
-            "    return act;\n"
-            "}\n\n");
-  else if (cpp_bit)
-    fprintf(sysprs,
-            "    static int t_action(int act, int sym, LexStream *stream)\n"
-            "    {\n"
-            "        act = base_action[act];\n"
-            "        int i = act + sym;\n\n"
-            "        if (sym == 0)\n"
-            "            act = ERROR_ACTION;\n"
-            "        else if (term_check[i] == sym)\n"
-            "            act = term_action[i];\n"
-            "        else\n"
-            "        {\n"
-            "            act = term_action[act];\n"
-            "            i = shift_state[act] + sym;\n"
-            "            act = (shift_check[i] == sym ? default_shift[sym]\n"
-            "                                         : default_reduce[act]);\n"
-            "        }\n\n"
-            "        if (act > LA_STATE_OFFSET)\n"
-            "        {\n"
-            "            for (TokenObject tok = stream -> Peek();\n"
-            "                 ;\n"
-            "                 tok = stream -> Next(tok))\n"
-            "            {\n"
-            "                 act -= LA_STATE_OFFSET;\n"
-            "                 sym = stream -> Kind(tok);\n"
-            "                 i = act + sym;\n"
-            "                 if (term_check[i] == sym)\n"
-            "                     act = term_action[i];\n"
-            "                 else\n"
-            "                 {\n"
-            "                     act = term_action[act];\n"
-            "                     i = shift_state[act] + sym;\n"
-            "                     act = (shift_check[i] == sym\n"
-            "                                            ? default_shift[sym]\n"
-            "                                            : default_reduce[act]);\n"
-            "                 }\n"
-            "                 if (act <= LA_STATE_OFFSET)\n"
-            "                     break;\n"
-            "            }\n"
-            "        }\n\n"
-            "        return act;\n"
-            "    }\n");
-  else if (java_bit)
-    fprintf(sysprs,
-            "    public final static int t_action(int act, int sym, LexStream stream)\n"
-            "    {\n"
-            "        act = base_action[act];\n"
-            "        int i = act + sym;\n\n"
-            "        if (sym == 0)\n"
-            "            act = ERROR_ACTION;\n"
-            "        else if (term_check[i] == sym)\n"
-            "            act = term_action[i];\n"
-            "        else\n"
-            "        {\n"
-            "            act = term_action[act];\n"
-            "            i = shift_state[act] + sym;\n"
-            "            act = (shift_check[i] == sym ? default_shift[sym]\n"
-            "                                         : default_reduce[act]);\n"
-            "        }\n\n"
-            "        if (act > LA_STATE_OFFSET)\n"
-            "        {\n"
-            "            for (int tok = stream.Peek();\n"
-            "                 ;\n"
-            "                 tok = stream.Next(tok))\n"
-            "            {\n"
-            "                 act -= LA_STATE_OFFSET;\n"
-            "                 sym = stream.Kind(tok);\n"
-            "                 i = act + sym;\n"
-            "                 if (term_check[i] == sym)\n"
-            "                     act = term_action[i];\n"
-            "                 else\n"
-            "                 {\n"
-            "                     act = term_action[act];\n"
-            "                     i = shift_state[act] + sym;\n"
-            "                     act = (shift_check[i] == sym\n"
-            "                                            ? default_shift[sym]\n"
-            "                                            : default_reduce[act]);\n"
-            "                 }\n"
-            "                 if (act <= LA_STATE_OFFSET)\n"
-            "                     break;\n"
-            "            }\n"
-            "        }\n\n"
-            "        return act;\n"
-            "    }\n");
-}
-
 void init_file(FILE **file, char *file_name, char *file_tag) {
   const char *p = strrchr(file_name, '.');
   if ((*file = fopen(file_name, "w")) == NULL) {
     fprintf(stderr, "***ERROR: Symbol file \"%s\" cannot be opened\n", file_name);
     exit(12);
-  }
-  memcpy(file_tag, file_name, p - file_name);
-  file_tag[p - file_name] = '\0';
-  if (c_bit || cpp_bit) {
-    fprintf(*file, "#ifndef %s_INCLUDED\n", file_tag);
-    fprintf(*file, "#define %s_INCLUDED\n\n", file_tag);
+  } else {
+    memcpy(file_tag, file_name, p - file_name);
+    file_tag[p - file_name] = '\0';
+    if (c_bit || cpp_bit) {
+      fprintf(*file, "#ifndef %s_INCLUDED\n", file_tag);
+      fprintf(*file, "#define %s_INCLUDED\n\n", file_tag);
+    }
   }
 }
 
@@ -488,13 +43,13 @@ void exit_file(FILE **file, char *file_tag) {
 void print_error_maps(void) {
   long *state_start;
   long *state_stack;
-  int *temp;
-  short *original;
+  long *temp;
+  long *original;
   long *as_size;
-  int *action_symbols_base;
-  int *action_symbols_range;
-  int *naction_symbols_base;
-  int *naction_symbols_range;
+  long *action_symbols_base;
+  long *action_symbols_range;
+  long *naction_symbols_base;
+  long *naction_symbols_range;
   int k;
   int offset;
   long num_bytes;
@@ -506,7 +61,7 @@ void print_error_maps(void) {
   /* Partition Heuristic and print it.                                */
   as_size = Allocate_long_array(num_states + 1);
   if (table_opt == OPTIMIZE_TIME) {
-    original = Allocate_short_array(num_symbols + 1);
+    original = Allocate_long_array(num_symbols + 1);
     /* In a compressed TIME table, the terminal and non-terminal */
     /* symbols are mixed together when they are remapped.        */
     /* We shall now recover the original number associated with  */
@@ -548,7 +103,7 @@ void print_error_maps(void) {
   partset(action_symbols, as_size, state_list, state_start, state_stack, num_terminals, 0);
   ffree(action_symbols);
   /* Compute and write out the base of the ACTION_SYMBOLS map. */
-  action_symbols_base = Allocate_int_array(num_states + 1);
+  action_symbols_base = Allocate_long_array(num_states + 1);
   for ALL_STATES3(state_no) {
     action_symbols_base[state_list[state_no]] = ABS(state_start[state_list[state_no]]);
   }
@@ -560,7 +115,7 @@ void print_error_maps(void) {
   ffree(action_symbols_base);
   /* Compute and write out the range of the ACTION_SYMBOLS map. */
   offset = state_start[num_states + 1];
-  action_symbols_range = Allocate_int_array(offset);
+  action_symbols_range = Allocate_long_array(offset);
   compute_action_symbols_range(state_start, state_stack, state_list, action_symbols_range);
   for (int i = 0; i < offset - 1; i++) {
     if (action_symbols_range[i] > (java_bit ? 127 : 255)) {
@@ -570,7 +125,7 @@ void print_error_maps(void) {
   }
   if (byte_terminal_range) {
     if (java_bit) {
-      prnt_shorts("\n    public final static byte asr[] = {0,\n",  0, offset - 2, 10, action_symbols_range);
+      prnt_shorts("\n    public final static byte asr[] = {0,\n", 0, offset - 2, 10, action_symbols_range);
     } else {
       prnt_shorts("\nconst unsigned char  CLASS_HEADER asr[] = {0,\n", 0, offset - 2, 10, action_symbols_range);
     }
@@ -612,7 +167,7 @@ void print_error_maps(void) {
     }
   }
   /* Compute and write out the base of the NACTION_SYMBOLS map.*/
-  naction_symbols_base = Allocate_int_array(num_states + 1);
+  naction_symbols_base = Allocate_long_array(num_states + 1);
   for ALL_STATES3(state_no) {
     naction_symbols_base[state_list[state_no]] = ABS(state_start[state_list[state_no]]);
   }
@@ -624,7 +179,7 @@ void print_error_maps(void) {
   ffree(naction_symbols_base);
   /* Compute and write out the range of the NACTION_SYMBOLS map.*/
   offset = state_start[num_states + 1];
-  naction_symbols_range = Allocate_int_array(offset);
+  naction_symbols_range = Allocate_long_array(offset);
   compute_naction_symbols_range(state_start, state_stack, state_list, naction_symbols_range);
   if (java_bit) {
     prnt_shorts("\n    public final static char nasr[] = {0,\n", 0, offset - 2, 10, naction_symbols_range);
@@ -638,7 +193,7 @@ void print_error_maps(void) {
   /* is used to remap the NAME_INDEX values based on the new symbol    */
   /* numberings. If time tables are requested, the terminals and non-  */
   /* terminals are mixed together.                                     */
-  temp = Allocate_int_array(num_symbols + 1);
+  temp = Allocate_long_array(num_symbols + 1);
   if (table_opt == OPTIMIZE_SPACE) {
     for ALL_TERMINALS3(symbol) {
       temp[symbol_map[symbol]] = symno[symbol].name_index;
@@ -750,7 +305,6 @@ void print_error_maps(void) {
   }
   if (java_bit) {
     // Print java names.
-
     long num_bytes = 0;
     max_name_length = 0;
     mystrcpy("\n    public final static String name[] = { null,\n");
@@ -802,7 +356,7 @@ void print_error_maps(void) {
     PRNT2(msg_line, "    Storage required for STRING_BUFFER map: %ld Bytes", num_bytes);
   } else {
     // Print C names.
-    int *name_len = Allocate_int_array(num_names + 1);
+    long *name_len = Allocate_long_array(num_names + 1);
     long num_bytes = 0;
     max_name_length = 0;
     mystrcpy("\nconst char  CLASS_HEADER string_buffer[] = {0,\n");
@@ -966,7 +520,6 @@ void print_error_maps(void) {
         mystrcpy("\nconst unsigned short CLASS_HEADER scope_lhs[] = {\n");
       }
     }
-
     padline();
     k = 0;
     for (int i = 1; i <= num_scopes; i++) {
@@ -1103,7 +656,6 @@ void print_error_maps(void) {
     } else {
       mystrcpy("                          };\n");
     }
-
     if (num_symbols <= (java_bit ? 127 : 255)) {
       if (java_bit) {
         mystrcpy("\n    public final static byte in_symb[] = {0,\n");
@@ -1155,7 +707,32 @@ void print_error_maps(void) {
   }
 }
 
-void common() {
+void common(const bool byte_check_bit) {
+  // Write table common.
+  {
+    if (error_maps_bit) {
+      print_error_maps();
+    }
+    if (!byte_check_bit) {
+      if (java_bit) {
+        PRNT("\n***Warning: Base Check vector contains value > 127. 16-bit words used.");
+      } else {
+        PRNT("\n***Warning: Base Check vector contains value > 255. 16-bit words used.");
+      }
+    }
+    if (!byte_terminal_range) {
+      if (java_bit) {
+        PRNT("***Warning: Terminal symbol > 127. 16-bit words used.");
+      } else {
+        PRNT("***Warning: Terminal symbol > 255. 16-bit words used.");
+      }
+    }
+    if (java_bit) {
+      mystrcpy("}\n");
+    }
+    fwrite(output_buffer, sizeof(char), output_ptr - &output_buffer[0], sysdcl);
+  }
+
   // print symbols
   {
     char line[SYMBOL_SIZE + /* max length of a token symbol  */
@@ -1184,8 +761,7 @@ void common() {
         while (strlen(line) > PARSER_LINE_SIZE) {
           fwrite(line, sizeof(char), PARSER_LINE_SIZE - 2, syssym);
           fprintf(syssym, "\\\n");
-          memmove(line, &line[PARSER_LINE_SIZE - 2],
-                  strlen(&line[PARSER_LINE_SIZE - 2]) + 1);
+          memmove(line, &line[PARSER_LINE_SIZE - 2], strlen(&line[PARSER_LINE_SIZE - 2]) + 1);
         }
       }
     }
@@ -1226,7 +802,7 @@ void common() {
                 num_states);
       }
     }
-    if (java_bit)
+    if (java_bit) {
       fprintf(sysdef,
               "      NT_OFFSET         = %d,\n"
               "      SCOPE_UBOUND      = %d,\n"
@@ -1259,7 +835,7 @@ void common() {
               eolt_image,
               accept_act,
               error_act);
-    else
+    } else {
       fprintf(sysdef,
               "      NT_OFFSET         = %d,\n"
               "      BUFF_UBOUND       = %d,\n"
@@ -1300,6 +876,7 @@ void common() {
               eolt_image,
               accept_act,
               error_act);
+    }
   }
 
   // print externs
@@ -1327,13 +904,9 @@ void common() {
               "class LexStream;\n\n"
               "class %s_table\n"
               "{\n"
-              "public:\n",
-              prs_tag);
+              "public:\n", prs_tag);
       if (error_maps_bit || debug_bit) {
-        fprintf(sysprs,
-                "    static int original_state(int state) "
-                "{ return -%s[state]; }\n",
-                table_opt == OPTIMIZE_TIME ? "check" : "base_check");
+        fprintf(sysprs, "    static int original_state(int state) { return -%s[state]; }\n", table_opt == OPTIMIZE_TIME ? "check" : "base_check");
       }
       if (error_maps_bit) {
         fprintf(sysprs,
@@ -1349,24 +922,14 @@ void common() {
       }
       fprintf(sysprs, "\n");
     } else if (java_bit) {
-      fprintf(sysprs,
-              "abstract class %s extends %s implements %s\n{\n",
-              prs_tag, dcl_tag, def_tag);
+      fprintf(sysprs, "abstract class %s extends %s implements %s\n{\n", prs_tag, dcl_tag, def_tag);
       if (error_maps_bit || debug_bit) {
-        fprintf(sysprs,
-                "    public final static int original_state(int state) "
-                "{ return -%s(state); }\n",
-                table_opt == OPTIMIZE_TIME ? "check" : "base_check");
+        fprintf(sysprs, "    public final static int original_state(int state) { return -%s(state); }\n", table_opt == OPTIMIZE_TIME ? "check" : "base_check");
         if (error_maps_bit) {
-          fprintf(sysprs,
-                  "    public final static int asi(int state) "
-                  "{ return asb[original_state(state)]; }\n"
-                  "    static int nasi(int state) "
-                  "{ return nasb[original_state(state)]; }\n");
+          fprintf(sysprs, "    public final static int asi(int state) { return asb[original_state(state)]; }\n");
+          fprintf(sysprs, "    static int nasi(int state) { return nasb[original_state(state)]; }\n");
           if (num_scopes > 0)
-            fprintf(sysprs,
-                    "    public final static int in_symbol(int state) "
-                    "{ return in_symb[original_state(state)]; }\n");
+            fprintf(sysprs, "    public final static int in_symbol(int state) { return in_symb[original_state(state)]; }\n");
         }
         fprintf(sysprs, "\n");
       }
@@ -1394,7 +957,6 @@ void common() {
       if (table_opt == OPTIMIZE_SPACE) {
         fprintf(sysprs, "%s const unsigned %s term_check[];\n", c_bit ? "extern" : "    static", num_terminals <= (java_bit ? 127 : 255) ? "char " : "short");
         fprintf(sysprs, "%s const unsigned short term_action[];\n", c_bit ? "extern" : "    static");
-
         if (shift_default_bit) {
           fprintf(sysprs, "%s const unsigned short default_reduce[];\n", c_bit ? "extern" : "    static");
           fprintf(sysprs, "%s const unsigned short shift_state[];\n", c_bit ? "extern" : "    static");
@@ -1402,7 +964,6 @@ void common() {
           fprintf(sysprs, "%s const unsigned short default_shift[];\n", c_bit ? "extern" : "    static");
         }
       }
-
       if (error_maps_bit) {
         fprintf(sysprs,
                 "\n"
@@ -1421,7 +982,6 @@ void common() {
                 c_bit ? "extern" : "    static",
                 c_bit ? "extern" : "    static",
                 c_bit ? "extern" : "    static");
-
         if (table_opt == OPTIMIZE_SPACE) {
           fprintf(sysprs,
                   "%s const unsigned %s terminal_index[];\n"
@@ -1441,7 +1001,6 @@ void common() {
                   c_bit ? "extern" : "    static",
                   num_names <= (java_bit ? 127 : 255) ? "char " : "short");
         }
-
         if (num_scopes > 0) {
           fprintf(sysprs, "%s const unsigned %s scope_prefix[];\n"
                   "%s const unsigned %s scope_suffix[];\n"
@@ -1468,38 +1027,470 @@ void common() {
                   num_symbols <= (java_bit ? 127 : 255) ? "char " : "short");
         }
       }
-
       fprintf(sysprs, "\n");
     }
     if (table_opt == OPTIMIZE_SPACE) {
       if (goto_default_bit) {
-        non_terminal_space_action();
+        // non_terminal_space_action
+        {
+          if (c_bit) {
+            fprintf(sysprs,
+                    "#define nt_action(state, sym) \\\n"
+                    "           ((base_check[state + sym] == sym) ? \\\n"
+                    "               base_action[state + sym] : "
+                    "default_goto[sym])\n\n");
+          } else if (cpp_bit) {
+            fprintf(sysprs,
+                    "    static int nt_action(int state, int sym)\n"
+                    "    {\n"
+                    "        return (base_check[state + sym] == sym)\n"
+                    "                             ? base_action[state + sym]\n"
+                    "                             : default_goto[sym];\n"
+                    "    }\n\n");
+          } else if (java_bit) {
+            fprintf(sysprs,
+                    "    public final static int nt_action(int state, int sym)\n"
+                    "    {\n"
+                    "        return (base_check(state + sym) == sym)\n"
+                    "                             ? base_action[state + sym]\n"
+                    "                             : default_goto[sym];\n"
+                    "    }\n\n");
+          }
+        }
       } else {
-        non_terminal_no_goto_default_space_action();
+        // non_terminal_no_goto_default_space_action
+        {
+          if (c_bit) {
+            fprintf(sysprs,
+                    "#define nt_action(state, sym) "
+                    "base_action[state + sym]\n\n");
+          } else if (cpp_bit) {
+            fprintf(sysprs,
+                    "    static int nt_action(int state, int sym)\n"
+                    "    {\n        return base_action[state + sym];\n    }\n\n");
+          } else if (java_bit) {
+            fprintf(sysprs,
+                    "    public final static int nt_action(int state, int sym)\n"
+                    "    {\n        return base_action[state + sym];\n    }\n\n");
+          }
+        }
       }
       if (lalr_level > 1) {
         if (shift_default_bit) {
-          terminal_shift_default_space_lalr_k();
+          // terminal_shift_default_space_lalr_k
+          {
+            if (c_bit) {
+              fprintf(sysprs,
+                      "static int t_action(int state, int sym, TokenObject next_tok)\n"
+                      "{\n"
+                      "    int act = base_action[state],\n"
+                      "          i = act + sym;\n\n"
+                      "    if (sym == 0)\n"
+                      "        act = ERROR_ACTION;\n"
+                      "    else if (term_check[i] == sym)\n"
+                      "        act = term_action[i];\n"
+                      "    else\n"
+                      "    {\n"
+                      "        act = term_action[act];\n"
+                      "        i = shift_state[act] + sym;\n"
+                      "        act = (shift_check[i] == sym ? default_shift[sym]\n"
+                      "                                     : default_reduce[act]);\n"
+                      "    }\n\n"
+                      "    while (act > LA_STATE_OFFSET)\n"
+                      "    {\n"
+                      "         act -= LA_STATE_OFFSET;\n"
+                      "         sym = Class(next_tok);\n"
+                      "         i = act + sym;\n"
+                      "         if (term_check[i] == sym)\n"
+                      "             act = term_action[i];\n"
+                      "         else\n"
+                      "         {\n"
+                      "             act = term_action[act];\n"
+                      "             i = shift_state[act] + sym;\n"
+                      "             act = (shift_check[i] == sym\n"
+                      "                                    ? default_shift[sym]\n"
+                      "                                    : default_reduce[act]);\n"
+                      "         }\n"
+                      "         if (act <= LA_STATE_OFFSET)\n"
+                      "             break;\n"
+                      "         next_tok = Next(next_tok);\n"
+                      "    }\n\n"
+                      "    return act;\n"
+                      "}\n\n");
+            } else if (cpp_bit) {
+              fprintf(sysprs,
+                      "    static int t_action(int act, int sym, LexStream *stream)\n"
+                      "    {\n"
+                      "        act = base_action[act];\n"
+                      "        int i = act + sym;\n\n"
+                      "        if (sym == 0)\n"
+                      "            act = ERROR_ACTION;\n"
+                      "        else if (term_check[i] == sym)\n"
+                      "            act = term_action[i];\n"
+                      "        else\n"
+                      "        {\n"
+                      "            act = term_action[act];\n"
+                      "            i = shift_state[act] + sym;\n"
+                      "            act = (shift_check[i] == sym ? default_shift[sym]\n"
+                      "                                         : default_reduce[act]);\n"
+                      "        }\n\n"
+                      "        if (act > LA_STATE_OFFSET)\n"
+                      "        {\n"
+                      "            for (TokenObject tok = stream -> Peek();\n"
+                      "                 ;\n"
+                      "                 tok = stream -> Next(tok))\n"
+                      "            {\n"
+                      "                 act -= LA_STATE_OFFSET;\n"
+                      "                 sym = stream -> Kind(tok);\n"
+                      "                 i = act + sym;\n"
+                      "                 if (term_check[i] == sym)\n"
+                      "                     act = term_action[i];\n"
+                      "                 else\n"
+                      "                 {\n"
+                      "                     act = term_action[act];\n"
+                      "                     i = shift_state[act] + sym;\n"
+                      "                     act = (shift_check[i] == sym\n"
+                      "                                            ? default_shift[sym]\n"
+                      "                                            : default_reduce[act]);\n"
+                      "                 }\n"
+                      "                 if (act <= LA_STATE_OFFSET)\n"
+                      "                     break;\n"
+                      "            }\n"
+                      "        }\n\n"
+                      "        return act;\n"
+                      "    }\n");
+            } else if (java_bit) {
+              fprintf(sysprs,
+                      "    public final static int t_action(int act, int sym, LexStream stream)\n"
+                      "    {\n"
+                      "        act = base_action[act];\n"
+                      "        int i = act + sym;\n\n"
+                      "        if (sym == 0)\n"
+                      "            act = ERROR_ACTION;\n"
+                      "        else if (term_check[i] == sym)\n"
+                      "            act = term_action[i];\n"
+                      "        else\n"
+                      "        {\n"
+                      "            act = term_action[act];\n"
+                      "            i = shift_state[act] + sym;\n"
+                      "            act = (shift_check[i] == sym ? default_shift[sym]\n"
+                      "                                         : default_reduce[act]);\n"
+                      "        }\n\n"
+                      "        if (act > LA_STATE_OFFSET)\n"
+                      "        {\n"
+                      "            for (int tok = stream.Peek();\n"
+                      "                 ;\n"
+                      "                 tok = stream.Next(tok))\n"
+                      "            {\n"
+                      "                 act -= LA_STATE_OFFSET;\n"
+                      "                 sym = stream.Kind(tok);\n"
+                      "                 i = act + sym;\n"
+                      "                 if (term_check[i] == sym)\n"
+                      "                     act = term_action[i];\n"
+                      "                 else\n"
+                      "                 {\n"
+                      "                     act = term_action[act];\n"
+                      "                     i = shift_state[act] + sym;\n"
+                      "                     act = (shift_check[i] == sym\n"
+                      "                                            ? default_shift[sym]\n"
+                      "                                            : default_reduce[act]);\n"
+                      "                 }\n"
+                      "                 if (act <= LA_STATE_OFFSET)\n"
+                      "                     break;\n"
+                      "            }\n"
+                      "        }\n\n"
+                      "        return act;\n"
+                      "    }\n");
+            }
+          }
         } else {
-          terminal_space_lalr_k();
+          // terminal_space_lalr_k
+          {
+            if (c_bit) {
+              fprintf(sysprs,
+                      "static int t_action(int state, int sym, TokenObject next_tok)\n"
+                      "{\n"
+                      "    int act = base_action[state],\n"
+                      "          i = act + sym;\n\n"
+                      "    act = term_action[term_check[i] == sym ? i : act];\n\n"
+                      "    if (act > LA_STATE_OFFSET)\n"
+                      "    {\n"
+                      "        for (;;)\n"
+                      "        {\n"
+                      "           act -= LA_STATE_OFFSET;\n"
+                      "           sym = Class(next_tok);\n"
+                      "           i = act + sym;\n"
+                      "           act = term_action[term_check[i] == sym ? i : act];\n"
+                      "           if (act <= LA_STATE_OFFSET)\n"
+                      "               break;\n"
+                      "           next_tok = Next(next_tok);\n"
+                      "        }\n"
+                      "    }\n\n"
+                      "    return act;\n"
+                      "}\n\n");
+            } else if (cpp_bit) {
+              fprintf(sysprs,
+                      "    static int t_action(int act, int sym, LexStream *stream)\n"
+                      "    {\n"
+                      "        act = base_action[act];\n"
+                      "        int i = act + sym;\n\n"
+                      "        act = term_action[term_check[i] == sym ? i : act];\n\n"
+                      "        if (act > LA_STATE_OFFSET)\n"
+                      "        {\n"
+                      "            for (TokenObject tok = stream -> Peek();\n"
+                      "                 ;\n"
+                      "                 tok = stream -> Next(tok))\n"
+                      "            {\n"
+                      "               act -= LA_STATE_OFFSET;\n"
+                      "               sym = stream -> Kind(tok);\n"
+                      "               i = act + sym;\n"
+                      "               act = term_action[term_check[i] == sym ? i : act];\n"
+                      "               if (act <= LA_STATE_OFFSET)\n"
+                      "                   break;\n"
+                      "            } \n"
+                      "        }\n\n"
+                      "        return act;\n"
+                      "    }\n");
+            } else if (java_bit) {
+              fprintf(sysprs,
+                      "    public final static int t_action(int act, int sym, LexStream stream)\n"
+                      "    {\n"
+                      "        act = base_action[act];\n"
+                      "        int i = act + sym;\n\n"
+                      "        act = term_action[term_check[i] == sym ? i : act];\n\n"
+                      "        if (act > LA_STATE_OFFSET)\n"
+                      "        {\n"
+                      "            for (int tok = stream.Peek();\n"
+                      "                 ;\n"
+                      "                 tok = stream.Next(tok))\n"
+                      "            {\n"
+                      "               act -= LA_STATE_OFFSET;\n"
+                      "               sym = stream.Kind(tok);\n"
+                      "               i = act + sym;\n"
+                      "               act = term_action[term_check[i] == sym ? i : act];\n"
+                      "               if (act <= LA_STATE_OFFSET)\n"
+                      "                   break;\n"
+                      "            } \n"
+                      "        }\n\n"
+                      "        return act;\n"
+                      "    }\n");
+            }
+          }
         }
       } else {
         if (shift_default_bit) {
-          terminal_shift_default_space_action();
+          // terminal_shift_default_space_action
+          {
+            if (c_bit) {
+              fprintf(sysprs,
+                      "static int t_action(int state, int sym, TokenObject next_tok)\n"
+                      "{\n"
+                      "    int i;\n\n"
+                      "    if (sym == 0)\n"
+                      "        return ERROR_ACTION;\n"
+                      "    i = base_action[state];\n"
+                      "    if (term_check[i + sym] == sym)\n"
+                      "        return term_action[i + sym];\n"
+                      "    i = term_action[i];\n"
+                      "    return ((shift_check[shift_state[i] + sym] == sym) ?\n"
+                      "                 default_shift[sym] : default_reduce[i]);\n"
+                      "}\n\n");
+            } else if (cpp_bit) {
+              fprintf(sysprs,
+                      "    static int t_action(int state, int sym, LexStream *stream)\n"
+                      "    {\n"
+                      "        if (sym == 0)\n"
+                      "            return ERROR_ACTION;\n"
+                      "        int i = base_action[state];\n"
+                      "        if (term_check[i + sym] == sym)\n"
+                      "            return term_action[i + sym];\n"
+                      "        i = term_action[i];\n"
+                      "        return ((shift_check[shift_state[i] + sym] == sym) ?\n"
+                      "                      default_shift[sym] : default_reduce[i]);\n"
+                      "    }\n");
+            } else if (java_bit) {
+              fprintf(sysprs,
+                      "    public final static int t_action(int state, int sym, LexStream stream)\n"
+                      "    {\n"
+                      "        if (sym == 0)\n"
+                      "            return ERROR_ACTION;\n"
+                      "        int i = base_action[state];\n"
+                      "        if (term_check[i + sym] == sym)\n"
+                      "            return term_action[i + sym];\n"
+                      "        i = term_action[i];\n"
+                      "        return ((shift_check[shift_state[i] + sym] == sym) ?\n"
+                      "                      default_shift[sym] : default_reduce[i]);\n"
+                      "    }\n");
+            }
+          }
         } else {
-          terminal_space_action();
+          // terminal_space_action
+          {
+            if (c_bit) {
+              fprintf(sysprs,
+                      "#define t_action(state, sym, next_tok) \\\n"
+                      "  term_action[term_check[base_action[state]+sym] == sym ? \\\n"
+                      "          base_action[state] + sym : base_action[state]]\n\n");
+            } else if (cpp_bit) {
+              fprintf(sysprs,
+                      "    static int t_action(int state, int sym, LexStream *stream)\n"
+                      "    {\n"
+                      "        return term_action[term_check[base_action[state]"
+                      "+sym] == sym\n"
+                      "                               ? base_action[state] + sym\n"
+                      "                               : base_action[state]];\n"
+                      "    }\n");
+            } else if (java_bit) {
+              fprintf(sysprs,
+                      "    public final static int t_action(int state, int sym, LexStream stream)\n"
+                      "    {\n"
+                      "        return term_action[term_check[base_action[state]"
+                      "+sym] == sym\n"
+                      "                               ? base_action[state] + sym\n"
+                      "                               : base_action[state]];\n"
+                      "    }\n");
+            }
+          }
         }
       }
     } else {
       if (goto_default_bit) {
-        non_terminal_time_action();
+        // non_terminal_time_action
+        {
+          if (c_bit) {
+            fprintf(sysprs,
+                    "#define nt_action(state, sym) \\\n"
+                    "           ((check[state+sym] == sym) ? \\\n"
+                    "                   action[state + sym] : "
+                    "default_goto[sym])\n\n");
+          } else if (cpp_bit) {
+            fprintf(sysprs,
+                    "    static int nt_action(int state, int sym)\n"
+                    "    {\n"
+                    "        return (check[state + sym] == sym)\n"
+                    "                                    ? action[state + sym]\n"
+                    "                                    : default_goto[sym];\n"
+                    "    }\n\n");
+          } else if (java_bit) {
+            fprintf(sysprs,
+                    "    public final static int nt_action(int state, int sym)\n"
+                    "    {\n"
+                    "        return (check(state + sym) == sym)\n"
+                    "                                    ? action[state + sym]\n"
+                    "                                    : default_goto[sym];\n"
+                    "    }\n\n");
+          }
+        }
       } else {
-        non_terminal_no_goto_default_time_action();
+        // non_terminal_no_goto_default_time_action
+        {
+          if (c_bit) {
+            fprintf(sysprs,
+                    "#define nt_action(state, sym) action[state + sym]\n\n");
+          } else if (cpp_bit) {
+            fprintf(sysprs,
+                    "    static int nt_action(int state, int sym)\n"
+                    "    {\n        return action[state + sym];\n    }\n\n");
+          } else if (java_bit) {
+            fprintf(sysprs,
+                    "    public final static int nt_action(int state, int sym)\n"
+                    "    {\n        return action[state + sym];\n    }\n\n");
+          }
+        }
       }
       if (lalr_level > 1) {
-        terminal_time_lalr_k();
+        // terminal_time_lalr_k
+        {
+          if (c_bit) {
+            fprintf(sysprs,
+                    "static int t_action(int act, int sym, TokenObject next_tok)\n"
+                    "{\n"
+                    "    int i = act + sym;\n\n"
+                    "    act = action[check[i] == sym ? i : act];\n\n"
+                    "    if (act > LA_STATE_OFFSET)\n"
+                    "    {\n"
+                    "        for (;;)\n"
+                    "        {\n"
+                    "            act -= ERROR_ACTION;\n"
+                    "            sym = Class(next_tok);\n"
+                    "            i = act + sym;\n"
+                    "            act = action[check[i] == sym ? i : act];\n"
+                    "            if (act <= LA_STATE_OFFSET)\n"
+                    "                break;\n"
+                    "            next_tok = Next(next_tok);\n"
+                    "        }\n"
+                    "    }\n\n"
+                    "    return act;\n"
+                    "}\n\n");
+          } else if (cpp_bit) {
+            fprintf(sysprs,
+                    "    static int t_action(int act, int sym, LexStream *stream)\n"
+                    "    {\n"
+                    "        int i = act + sym;\n\n"
+                    "        act = action[check[i] == sym ? i : act];\n\n"
+                    "        if (act > LA_STATE_OFFSET)\n"
+                    "        {\n"
+                    "            for (TokenObject tok = stream -> Peek();\n"
+                    "                 ;\n"
+                    "                 tok = stream -> Next(tok))\n"
+                    "            {\n"
+                    "                act -= ERROR_ACTION;\n"
+                    "                sym = stream -> Kind(tok);\n"
+                    "                i = act + sym;\n"
+                    "                act = action[check[i] == sym ? i : act];\n"
+                    "                if (act <= LA_STATE_OFFSET)\n"
+                    "                    break;\n"
+                    "            }\n"
+                    "        }\n\n"
+                    "        return act;\n"
+                    "    }\n\n");
+          } else if (java_bit) {
+            fprintf(sysprs,
+                    "    public final static int t_action(int act, int sym, LexStream stream)\n"
+                    "    {\n"
+                    "        int i = act + sym;\n\n"
+                    "        act = action[check(i) == sym ? i : act];\n\n"
+                    "        if (act > LA_STATE_OFFSET)\n"
+                    "        {\n"
+                    "            for (int tok = stream.Peek();\n"
+                    "                 ;\n"
+                    "                 tok = stream.Next(tok))\n"
+                    "            {\n"
+                    "                act -= ERROR_ACTION;\n"
+                    "                sym = stream.Kind(tok);\n"
+                    "                i = act + sym;\n"
+                    "                act = action[check(i) == sym ? i : act];\n"
+                    "                if (act <= LA_STATE_OFFSET)\n"
+                    "                    break;\n"
+                    "            }\n"
+                    "        }\n\n"
+                    "        return act;\n"
+                    "    }\n\n");
+          }
+        }
       } else {
-        terminal_time_action();
+        // terminal_time_action
+        {
+          if (c_bit) {
+            fprintf(sysprs,
+                    "#define t_action(state, sym, next_tok) \\\n"
+                    "   action[check[state + sym] == sym ? state + sym : state]\n\n");
+          } else if (cpp_bit) {
+            fprintf(sysprs,
+                    "    static int t_action(int state, int sym, LexStream *stream)\n"
+                    "    {\n"
+                    "        return action[check[state + sym] == sym"
+                    " ? state + sym : state];\n"
+                    "    }\n");
+          } else if (java_bit) {
+            fprintf(sysprs,
+                    "    public final static int t_action(int state, int sym, LexStream stream)\n"
+                    "    {\n"
+                    "        return action[check(state + sym) == sym"
+                    " ? state + sym : state];\n"
+                    "    }\n");
+          }
+        }
       }
     }
     if (cpp_bit) {
@@ -1519,13 +1510,12 @@ void common() {
 }
 
 void print_space_parser() {
-  {
+  bool byte_check_bit = true; {
     int *check;
     int *action;
     int la_state_offset;
     int k;
     int indx;
-    int act;
     long result_act;
     int default_count = 0;
     int goto_count = 0;
@@ -1564,8 +1554,8 @@ void print_space_parser() {
     for (int i = 1; i <= num_terminal_states; i++) {
       indx = term_state_index[i];
       int state_no = new_state_element[i].image;
-      /*   Update the action link between the non-terminal and terminal    */
-      /* tables.  If error-maps are requested, an indirect linking is made */
+      /* Update the action link between the non-terminal and terminal      */
+      /* tables. If error-maps are requested, an indirect linking is made  */
       /* as follows:                                                       */
       /*  Each non-terminal row identifies its original state number, and  */
       /* a new vector START_TERMINAL_STATE indexable by state numbers      */
@@ -1576,7 +1566,7 @@ void print_space_parser() {
         }
       } else {
         for (; state_no != NIL; state_no = state_list[state_no]) {
-          act = la_state_offset + indx;
+          int act = la_state_offset + indx;
           state_index[state_no] = act;
         }
       }
@@ -1592,7 +1582,7 @@ void print_space_parser() {
         if (goto_default_bit || nt_check_bit) {
           check[i] = symbol;
         }
-        act = go_to.map[j].action;
+        int act = go_to.map[j].action;
         if (act > 0) {
           action[i] = state_index[act] + num_rules;
           goto_count++;
@@ -1793,7 +1783,7 @@ void print_space_parser() {
       sh = shift[new_state_element[state_no].shift_number];
       for (int j = 1; j <= sh.size; j++) {
         int symbol = sh.map[j].symbol;
-        act = sh.map[j].action;
+        int act = sh.map[j].action;
         if (!shift_default_bit || act != shiftdf[symbol]) {
           int i = indx + symbol;
           check[i] = symbol;
@@ -1807,12 +1797,10 @@ void print_space_parser() {
             result_act = -act + error_act;
             shift_reduce_count++;
           }
-
           if (result_act > MAX_TABLE_SIZE + 1) {
             PRNTERR2(msg_line, "Table contains look-ahead shift entry that is >%ld; Processing stopped.", MAX_TABLE_SIZE + 1);
             return;
           }
-
           action[i] = result_act;
         }
       }
@@ -1876,7 +1864,7 @@ void print_space_parser() {
       padline();
       k = 0;
       for ALL_NON_TERMINALS3(symbol) {
-        act = gotodef[symbol];
+        int act = gotodef[symbol];
         if (act < 0) {
           result_act = -act;
         } else if (act == 0) {
@@ -1904,7 +1892,6 @@ void print_space_parser() {
         mystrcpy("                 };\n");
       }
     }
-
     if (shift_default_bit) {
       if (java_bit) {
         mystrcpy("\n    public final static char default_reduce[] = {0,\n");
@@ -2018,7 +2005,7 @@ void print_space_parser() {
       padline();
       k = 0;
       for ALL_TERMINALS3(symbol) {
-        act = shiftdf[symbol];
+        int act = shiftdf[symbol];
         if (act < 0) {
           result_act = -act + error_act;
         } else if (act == 0) {
@@ -2054,33 +2041,12 @@ void print_space_parser() {
     }
     ffree(check);
     ffree(action);
-    if (error_maps_bit) {
-      print_error_maps();
-    }
-    if (!byte_check_bit) {
-      if (java_bit) {
-        PRNT("\n***Warning: Base Check vector contains value > 127. 16-bit words used.");
-      } else {
-        PRNT("\n***Warning: Base Check vector contains value > 255. 16-bit words used.");
-      }
-    }
-    if (!byte_terminal_range) {
-      if (java_bit) {
-        PRNT("***Warning: Terminal symbol > 127. 16-bit words used.");
-      } else {
-        PRNT("***Warning: Terminal symbol > 255. 16-bit words used.");
-      }
-    }
-    if (java_bit) {
-      mystrcpy("}\n");
-    }
-    fwrite(output_buffer, sizeof(char), output_ptr - &output_buffer[0], sysdcl);
   }
-  common();
+  common(byte_check_bit);
 }
 
 void print_time_parser() {
-  {
+  bool byte_check_bit = true; {
     long *action;
     long *check;
     int la_shift_count = 0;
@@ -2090,18 +2056,12 @@ void print_time_parser() {
     int reduce_count = 0;
     int shift_reduce_count = 0;
     int goto_reduce_count = 0;
-    int indx;
-    int la_state_offset;
-    int act;
-    int result_act;
-    int k;
-    short default_rule;
-    long offset;
     state_list = Allocate_long_array(max_la_state + 1);
     output_ptr = &output_buffer[0];
     check = next;
     action = previous;
-    offset = error_act;
+    long offset = error_act;
+    int la_state_offset;
     if (lalr_level > 1) {
       if (read_reduce_bit) {
         offset += num_rules;
@@ -2116,13 +2076,14 @@ void print_time_parser() {
     }
     /* Initialize all unfilled slots with default values.                */
     /* RECALL that the vector "check" is aliased to the vector "next".   */
+    long indx;
     indx = first_index;
-    for (int i = indx; i != NIL && i <= (int) action_size; i = indx) {
+    for (long i = indx; i != NIL && i <= action_size; i = indx) {
       indx = next[i];
       check[i] = DEFAULT_SYMBOL;
       action[i] = error_act;
     }
-    for (int i = (int) action_size + 1; i <= (int) table_size; i++) {
+    for (long i = action_size + 1; i <= table_size; i++) {
       check[i] = DEFAULT_SYMBOL;
     }
     /* We set the rest of the table with the proper table entries.       */
@@ -2137,13 +2098,13 @@ void print_time_parser() {
         struct goto_header_type go_to = statset[state_no].go_to;
         for (int j = 1; j <= go_to.size; j++) {
           int symbol = go_to.map[j].symbol;
-          int i = indx + symbol;
+          long i = indx + symbol;
           if (goto_default_bit || nt_check_bit) {
             check[i] = symbol;
           } else {
             check[i] = DEFAULT_SYMBOL;
           }
-          act = go_to.map[j].action;
+          int act = go_to.map[j].action;
           if (act > 0) {
             action[i] = state_index[act] + num_rules;
             goto_count++;
@@ -2157,9 +2118,10 @@ void print_time_parser() {
       }
       for (int j = 1; j <= sh.size; j++) {
         int symbol = sh.map[j].symbol;
-        int i = indx + symbol;
+        long i = indx + symbol;
         check[i] = symbol;
-        act = sh.map[j].action;
+        int act = sh.map[j].action;
+        long result_act;
         if (act > num_states) {
           result_act = la_state_offset + state_index[act];
           la_shift_count++;
@@ -2178,13 +2140,13 @@ void print_time_parser() {
       }
       /*   We now initialize the elements reserved for reduce actions in   */
       /* the current state.                                                */
-      default_rule = red.map[0].rule_number;
+      short default_rule = red.map[0].rule_number;
       for (int j = 1; j <= red.size; j++) {
         if (red.map[j].rule_number != default_rule) {
           int symbol = red.map[j].symbol;
-          int i = indx + symbol;
+          long i = indx + symbol;
           check[i] = symbol;
-          act = red.map[j].rule_number;
+          int act = red.map[j].rule_number;
           if (rules[act].lhs == accept_image) {
             action[i] = accept_act;
           } else {
@@ -2200,7 +2162,7 @@ void print_time_parser() {
       /* Otherwise it is initialized to the rule number in question.       */
       int i = indx + DEFAULT_SYMBOL;
       check[i] = DEFAULT_SYMBOL;
-      act = red.map[0].rule_number;
+      int act = red.map[0].rule_number;
       if (act == OMEGA) {
         action[i] = error_act;
       } else {
@@ -2249,7 +2211,7 @@ void print_time_parser() {
       mystrcpy("const unsigned char  CLASS_HEADER rhs[] = {0,\n");
     }
     padline();
-    k = 0;
+    int k = 0;
     for (int i = 1; i <= num_rules; i++) {
       k++;
       if (k > 15) {
@@ -2305,7 +2267,6 @@ void print_time_parser() {
     }
     *output_ptr++ = '\n';
     BUFFER_CHECK(sysdcl);
-
     if (byte_check_bit && !error_maps_bit) {
       if (java_bit) {
         mystrcpy("    public final static byte check(int i) \n    {\n        return check_table[i - (NUM_RULES + 1)];\n    }\n");
@@ -2388,13 +2349,13 @@ void print_time_parser() {
     BUFFER_CHECK(sysdcl);
     if (java_bit) {
       mystrcpy("    public final static char action[] = lhs;\n");
-    } else mystrcpy("const unsigned short *CLASS_HEADER action = lhs;\n");
+    } else {
+      mystrcpy("const unsigned short *CLASS_HEADER action = lhs;\n");
+    }
     *output_ptr++ = '\n';
-
     /* If GOTO_DEFAULT is requested, we print out the GOTODEF vector.   */
     if (goto_default_bit) {
-      short *default_map;
-      default_map = Allocate_short_array(num_symbols + 1);
+      short *default_map = Allocate_short_array(num_symbols + 1);
       if (java_bit) {
         mystrcpy("\n    public final static char default_goto[] = {0,\n");
       } else {
@@ -2406,7 +2367,8 @@ void print_time_parser() {
         default_map[i] = error_act;
       }
       for ALL_NON_TERMINALS3(symbol) {
-        act = gotodef[symbol];
+        int act = gotodef[symbol];
+        int result_act;
         if (act < 0) {
           result_act = -act;
         } else if (act > 0) {
@@ -2437,30 +2399,8 @@ void print_time_parser() {
         mystrcpy("                 };\n");
       }
     }
-
     ffree(next);
     ffree(previous);
-    if (error_maps_bit) {
-      print_error_maps();
-    }
-    if (!byte_check_bit) {
-      if (java_bit) {
-        PRNT("\n***Warning: Base Check vector contains value > 127. 16-bit words used.");
-      } else {
-        PRNT("\n***Warning: Base Check vector contains value > 255. 16-bit words used.");
-      }
-    }
-    if (!byte_terminal_range) {
-      if (java_bit) {
-        PRNT("***Warning: Terminal symbol > 127. 16-bit words used.");
-      } else {
-        PRNT("***Warning: Terminal symbol > 255. 16-bit words used.");
-      }
-    }
-    if (java_bit) {
-      mystrcpy("}\n");
-    }
-    fwrite(output_buffer, sizeof(char), output_ptr - &output_buffer[0], sysdcl);
   }
-  common();
+  common(byte_check_bit);
 }

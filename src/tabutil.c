@@ -8,9 +8,8 @@ static char hostfile[] = __FILE__;
 
 static const char digits[] = "0123456789";
 
-void prnt_shorts(const char *title, const int init, const int bound, const int perline, const int *array) {
+void prnt_shorts(const char *title, const int init, const int bound, const int perline, const long *array) {
   mystrcpy(title);
-
   padline();
   int k = 0;
   for (int i = init; i <= bound; i++) {
@@ -28,7 +27,6 @@ void prnt_shorts(const char *title, const int init, const int bound, const int p
     *(output_ptr - 1) = '\n';
     BUFFER_CHECK(sysdcl);
   }
-
   if (java_bit) {
     mystrcpy("    };\n");
   } else {
@@ -38,7 +36,6 @@ void prnt_shorts(const char *title, const int init, const int bound, const int p
 
 void prnt_ints(const char *title, const int init, const int bound, const int perline, const int *array) {
   mystrcpy(title);
-
   padline();
   int k = 0;
   for (int i = init; i <= bound; i++) {
@@ -56,23 +53,25 @@ void prnt_ints(const char *title, const int init, const int bound, const int per
     *(output_ptr - 1) = '\n';
     BUFFER_CHECK(sysdcl);
   }
-
-  if (java_bit)
+  if (java_bit) {
     mystrcpy("    };\n");
-  else mystrcpy("                 };\n");
+  } else {
+    mystrcpy("                 };\n");
+  }
 }
 
 void mystrcpy(const char *str) {
-  while (*str != '\0')
+  while (*str != '\0') {
     *output_ptr++ = *str++;
-
+  }
   BUFFER_CHECK(sysdcl);
   BUFFER_CHECK(syssym);
 }
 
 void padline(void) {
-  for (register int i = 0; i < 12; i++)
+  for (register int i = 0; i < 12; i++) {
     *output_ptr++ = ' ';
+  }
 }
 
 /* ITOC takes as arguments an integer NUM. NUM is an integer containing at */
@@ -81,7 +80,6 @@ void padline(void) {
 /* negative, a leading "-" is added.                                       */
 void itoc(const int num) {
   char tmp[12];
-
   register int val = ABS(num);
   tmp[11] = '\0';
   register char *p = &tmp[11];
@@ -90,14 +88,13 @@ void itoc(const int num) {
     *p = digits[val % 10];
     val /= 10;
   } while (val > 0);
-
   if (num < 0) {
     p--;
     *p = '-';
   }
-
-  while (*p != '\0')
+  while (*p != '\0') {
     *output_ptr++ = *p++;
+  }
 }
 
 /* FIELD takes as arguments two integers: NUM and LEN.  NUM is an integer  */
@@ -131,16 +128,13 @@ void field(const long num, const int len) {
 void sortdes(long array[], long count[], const long low, const long high, const long max) {
   register long element;
   register long k;
-
   /* BUCKET is used to hold the roots of lists that contain the    */
   /* elements of each bucket.  LIST is used to hold these lists.   */
   long *bucket = Allocate_long_array(max + 1);
   long *list = Allocate_long_array(high - low + 1);
-
   for (register int i = 0; i <= max; i++) {
     bucket[i] = NIL;
   }
-
   /* We now partition the elements to be sorted and place them in their*/
   /* respective buckets.  We iterate backward over ARRAY and COUNT to  */
   /* keep the sorting stable since elements are inserted in the buckets*/
@@ -154,7 +148,6 @@ void sortdes(long array[], long count[], const long low, const long high, const 
     list[element - low] = bucket[k];
     bucket[k] = element;
   }
-
   /* Iterate over each bucket, and place elements in ARRAY and COUNT   */
   /* in sorted order.  The iteration is done backward because we want  */
   /* the arrays sorted in descending order.                            */
@@ -177,10 +170,8 @@ void reallocate(void) {
     PRNTERR2(msg_line, "Table has exceeded maximum limit of %ld", MAX_TABLE_SIZE);
     exit(12);
   }
-
   const register int old_size = table_size;
   table_size = MIN(table_size + increment_size, MAX_TABLE_SIZE);
-
   if (verbose_bit) {
     if (table_opt == OPTIMIZE_TIME) {
       PRNT2(msg_line, "Reallocating storage for TIME table, adding %ld entries", table_size - old_size);
@@ -188,22 +179,17 @@ void reallocate(void) {
       PRNT2(msg_line, "Reallocating storage for SPACE table, adding %ld entries", table_size - old_size);
     }
   }
-
   long *n = Allocate_long_array(table_size + 1);
   long *p = Allocate_long_array(table_size + 1);
-
   /* Copy old information */
   for (register int i = 1; i <= old_size; i++) {
     n[i] = next[i];
     p[i] = previous[i];
   }
-
   ffree(next);
   ffree(previous);
-
   next = n;
   previous = p;
-
   if (first_index == NIL) {
     first_index = old_size + 1;
     previous[first_index] = NIL;
@@ -211,7 +197,6 @@ void reallocate(void) {
     next[last_index] = old_size + 1;
     previous[old_size + 1] = last_index;
   }
-
   next[old_size + 1] = old_size + 2;
   for (register int i = old_size + 2; i < (int) table_size; i++) {
     next[i] = i + 1;
@@ -241,9 +226,8 @@ void process_error_maps(void) {
   int *symbol_count;
   int *term_list;
   long *as_size;
-  int *action_symbols_range;
-  int *naction_symbols_range;
-
+  long *action_symbols_range;
+  long *naction_symbols_range;
   int offset;
   int item_no;
   int lhs_symbol;
@@ -251,27 +235,20 @@ void process_error_maps(void) {
   int k;
   int terminal_ubound;
   int non_terminal_ubound;
-
   long num_bytes;
-
   char tok[SYMBOL_SIZE + 1];
-
   terminal_ubound = table_opt == OPTIMIZE_TIME
                       ? num_symbols
                       : num_terminals;
-
   non_terminal_ubound = table_opt == OPTIMIZE_TIME
                           ? num_symbols
                           : num_non_terminals;
-
   symbol_root = Allocate_int_array(num_symbols + 1);
   symbol_count = Allocate_int_array(num_symbols + 1);
   state_start = Allocate_long_array(num_states + 2);
   state_stack = Allocate_long_array(num_states + 1);
   term_list = Allocate_int_array(num_symbols + 1);
-
   PRNT("\nError maps storage:");
-
   /* The FOLLOW map is written out as two vectors where the first      */
   /* vector indexed by a Symbol gives the starting location in the     */
   /* second vector where the elements of the follow set of that symbol */
@@ -288,7 +265,6 @@ void process_error_maps(void) {
     symbol_count[symbol] = 0;
     symbol_root[symbol] = OMEGA;
   }
-
   for ALL_NON_TERMINALS3(lhs_symbol) {
     int symbol;
     if (table_opt == OPTIMIZE_TIME) {
@@ -303,7 +279,6 @@ void process_error_maps(void) {
       }
     }
   }
-
   offset = 1;
   k = 1;
   field(offset, 6); /* Offset of the first state */
@@ -321,7 +296,6 @@ void process_error_maps(void) {
     *output_ptr++ = '\n';
     BUFFER_CHECK(systab);
   }
-
   /*  We now write the elements in the range of the FOLLOW map.  */
   k = 0;
   for (int symbol = 1; symbol <= non_terminal_ubound; symbol++) {
@@ -344,23 +318,19 @@ void process_error_maps(void) {
     *output_ptr++ = '\n';
     BUFFER_CHECK(systab);
   }
-
   /* Compute and list amount of space required for the Follow map. */
   if (table_opt == OPTIMIZE_TIME) {
     num_bytes = 2 * (num_symbols + offset);
-    if (byte_bit) {
-      if (last_non_terminal <= 255)
-        num_bytes = num_bytes - offset + 1;
+    if (byte_bit && last_non_terminal <= 255) {
+      num_bytes = num_bytes - offset + 1;
     }
   } else {
     num_bytes = 2 * (num_non_terminals + offset);
-    if (byte_bit) {
-      if (num_terminals <= 255)
-        num_bytes = num_bytes - offset + 1;
+    if (byte_bit && num_terminals <= 255) {
+      num_bytes = num_bytes - offset + 1;
     }
   }
   PRNT2(msg_line, "    Storage required for FOLLOW map: %ld Bytes", num_bytes);
-
   /* We now write out the states in sorted order: SORTED_STATE. */
   k = 0;
   for ALL_STATES3(state_no) {
@@ -376,11 +346,9 @@ void process_error_maps(void) {
     *output_ptr++ = '\n';
     BUFFER_CHECK(systab);
   }
-
   /* Compute and list space required for SORTED_STATE map.         */
   num_bytes = 2 * num_states;
   PRNT2(msg_line, "    Storage required for SORTED_STATE map: %ld Bytes", num_bytes);
-
   /* We now write a vector parallel to SORTED_STATE that gives us the */
   /* original number associated with the state: ORIGINAL_STATE.       */
   k = 0;
@@ -397,19 +365,15 @@ void process_error_maps(void) {
     *output_ptr++ = '\n';
     BUFFER_CHECK(systab);
   }
-
   /* Compute and list space required for ORIGINAL_STATE map.       */
   num_bytes = 2 * num_states;
   PRNT2(msg_line, "    Storage required for ORIGINAL_STATE map: %ld Bytes", num_bytes);
-
   /* We now construct a bit map for the set of terminal symbols that  */
   /* may appear in each state. Then, we invoke PARTSET to apply the   */
   /* Partition Heuristic and print it.                                */
   as_size = Allocate_long_array(num_states + 1);
-
   if (table_opt == OPTIMIZE_TIME) {
     original = Allocate_int_array(num_symbols + 1);
-
     /* In a compressed TIME table, the terminal and non-terminal */
     /* symbols are mixed together when they are remapped.        */
     /* We shall now recover the original number associated with  */
@@ -422,14 +386,12 @@ void process_error_maps(void) {
       original[symbol_map[symbol]] = symbol;
     }
   }
-
   /* NOTE that the arrays ACTION_SYMBOLS and NACTION_SYMBOLS are global  */
   /* variables that are allocated in the procedure PROCESS_TABLES by     */
   /* calloc which automatically initializes them to 0.                   */
   for ALL_STATES3(state_no) {
     struct shift_header_type sh;
     struct reduce_header_type red;
-
     sh = shift[statset[state_no].shift_number];
     as_size[state_no] = sh.size;
     for (state_no = 1; state_no <= sh.size; state_no++) {
@@ -441,7 +403,6 @@ void process_error_maps(void) {
       }
       SET_BIT_IN(action_symbols, state_no, symbol);
     }
-
     red = reduce[state_no];
     as_size[state_no] += red.size;
     for (state_no = 1; state_no <= red.size; state_no++) {
@@ -454,12 +415,9 @@ void process_error_maps(void) {
       SET_BIT_IN(action_symbols, state_no, symbol);
     }
   }
-
   partset(action_symbols, as_size, state_list, state_start,
           state_stack, num_terminals, 0);
-
   ffree(action_symbols);
-
   /* We now write the starting location for each state in the domain   */
   /* of the ACTION_SYMBOL map.                                         */
   /* The starting locations are contained in the STATE_START vector.   */
@@ -477,13 +435,9 @@ void process_error_maps(void) {
   field(offset, 6);
   *output_ptr++ = '\n';
   BUFFER_CHECK(systab);
-
   /* Compute and write out the range of the ACTION_SYMBOLS map. */
-  action_symbols_range = Allocate_int_array(offset);
-
-  compute_action_symbols_range(state_start, state_stack,
-                               state_list, action_symbols_range);
-
+  action_symbols_range = Allocate_long_array(offset);
+  compute_action_symbols_range(state_start, state_stack, state_list, action_symbols_range);
   k = 0;
   for (int state_no = 0; state_no < offset - 1; state_no++) {
     field(action_symbols_range[state_no], 4);
@@ -498,20 +452,19 @@ void process_error_maps(void) {
     *output_ptr++ = '\n';
     BUFFER_CHECK(systab);
   }
-
   /* Compute and list space required for ACTION_SYMBOLS map.   */
   num_bytes = 2 * (num_states + offset);
   if (byte_bit) {
-    if (offset <= 255)
+    if (offset <= 255) {
       num_bytes -= num_states + 1;
+    }
     if ((table_opt == OPTIMIZE_TIME && last_terminal <= 255) ||
-        (table_opt != OPTIMIZE_TIME && num_terminals <= 255))
+        (table_opt != OPTIMIZE_TIME && num_terminals <= 255)) {
       num_bytes -= offset - 1;
+    }
   }
   PRNT2(msg_line, "    Storage required for ACTION_SYMBOLS map: %ld Bytes", num_bytes);
-
   ffree(action_symbols_range);
-
   /* We now repeat the same process for the domain of the GOTO table.    */
   for ALL_STATES3(state_no) {
     as_size[state_no] = gd_index[state_no + 1] - gd_index[state_no];
@@ -520,26 +473,22 @@ void process_error_maps(void) {
       NTSET_BIT_IN(naction_symbols, state_no, symbol);
     }
   }
-
   partset(naction_symbols, as_size, state_list, state_start,
           state_stack, num_non_terminals, 0);
-
   ffree(as_size);
   ffree(naction_symbols);
-
-  for (int state_no = 1; state_no <= gotodom_size; state_no++) /* Remap non-terminals */
-  {
-    if (table_opt == OPTIMIZE_TIME)
+  for (int state_no = 1; state_no <= gotodom_size; state_no++) {
+    /* Remap non-terminals */
+    if (table_opt == OPTIMIZE_TIME) {
       gd_range[state_no] = symbol_map[gd_range[state_no]];
-    else
+    } else {
       gd_range[state_no] = symbol_map[gd_range[state_no]] - num_terminals;
+    }
   }
-
   /* We now write the starting location for each state in the      */
   /* domain of the NACTION_SYMBOLS map. The starting locations are */
   /* contained in the STATE_START vector.                          */
   offset = state_start[num_states + 1];
-
   k = 0;
   for ALL_STATES3(state_no) {
     field(ABS(state_start[state_list[state_no]]), 6);
@@ -553,13 +502,10 @@ void process_error_maps(void) {
   field(offset, 6);
   *output_ptr++ = '\n';
   BUFFER_CHECK(systab);
-
   /* Compute and write out the range of the NACTION_SYMBOLS map.*/
-  naction_symbols_range = Allocate_int_array(offset);
-
+  naction_symbols_range = Allocate_long_array(offset);
   compute_naction_symbols_range(state_start, state_stack,
                                 state_list, naction_symbols_range);
-
   k = 0;
   for (int state_no = 0; state_no < offset - 1; state_no++) {
     field(naction_symbols_range[state_no], 4);
@@ -574,7 +520,6 @@ void process_error_maps(void) {
     *output_ptr++ = '\n';
     BUFFER_CHECK(systab);
   }
-
   /* Compute and list space required for NACTION_SYMBOLS map.  */
   num_bytes = 2 * (num_states + offset);
   if (byte_bit) {
@@ -585,9 +530,7 @@ void process_error_maps(void) {
       num_bytes -= offset - 1;
   }
   PRNT2(msg_line, "    Storage required for NACTION_SYMBOLS map: %ld Bytes", num_bytes);
-
   ffree(naction_symbols_range);
-
   /* Compute map from each symbol to state into which that symbol can    */
   /* cause a transition: TRANSITION_STATES                               */
   /* TRANSITION_STATES is also written as two vectors like the FOLLOW    */
@@ -604,16 +547,13 @@ void process_error_maps(void) {
     symbol_root[symbol] = NIL;
     symbol_count[symbol] = 0;
   }
-
   for (int state_no = 2; state_no <= num_states; state_no++) {
     struct node *q;
-
     q = statset[state_no].kernel_items;
     if (q == NULL) {
       /* is the state a single production state? */
       q = statset[state_no].complete_items; /* pick arbitrary item */
     }
-
     item_no = q->value - 1;
     state_no = item_table[item_no].symbol;
     int symbol = symbol_map[state_no];
@@ -621,7 +561,6 @@ void process_error_maps(void) {
     symbol_root[symbol] = state_no;
     symbol_count[symbol]++;
   }
-
   /* We now compute and write the starting location for each terminal symbol */
   offset = 1; /* Offset of the first state */
   field(offset, 6);
@@ -640,7 +579,6 @@ void process_error_maps(void) {
     *output_ptr++ = '\n';
     BUFFER_CHECK(systab);
   }
-
   /* We now write out the range elements of SHIFT_STATES for space     */
   /* tables or TRANSITION_STATES for time tables.                      */
   k = 0;
@@ -659,7 +597,6 @@ void process_error_maps(void) {
     *output_ptr++ = '\n';
     BUFFER_CHECK(systab);
   }
-
   /* If space tables are requested we compute and list space required  */
   /* for SHIFT_STATES map. The base vector contains NUM_TERMINALS+ 1   */
   /* elements,  and the vector containing the range elements has size  */
@@ -673,7 +610,6 @@ void process_error_maps(void) {
   } else {
     num_bytes = 2 * (num_terminals + offset);
     PRNT2(msg_line, "    Storage required for SHIFT_STATES map: %ld Bytes", num_bytes);
-
     /* We now compute and write the starting location for each  */
     /* non-terminal symbol...                                   */
     offset = 1;
@@ -693,7 +629,6 @@ void process_error_maps(void) {
       *output_ptr++ = '\n';
       BUFFER_CHECK(systab);
     }
-
     /* We now write out the range elements of GOTO_STATES whose domain   */
     /* is a non-terminal symbol.                                         */
     k = 0;
@@ -713,27 +648,24 @@ void process_error_maps(void) {
       *output_ptr++ = '\n';
       BUFFER_CHECK(systab);
     }
-
     /* We compute and list space required for GOTO_STATES map. The       */
     /* base vector contains NUM_NON_TERMINALS+ 1 elements, and the vector*/
     /* containing the range elements has size OFFSET - 1                 */
     num_bytes = 2 * (num_non_terminals + offset);
     PRNT2(msg_line, "    Storage required for GOTO_STATES map: %ld Bytes", num_bytes);
   }
-
   /* Write the number associated with the ERROR symbol.                */
-
   field(error_image, 4);
   field(eolt_image, 4);
   field(num_names, 4);
   field(num_scopes, 4);
   field(scope_rhs_size, 4);
   field(scope_state_size, 4);
-  if (table_opt == OPTIMIZE_SPACE)
+  if (table_opt == OPTIMIZE_SPACE) {
     field(num_error_rules, 4);
+  }
   *output_ptr++ = '\n';
   BUFFER_CHECK(systab);
-
   /* We write out the names map.                                       */
   num_bytes = 0;
   max_len = 0;
@@ -769,18 +701,15 @@ void process_error_maps(void) {
     *output_ptr++ = '\n';
     BUFFER_CHECK(systab);
   }
-
   /* We write the name_index of each terminal symbol.  The array TEMP  */
   /* is used to remap the NAME_INDEX values based on the new symbol    */
   /* numberings. If time tables are requested, the terminals and non-  */
   /* terminals are mixed together.                                     */
   temp = Allocate_int_array(num_symbols + 1);
-
   if (table_opt == OPTIMIZE_TIME) {
     for ALL_SYMBOLS3(symbol) {
       temp[symbol_map[symbol]] = symno[symbol].name_index;
     }
-
     k = 0;
     for ALL_SYMBOLS3(symbol) {
       field(temp[symbol], 4);
@@ -791,7 +720,6 @@ void process_error_maps(void) {
         k = 0;
       }
     }
-
     if (k != 0) {
       *output_ptr++ = '\n';
       BUFFER_CHECK(systab);
@@ -800,7 +728,6 @@ void process_error_maps(void) {
     for ALL_TERMINALS3(symbol) {
       temp[symbol_map[symbol]] = symno[symbol].name_index;
     }
-
     k = 0;
     for ALL_TERMINALS3(symbol) {
       field(temp[symbol], 4);
@@ -811,19 +738,16 @@ void process_error_maps(void) {
         k = 0;
       }
     }
-
     if (k != 0) {
       *output_ptr++ = '\n';
       BUFFER_CHECK(systab);
     }
-
     /* We write the name_index of each non_terminal symbol. The     */
     /* array TEMP is used to remap the NAME_INDEX values based on   */
     /* the new symbol numberings.                                   */
     for ALL_NON_TERMINALS3(symbol) {
       temp[symbol_map[symbol]] = symno[symbol].name_index;
     }
-
     k = 0;
     for ALL_NON_TERMINALS3(symbol) {
       field(temp[symbol], 4);
@@ -834,55 +758,45 @@ void process_error_maps(void) {
         k = 0;
       }
     }
-
     if (k != 0) {
       *output_ptr++ = '\n';
       BUFFER_CHECK(systab);
     }
   }
-
   /* Compute and list space requirements for NAME map. */
   if (max_len > 255) {
     offset = 2 * num_symbols;
   } else {
     offset = num_symbols;
   }
-
   if (num_bytes > 255) {
     offset += 2 * num_symbols;
   } else {
     offset += num_symbols;
   }
-
   PRNT2(msg_line, "    Storage required for direct NAME map: %ld Bytes", num_bytes + offset);
-
   if (max_len > 255) {
     offset = 2 * num_names;
   } else {
     offset = num_names;
   }
-
   if (num_bytes > 255) {
     offset += 2 * num_names;
   } else {
     offset += num_names;
   }
-
   if (num_names > 255) {
     offset += 2 * num_symbols;
   } else {
     offset += num_symbols;
   }
-
   PRNT2(msg_line, "    Storage required for indirect NAME map: %ld Bytes", num_bytes + offset);
-
   if (scopes_bit) {
     for (int i = 1; i <= scope_rhs_size; i++) {
       if (scope_right_side[i] != 0) {
         scope_right_side[i] = symbol_map[scope_right_side[i]];
       }
     }
-
     for (int i = 1; i <= num_scopes; i++) {
       scope[i].look_ahead = symbol_map[scope[i].look_ahead];
       if (table_opt == OPTIMIZE_TIME) {
@@ -891,7 +805,6 @@ void process_error_maps(void) {
         scope[i].lhs_symbol = symbol_map[scope[i].lhs_symbol] - num_terminals;
       }
     }
-
     k = 0;
     for (int i = 1; i <= num_scopes; i++) {
       field(scope[i].prefix, 4);
@@ -902,12 +815,10 @@ void process_error_maps(void) {
         k = 0;
       }
     }
-
     if (k != 0) {
       *output_ptr++ = '\n';
       BUFFER_CHECK(systab);
     }
-
     k = 0;
     for (int i = 1; i <= num_scopes; i++) {
       field(scope[i].suffix, 4);
@@ -918,12 +829,10 @@ void process_error_maps(void) {
         k = 0;
       }
     }
-
     if (k != 0) {
       *output_ptr++ = '\n';
       BUFFER_CHECK(systab);
     }
-
     k = 0;
     for (int i = 1; i <= num_scopes; i++) {
       field(scope[i].lhs_symbol, 4);
@@ -934,12 +843,10 @@ void process_error_maps(void) {
         k = 0;
       }
     }
-
     if (k != 0) {
       *output_ptr++ = '\n';
       BUFFER_CHECK(systab);
     }
-
     k = 0;
     for (int i = 1; i <= num_scopes; i++) {
       field(scope[i].look_ahead, 4);
@@ -950,12 +857,10 @@ void process_error_maps(void) {
         k = 0;
       }
     }
-
     if (k != 0) {
       *output_ptr++ = '\n';
       BUFFER_CHECK(systab);
     }
-
     k = 0;
     for (int i = 1; i <= num_scopes; i++) {
       field(scope[i].state_set, 4);
@@ -966,12 +871,10 @@ void process_error_maps(void) {
         k = 0;
       }
     }
-
     if (k != 0) {
       *output_ptr++ = '\n';
       BUFFER_CHECK(systab);
     }
-
     k = 0;
     for (int i = 1; i <= scope_rhs_size; i++) {
       field(scope_right_side[i], 4);
@@ -982,18 +885,17 @@ void process_error_maps(void) {
         k = 0;
       }
     }
-
     if (k != 0) {
       *output_ptr++ = '\n';
       BUFFER_CHECK(systab);
     }
-
     k = 0;
     for (int i = 1; i <= scope_state_size; i++) {
-      if (scope_state[i] == 0)
+      if (scope_state[i] == 0) {
         field(0, 6);
-      else
+      } else {
         field(state_index[scope_state[i]] + num_rules, 6);
+      }
       k++;
       if (k == 12) {
         *output_ptr++ = '\n';
@@ -1001,34 +903,35 @@ void process_error_maps(void) {
         k = 0;
       }
     }
-
     if (k != 0) {
       *output_ptr++ = '\n';
       BUFFER_CHECK(systab);
     }
-
     if (table_opt == OPTIMIZE_TIME) {
-      num_bytes = 5 * num_scopes +
-                  scope_rhs_size + scope_state_size;
-      if (num_symbols > 255)
+      num_bytes = 5 * num_scopes + scope_rhs_size + scope_state_size;
+      if (num_symbols > 255) {
         num_bytes += 2 * num_scopes + scope_rhs_size;
+      }
     } else {
-      num_bytes = 5 * num_scopes +
-                  scope_rhs_size + 2 * scope_state_size;
-      if (num_non_terminals > 255)
+      num_bytes = 5 * num_scopes + scope_rhs_size + 2 * scope_state_size;
+      if (num_non_terminals > 255) {
         num_bytes += num_scopes;
-      if (num_terminals > 255)
+      }
+      if (num_terminals > 255) {
         num_bytes += num_scopes;
-      if (num_symbols > 255)
+      }
+      if (num_symbols > 255) {
         num_bytes += scope_rhs_size;
+      }
     }
-    if (scope_rhs_size > 255)
+    if (scope_rhs_size > 255) {
       num_bytes += 2 * num_scopes;
-    if (scope_state_size > 255)
+    }
+    if (scope_state_size > 255) {
       num_bytes += num_scopes;
+    }
     PRNT2(msg_line, "    Storage required for SCOPE map: %ld Bytes", num_bytes);
   }
-
   if (original != NULL) {
     ffree(original);
   }
@@ -1053,12 +956,10 @@ void process_error_maps(void) {
 void compute_action_symbols_range(const long *state_start,
                                   const long *state_stack,
                                   const long *state_list,
-                                  int *action_symbols_range) {
-  int state,
-      symbol;
-
+                                  long *action_symbols_range) {
+  int state;
+  int symbol;
   short *symbol_list = Allocate_short_array(num_symbols + 1);
-
   /* We now write out the range elements of the ACTION_SYMBOLS map.    */
   /* Recall that if STATE_START has a negative value, then the set in  */
   /* question is sharing elements and does not need to be processed.   */
@@ -1066,13 +967,11 @@ void compute_action_symbols_range(const long *state_start,
   for ALL_SYMBOLS3(j) {
     symbol_list[j] = OMEGA; /* Initialize all links to OMEGA */
   }
-
   for ALL_STATES3(state_no) {
     const int state_no__ = state_list[state_no];
     if (state_start[state_no__] > 0) {
       int symbol_root = 0; /* Add "fence" element: 0 to list */
       symbol_list[symbol_root] = NIL;
-
       /* Pop a state from the stack,  and add each of its elements */
       /* that has not yet been processed into the list.            */
       /* Continue until stack is empty...                          */
@@ -1087,7 +986,6 @@ void compute_action_symbols_range(const long *state_start,
             symbol_root = symbol;
           }
         }
-
         const struct reduce_header_type red = reduce[state];
         for (int j = 1; j <= red.size; j++) {
           symbol = red.map[j].symbol;
@@ -1097,17 +995,14 @@ void compute_action_symbols_range(const long *state_start,
           }
         }
       }
-
       /* Write the list out.                                       */
       for (symbol = symbol_root; symbol != NIL; symbol = symbol_root) {
         symbol_root = symbol_list[symbol];
-
         symbol_list[symbol] = OMEGA;
         action_symbols_range[k++] = symbol;
       }
     }
   }
-
   ffree(symbol_list);
 }
 
@@ -1116,12 +1011,10 @@ void compute_action_symbols_range(const long *state_start,
 void compute_naction_symbols_range(const long *state_start,
                                    const long *state_stack,
                                    const long *state_list,
-                                   int *naction_symbols_range) {
+                                   long *naction_symbols_range) {
   int state;
   int symbol;
-
   short *symbol_list = Allocate_short_array(num_symbols + 1);
-
   /* We now write out the range elements of the NACTION_SYMBOLS map.   */
   /* Recall that if STATE_START has a negative value, then the set in  */
   /* question is sharing elements and does not need to be processed.   */
@@ -1129,13 +1022,11 @@ void compute_naction_symbols_range(const long *state_start,
   for ALL_SYMBOLS3(j) {
     symbol_list[j] = OMEGA; /* Initialize all links to OMEGA */
   }
-
   for ALL_STATES3(state_no) {
     const int state_no__ = state_list[state_no];
     if (state_start[state_no__] > 0) {
       int symbol_root = 0; /* Add "fence" element: 0 to list */
       symbol_list[symbol_root] = NIL;
-
       /* Pop a state from the stack,  and add each of its elements */
       /* that has not yet been processed into the list.            */
       /* Continue until stack is empty...                          */
@@ -1152,16 +1043,13 @@ void compute_naction_symbols_range(const long *state_start,
           }
         }
       }
-
       /* Write the list out.                                    */
       for (symbol = symbol_root; symbol != NIL; symbol = symbol_root) {
         symbol_root = symbol_list[symbol];
-
         symbol_list[symbol] = OMEGA;
         naction_symbols_range[k++] = symbol;
       }
     }
   }
-
   ffree(symbol_list);
 }

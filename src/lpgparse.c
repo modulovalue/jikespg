@@ -34,7 +34,7 @@ static int output_size = 5000;
 static int line_no = 0;
 
 /* This procedure opens all relevant files and processes the input grammar.*/
-void process_input(char *grm_file, char *lis_file, struct OutputFiles* output_files) {
+void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_files) {
   /* Open input grammar file. If the file cannot be opened and that file name */
   /* did not have an extension, then the extension ".g" is added to the file  */
   /* name and we try again. If no file can be found an error message is       */
@@ -112,7 +112,7 @@ static void read_input(char *grm_file) {
 
 /* This routine is invoked to allocate space for the global structures       */
 /* needed to process the input grammar.                                      */
-static void init_process(char *grm_file, struct OutputFiles* output_files) {
+static void init_process(char *grm_file, struct OutputFiles *output_files) {
   /* Set up a pool of temporary space.                            */
   reset_temporary_space();
   terminal = (struct terminal_type *) calloc(STACK_SIZE, sizeof(struct terminal_type));
@@ -426,8 +426,8 @@ static void options(void) {
     } else {
       /* We now process the valued-parameter. Pick value after "=" and process */
       i++;
-      if (IsSpace(parm[i]) || parm[i] == '\0') /* no value specified */
-      {
+      if (IsSpace(parm[i]) || parm[i] == '\0') {
+        /* no value specified */
         PRNTERR2(msg_line, "Null string or blank is invalid for parameter %s", token);
         continue;
       }
@@ -645,7 +645,7 @@ static void options(void) {
 /* if they are (it is an) "options" line(s).  If so, the options are        */
 /* processed.  Then, we process user-supplied options if there are any.  In */
 /* any case, the options in effect are printed.                             */
-static void process_options_lines(char *grm_file, struct OutputFiles* output_files) {
+static void process_options_lines(char *grm_file, struct OutputFiles *output_files) {
   char old_parm[MAX_LINE_SIZE + 1];
   char output_line[PRINT_LINE_SIZE + 1];
   char opt_string[60][OUTPUT_PARM_SIZE + 1];

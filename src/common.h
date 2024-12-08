@@ -307,16 +307,16 @@ extern struct node **adequate_item;
 /* of the dot,  the symbol following the dot, and FIRST of the suffix  */
 /* following the "dot symbol".                                         */
 extern struct itemtab {
-  short symbol,
-      rule_number,
-      suffix_index,
-      dot;
+  short symbol;
+  short rule_number;
+  short suffix_index;
+  short dot;
 } *item_table;
 
 /* SYMNO is an array that maps symbol numbers to actual symbols.       */
 extern struct symno_type {
-  int ptr,
-      name_index;
+  int ptr;
+  int name_index;
 } *symno;
 
 /* NULL_NT is a boolean vector that indicates whether or not a given   */
@@ -325,9 +325,9 @@ extern bool *null_nt;
 
 /* FOLLOW is a mapping from non-terminals to a set of terminals that   */
 /* may appear immediately after the non-terminal.                      */
-extern SET_PTR nt_first,
-    first,
-    follow;
+extern SET_PTR nt_first;
+extern SET_PTR first;
+extern SET_PTR follow;
 
 /* NAME is an array containing names to be associated with symbols.    */
 /* REDUCE is a mapping from each state to reduce actions in that state.*/
@@ -342,10 +342,10 @@ extern struct shift_header_type *shift;
 
 extern struct reduce_header_type *reduce;
 
-extern short *gotodef,
-    *shiftdf,
-    *gd_index,
-    *gd_range;
+extern short *gotodef;
+extern short *shiftdf;
+extern short *gd_index;
+extern short *gd_range;
 
 extern int *name;
 
@@ -358,20 +358,20 @@ extern struct statset_type *statset;
 extern struct lastats_type *lastats;
 extern struct node **in_stat;
 
-extern int num_scopes,
-    scope_rhs_size,
-    scope_state_size,
-    num_error_rules;
+extern int num_scopes;
+extern int scope_rhs_size;
+extern int scope_state_size;
+extern int num_error_rules;
 
 extern struct scope_type {
-  short prefix,
-      suffix,
-      lhs_symbol,
-      look_ahead,
-      state_set;
+  short prefix;
+  short suffix;
+  short lhs_symbol;
+  short look_ahead;
+  short state_set;
 } *scope;
 
-extern int *scope_right_side;
+extern long *scope_right_side;
 extern short *scope_state;
 
 /**                        OUTPUT DECLARATIONS                    **/
@@ -402,8 +402,8 @@ extern long last_index;
 extern int last_symbol;
 extern int max_name_length;
 
-extern SET_PTR naction_symbols,
-    action_symbols;
+extern SET_PTR naction_symbols;
+extern SET_PTR action_symbols;
 
 extern bool byte_terminal_range;
 
@@ -497,18 +497,18 @@ void print_state(int state_no);
 void compute_action_symbols_range(const long *state_start,
                                   const long *state_stack,
                                   const long *state_list,
-                                  int *action_symbols_range);
+                                  long *action_symbols_range);
 
 void compute_naction_symbols_range(const long *state_start,
                                    const long *state_stack,
                                    const long *state_list,
-                                   int *naction_symbols_range);
+                                   long *naction_symbols_range);
 
 void produce(void);
 
 void process_error_maps(void);
 
-void prnt_shorts(const char *title, int init, int bound, int perline, const int *array);
+void prnt_shorts(const char *title, int init, int bound, int perline, const long *array);
 
 void prnt_ints(const char *title, int init, int bound, int perline, const int *array);
 
