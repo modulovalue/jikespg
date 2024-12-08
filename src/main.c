@@ -6,7 +6,7 @@ static char hostfile[] = __FILE__;
 
 static void print_opts(void);
 
-void process_input(void);
+void process_input(char* grm_file, char* lis_file);
 
 /* Jikes PG is a parser generator capable of generating LALR(k) and  */
 /* SLR(1) tables.  It is organized as a main routine: MAIN, which    */
@@ -31,170 +31,175 @@ void process_input(void);
 /*    3) SYSACT           - Output file used for semantic actions.   */
 /*    4) SYSTAB           - Output file used for Parsing tables.     */
 int main(const int argc, char *argv[]) {
-  char *dot;
-  char *slash;
-  char tmpbuf[20];
-
-  /* If only "jikespg" or "jikespg ?*" is typed, we display the help   */
-  /* screen.                                                           */
-  /*                                                                   */
-  /* NOTE that because of some bug (feature?) in AIX, when two or more */
-  /* consecutive "?" is passed as argument to a program, the behaviour */
-  /* of the system becomes unpredictable. 1/4/94                       */
-  /* You may test this by invoking the "echo" program with "???".      */
-  if (argc == 1 || argv[1][0] == '?') {
-    print_opts();
-    return 4;
-  }
-  /*     If options are passed to the program, copy them into "parm".   */
-  if (argc > 2) {
-    int j = 0;
-    parm[0] = '\0';
-    while (j < argc - 2) {
-      if (*argv[++j] == '-') {
-        strcat(parm, argv[j]+1);
-      } else {
-        strcat(parm, argv[j]);
-        printf("***WARNING: Option \"%s\" is missing preceding '-'.\n",
-               argv[j]);
+  // process input
+  {
+    /* If only "jikespg" or "jikespg ?*" is typed, we display the help   */
+    /* screen.                                                           */
+    /*                                                                   */
+    /* NOTE that because of some bug (feature?) in AIX, when two or more */
+    /* consecutive "?" is passed as argument to a program, the behaviour */
+    /* of the system becomes unpredictable. 1/4/94                       */
+    /* You may test this by invoking the "echo" program with "???".      */
+    if (argc == 1 || argv[1][0] == '?') {
+      print_opts();
+      return 4;
+    }
+    /*     If options are passed to the program, copy them into "parm".   */
+    if (argc > 2) {
+      int j = 0;
+      parm[0] = '\0';
+      while (j < argc - 2) {
+        if (*argv[++j] == '-') {
+          strcat(parm, argv[j]+1);
+        } else {
+          strcat(parm, argv[j]);
+          printf("***WARNING: Option \"%s\" is missing preceding '-'.\n",
+                 argv[j]);
+        }
+        strcat(parm, BLANK);
       }
-      strcat(parm, BLANK);
     }
-  }
-  /*               Create file names for output files                         */
-  strcpy(grm_file, argv[argc - 1]);
+    char grm_file[80];
+    char lis_file[80];
+    /*               Create file names for output files                         */
+    strcpy(grm_file, argv[argc - 1]);
+    char *slash;
 #if defined(DOS) || defined(OS2)
-  slash = strrchr(grm_file, '\\');
+    slash = strrchr(grm_file, '\\');
 #else
-  slash = strrchr(grm_file, '/');
+    slash = strrchr(grm_file, '/');
 #endif
-  if (slash != NULL) {
-    strcpy(tmpbuf, slash + 1);
-  } else {
-    strcpy(tmpbuf, grm_file);
+    char tmpbuf[20];
+    if (slash != NULL) {
+      strcpy(tmpbuf, slash + 1);
+    } else {
+      strcpy(tmpbuf, grm_file);
+    }
+    char *dot = strrchr(tmpbuf, '.');
+    /* if filename has no extension, copy it. */
+    if (dot == NULL) {
+      strcpy(lis_file, tmpbuf);
+      strcpy(tab_file, tmpbuf);
+      int ii;
+      for (ii = 0; ii < 5; ii++) {
+        file_prefix[ii] = tmpbuf[ii];
+      }
+      file_prefix[ii] = '\0';
+    } else {
+      int ii;
+      /* if file name contains an extension copy up to the dot */
+      for (ii = 0; ii < 5 && tmpbuf + ii != dot; ii++) {
+        file_prefix[ii] = tmpbuf[ii];
+      }
+      file_prefix[ii] = '\0';
+      memcpy(lis_file, tmpbuf, dot - tmpbuf);
+      memcpy(tab_file, tmpbuf, dot - tmpbuf);
+      lis_file[dot - tmpbuf] = '\0';
+      tab_file[dot - tmpbuf] = '\0';
+    }
+    strcat(lis_file, ".l"); /* add .l extension for listing file */
+    strcat(tab_file, ".t"); /* add .t extension for table file */
+    process_input(grm_file, lis_file);
   }
-  dot = strrchr(tmpbuf, '.');
-  /* if filename has no extension, copy it. */
-  if (dot == NULL) {
-    strcpy(lis_file, tmpbuf);
-    strcpy(tab_file, tmpbuf);
-    int ii;
-    for (ii = 0; ii < 5; ii++) {
-      file_prefix[ii] = tmpbuf[ii];
-    }
-    file_prefix[ii] = '\0';
-  } else {
-    int ii;
-    /* if file name contains an extension copy up to the dot */
-    for (ii = 0; ii < 5 && tmpbuf + ii != dot; ii++) {
-      file_prefix[ii] = tmpbuf[ii];
-    }
-    file_prefix[ii] = '\0';
-    memcpy(lis_file, tmpbuf, dot - tmpbuf);
-    memcpy(tab_file, tmpbuf, dot - tmpbuf);
-    lis_file[dot - tmpbuf] = '\0';
-    tab_file[dot - tmpbuf] = '\0';
-  }
 
-  strcat(lis_file, ".l"); /* add .l extension for listing file */
-  strcat(tab_file, ".t"); /* add .t extension for table file */
-
-  process_input();
-
-  /* If the user only wanted to edit his grammar, we quit the program.        */
-  if (edit_bit) {
-    if (first_bit || follow_bit || xref_bit) {
-      mkfirst();
+  // process rest
+  {
+    /* If the user only wanted to edit his grammar, we quit the program.        */
+    if (edit_bit) {
+      if (first_bit || follow_bit || xref_bit) {
+        mkfirst();
+      }
+      PRNT2(msg_line, "\nNumber of Terminals: %d", num_terminals - 1); /*-1 for %empty */
+      PRNT2(msg_line, "Number of Nonterminals: %d", num_non_terminals - 1); /* -1 for %ACC */
+      PRNT2(msg_line, "Number of Productions: %d", num_rules + 1);
+      if (single_productions_bit) {
+        PRNT2(msg_line, "Number of Single Productions: %d", num_single_productions);
+      }
+      PRNT2(msg_line, "Number of Items: %ld", num_items);
+      fclose(syslis); /* close listing file */
+      return 0;
     }
-    PRNT2(msg_line, "\nNumber of Terminals: %d", num_terminals - 1); /*-1 for %empty */
-    PRNT2(msg_line, "Number of Nonterminals: %d", num_non_terminals - 1); /* -1 for %ACC */
+    mkfirst(); /* Construct basic maps */
+    mkstats(); /* Build State Automaton */
+    mkrdcts(); /* Build Reduce map, and detect conflicts if any */
+    /*                  Print more relevant statistics.                         */
+    PRNT2(msg_line, "\nNumber of Terminals: %d", num_terminals - 1);
+    PRNT2(msg_line, "Number of Nonterminals: %d", num_non_terminals - 1);
     PRNT2(msg_line, "Number of Productions: %d", num_rules + 1);
     if (single_productions_bit) {
       PRNT2(msg_line, "Number of Single Productions: %d", num_single_productions);
     }
     PRNT2(msg_line, "Number of Items: %ld", num_items);
-    fclose(syslis); /* close listing file */
-    return 0;
-  }
-  mkfirst(); /* Construct basic maps */
-  mkstats(); /* Build State Automaton */
-  mkrdcts(); /* Build Reduce map, and detect conflicts if any */
-  /*                  Print more relevant statistics.                         */
-  PRNT2(msg_line, "\nNumber of Terminals: %d", num_terminals - 1);
-  PRNT2(msg_line, "Number of Nonterminals: %d", num_non_terminals - 1);
-  PRNT2(msg_line, "Number of Productions: %d", num_rules + 1);
-  if (single_productions_bit) {
-    PRNT2(msg_line, "Number of Single Productions: %d", num_single_productions);
-  }
-  PRNT2(msg_line, "Number of Items: %ld", num_items);
-  if (scopes_bit) {
-    PRNT2(msg_line, "Number of Scopes: %d", num_scopes);
-  }
-  PRNT2(msg_line, "Number of States: %d", num_states);
-  if (max_la_state > num_states) {
-    PRNT2(msg_line, "Number of look-ahead states: %d", max_la_state - num_states);
-  }
-  PRNT2(msg_line, "Number of Shift actions: %ld", num_shifts);
-  PRNT2(msg_line, "Number of Goto actions: %ld", num_gotos);
-  if (read_reduce_bit) {
-    PRNT2(msg_line, "Number of Shift/Reduce actions: %ld", num_shift_reduces);
-    PRNT2(msg_line, "Number of Goto/Reduce actions: %ld", num_goto_reduces);
-  }
-  PRNT2(msg_line, "Number of Reduce actions: %ld", num_reductions);
-  PRNT2(msg_line, "Number of Shift-Reduce conflicts: %ld", num_sr_conflicts);
-  PRNT2(msg_line, "Number of Reduce-Reduce conflicts: %ld", num_rr_conflicts);
-  /* If the removal of single productions is requested, do  */
-  /* so now.                                                */
-  /* If STATE_BIT is on, we print the states.               */
-  if (states_bit) {
-    ptstats();
-  }
-  /* If the tables are requested, we process them.          */
-  if (table_opt != 0) {
-    if (goto_default_bit && nt_check_bit) {
-      PRNTERR("The options GOTO_DEFAULT and NT_CHECK are incompatible. Tables not generated");
-    } else {
-      num_entries = max_la_state + num_shifts + num_shift_reduces
-                    + num_gotos + num_goto_reduces
-                    + num_reductions;
-      /* We release space used by RHS_SYM, the ADEQUATE_ITEM     */
-      /* map, ITEM_TABLE (if we don't have to dump error maps),  */
-      /* IN_STAT, FIRST, NULL_NT and FOLLOW (if it's no longer   */
-      /* needed).                                                */
-      ffree(rhs_sym);
-      if (adequate_item != NULL) {
-        for ALL_RULES3(rule_no) {
-          struct node *q = adequate_item[rule_no];
-          if (q != NULL) {
-            free_nodes(q, q);
+    if (scopes_bit) {
+      PRNT2(msg_line, "Number of Scopes: %d", num_scopes);
+    }
+    PRNT2(msg_line, "Number of States: %d", num_states);
+    if (max_la_state > num_states) {
+      PRNT2(msg_line, "Number of look-ahead states: %d", max_la_state - num_states);
+    }
+    PRNT2(msg_line, "Number of Shift actions: %ld", num_shifts);
+    PRNT2(msg_line, "Number of Goto actions: %ld", num_gotos);
+    if (read_reduce_bit) {
+      PRNT2(msg_line, "Number of Shift/Reduce actions: %ld", num_shift_reduces);
+      PRNT2(msg_line, "Number of Goto/Reduce actions: %ld", num_goto_reduces);
+    }
+    PRNT2(msg_line, "Number of Reduce actions: %ld", num_reductions);
+    PRNT2(msg_line, "Number of Shift-Reduce conflicts: %ld", num_sr_conflicts);
+    PRNT2(msg_line, "Number of Reduce-Reduce conflicts: %ld", num_rr_conflicts);
+    /* If the removal of single productions is requested, do  */
+    /* so now.                                                */
+    /* If STATE_BIT is on, we print the states.               */
+    if (states_bit) {
+      ptstats();
+    }
+    /* If the tables are requested, we process them.          */
+    if (table_opt != 0) {
+      if (goto_default_bit && nt_check_bit) {
+        PRNTERR("The options GOTO_DEFAULT and NT_CHECK are incompatible. Tables not generated");
+      } else {
+        num_entries = max_la_state + num_shifts + num_shift_reduces
+                      + num_gotos + num_goto_reduces
+                      + num_reductions;
+        /* We release space used by RHS_SYM, the ADEQUATE_ITEM     */
+        /* map, ITEM_TABLE (if we don't have to dump error maps),  */
+        /* IN_STAT, FIRST, NULL_NT and FOLLOW (if it's no longer   */
+        /* needed).                                                */
+        ffree(rhs_sym);
+        if (adequate_item != NULL) {
+          for ALL_RULES3(rule_no) {
+            struct node *q = adequate_item[rule_no];
+            if (q != NULL) {
+              free_nodes(q, q);
+            }
+          }
+          ffree(adequate_item);
+        }
+        if (!error_maps_bit) {
+          ffree(item_table);
+        }
+        for ALL_STATES3(state_no) {
+          struct node *head = in_stat[state_no];
+          if (head != NULL) {
+            head = head->next;
+            free_nodes(head, in_stat[state_no]);
           }
         }
-        ffree(adequate_item);
-      }
-      if (!error_maps_bit) {
-        ffree(item_table);
-      }
-      for ALL_STATES3(state_no) {
-        struct node *head = in_stat[state_no];
-        if (head != NULL) {
-          head = head->next;
-          free_nodes(head, in_stat[state_no]);
+        ffree(in_stat);
+        ffree(first);
+        null_nt += num_terminals + 1;
+        ffree(null_nt);
+        if (follow != NULL) {
+          if (!error_maps_bit || c_bit || cpp_bit || java_bit) {
+            follow += (num_terminals + 1) * term_set_size;
+            ffree(follow);
+          }
         }
+        process_tables();
       }
-      ffree(in_stat);
-      ffree(first);
-      null_nt += num_terminals + 1;
-      ffree(null_nt);
-      if (follow != NULL) {
-        if (!error_maps_bit || c_bit || cpp_bit || java_bit) {
-          follow += (num_terminals + 1) * term_set_size;
-          ffree(follow);
-        }
-      }
-      process_tables();
     }
+    fclose(syslis); /* close listing file */
   }
-  fclose(syslis); /* close listing file */
+
   return 0;
 }
 

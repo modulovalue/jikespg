@@ -187,8 +187,7 @@ static void act$rule_number(void)
 /.$location
 static void act$rule_number(void)
 {
-    sprintf(msg_line, "Macro name \"%s\" does not start with the escape character. Line %ld, column %d", SYM1.name, SYM1.start_line, SYM1.start_column);
-    PRNTWNG(msg_line);
+    PRNTWNG2(msg_line, "Macro name \"%s\" does not start with the escape character. Line %ld, column %d", SYM1.name, SYM1.start_line, SYM1.start_column);
 }
 ./
                         | '|'             -- No Good !!!

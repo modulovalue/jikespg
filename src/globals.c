@@ -9,8 +9,6 @@ const char VERSION[] = "1.2";
 const char BLANK[] = " ";
 const long MAX_TABLE_SIZE = (USHRT_MAX < INT_MAX ? USHRT_MAX : INT_MAX) - 1;
 
-char grm_file[80];
-char lis_file[80];
 char act_file[80];
 char hact_file[80];
 char tab_file[80];

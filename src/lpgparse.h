@@ -254,7 +254,7 @@ static int blockb_len,
 
 static int stack_top = -1;
 
-static void init_process(void);
+static void init_process(char* grm_file);
 
 static void exit_process(void);
 
@@ -264,7 +264,7 @@ static char *translate(char *str, int len);
 
 static void options(void);
 
-static void process_options_lines(void);
+static void process_options_lines(char* grm_file);
 
 static int hash(const char *symbl);
 
@@ -278,15 +278,15 @@ static int symbol_image(const char *item);
 
 static int name_map(const char *symb);
 
-static void process_grammar(void);
+static void process_grammar(char* grm_file);
 
-static void scanner(void);
+static void scanner(char* grm_file);
 
 static void token_action(void);
 
 static void error_action(void);
 
-static void accept_action(void);
+static void accept_action(char* grm_file);
 
 static void build_symno(void);
 
@@ -297,10 +297,10 @@ static void make_rules_map(void);
 
 static void make_names_map(void);
 
-static void process_actions(void);
+static void process_actions(char* grm_file);
 
 static void process_action_line(FILE *sysout, char *text,
-                                int line_no, int rule_no);
+                                int line_no, int rule_no, char* grm_file);
 
 static struct line_elemt *alloc_line(void);
 

@@ -161,9 +161,7 @@ struct statset_type {
   short shift_number;
 };
 
-extern char grm_file[],
-    lis_file[],
-    act_file[],
+extern char act_file[],
     hact_file[],
     tab_file[],
     prs_file[],

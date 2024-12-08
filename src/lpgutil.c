@@ -429,12 +429,12 @@ void print_large_token(char *line, char *token, const char *indent, int len) {
 
 /* PRINT_ITEM takes as parameter an ITEM_NO which it prints.                 */
 void print_item(const int item_no) {
-  char tempstr[PRINT_LINE_SIZE + 1],
-      line[PRINT_LINE_SIZE + 1],
-      tok[SYMBOL_SIZE + 1];
+  char tempstr[PRINT_LINE_SIZE + 1];
+  char line[PRINT_LINE_SIZE + 1];
+  char tok[SYMBOL_SIZE + 1];
 
   /* We first print the left hand side of the rule, leaving at least   */
-  /* 5 spaces in the output line to accomodate the equivalence symbol  */
+  /* 5 spaces in the output line to accommodate the equivalence symbol  */
   /* "::=" surrounded by blanks on both sides.  Then, we print all the */
   /* terminal symbols on the right hand side up to but not including   */
   /* the dot symbol.                                                   */

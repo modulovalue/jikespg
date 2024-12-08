@@ -87,8 +87,7 @@ static void act14(void)
 #line 188 "jikespg.g"
 static void act16(void)
 {
-    sprintf(msg_line, "Macro name \"%s\" does not start with the escape character. Line %ld, column %d", SYM1.name, SYM1.start_line, SYM1.start_column);
-    PRNTWNG(msg_line);
+    PRNTWNG2(msg_line, "Macro name \"%s\" does not start with the escape character. Line %ld, column %d", SYM1.name, SYM1.start_line, SYM1.start_column);
 }
 
 /* macro_name_symbol ::= OR */
