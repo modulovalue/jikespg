@@ -34,7 +34,7 @@ static int output_size = 5000;
 static int line_no = 0;
 
 /* This procedure opens all relevant files and processes the input grammar.*/
-void process_input(char* grm_file, char* lis_file) {
+void process_input(char *grm_file, char *lis_file) {
   /* Open input grammar file. If the file cannot be opened and that file name */
   /* did not have an extension, then the extension ".g" is added to the file  */
   /* name and we try again. If no file can be found an error message is       */
@@ -42,9 +42,9 @@ void process_input(char* grm_file, char* lis_file) {
   if ((sysgrm = fopen(grm_file, "r")) == (FILE *) NULL) {
     register int ii;
     for (ii = strlen(grm_file); ii > 0 &&
-                               grm_file[ii] != '.' &&
-                               grm_file[ii] != '/' && /* Unix */
-                               grm_file[ii] != '\\'; /* Dos  */
+                                grm_file[ii] != '.' &&
+                                grm_file[ii] != '/' && /* Unix */
+                                grm_file[ii] != '\\'; /* Dos  */
          ii--) {
     }
 
@@ -108,7 +108,7 @@ void process_input(char* grm_file, char* lis_file) {
 }
 
 /*         READ_INPUT fills the buffer from p1 to the end.          */
-static void read_input(char* grm_file) {
+static void read_input(char *grm_file) {
   long num_read = input_buffer + IOBUFFER_SIZE - bufend;
   if ((num_read = fread(bufend, 1, num_read, sysgrm)) == 0) {
     if (ferror(sysgrm) != 0) {
@@ -122,7 +122,7 @@ static void read_input(char* grm_file) {
 
 /* This routine is invoked to allocate space for the global structures       */
 /* needed to process the input grammar.                                      */
-static void init_process(char* grm_file) {
+static void init_process(char *grm_file) {
   /* Set up a pool of temporary space.                            */
   reset_temporary_space();
 
@@ -277,13 +277,11 @@ static void options(void) {
           parm[i] == ' '))
     i++;
 
-  while (parm[i] != '\0') /* Repeat until parm line is exhausted */
-  {
+  while (parm[i] != '\0') {
+    /* Repeat until parm line is exhausted */
     /* Remove garbage in front */
     memmove(parm, parm + i, strlen (parm + i) + 1);
-
     i = 0;
-
     while (parm[i] != '\0' && /* Search for delimiter */
            (parm[i] != ',' &&
             parm[i] != '/' &&
@@ -291,26 +289,28 @@ static void options(void) {
             parm[i] != ' '))
       i++;
 
-    for (int j = 0; j < i; j++) /* Fold actual parameter */
-    {
+    for (int j = 0; j < i; j++) {
+      /* Fold actual parameter */
       token[j] = TOUPPER(parm[j]);
       temp[j] = parm[j];
     }
     token[i] = '\0';
     temp[i] = '\0';
-
     /* find first non-blank after parm */
-    while (parm[i] != '\0' && parm[i] == ' ')
+    while (parm[i] != '\0' && parm[i] == ' ') {
       i++;
-
-    if (parm[i] != '\0') /* not end of parameter line */
+    }
+    if (parm[i] != '\0') {
+      /* not end of parameter line */
       delim = parm[i];
-    else
+    } else {
       delim = ' ';
+    }
 
     register int len = strlen(token);
-    if (len > MAX_PARM_SIZE)
+    if (len > MAX_PARM_SIZE) {
       token[MAX_PARM_SIZE] = '\0';
+    }
 
     /*  We check whether we have a switch or a value parameter.                  */
     /* Each category is checked separately.  A match is made whenever            */
@@ -319,8 +319,8 @@ static void options(void) {
     /*                                                                           */
     /* At this stage, TEMP contains the value of the switch as specified         */
     /* and TOKEN contains the upper-case folded value of TEMP.                   */
-    if (delim != '=') /* if switch parameter then process */
-    {
+    /* if switch parameter then process */
+    if (delim != '=') {
       /* option has "NO" */
       if (len > 2 && memcmp(token, "NO", 2) == 0) {
         /* prefix?         */
@@ -331,7 +331,6 @@ static void options(void) {
       } else {
         flag = true;
       }
-
       if (memcmp(oaction, token, len) == 0) {
         action_bit = flag;
       } else if (memcmp(obyte, token, len) == 0) {
@@ -449,11 +448,8 @@ static void options(void) {
       } else {
         PRNTERR2(msg_line, "\"%s\" is an invalid option", temp);
       }
-    }
-
-    /* We now process the valued-parameter. */
-    else /* value parameter. pick value after "=" and process */
-    {
+    } else {
+      /* We now process the valued-parameter. Pick value after "=" and process */
       i++;
       if (IsSpace(parm[i]) || parm[i] == '\0') /* no value specified */
       {
@@ -674,7 +670,7 @@ static void options(void) {
 /* if they are (it is an) "options" line(s).  If so, the options are        */
 /* processed.  Then, we process user-supplied options if there are any.  In */
 /* any case, the options in effect are printed.                             */
-static void process_options_lines(char* grm_file) {
+static void process_options_lines(char *grm_file) {
   char old_parm[MAX_LINE_SIZE + 1];
   char output_line[PRINT_LINE_SIZE + 1];
   char opt_string[60][OUTPUT_PARM_SIZE + 1];
@@ -744,17 +740,19 @@ static void process_options_lines(char* grm_file) {
   if (!error_maps_bit) /* Deferred parsing without error maps is useless*/
     deferred_bit = false;
 
-  if (act_file[0] == '\0')
+  if (act_file[0] == '\0') {
     sprintf(act_file, "%sact.%s", file_prefix, java_bit ? "java" : "h");
-  if (hact_file[0] == '\0')
+  }
+  if (hact_file[0] == '\0') {
     sprintf(hact_file, "%shdr.%s", file_prefix, java_bit ? "java" : "h");
+  }
   sprintf(sym_file, "%ssym.%s", file_prefix, java_bit ? "java" : "h");
   sprintf(def_file, "%sdef.%s", file_prefix, java_bit ? "java" : "h");
   sprintf(prs_file, "%sprs.%s", file_prefix, java_bit ? "java" : "h");
   sprintf(dcl_file, "%sdcl.%s", file_prefix, java_bit ? "java" : "h");
 
-  if (verbose_bit) /* turn everything on */
-  {
+  /* turn everything on */
+  if (verbose_bit) {
     first_bit = true;
     follow_bit = true;
     list_bit = true;
@@ -763,17 +761,17 @@ static void process_options_lines(char* grm_file) {
     warnings_bit = true;
   }
 
-
   /*                          PRINT OPTIONS:                                   */
   /* Here we print all options set by the user.  As of now, only about 48      */
   /* different options and related aliases are allowed.  In case that number   */
   /* goes up, the bound of the array, opt_string, should be changed.           */
   /* BLOCKB, BLOCKE, HBLOCKB and HBLOCKE can generate the longest strings      */
   /* since their value can be up to MAX_PARM_SIZE characters long.             */
-  if (action_bit)
+  if (action_bit) {
     strcpy(opt_string[++top], "ACTION");
-  else
+  } else {
     strcpy(opt_string[++top], "NOACTION");
+  }
 
   sprintf(opt_string[++top], "ACTFILE-NAME=%s", act_file);
 
@@ -781,155 +779,181 @@ static void process_options_lines(char* grm_file) {
 
   sprintf(opt_string[++top], "BLOCKE=%s", blocke);
 
-  if (byte_bit)
+  if (byte_bit) {
     strcpy(opt_string[++top], "BYTE");
+  }
 
-  if (conflicts_bit)
+  if (conflicts_bit) {
     strcpy(opt_string[++top], "CONFLICTS");
-  else
+  } else {
     strcpy(opt_string[++top], "NOCONFLICTS");
+  }
 
-  if (default_opt == 0)
+  if (default_opt == 0) {
     strcpy(opt_string[++top], "NODEFAULT");
-  else
+  } else {
     sprintf(opt_string[++top], "DEFAULT=%d", default_opt);
+  }
 
-  if (debug_bit)
+  if (debug_bit) {
     strcpy(opt_string[++top], "DEBUG");
-  else
+  } else {
     strcpy(opt_string[++top], "NODEBUG");
+  }
 
-  if (deferred_bit)
+  if (deferred_bit) {
     strcpy(opt_string[++top], "DEFERRED");
-  else
+  } else {
     strcpy(opt_string[++top], "NODEFERRED");
+  }
 
-  if (edit_bit)
+  if (edit_bit) {
     strcpy(opt_string[++top], "EDIT");
-  else
+  } else {
     strcpy(opt_string[++top], "NOEDIT");
+  }
 
-  if (error_maps_bit)
+  if (error_maps_bit) {
     strcpy(opt_string[++top], "ERROR-MAPS");
-  else
+  } else {
     strcpy(opt_string[++top], "NOERROR-MAPS");
+  }
 
   sprintf(opt_string[++top], "ESCAPE=%c", escape);
 
   sprintf(opt_string[++top], "FILE-PREFIX=%s", file_prefix);
-  if (first_bit)
+  if (first_bit) {
     strcpy(opt_string[++top], "FIRST");
-  else
+  } else {
     strcpy(opt_string[++top], "NOFIRST");
+  }
 
-  if (follow_bit)
+  if (follow_bit) {
     strcpy(opt_string[++top], "FOLLOW");
-  else
+  } else {
     strcpy(opt_string[++top], "NOFOLLOW");
+  }
 
-  if (c_bit)
+  if (c_bit) {
     sprintf(opt_string[++top], "GENERATE-PARSER=C");
-  else if (cpp_bit)
+  } else if (cpp_bit) {
     sprintf(opt_string[++top], "GENERATE-PARSER=C++");
-  else if (java_bit)
+  } else if (java_bit)
     sprintf(opt_string[++top], "GENERATE-PARSER=JAVA");
-  else
+  else {
     strcpy(opt_string[++top], "NOGENERATE-PARSER");
+  }
 
-  if (goto_default_bit)
+  if (goto_default_bit) {
     strcpy(opt_string[++top], "GOTO-DEFAULT");
-  else
+  } else {
     strcpy(opt_string[++top], "NOGOTO-DEFAULT");
+  }
 
   sprintf(opt_string[++top], "HACTFILE-NAME=%s", hact_file);
 
-  if (!byte_bit)
+  if (!byte_bit) {
     strcpy(opt_string[++top], "HALF-WORD");
+  }
 
   sprintf(opt_string[++top], "HBLOCKB=%s", hblockb);
 
   sprintf(opt_string[++top], "HBLOCKE=%s", hblocke);
 
-  if (!slr_bit)
+  if (!slr_bit) {
     sprintf(opt_string[++top], "LALR=%d", lalr_level);
+  }
 
-  if (list_bit)
+  if (list_bit) {
     strcpy(opt_string[++top], "LIST");
-  else
+  } else {
     strcpy(opt_string[++top], "NOLIST");
+  }
 
   sprintf(opt_string[++top], "MAX-DISTANCE=%d", maximum_distance);
   sprintf(opt_string[++top], "MIN-DISTANCE=%d", minimum_distance);
-  if (names_opt == MAXIMUM_NAMES)
+  if (names_opt == MAXIMUM_NAMES) {
     strcpy(opt_string[++top], "NAMES=MAXIMUM");
-  else if (names_opt == MINIMUM_NAMES)
+  } else if (names_opt == MINIMUM_NAMES) {
     strcpy(opt_string[++top], "NAMES=MINIMUM");
-  else
+  } else {
     strcpy(opt_string[++top], "NAMES=OPTIMIZED");
+  }
 
-  if (nt_check_bit)
+  if (nt_check_bit) {
     strcpy(opt_string[++top], "NT-CHECK");
-  else
+  } else {
     strcpy(opt_string[++top], "NONT-CHECK");
+  }
 
   sprintf(opt_string[++top], "ORMARK=%c", ormark);
   sprintf(opt_string[++top], "OUTPUT-SIZE=%d", output_size);
   sprintf(opt_string[++top], "PREFIX=%s", prefix);
 
-  if (read_reduce_bit)
+  if (read_reduce_bit) {
     strcpy(opt_string[++top], "READ-REDUCE");
-  else
+  } else {
     strcpy(opt_string[++top], "NOREAD-REDUCE");
+  }
 
-  if (scopes_bit)
+  if (scopes_bit) {
     strcpy(opt_string[++top], "SCOPES");
-  else
+  } else {
     strcpy(opt_string[++top], "NOSCOPES");
+  }
 
-  if (shift_default_bit)
+  if (shift_default_bit) {
     strcpy(opt_string[++top], "SHIFT-DEFAULT");
-  else
+  } else {
     strcpy(opt_string[++top], "NOSHIFT-DEFAULT");
+  }
 
-  if (single_productions_bit)
+  if (single_productions_bit) {
     strcpy(opt_string[++top], "SINGLE-PRODUCTIONS");
-  else
+  } else {
     strcpy(opt_string[++top], "NOSINGLE-PRODUCTIONS");
+  }
 
-  if (slr_bit)
+  if (slr_bit) {
     strcpy(opt_string[++top], "SLR");
+  }
 
   sprintf(opt_string[++top], "STACK-SIZE=%d", stack_size);
-  if (states_bit)
+  if (states_bit) {
     strcpy(opt_string[++top], "STATES");
-  else
+  } else {
     strcpy(opt_string[++top], "NOSTATES");
+  }
 
   sprintf(opt_string[++top], "SUFFIX=%s", suffix);
 
-  if (table_opt == 0)
+  if (table_opt == 0) {
     strcpy(opt_string[++top], "NOTABLE");
-  else if (table_opt == OPTIMIZE_SPACE)
+  } else if (table_opt == OPTIMIZE_SPACE) {
     strcpy(opt_string[++top], "TABLE=SPACE");
-  else
+  } else {
     strcpy(opt_string[++top], "TABLE=TIME");
+  }
 
-  if (trace_opt == NOTRACE)
+  if (trace_opt == NOTRACE) {
     strcpy(opt_string[++top], "NOTRACE");
-  else if (trace_opt == TRACE_CONFLICTS)
+  } else if (trace_opt == TRACE_CONFLICTS) {
     strcpy(opt_string[++top], "TRACE=CONFLICTS");
-  else
+  } else {
     strcpy(opt_string[++top], "TRACE=FULL");
+  }
 
-  if (verbose_bit)
+  if (verbose_bit) {
     strcpy(opt_string[++top], "VERBOSE");
-  else
+  } else {
     strcpy(opt_string[++top], "NOVERBOSE");
+  }
 
-  if (warnings_bit)
+  if (warnings_bit) {
     strcpy(opt_string[++top], "WARNINGS");
-  else
+  } else {
     strcpy(opt_string[++top], "NOWARNINGS");
+  }
 
   if (xref_bit) {
     strcpy(opt_string[++top], "XREF");
@@ -945,8 +969,9 @@ static void process_options_lines(char* grm_file) {
       strcpy(output_line, "    ");
     }
     strcat(output_line, opt_string[i]);
-    if (strlen(output_line) + 2 < PRINT_LINE_SIZE - 1)
+    if (strlen(output_line) + 2 < PRINT_LINE_SIZE - 1) {
       strcat(output_line, "  ");
+    }
   }
   PRNT(output_line);
 
@@ -972,28 +997,29 @@ static void process_options_lines(char* grm_file) {
     PRNT("MAX_DISTANCE must be > MIN_DISTANCE + 1");
     exit(12);
   }
-  if (strcmp(blockb, blocke) == 0)
+  if (strcmp(blockb, blocke) == 0) {
     strcpy(temp, "BLOCKB and BLOCKE");
-  else if (strlen(blockb) == 1 && blockb[0] == escape)
+  } else if (strlen(blockb) == 1 && blockb[0] == escape) {
     strcpy(temp, "BLOCKB and ESCAPE");
-  else if (strlen(blockb) == 1 && blockb[0] == ormark)
+  } else if (strlen(blockb) == 1 && blockb[0] == ormark) {
     strcpy(temp, "BLOCKB and ORMARK");
-  else if (strlen(blocke) == 1 && blocke[0] == escape)
+  } else if (strlen(blocke) == 1 && blocke[0] == escape) {
     strcpy(temp, "ESCAPE and BLOCKE");
-  else if (strlen(blocke) == 1 && blocke[0] == ormark)
+  } else if (strlen(blocke) == 1 && blocke[0] == ormark) {
     strcpy(temp, "ORMARK and BLOCKE");
-  else if (strcmp(hblockb, hblocke) == 0)
+  } else if (strcmp(hblockb, hblocke) == 0) {
     strcpy(temp, "HBLOCKB and HBLOCKE");
-  else if (strlen(hblockb) == 1 && hblockb[0] == escape)
+  } else if (strlen(hblockb) == 1 && hblockb[0] == escape) {
     strcpy(temp, "HBLOCKB and ESCAPE");
-  else if (strlen(hblockb) == 1 && hblockb[0] == ormark)
+  } else if (strlen(hblockb) == 1 && hblockb[0] == ormark) {
     strcpy(temp, "HBLOCKB and ORMARK");
-  else if (strlen(hblocke) == 1 && hblocke[0] == escape)
+  } else if (strlen(hblocke) == 1 && hblocke[0] == escape) {
     strcpy(temp, "ESCAPE and HBLOCKE");
-  else if (strlen(hblocke) == 1 && hblocke[0] == ormark)
+  } else if (strlen(hblocke) == 1 && hblocke[0] == ormark) {
     strcpy(temp, "ORMARK and HBLOCKE");
-  else if (ormark == escape)
+  } else if (ormark == escape) {
     strcpy(temp, "ORMARK and ESCAPE");
+  }
 
   if (temp[0] != '\0') {
     PRNTERR2(msg_line, "The options %s cannot have the same value", temp);
@@ -1017,8 +1043,9 @@ static int hash(const char *symbl) {
     const register unsigned short k = *symbl;
     symbl++;
     hash_value += (k << 7) + *symbl;
-    if (*symbl == '\0')
+    if (*symbl == '\0') {
       break;
+    }
   }
 
   return hash_value % HT_SIZE;
@@ -1035,10 +1062,10 @@ static void insert_string(struct hash_type *q, const char *string) {
     (string_table == (char *) NULL
        ? malloc(string_size * sizeof(char))
        : realloc(string_table, string_size * sizeof(char)));
-    if (string_table == (char *) NULL)
+    if (string_table == (char *) NULL) {
       nospace(__FILE__, __LINE__);
+    }
   }
-
   q->st_ptr = string_offset;
   while ((string_table[string_offset++] = *string++)); /* Copy until NULL */
   /* is copied.      */
@@ -1067,14 +1094,15 @@ static void assign_symbol_no(const char *string_ptr, const int image) {
   }
 
   p = (struct hash_type *) talloc(sizeof(struct hash_type));
-  if (p == (struct hash_type *) NULL)
+  if (p == (struct hash_type *) NULL) {
     nospace(__FILE__, __LINE__);
-
+  }
   if (image == OMEGA) {
     num_symbols++;
     p->number = num_symbols;
-  } else
+  } else {
     p->number = -image;
+  }
   p->name_index = OMEGA;
   insert_string(p, string_ptr);
   p->link = hash_table[i];
@@ -1149,7 +1177,7 @@ static int name_map(const char *symb) {
 #include "lpgact.h"
 #include "lpgprs.h"
 
-static void process_grammar(char* grm_file) {
+static void process_grammar(char *grm_file) {
   short state_stack[STACK_SIZE];
 
   scanner(grm_file); /* Get first token */
@@ -1192,7 +1220,7 @@ process_non_terminal:
 }
 
 /* SCANNER scans the input stream and returns the next input token.          */
-static void scanner(char* grm_file) {
+static void scanner(char *grm_file) {
   register int i;
 
   char tok_string[SYMBOL_SIZE + 1];
@@ -1564,7 +1592,7 @@ static void error_action(void) {
 }
 
 /*          Actions to be taken if grammar is successfully parsed.          */
-static void accept_action(char* grm_file) {
+static void accept_action(char *grm_file) {
   if (rulehdr == NULL) {
     printf("Informative: Empty grammar read in. Processing stopped.\n");
     fprintf(syslis, "***Informative: Empty grammar read in. Processing stopped.\n");
@@ -1618,7 +1646,7 @@ static void build_symno(void) {
 }
 
 /*     Process all semantic actions and generate action file.               */
-static void process_actions(char* grm_file) {
+static void process_actions(char *grm_file) {
   register int k;
   register int len;
   register char *p;
@@ -1952,7 +1980,7 @@ static void free_line(struct line_elemt *p) {
 /* stituted for the name. The modified action text is then printed out in    */
 /* the action file.                                                          */
 static void process_action_line(FILE *sysout, char *text,
-                                const int line_no, const int rule_no, char* grm_file) {
+                                const int line_no, const int rule_no, char *grm_file) {
   char temp1[MAX_LINE_SIZE + 1];
   char suffix[MAX_LINE_SIZE + 1];
   char symbol[SYMBOL_SIZE + 1];
@@ -1971,7 +1999,7 @@ next_line: {
       /* character                             */
       /* 12 is length of %rule_number and */
       if (k + 12 <= text_len) {
-      /* %num_symbols.                    */
+        /* %num_symbols.                    */
         if (strxeq(text + k, krule_number)) {
           strcpy(temp1, text + k + 12);
           if (k + 12 != text_len)

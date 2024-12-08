@@ -730,10 +730,11 @@ static void process_conflicts(const int state_no) {
               "on \"%s\" between rule %d and %d\n",
               temp, n, rule_no);
       if (trace_opt != NOTRACE) {
-        if (!slr_bit)
+        if (!slr_bit) {
           print_relevant_lalr_items(state_no, p->item1, symbol);
-        else
+        } else {
           print_relevant_slr_items(p->item1, symbol);
+        }
         print_item(p->item1);
         fill_in(msg_line, PRINT_LINE_SIZE - 3, '-');
         fprintf(syslis, "\n%s", msg_line);
