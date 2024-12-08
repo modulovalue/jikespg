@@ -55,22 +55,20 @@ static void add_block_definition(const struct terminal_type *term)
 #line 131 "jikespg.g"
 static void bad_first_symbol(void)
 {
-    sprintf(msg_line, "First symbol: \"%s\" found in file is illegal. Line %ld, column %d", SYM1.name, SYM1.start_line, SYM1.start_column);
-    PRNTERR(msg_line);
+    PRNTERR2(msg_line, "First symbol: \"%s\" found in file is illegal. Line %ld, column %d", SYM1.name, SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 
 /* bad_symbol ::= BLOCK */
-#line 153 "jikespg.g"
+#line 152 "jikespg.g"
 static void act10(void)
 {
-    sprintf(msg_line, "Action block cannot be first object in file. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
-    PRNTERR(msg_line);
+    PRNTERR2(msg_line, "Action block cannot be first object in file. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 
 /* macro_list ::= macro_name_symbol macro_block */
-#line 169 "jikespg.g"
+#line 167 "jikespg.g"
 static void act13(void)
 {
     if (action_bit)
@@ -78,7 +76,7 @@ static void act13(void)
 }
 
 /* macro_list ::= macro_list macro_name_symbol macro_block */
-#line 178 "jikespg.g"
+#line 176 "jikespg.g"
 static void act14(void)
 {
     if (action_bit)
@@ -86,7 +84,7 @@ static void act14(void)
 }
 
 /* macro_name_symbol ::= SYMBOL */
-#line 190 "jikespg.g"
+#line 188 "jikespg.g"
 static void act16(void)
 {
     sprintf(msg_line, "Macro name \"%s\" does not start with the escape character. Line %ld, column %d", SYM1.name, SYM1.start_line, SYM1.start_column);
@@ -94,72 +92,62 @@ static void act16(void)
 }
 
 /* macro_name_symbol ::= OR */
-#line 199 "jikespg.g"
+#line 197 "jikespg.g"
 static void bad_macro_name(void)
 {
-    sprintf(msg_line, "Reserved symbol cannot be used as macro name. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
-    PRNTERR(msg_line);
-
+    PRNTERR2(msg_line, "Reserved symbol cannot be used as macro name. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 
 /* macro_name_symbol ::= BLOCK */
-#line 216 "jikespg.g"
+#line 212 "jikespg.g"
 static void act21(void)
 {
-    sprintf(msg_line, "Macro name not supplied for macro definition. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
-    PRNTERR(msg_line);
-
+    PRNTERR2(msg_line, "Macro name not supplied for macro definition. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 
 /* macro_name_symbol ::= DEFINE_KEY */
-#line 227 "jikespg.g"
+#line 221 "jikespg.g"
 static void act22(void)
 {
-    sprintf(msg_line, "Macro keyword misplaced. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
-    PRNTERR(msg_line);
+    PRNTERR2(msg_line, "Macro keyword misplaced. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 
 /* macro_block ::= OR */
-#line 240 "jikespg.g"
+#line 233 "jikespg.g"
 static void definition_expected(void)
 {
-    sprintf(msg_line, "Definition block expected where symbol found. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
-    PRNTERR(msg_line);
-
+    PRNTERR2(msg_line, "Definition block expected where symbol found. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 
 /* terminal_symbol ::= SYMBOL */
-#line 268 "jikespg.g"
+#line 259 "jikespg.g"
 static void process_terminal(void)
 {
     assign_symbol_no(SYM1.name, OMEGA);
 }
 
 /* terminal_symbol ::= DEFINE_KEY */
-#line 280 "jikespg.g"
+#line 271 "jikespg.g"
 static void bad_terminal(void)
 {
-    sprintf(msg_line, "Keyword  has been misplaced in Terminal section.  Line %ld, column %d", SYM1.start_line, SYM1.start_column);
-    PRNTERR(msg_line);
+    PRNTERR2(msg_line, "Keyword  has been misplaced in Terminal section.  Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 
 /* terminal_symbol ::= BLOCK */
-#line 292 "jikespg.g"
+#line 282 "jikespg.g"
 static void act37(void)
 {
-    sprintf(msg_line, "Misplaced block found in TERMINALS section.  Line %ld, column %d", SYM1.start_line, SYM1.start_column);
-    PRNTERR(msg_line);
-
+    PRNTERR2(msg_line, "Misplaced block found in TERMINALS section.  Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 
 /* alias_definition ::= alias_lhs produces alias_rhs */
-#line 307 "jikespg.g"
+#line 295 "jikespg.g"
 static void act39(void)
 {
     register int image;
@@ -180,8 +168,7 @@ static void act39(void)
             if (error_image > num_terminals)
             {
                 restore_symbol(tok_string, kerror);
-                sprintf(msg_line, "Illegal aliasing to %s prior to its definition.  Line %ld, column %d", tok_string, SYM3.start_line, SYM3.start_column);
-                PRNTERR(msg_line);
+                PRNTERR2(msg_line, "Illegal aliasing to %s prior to its definition.  Line %ld, column %d", tok_string, SYM3.start_line, SYM3.start_column);
                 exit(12);
             }
             image = error_image;
@@ -191,8 +178,7 @@ static void act39(void)
             if (eoft_image > num_terminals)
             {
                 restore_symbol(tok_string, keoft);
-                sprintf(msg_line, "Illegal aliasing to %s prior to its definition. Line %ld, column %d", tok_string, SYM3.start_line, SYM3.start_column);
-                PRNTERR(msg_line);
+                PRNTERR2(msg_line, "Illegal aliasing to %s prior to its definition. Line %ld, column %d", tok_string, SYM3.start_line, SYM3.start_column);
                 exit(12);
             }
             image = eoft_image;
@@ -201,8 +187,7 @@ static void act39(void)
         case EOL_SYMBOL_TK:
             if (eolt_image == OMEGA)
             {
-                sprintf(msg_line, "Illegal aliasing to EOL prior to its definition. Line %ld, column %d", SYM3.start_line, SYM3.start_column);
-                PRNTERR(msg_line);
+                PRNTERR2(msg_line, "Illegal aliasing to EOL prior to its definition. Line %ld, column %d", SYM3.start_line, SYM3.start_column);
                 exit(12);
             }
             image = eolt_image;
@@ -219,8 +204,7 @@ static void act39(void)
             if (symbol_image(SYM1.name) != OMEGA)
             {
                 restore_symbol(tok_string, SYM1.name);
-                sprintf(msg_line, "Symbol %s was previously defined. Line %ld, column %d", tok_string, SYM1.start_line, SYM1.start_column);
-                PRNTERR(msg_line);
+                PRNTERR2(msg_line, "Symbol %s was previously defined. Line %ld, column %d", tok_string, SYM1.start_line, SYM1.start_column);
                 exit(12);
             }
             assign_symbol_no(SYM1.name, image);
@@ -233,8 +217,7 @@ static void act39(void)
                     image == eoft_image || image > num_terminals)
                 {
                     restore_symbol(tok_string, kerror);
-                    sprintf(msg_line, "Illegal alias for symbol %s. Line %ld, column %d.", tok_string, SYM1.start_line, SYM1.start_column);
-                    PRNTERR(msg_line);
+                    PRNTERR2(msg_line, "Illegal alias for symbol %s. Line %ld, column %d.", tok_string, SYM1.start_line, SYM1.start_column);
                     exit(12);
                 }
                 alias_map(kerror, image);
@@ -243,8 +226,7 @@ static void act39(void)
             else
             {
                 restore_symbol(tok_string, kerror);
-                sprintf(msg_line, "Symbol %s was previously defined. Line %ld, column %d", tok_string, SYM1.start_line, SYM1.start_column);
-                PRNTERR(msg_line);
+                PRNTERR2(msg_line, "Symbol %s was previously defined. Line %ld, column %d", tok_string, SYM1.start_line, SYM1.start_column);
                 exit(12);
             }
             break;
@@ -256,8 +238,7 @@ static void act39(void)
                     image == error_image || image > num_terminals)
                 {
                     restore_symbol(tok_string, keoft);
-                    sprintf(msg_line, "Illegal alias for symbol %s. Line %ld, column %d.", tok_string, SYM1.start_line, SYM1.start_column);
-                    PRNTERR(msg_line);
+                    PRNTERR2(msg_line, "Illegal alias for symbol %s. Line %ld, column %d.", tok_string, SYM1.start_line, SYM1.start_column);
                     exit(12);
                 }
                 alias_map(keoft, image);
@@ -266,8 +247,7 @@ static void act39(void)
             else
             {
                 restore_symbol(tok_string, keoft);
-                sprintf(msg_line, "Symbol %s was previously defined.  %ld, column %d", tok_string, SYM1.start_line, SYM1.start_column);
-                PRNTERR(msg_line);
+                PRNTERR2(msg_line, "Symbol %s was previously defined.  %ld, column %d", tok_string, SYM1.start_line, SYM1.start_column);
                 exit(12);
             }
             break;
@@ -280,16 +260,14 @@ static void act39(void)
                     image == error_image ||
                     image > num_terminals)
                 {
-                    sprintf(msg_line, "Illegal alias for symbol EOL. Line %ld, column %d.", SYM1.start_line, SYM1.start_column);
-                    PRNTERR(msg_line);
+                    PRNTERR2(msg_line, "Illegal alias for symbol EOL. Line %ld, column %d.", SYM1.start_line, SYM1.start_column);
                     exit(12);
                 }
                 eolt_image = image;
             }
             else
             {
-                sprintf(msg_line, "Symbol EOL was previously defined. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
-                PRNTERR(msg_line);
+                PRNTERR2(msg_line, "Symbol EOL was previously defined. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
                 exit(12);
             }
             break;
@@ -297,47 +275,39 @@ static void act39(void)
 }
 
 /* bad_alias_rhs ::= DEFINE_KEY */
-#line 477 "jikespg.g"
+#line 455 "jikespg.g"
 static void bad_alias_rhs(void)
 {
-    sprintf(msg_line, "Misplaced keyword found in Alias section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
-    PRNTERR(msg_line);
-
+    PRNTERR2(msg_line, "Misplaced keyword found in Alias section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 
 /* bad_alias_rhs ::= BLOCK */
-#line 492 "jikespg.g"
+#line 468 "jikespg.g"
 static void act57(void)
 {
-    sprintf(msg_line, "Misplaced block found in Alias section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
-    PRNTERR(msg_line);
-
+    PRNTERR2(msg_line, "Misplaced block found in Alias section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 
 /* bad_alias_lhs ::= EMPTY_SYMBOL */
-#line 507 "jikespg.g"
+#line 481 "jikespg.g"
 static void act59(void)
 {
-    sprintf(msg_line, "Empty symbol cannot be aliased. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
-    PRNTERR(msg_line);
-
+    PRNTERR2(msg_line, "Empty symbol cannot be aliased. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 
 /* bad_alias_lhs ::= produces */
-#line 518 "jikespg.g"
+#line 490 "jikespg.g"
 static void missing_quote(void)
 {
-    sprintf(msg_line, "Symbol must be quoted when used as a grammar symbol. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
-    PRNTERR(msg_line);
-
+    PRNTERR2(msg_line, "Symbol must be quoted when used as a grammar symbol. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 
 /* start_symbol ::= SYMBOL */
-#line 536 "jikespg.g"
+#line 506 "jikespg.g"
 static void act63(void)
 {
     assign_symbol_no(SYM1.name, OMEGA);
@@ -357,43 +327,31 @@ static void act63(void)
 }
 
 /* start_symbol ::= OR */
-#line 557 "jikespg.g"
+#line 527 "jikespg.g"
 static void bad_start_symbol(void)
 {
-    sprintf(msg_line, "Symbol cannot be used as Start symbol. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
-    PRNTERR(msg_line);
-
+    PRNTERR2(msg_line, "Symbol cannot be used as Start symbol. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 
 /* start_symbol ::= BLOCK */
-#line 574 "jikespg.g"
+#line 542 "jikespg.g"
 static void act68(void)
 {
-    sprintf(msg_line,
-            "Misplaced block found in Start section. "
-            "Line %ld, column %d",
-            SYM1.start_line, SYM1.start_column);
-    PRNTERR(msg_line);
-
+    PRNTERR2(msg_line, "Misplaced block found in Start section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 
 /* start_symbol ::= DEFINE_KEY */
-#line 588 "jikespg.g"
+#line 551 "jikespg.g"
 static void misplaced_keyword_found_in_START_section(void)
 {
-    sprintf(msg_line,
-            "Misplaced keyword found in START section. "
-            "Line %ld, column %d",
-            SYM1.start_line, SYM1.start_column);
-    PRNTERR(msg_line);
-
+    PRNTERR2(msg_line, "Misplaced keyword found in START section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 
 /* rules_block ::= RULES_KEY */
-#line 609 "jikespg.g"
+#line 567 "jikespg.g"
 static void act73(void)
 {
 
@@ -410,14 +368,14 @@ static void act73(void)
 }
 
 /* rules_block ::= RULES_KEY rule_list */
-#line 627 "jikespg.g"
+#line 585 "jikespg.g"
 static void act74(void)
 {
     build_symno();
 }
 
 /* rule_list ::= {action_block} SYMBOL produces */
-#line 641 "jikespg.g"
+#line 599 "jikespg.g"
 static void act77(void)
 {
     assign_symbol_no(SYM2.name, OMEGA);
@@ -454,7 +412,7 @@ static void act77(void)
 }
 
 /* rule_list ::= rule_list OR */
-#line 680 "jikespg.g"
+#line 638 "jikespg.g"
 static void act78(void)
 {
     num_rules++;
@@ -474,7 +432,7 @@ static void act78(void)
 }
 
 /* rule_list ::= rule_list SYMBOL produces */
-#line 701 "jikespg.g"
+#line 659 "jikespg.g"
 static void act79(void)
 {
     num_rules++;
@@ -495,19 +453,14 @@ static void act79(void)
 }
 
 /* rule_list ::= rule_list ERROR_SYMBOL */
-#line 728 "jikespg.g"
+#line 686 "jikespg.g"
 static void act82(void)
 {
     if (error_image == DEFAULT_SYMBOL)
     {
         char tok_string[SYMBOL_SIZE + 1];
         restore_symbol(tok_string, kerror);
-        sprintf(msg_line,
-                "%s not declared or aliased to terminal "
-                "symbol. Line %ld, column %d",
-                tok_string,
-                SYM2.start_line, SYM2.start_column);
-        PRNTERR(msg_line);
+        PRNTERR2(msg_line, "%s not declared or aliased to terminal symbol. Line %ld, column %d", tok_string, SYM2.start_line, SYM2.start_column);
         exit(12);
     }
     register struct node *q = Allocate_node();
@@ -525,7 +478,7 @@ static void act82(void)
 }
 
 /* rule_list ::= rule_list SYMBOL */
-#line 759 "jikespg.g"
+#line 712 "jikespg.g"
 static void act83(void)
 {
     assign_symbol_no(SYM2.name, OMEGA);
@@ -534,11 +487,7 @@ static void act83(void)
     {
         if (sym == eoft_image)
         {
-            sprintf(msg_line,
-                    "End-of-file symbol cannot be used "
-                    "in rule. Line %ld, column %d",
-                    SYM2.start_line, SYM2.start_column);
-            PRNTERR(msg_line);
+            PRNTERR2(msg_line, "End-of-file symbol cannot be used in rule. Line %ld, column %d", SYM2.start_line, SYM2.start_column);
             exit(12);
         }
         register struct node *q = Allocate_node();
@@ -557,45 +506,31 @@ static void act83(void)
 }
 
 /* rule_list ::= OR */
-#line 792 "jikespg.g"
+#line 741 "jikespg.g"
 static void bad_first_symbol_in_RULES_section(void)
 {
-    sprintf(msg_line,
-            "First symbol in Rules section is not "
-            "a valid left-hand side.\n Line %ld, column %d",
-            SYM1.start_line, SYM1.start_column);
-    PRNTERR(msg_line);
-
+    PRNTERR2(msg_line, "First symbol in Rules section is not a valid left-hand side.\n Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 
 /* rule_list ::= rule_list OR produces */
-#line 812 "jikespg.g"
+#line 756 "jikespg.g"
 static void rule_without_left_hand_side(void)
 {
-    sprintf(msg_line,
-            "Rule without left-hand-side.  Line %ld, column %d",
-            SYM3.start_line, SYM3.start_column);
-    PRNTERR(msg_line);
-
+    PRNTERR2(msg_line, "Rule without left-hand-side.  Line %ld, column %d", SYM3.start_line, SYM3.start_column);
     exit(12);
 }
 
 /* rule_list ::= rule_list keyword produces */
-#line 829 "jikespg.g"
+#line 769 "jikespg.g"
 static void act91(void)
 {
-    sprintf(msg_line,
-            "Misplaced keyword found in Rules section "
-            "Line %ld, column %d",
-            SYM2.start_line, SYM2.start_column);
-    PRNTERR(msg_line);
-
+    sprintf(msg_line, "Misplaced keyword found in Rules section Line %ld, column %d",  SYM2.start_line, SYM2.start_column);
     exit(12);
 }
 
 /* action_block ::= BLOCK */
-#line 844 "jikespg.g"
+#line 779 "jikespg.g"
 static void act92(void)
 {
     if (action_bit)
@@ -603,7 +538,7 @@ static void act92(void)
 }
 
 /* action_block ::= HBLOCK */
-#line 853 "jikespg.g"
+#line 788 "jikespg.g"
 static void act93(void)
 {
     if (action_bit)
@@ -611,20 +546,15 @@ static void act93(void)
 }
 
 /* keyword ::= DEFINE_KEY */
-#line 863 "jikespg.g"
+#line 798 "jikespg.g"
 static void misplaced_keyword_found_in_RULES_section(void)
 {
-    sprintf(msg_line,
-            "Misplaced keyword found in RULES section. "
-            "Line %ld, column %d",
-            SYM1.start_line, SYM1.start_column);
-    PRNTERR(msg_line);
-
+    sprintf(msg_line,"Misplaced keyword found in RULES section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 
 /* names_definition ::= name produces name */
-#line 889 "jikespg.g"
+#line 819 "jikespg.g"
 static void act100(void)
 {
     if (error_maps_bit)
@@ -656,22 +586,13 @@ static void act100(void)
 
         if (symbol == OMEGA)
         {
-            sprintf(msg_line,
-                    "Symbol %s is undefined. Line %ld, column %d",
-            SYM1.name, SYM1.start_line, SYM1.start_column);
-            PRNTERR(msg_line);
-
+            PRNTERR2(msg_line, "Symbol %s is undefined. Line %ld, column %d", SYM1.name, SYM1.start_line, SYM1.start_column);
             exit(12);
         }
 
         if (symno[symbol].name_index != OMEGA)
         {
-            sprintf(msg_line,
-                    "Symbol %s has been named more than once. "
-                    "Line %ld, column %d.",
-            SYM1.name, SYM1.start_line, SYM1.start_column);
-            PRNTERR(msg_line);
-
+            PRNTERR2(msg_line, "Symbol %s has been named more than once. Line %ld, column %d.", SYM1.name, SYM1.start_line, SYM1.start_column);
             exit(12);
         }
          symno[symbol].name_index = name_map(SYM3.name);
@@ -679,46 +600,31 @@ static void act100(void)
 }
 
 /* bad_name ::= DEFINE_KEY */
-#line 965 "jikespg.g"
+#line 886 "jikespg.g"
 static void misplaced_keyword_found_in_NAMES_section(void)
 {
-    sprintf(msg_line,
-            "Keyword  has been misplaced in NAMES section."
-            "  Line %ld, column %d",
-            SYM1.start_line, SYM1.start_column);
-    PRNTERR(msg_line);
-
+    PRNTERR2(msg_line, "Keyword  has been misplaced in NAMES section.  Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 
 /* bad_name ::= BLOCK */
-#line 989 "jikespg.g"
+#line 905 "jikespg.g"
 static void act116(void)
 {
-    sprintf(msg_line,
-            "Misplaced action block found in NAMES "
-            "section. Line %ld, column %d",
-            SYM1.start_line, SYM1.start_column);
-    PRNTERR(msg_line);
-
+    PRNTERR2(msg_line, "Misplaced action block found in NAMES section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 
 /* bad_name ::= MACRO_NAME */
-#line 1003 "jikespg.g"
+#line 914 "jikespg.g"
 static void act117(void)
 {
-    sprintf(msg_line,
-            "Misplaced macro name found in NAMES "
-            "section. Line %ld, column %d",
-            SYM1.start_line, SYM1.start_column);
-    PRNTERR(msg_line);
-
+    PRNTERR2(msg_line, "Misplaced macro name found in NAMES section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 
 /* [terminals_block] ::= */
-#line 1025 "jikespg.g"
+#line 931 "jikespg.g"
 static void process_TERMINALS_section(void)
 {
     num_terminals = num_symbols;
@@ -737,7 +643,7 @@ static void process_TERMINALS_section(void)
 }
 
 /* [alias_block] ::= */
-#line 1048 "jikespg.g"
+#line 954 "jikespg.g"
 static void process_ALIAS_section(void)
 {
 
@@ -783,7 +689,7 @@ static void process_ALIAS_section(void)
 }
 
 /* {terminal_symbol} ::= */
-#line 1120 "jikespg.g"
+#line 1026 "jikespg.g"
 static void act132(void)
 {
     assign_symbol_no(kempty, OMEGA);

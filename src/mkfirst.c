@@ -228,8 +228,8 @@ void mkfirst(void) {
 
   first_table = Allocate_short_array(num_symbols + 1);
 
-  for ALL_SYMBOLS(i) /* Initialize FIRST_TABLE to NIL */
-    first_table[i] = NIL;
+  for ALL_SYMBOLS2 /* Initialize FIRST_TABLE to NIL */
+    first_table[symbol] = NIL;
 
   top = 1;
   const int first_of_empty = top;
@@ -547,8 +547,9 @@ static void no_rules_produced(void) {
       if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE) {
         PRNT(line);
         print_large_token(line, tok, "    ", LEN);
-      } else
+      } else {
         strcat(line, tok);
+      }
       strcat(line, BLANK);
     }
     PRNT(line);
@@ -1072,10 +1073,8 @@ static void compute_follow(const int nt) {
 }
 
 static void print_unreachables(void) {
-  int
-      rule_no,
-      symbol,
-      i;
+  int rule_no;
+  int i;
 
   char line[PRINT_LINE_SIZE + 1],
       tok[SYMBOL_SIZE + 1];
@@ -1085,9 +1084,10 @@ static void print_unreachables(void) {
   /*        non-terminal.                                        */
   /*  2) to construct lists of symbols that are not reachable.   */
 
-  short *symbol_list = Allocate_short_array(num_symbols + 1);
-  for ALL_SYMBOLS(i)
-    symbol_list[i] = OMEGA;
+  int *symbol_list = Allocate_int_array(num_symbols + 1);
+  for ALL_SYMBOLS2 {
+    symbol_list[symbol] = OMEGA;
+  }
   symbol_list[eoft_image] = NIL;
   symbol_list[empty] = NIL;
   if (error_maps_bit)
@@ -1111,7 +1111,7 @@ static void print_unreachables(void) {
          end_node = rule_no == lhs_rule[nt]) {
       rule_no = next_rule[rule_no];
       for ENTIRE_RHS(i, rule_no) {
-        symbol = rhs_sym[i];
+        int symbol = rhs_sym[i];
         if (IS_A_TERMINAL(symbol))
           symbol_list[symbol] = NIL;
         else if (symbol_list[symbol] == OMEGA) {
@@ -1127,7 +1127,7 @@ static void print_unreachables(void) {
   /* list. If the list is not empty, we signal that these symbols*/
   /* are unused.                                                 */
   int t_root = NIL;
-  for ALL_TERMINALS_BACKWARDS(symbol) {
+  for ALL_TERMINALS_BACKWARDS {
     if (symbol_list[symbol] == OMEGA) {
       symbol_list[symbol] = t_root;
       t_root = symbol;
@@ -1143,7 +1143,7 @@ static void print_unreachables(void) {
     } else
       strcpy(line, "*** The following Terminal is useless: ");
 
-    for (symbol = t_root; symbol != NIL; symbol = symbol_list[symbol]) {
+    for (int symbol = t_root; symbol != NIL; symbol = symbol_list[symbol]) {
       restore_symbol(tok, RETRIEVE_STRING(symbol));
       if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE) {
         PRNT(line);
@@ -1163,7 +1163,7 @@ static void print_unreachables(void) {
   /* list.  If the list is not empty, we signal that these       */
   /* symbols are unused.                                         */
   nt_root = NIL;
-  for ALL_NON_TERMINALS_BACKWARDS(symbol) {
+  for ALL_NON_TERMINALS_BACKWARDS {
     if (symbol_list[symbol] == OMEGA) {
       symbol_list[symbol] = nt_root;
       nt_root = symbol;
@@ -1179,7 +1179,7 @@ static void print_unreachables(void) {
     } else
       strcpy(line, "*** The following Non-Terminal is useless: ");
 
-    for (symbol = nt_root; symbol != NIL; symbol = symbol_list[symbol]) {
+    for (int symbol = nt_root; symbol != NIL; symbol = symbol_list[symbol]) {
       restore_symbol(tok, RETRIEVE_STRING(symbol));
       if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE) {
         PRNT(line);
@@ -1201,22 +1201,21 @@ static void print_unreachables(void) {
 /* sorted, since they are inserted in STACK fashion in the lists:  Last-in,  */
 /* First out.                                                                */
 static void print_xref(void) {
-  int i,
-      rule_no,
-      item_no,
-      symbol;
+  int rule_no;
+  int item_no;
 
   /* SORT_SYM is used to sort the symbols for cross_reference listing. */
   short *sort_sym = Allocate_short_array(num_symbols + 1);
   short *t_items = Allocate_short_array(num_terminals + 1);
 
-  for ALL_TERMINALS(i)
-    t_items[i] = NIL;
+  int symbol;
+  for ALL_TERMINALS(symbol)
+    t_items[symbol] = NIL;
 
   for ALL_RULES_BACKWARDS(rule_no) {
     item_no = first_item_of[rule_no];
-    for ENTIRE_RHS(i, rule_no) {
-      symbol = rhs_sym[i];
+    for ENTIRE_RHS(symbol, rule_no) {
+      symbol = rhs_sym[symbol];
       if (IS_A_TERMINAL(symbol)) {
         next_item[item_no] = t_items[symbol];
         t_items[symbol] = item_no;
@@ -1224,15 +1223,16 @@ static void print_xref(void) {
       item_no++;
     }
   }
-  for ALL_SYMBOLS(i)
-    sort_sym[i] = i;
+  for ALL_SYMBOLS2 {
+    sort_sym[symbol] = symbol;
+  }
   quick_sym(sort_sym, num_symbols);
 
   PR_HEADING();
   fprintf(syslis, "\n\nCross-reference table:\n");
   output_line_no += 3;
-  for ALL_SYMBOLS(i) {
-    symbol = sort_sym[i];
+  for ALL_SYMBOLS2 {
+    symbol = sort_sym[symbol];
     if (symbol != accept_image && symbol != eoft_image
         && symbol != empty) {
       char line[PRINT_LINE_SIZE + 1];

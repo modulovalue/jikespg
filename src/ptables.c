@@ -60,14 +60,11 @@ static void compute_shift_default(void) {
   /* For each state, invoke PROCESS_SHIFT_ACTIONS to process the     */
   /* shift map associated with that state.                           */
   for ALL_STATES2 {
-    process_shift_actions(action_count,
-                          statset[state_no].shift_number);
+    process_shift_actions(action_count, statset[state_no].shift_number);
   }
 
-  int state_no;
-  for ALL_LA_STATES(state_no) {
-    process_shift_actions(action_count,
-                          lastats[state_no].shift_number);
+  for ALL_LA_STATES2 {
+    process_shift_actions(action_count, lastats[state_no].shift_number);
   }
 
   /* We now iterate over the ACTION_COUNT mapping, and for each        */
@@ -241,8 +238,7 @@ void process_tables(void) {
     for (int i = 1; i <= red.size; i++)
       red.map[i].symbol--;
   }
-  int state_no;
-  for ALL_LA_STATES(state_no) {
+  for ALL_LA_STATES2 {
     red = lastats[state_no].reduce;
     for (int i = 1; i <= red.size; i++)
       red.map[i].symbol--;

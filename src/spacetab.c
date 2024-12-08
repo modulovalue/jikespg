@@ -227,18 +227,13 @@ static void overlap_nt_rows(void) {
     PRNT2(msg_line, "Length of base Check Table: %d", check_size);
   }
 
-  sprintf(msg_line, "Length of base Action Table: %ld", action_size);
-  PRNT(msg_line);
+  PRNT2(msg_line, "Length of base Action Table: %ld", action_size);
 
-  sprintf(msg_line, "Number of entries in base Action Table: %ld",
-          num_table_entries);
-  PRNT(msg_line);
+  PRNT2(msg_line, "Number of entries in base Action Table: %ld", num_table_entries);
 
   const int percentage = (action_size - num_table_entries) * 1000
                    / num_table_entries;
-  sprintf(msg_line, "Percentage of increase: %d.%d%%",
-          percentage / 10, percentage % 10);
-  PRNT(msg_line);
+  PRNT2(msg_line, "Percentage of increase: %d.%d%%", percentage / 10, percentage % 10);
 
   if (byte_bit) {
     num_bytes = 2 * action_size + check_size;
@@ -255,17 +250,15 @@ static void overlap_nt_rows(void) {
 
   const int k_bytes = num_bytes / 1024 + 1;
 
-  sprintf(msg_line, "Storage required for base Tables: %ld Bytes, %dK",
-          num_bytes, k_bytes);
-  PRNT(msg_line);
+  PRNT2(msg_line, "Storage required for base Tables: %ld Bytes, %dK", num_bytes, k_bytes);
+
   num_bytes = (long) 4 * num_rules;
   if (byte_bit) {
     num_bytes -= num_rules;
     if (num_non_terminals < 256)
       num_bytes -= num_rules;
   }
-  sprintf(msg_line, "Storage required for Rules: %ld Bytes", num_bytes);
-  PRNT(msg_line);
+  PRNT2(msg_line, "Storage required for Rules: %ld Bytes", num_bytes);
 }
 
 /* We now try to merge states in the terminal table that are similar.*/
@@ -682,12 +675,9 @@ static void merge_shift_domains(void) {
   shift_check_size = max_indx + num_terminals;
 
   printf("\n");
-  sprintf(msg_line, "Length of Shift Check Table: %d", shift_check_size);
-  PRNT(msg_line);
+  PRNT2(msg_line, "Length of Shift Check Table: %d", shift_check_size);
 
-  sprintf(msg_line, "Number of entries in Shift Check Table: %ld",
-          num_table_entries);
-  PRNT(msg_line);
+  PRNT2(msg_line, "Number of entries in Shift Check Table: %ld", num_table_entries);
 
   for (k = shift_check_size; k >= max_indx; k--)
     if (next[k] == OMEGA)
@@ -695,9 +685,7 @@ static void merge_shift_domains(void) {
   percentage = ((long) k - num_table_entries) * 1000
                / num_table_entries;
 
-  sprintf(msg_line, "Percentage of increase: %d.%d%%",
-          percentage/10, percentage % 10);
-  PRNT(msg_line);
+  PRNT2(msg_line, "Percentage of increase: %d.%d%%", percentage/10, percentage % 10);
 
   if (byte_bit) {
     num_bytes = shift_check_size;
@@ -709,10 +697,8 @@ static void merge_shift_domains(void) {
 
   k_bytes = num_bytes / 1024 + 1;
 
-  sprintf(msg_line,
-          "Storage required for Shift Check Table: %ld Bytes, %dK",
-          num_bytes, k_bytes);
-  PRNT(msg_line);
+  PRNT2(msg_line, "Storage required for Shift Check Table: %ld Bytes, %dK", num_bytes, k_bytes);
+
   total_bytes += num_bytes;
 
   ffree(ordered_shift);
@@ -1012,26 +998,18 @@ static void overlay_sim_t_rows(void) {
       frequency_count[symbol]++;
     }
   }
-  sprintf(msg_line,
-          "Number of unique terminal states: %d",
-          num_terminal_states);
-  PRNT(msg_line);
-  sprintf(msg_line, "Number of Shift actions saved by merging: %d",
-          num_shifts_saved);
-  PRNT(msg_line);
-  sprintf(msg_line, "Number of Reduce actions saved by merging: %d",
-          num_reductions_saved);
-  PRNT(msg_line);
-  sprintf(msg_line, "Number of Reduce saved by default: %d",
-          default_saves);
-  PRNT(msg_line);
+  PRNT2(msg_line, "Number of unique terminal states: %d", num_terminal_states);
 
-  sortdes(ordered_state, row_size, 1, num_terminal_states,
-          num_terminals);
+  PRNT2(msg_line, "Number of Shift actions saved by merging: %d", num_shifts_saved);
+
+  PRNT2(msg_line, "Number of Reduce actions saved by merging: %d", num_reductions_saved);
+
+  PRNT2(msg_line, "Number of Reduce saved by default: %d", default_saves);
+
+  sortdes(ordered_state, row_size, 1, num_terminal_states, num_terminals);
 
   if (!shift_default_bit) {
-    sortdes(frequency_symbol, frequency_count, 1, num_terminals,
-            num_terminal_states);
+    sortdes(frequency_symbol, frequency_count, 1, num_terminals, num_terminal_states);
     for ALL_TERMINALS(symbol)
       symbol_map[frequency_symbol[symbol]] = symbol;
     symbol_map[DEFAULT_SYMBOL] = DEFAULT_SYMBOL;
@@ -1201,24 +1179,16 @@ static void overlap_t_rows(void) {
       break;
 
   printf("\n");
-  sprintf(msg_line, "Length of Terminal Check Table: %d",
-          term_check_size);
-  PRNT(msg_line);
+  PRNT2(msg_line, "Length of Terminal Check Table: %d", term_check_size);
 
-  sprintf(msg_line, "Length of Terminal Action Table: %d",
-          term_action_size);
-  PRNT(msg_line);
+  PRNT2(msg_line, "Length of Terminal Action Table: %d", term_action_size);
 
-  sprintf(msg_line, "Number of entries in Terminal Action Table: %ld",
-          num_table_entries);
-  PRNT(msg_line);
+  PRNT2(msg_line, "Number of entries in Terminal Action Table: %ld", num_table_entries);
 
   const int percentage = ((long) term_action_size - num_table_entries) * 1000
                    / num_table_entries;
 
-  sprintf(msg_line, "Percentage of increase: %d.%d%%",
-          percentage / 10, percentage % 10);
-  PRNT(msg_line);
+  PRNT2(msg_line, "Percentage of increase: %d.%d%%", percentage / 10, percentage % 10);
 
   if (byte_bit) {
     num_bytes = 2 * term_action_size + term_check_size;
@@ -1232,19 +1202,13 @@ static void overlap_t_rows(void) {
 
   int k_bytes = num_bytes / 1024 + 1;
 
-  sprintf(msg_line,
-          "Storage required for Terminal Tables: %ld Bytes, %dK",
-          num_bytes, k_bytes);
-  PRNT(msg_line);
+  PRNT2(msg_line, "Storage required for Terminal Tables: %ld Bytes, %dK", num_bytes, k_bytes);
 
   total_bytes += num_bytes;
 
   /* Report total number of storage used.                              */
   k_bytes = total_bytes / 1024 + 1;
-  sprintf(msg_line,
-          "Total storage required for Tables: %ld Bytes, %dK",
-          total_bytes, k_bytes);
-  PRNT(msg_line);
+  PRNT2(msg_line, "Total storage required for Tables: %ld Bytes, %dK", total_bytes, k_bytes);
 
   /* We now write out the tables to the SYSTAB file.                   */
 
@@ -1294,9 +1258,7 @@ static void print_tables(void) {
   la_state_offset = offset;
 
   if (offset > MAX_TABLE_SIZE + 1) {
-    sprintf(msg_line, "Table contains entries that are > "
-            "%ld; Processing stopped.", MAX_TABLE_SIZE + 1);
-    PRNTERR(msg_line);
+    PRNTERR2(msg_line, "Table contains entries that are > %ld; Processing stopped.", MAX_TABLE_SIZE + 1);
     exit(12);
   }
 
@@ -1534,10 +1496,7 @@ static void print_tables(void) {
         }
 
         if (result_act > MAX_TABLE_SIZE + 1) {
-          sprintf(msg_line,
-                  "Table contains look-ahead shift entry that is >"
-                  " %ld; Processing stopped.", MAX_TABLE_SIZE + 1);
-          PRNTERR(msg_line);
+          PRNTERR2(msg_line, "Table contains look-ahead shift entry that is >%ld; Processing stopped.", MAX_TABLE_SIZE + 1);
           return;
         }
 
@@ -1565,30 +1524,22 @@ static void print_tables(void) {
   }
 
   PRNT("\n\nActions in Compressed Tables:");
-  sprintf(msg_line, "     Number of Shifts: %d", shift_count);
-  PRNT(msg_line);
 
-  sprintf(msg_line, "     Number of Shift/Reduces: %d", shift_reduce_count);
-  PRNT(msg_line);
+  PRNT2(msg_line, "     Number of Shifts: %d", shift_count);
+
+  PRNT2(msg_line, "     Number of Shift/Reduces: %d", shift_reduce_count);
 
   if (max_la_state > num_states) {
-    sprintf(msg_line,
-            "     Number of Look-Ahead Shifts: %d",
-            la_shift_count);
-    PRNT(msg_line);
+    PRNT2(msg_line, "     Number of Look-Ahead Shifts: %d", la_shift_count);
   }
 
-  sprintf(msg_line, "     Number of Gotos: %d", goto_count);
-  PRNT(msg_line);
+  PRNT2(msg_line, "     Number of Gotos: %d", goto_count);
 
-  sprintf(msg_line, "     Number of Goto/Reduces: %d", goto_reduce_count);
-  PRNT(msg_line);
+  PRNT2(msg_line, "     Number of Goto/Reduces: %d", goto_reduce_count);
 
-  sprintf(msg_line, "     Number of Reduces: %d", reduce_count);
-  PRNT(msg_line);
+  PRNT2(msg_line, "     Number of Reduces: %d", reduce_count);
 
-  sprintf(msg_line, "     Number of Defaults: %d", default_count);
-  PRNT(msg_line);
+  PRNT2(msg_line, "     Number of Defaults: %d", default_count);
 
   /* Write Terminal Check Table.                                      */
   k = 0;
@@ -1744,10 +1695,7 @@ static void print_tables(void) {
         result_act = state_index[act] + num_rules;
 
       if (result_act > MAX_TABLE_SIZE + 1) {
-        sprintf(msg_line,
-                "Table contains look-ahead shift entry that is >"
-                " %ld; Processing stopped.", MAX_TABLE_SIZE + 1);
-        PRNTERR(msg_line);
+        PRNTERR2(msg_line, "Table contains look-ahead shift entry that is >%ld; Processing stopped.", MAX_TABLE_SIZE + 1);
         return;
       }
 

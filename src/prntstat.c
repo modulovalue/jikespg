@@ -117,8 +117,7 @@ void ptstats(void) {
     PR_HEADING();
     fprintf(syslis, "Look-Ahead STATES:");
   }
-  int state_no;
-  for ALL_LA_STATES(state_no) {
+  for ALL_LA_STATES2 {
     char buffer[PRINT_LINE_SIZE + 1];
 
     int i = number_len(state_no) + 8; /* 8 = length of "STATE" */

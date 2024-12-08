@@ -337,49 +337,49 @@ static void options(void) {
     /* and TOKEN contains the upper-case folded value of TEMP.                   */
     if (delim != '=') /* if switch parameter then process */
     {
-      if (len > 2 &&
-          memcmp(token, "NO", 2) == 0) /* option has "NO" */
-      {
+      /* option has "NO" */
+      if (len > 2 && memcmp(token, "NO", 2) == 0) {
         /* prefix?         */
         flag = false;
         len = len - 2;
         /* get rid of "NO" prefix */
         memmove(token, token + 2, strlen(token + 2) + 1);
-      } else
+      } else {
         flag = true;
+      }
 
-      if (memcmp(oaction, token, len) == 0)
+      if (memcmp(oaction, token, len) == 0) {
         action_bit = flag;
-      else if (memcmp(obyte, token, len) == 0)
+      } else if (memcmp(obyte, token, len) == 0) {
         byte_bit = flag;
-      else if (memcmp(oconflicts, token, len) == 0)
+      } else if (memcmp(oconflicts, token, len) == 0) {
         conflicts_bit = flag;
-      else if (len >= 4 && memcmp(odefault, token, len) == 0) {
+      } else if (len >= 4 && memcmp(odefault, token, len) == 0) {
         if (flag)
           default_opt = 5;
         else
           default_opt = 0;
-      } else if (len >= 3 && memcmp(odebug, token, len) == 0)
+      } else if (len >= 3 && memcmp(odebug, token, len) == 0) {
         debug_bit = flag;
-      else if (len >= 4 && memcmp(odeferred, token, len) == 0)
+      } else if (len >= 4 && memcmp(odeferred, token, len) == 0) {
         deferred_bit = flag;
-      else if (len >= 2 && memcmp(oedit, token, len) == 0)
+      } else if (len >= 2 && memcmp(oedit, token, len) == 0) {
         edit_bit = flag;
-      else if (len >= 2 &&
-               (memcmp(oerrormaps, token, len) == 0 ||
-                strcmp("EM", token) == 0 ||
-                memcmp(oerrormaps2, token, len) == 0 ||
-                memcmp(oerrormaps3, token, len) == 0))
+      } else if (len >= 2 &&
+                 (memcmp(oerrormaps, token, len) == 0 ||
+                  strcmp("EM", token) == 0 ||
+                  memcmp(oerrormaps2, token, len) == 0 ||
+                  memcmp(oerrormaps3, token, len) == 0)) {
         error_maps_bit = flag;
-      else if (len >= 2 && memcmp(ofirst, token, len) == 0)
+      } else if (len >= 2 && memcmp(ofirst, token, len) == 0) {
         first_bit = flag;
-      else if (len >= 2 && memcmp(ofollow, token, len) == 0)
+      } else if (len >= 2 && memcmp(ofollow, token, len) == 0) {
         follow_bit = flag;
-      else if (len >= 2 &&
-               (strcmp(token, "GP") == 0 ||
-                memcmp(ogenprsr, token, len) == 0 ||
-                memcmp(ogenprsr2, token, len) == 0 ||
-                memcmp(ogenprsr3, token, len) == 0)) {
+      } else if (len >= 2 &&
+                 (strcmp(token, "GP") == 0 ||
+                  memcmp(ogenprsr, token, len) == 0 ||
+                  memcmp(ogenprsr2, token, len) == 0 ||
+                  memcmp(ogenprsr3, token, len) == 0)) {
         c_bit = flag;
         cpp_bit = false;
         java_bit = false;
@@ -387,89 +387,83 @@ static void options(void) {
                  (strcmp(token, "GD") == 0 ||
                   memcmp(ogotodefault, token, len) == 0 ||
                   memcmp(ogotodefault2, token, len) == 0 ||
-                  memcmp(ogotodefault3, token, len) == 0))
+                  memcmp(ogotodefault3, token, len) == 0)) {
         goto_default_bit = flag;
-      else if (strcmp(token, "HW") == 0 ||
-               memcmp(ohalfword, token, len) == 0 ||
-               memcmp(ohalfword2, token, len) == 0 ||
-               memcmp(ohalfword3, token, len) == 0)
+      } else if (strcmp(token, "HW") == 0 ||
+                 memcmp(ohalfword, token, len) == 0 ||
+                 memcmp(ohalfword2, token, len) == 0 ||
+                 memcmp(ohalfword3, token, len) == 0) {
         byte_bit = !flag;
-      else if (len >= 2 && memcmp(olalr, token, len) == 0) {
+      } else if (len >= 2 && memcmp(olalr, token, len) == 0) {
         slr_bit = !flag;
         lalr_level = 1;
-      } else if (len >= 2 && memcmp(olist, token, len) == 0)
+      } else if (len >= 2 && memcmp(olist, token, len) == 0) {
         list_bit = flag;
-      else if (strcmp(token, "NC") == 0 ||
-               memcmp(ontcheck, token, len) == 0 ||
-               memcmp(ontcheck2, token, len) == 0 ||
-               memcmp(ontcheck3, token, len) == 0)
+      } else if (strcmp(token, "NC") == 0 ||
+                 memcmp(ontcheck, token, len) == 0 ||
+                 memcmp(ontcheck2, token, len) == 0 ||
+                 memcmp(ontcheck3, token, len) == 0) {
         nt_check_bit = flag;
-      else if (strcmp(token, "RR") == 0 ||
-               memcmp(oreadreduce, token, len) == 0 ||
-               memcmp(oreadreduce2, token, len) == 0 ||
-               memcmp(oreadreduce3, token, len) == 0)
+      } else if (strcmp(token, "RR") == 0 ||
+                 memcmp(oreadreduce, token, len) == 0 ||
+                 memcmp(oreadreduce2, token, len) == 0 ||
+                 memcmp(oreadreduce3, token, len) == 0) {
         read_reduce_bit = flag;
-      else if (len >= 2 && memcmp(oscopes, token, len) == 0)
+      } else if (len >= 2 && memcmp(oscopes, token, len) == 0) {
         scopes_bit = flag;
-      else if (len >= 2 &&
-               (strcmp(token, "SD") == 0 ||
-                memcmp(oshiftdefault, token, len) == 0 ||
-                memcmp(oshiftdefault2, token, len) == 0 ||
-                memcmp(oshiftdefault3, token, len) == 0))
+      } else if (len >= 2 &&
+                 (strcmp(token, "SD") == 0 ||
+                  memcmp(oshiftdefault, token, len) == 0 ||
+                  memcmp(oshiftdefault2, token, len) == 0 ||
+                  memcmp(oshiftdefault3, token, len) == 0)) {
         shift_default_bit = flag;
-      else if (len >= 2 &&
-               (strcmp(token, "SP") == 0 ||
-                memcmp(osingleproductions, token, len) == 0 ||
-                memcmp(osingleproductions2, token, len) == 0 ||
-                memcmp(osingleproductions3, token, len) == 0))
+      } else if (len >= 2 &&
+                 (strcmp(token, "SP") == 0 ||
+                  memcmp(osingleproductions, token, len) == 0 ||
+                  memcmp(osingleproductions2, token, len) == 0 ||
+                  memcmp(osingleproductions3, token, len) == 0)) {
         single_productions_bit = flag;
-      else if (len >= 2 && memcmp(oslr, token, len) == 0) {
+      } else if (len >= 2 && memcmp(oslr, token, len) == 0) {
         slr_bit = flag;
         lalr_level = 1;
-      } else if (len >= 2 && memcmp(ostates, token, len) == 0)
+      } else if (len >= 2 && memcmp(ostates, token, len) == 0) {
         states_bit = flag;
-      else if (len >= 2 && memcmp(otable, token, len) == 0) {
-        if (flag)
+      } else if (len >= 2 && memcmp(otable, token, len) == 0) {
+        if (flag) {
           table_opt = OPTIMIZE_SPACE;
-        else
+        } else {
           table_opt = 0;
+        }
       } else if (len >= 2 && memcmp(otrace, token, len) == 0) {
-        if (flag)
+        if (flag) {
           trace_opt = TRACE_CONFLICTS;
-        else
+        } else {
           trace_opt = NOTRACE;
+        }
       } else if (memcmp(overbose, token, len) == 0)
         verbose_bit = flag;
       else if (memcmp(owarnings, token, len) == 0)
         warnings_bit = flag;
       else if (memcmp(oxref, token, len) == 0)
         xref_bit = flag;
-      else if (strcmp(token, "D") == 0 ||
-               strcmp(token, "DE") == 0) {
-        sprintf(msg_line, "\"%s\" is an ambiguous option: DEBUG, DEFAULT, DEFERRED ?", temp);
-        PRNTERR(msg_line);
+      else if (strcmp(token, "D") == 0 || strcmp(token, "DE") == 0) {
+        PRNTERR2(msg_line, "\"%s\" is an ambiguous option: DEBUG, DEFAULT, DEFERRED ?", temp);
       } else if (strcmp(token, "DEF") == 0) {
-        PRNTERR("\"DEF\" is an ambiguous option: "
-          "DEFAULT, DEFERRED ?");
+        PRNTERR("\"DEF\" is an ambiguous option: DEFAULT, DEFERRED ?");
       } else if (strcmp(token, "E") == 0) {
-        PRNTERR("\"E\" is an ambiguous option: "
-          "EDIT, ERROR-MAPS ?");
+        PRNTERR("\"E\" is an ambiguous option: EDIT, ERROR-MAPS ?");
       } else if (strcmp(token, "F") == 0) {
         PRNTERR("\"F\" is an ambiguous option: FOLLOW, FIRST ?");
       } else if (strcmp(token, "G") == 0) {
-        PRNTERR("\"G\" is an ambiguous option: "
-          "GENERATE-PARSER, GOTO-DEFAULT ?");
+        PRNTERR("\"G\" is an ambiguous option: GENERATE-PARSER, GOTO-DEFAULT ?");
       } else if (strcmp(token, "L") == 0) {
         PRNTERR("\"L\" is an ambiguous option: LALR, LIST ?");
       } else if (strcmp(token, "S") == 0) {
-        PRNTERR("\"S\" is an ambiguous option:\n "
-          "SCOPES, SEARCH, STATES, SLR, "
-          "SHIFT-DEFAULT, SINGLE-PRODUCTIONS  ?");
+        PRNTERR("\"S\" is an ambiguous option:\n SCOPES, SEARCH, STATES, SLR, SHIFT-DEFAULT, SINGLE-PRODUCTIONS  ?");
       } else if (strcmp(token, "T") == 0) {
         PRNTERR("\"T\" is an ambiguous option:  TABLE, TRACE ?");
       } else {
-        sprintf(msg_line, "\"%s\" is an invalid option", temp);
-        PRNTERR(msg_line);
+        PRNTERR2(msg_line, "\"%s\" is an invalid option", temp);
       }
     }
 
@@ -479,8 +473,7 @@ static void options(void) {
       i++;
       if (IsSpace(parm[i]) || parm[i] == '\0') /* no value specified */
       {
-        sprintf(msg_line, "Null string or blank is invalid for parameter %s", token);
-        PRNTERR(msg_line);
+        PRNTERR2(msg_line, "Null string or blank is invalid for parameter %s", token);
         continue;
       }
 
@@ -503,11 +496,10 @@ static void options(void) {
       else if (strcmp(token, oblocke) == 0)
         strcpy(blocke, temp);
       else if (memcmp(odefault, token, len) == 0) {
-        if (verify(temp))
+        if (verify(temp)) {
           default_opt = MIN(atoi(temp), 5);
-        else {
-          sprintf(msg_line, "\"%s\" is an invalid value for %s", temp, token);
-          PRNTERR(msg_line);
+        } else {
+          PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
         }
       } else if (len >= 2 && memcmp(token, oescape, len) == 0)
         escape = temp[0];
@@ -549,8 +541,7 @@ static void options(void) {
         }
 
         if (invalid_language) {
-          sprintf(msg_line, "\"%s\" is an invalid value for %s", temp, token);
-          PRNTERR(msg_line);
+          PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
         }
       } else if (strcmp(token, "HN") == 0 ||
                  (len >= 2 &&
@@ -568,8 +559,7 @@ static void options(void) {
           temp[MAX_PARM_SIZE - 1] = '\0';
         if (!verify(temp) &&
             memcmp(translate(temp, len), omax, len) != 0) {
-          sprintf(msg_line, "\"%s\" is an invalid value for %s", temp, token);
-          PRNTERR(msg_line);
+          PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
         } else {
           slr_bit = false;
           if (memcmp(omax, translate(temp, len), len) == 0)
@@ -590,18 +580,16 @@ static void options(void) {
         if (verify(temp))
           maximum_distance = atoi(temp);
         else {
-          sprintf(msg_line, "\"%s\" is an invalid value for %s", temp, token);
-          PRNTERR(msg_line);
+          PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
         }
       } else if (len >= 2 &&
                  (memcmp(token, ominimum_distance, len) == 0 ||
                   memcmp(token, ominimum_distance2, len) == 0 ||
                   memcmp(token, ominimum_distance3, len) == 0)) {
-        if (verify(temp))
+        if (verify(temp)) {
           minimum_distance = atoi(temp);
-        else {
-          sprintf(msg_line, "\"%s\" is an invalid value for %s", temp, token);
-          PRNTERR(msg_line);
+        } else {
+          PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
         }
       } else if (memcmp(onames, token, len) == 0) {
         len = strlen(temp);
@@ -614,11 +602,9 @@ static void options(void) {
           names_opt = OPTIMIZE_PHRASES;
         else if ((temp[0] == 'm' || temp[0] == 'M') &&
                  temp[1] != '\0') {
-          sprintf(msg_line, "\"M\" is an ambiguous value for %s: MAXIMUM, MINIMUM?", token);
-          PRNTERR(msg_line);
+          PRNTERR2(msg_line, "\"M\" is an ambiguous value for %s: MAXIMUM, MINIMUM?", token);
         } else {
-          sprintf(msg_line, "\"%s\" is an invalid value for %s", temp, token);
-          PRNTERR(msg_line);
+          PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
         }
       } else if (len >= 2 && memcmp(token, oormark, len) == 0) {
         ormark = temp[0];
@@ -630,14 +616,12 @@ static void options(void) {
       //   if (verify(temp)) {
       //     const int tmpval = atoi(temp);
       //     if (tmpval > MAX_LINE_SIZE) {
-      //       sprintf(msg_line, "OUTPUT_SIZE cannot exceed %d", MAX_LINE_SIZE);
-      //       PRNTERR(msg_line);
+      //       PRNTERR2(msg_line, "OUTPUT_SIZE cannot exceed %d", MAX_LINE_SIZE);
       //     } else {
       //       output_size = tmpval;
       //     }
       //   } else {
-      //     sprintf(msg_line, "\"%s\" is an invalid value for %s", temp, token);
-      //     PRNTERR(msg_line);
+      //     PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
       //   }
       } else if (memcmp(token, oprefix, len) == 0)
         strcpy(prefix, temp);
@@ -645,59 +629,53 @@ static void options(void) {
                (memcmp(token, ostack_size, len) == 0 ||
                 memcmp(token, ostack_size2, len) == 0 ||
                 memcmp(token, ostack_size3, len) == 0)) {
-        if (verify(temp))
+        if (verify(temp)) {
           stack_size = atoi(temp);
-        else {
-          sprintf(msg_line, "\"%s\" is an invalid value for %s", temp, token);
-          PRNTERR(msg_line);
+        } else {
+          PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
         }
       } else if (len >= 2 && memcmp(token, osuffix, len) == 0)
         strcpy(suffix, temp);
       else if (len >= 2 && memcmp(token, otable, len) == 0) {
         len = strlen(temp);
-        if (len > MAX_PARM_SIZE)
+        if (len > MAX_PARM_SIZE) {
           temp[MAX_PARM_SIZE - 1] = '\0';
-
-        if (memcmp(ospace, translate(temp, len), len) == 0)
+        }
+        if (memcmp(ospace, translate(temp, len), len) == 0) {
           table_opt = OPTIMIZE_SPACE;
-        else if (memcmp(translate(temp, len), otime, len) == 0)
+        } else if (memcmp(translate(temp, len), otime, len) == 0) {
           table_opt = OPTIMIZE_TIME;
-        else {
-          sprintf(msg_line, "\"%s\" is an invalid value for %s", temp, token);
-          PRNTERR(msg_line);
+        } else {
+          PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
         }
       } else if (len >= 2 && memcmp(token, otrace, len) == 0) {
         len = strlen(temp);
-        if (len > MAX_PARM_SIZE)
+        if (len > MAX_PARM_SIZE) {
           temp[MAX_PARM_SIZE - 1] = '\0';
-
-        if (memcmp(oconflicts, translate(temp, len), len) == 0)
+        }
+        if (memcmp(oconflicts, translate(temp, len), len) == 0) {
           trace_opt = TRACE_CONFLICTS;
-        else if (memcmp(translate(temp, len), ofull, len) == 0)
+        } else if (memcmp(translate(temp, len), ofull, len) == 0) {
           trace_opt = TRACE_FULL;
-        else {
-          sprintf(msg_line, "\"%s\" is an invalid value for %s", temp, token);
-          PRNTERR(msg_line);
+        } else {
+          PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
         }
       } else if (strcmp(token, "BLOCK") == 0) {
         PRNTERR("Option \"BLOCK\" is ambiguous: BLOCKB, BLOCKE ?");
       } else if (strcmp("E", token) == 0) {
-        PRNTERR("Option \"E\" is ambiguous: "
-          "ERROR-PROC, ERROR-MAPS ?");
+        PRNTERR("Option \"E\" is ambiguous: ERROR-PROC, ERROR-MAPS ?");
       } else if (strcmp(token, "H") == 0) {
         PRNTERR("Option \"H\" is ambiguous: HBLOCKB, HBLOCKE ?");
       } else if (strcmp(token, "HBLOCK") == 0) {
         PRNTERR("Option \"HBLOCK\" is ambiguous: HBLOCKB, HBLOCKE ?");
       } else if (strcmp("M", token) == 0 || strcmp("MD", token) == 0) {
-        sprintf(msg_line, "Option \"%s\" is ambiguous: MAX-DISTANCE, MIN-DISTANCE?", token);
-        PRNTERR(msg_line);
+        PRNTERR2(msg_line, "Option \"%s\" is ambiguous: MAX-DISTANCE, MIN-DISTANCE?", token);
       } else if (strcmp("O", token) == 0) {
         PRNTERR("Option \"O\" is ambiguous: OUTPUT-SIZE, ORMARK ?");
       } else if (strcmp("T", token) == 0) {
         PRNTERR("Option \"T\" is ambiguous: TABLE, TRACE?");
       } else {
-        sprintf(msg_line, "\"%s\" is an invalid option", token);
-        PRNTERR(msg_line);
+        PRNTERR2(msg_line, "\"%s\" is an invalid option", token);
       }
     }
 
@@ -971,10 +949,11 @@ static void process_options_lines(void) {
   else
     strcpy(opt_string[++top], "NOWARNINGS");
 
-  if (xref_bit)
+  if (xref_bit) {
     strcpy(opt_string[++top], "XREF");
-  else
+  } else {
     strcpy(opt_string[++top], "NOXREF");
+  }
 
   PRNT("Options in effect:");
   strcpy(output_line, "    ");
@@ -1035,24 +1014,14 @@ static void process_options_lines(void) {
     strcpy(temp, "ORMARK and ESCAPE");
 
   if (temp[0] != '\0') {
-    sprintf(msg_line,
-            "The options %s cannot have the same value", temp);
-    PRNTERR(msg_line);
-    sprintf(msg_line,
-            "Input process aborted at line %d ...", line_no);
-    PRNT(msg_line);
+    PRNTERR2(msg_line, "The options %s cannot have the same value", temp);
+    PRNT2(msg_line, "Input process aborted at line %d ...", line_no);
     exit(12);
   }
 
-  if (strlen(hblockb) <= strlen(blockb) &&
-      memcmp(hblockb, blockb, strlen(hblockb)) == 0) {
-    sprintf(msg_line,
-            "Hblockb value, %s, cannot be a suffix of blockb: %s",
-            hblockb, blockb);
-    PRNTERR(msg_line);
-    sprintf(msg_line,
-            "Input process aborted at line %d ...", line_no);
-    PRNT(msg_line);
+  if (strlen(hblockb) <= strlen(blockb) && memcmp(hblockb, blockb, strlen(hblockb)) == 0) {
+    PRNTERR2(msg_line,"Hblockb value, %s, cannot be a suffix of blockb: %s", hblockb, blockb);
+    PRNT2(msg_line, "Input process aborted at line %d ...", line_no);
     exit(12);
   }
 }
@@ -1281,11 +1250,7 @@ scan_token:
 
     while (strncmp(p1, hblocke, hblocke_len) != 0) {
       if (*p1 == '\0') {
-        sprintf(msg_line,
-                "End of file encountered while "
-                "scanning header action block in rule %d",
-                num_rules);
-        PRNTERR(msg_line);
+        PRNTERR2(msg_line, "End of file encountered while scanning header action block in rule %d", num_rules);
         exit(12);
       }
       if (*p1++ == '\n') {
@@ -1326,10 +1291,7 @@ scan_token:
 
     while (strncmp(p1, blocke, blocke_len) != 0) {
       if (*p1 == '\0') {
-        sprintf(msg_line,
-                "End of file encountered while "
-                "scanning action block in rule %d", num_rules);
-        PRNTERR(msg_line);
+        PRNTERR2(msg_line, "End of file encountered while scanning action block in rule %d", num_rules);
         exit(12);
       }
       if (*p1++ == '\n') {
@@ -1375,12 +1337,7 @@ scan_token:
         i = min(SYMBOL_SIZE, p2 - p1);
         memcpy(tok_string, p1, i);
         tok_string[i] = '\0';
-        sprintf(msg_line,
-                "Symbol \"%s\""
-                " has been referenced in line %ld "
-                " without the closing \">\"",
-                tok_string, ct_start_line);
-        PRNTERR(msg_line);
+        PRNTERR2(msg_line, "Symbol \"%s\" has been referenced in line %ld without the closing \">\"", tok_string, ct_start_line);
         exit(12);
       }
       break;
@@ -1617,30 +1574,17 @@ static void token_action(void) {
 /*  Error messages to be printed if an error is encountered during parsing. */
 static void error_action(void) {
   ct_ptr[ct_length] = '\0';
-
-  if (ct == EOF_TK)
-    sprintf(msg_line, "End-of file reached prematurely");
-  else if (ct == MACRO_NAME_TK) {
-    sprintf(msg_line,
-            "Misplaced macro name \"%s\" found "
-            "in line %d, column %d",
-            ct_ptr, line_no, ct_start_col);
+  if (ct == EOF_TK) {
+    PRNTERR2(msg_line, "End-of file reached prematurely");
+  } else if (ct == MACRO_NAME_TK) {
+    PRNTERR2(msg_line, "Misplaced macro name \"%s\" found in line %d, column %d", ct_ptr, line_no, ct_start_col);
   } else if (ct == SYMBOL_TK) {
     char tok_string[SYMBOL_SIZE + 1];
     restore_symbol(tok_string, ct_ptr);
-    sprintf(msg_line,
-            "Misplaced symbol \"%s\" found "
-            "in line %d, column %d",
-            tok_string, line_no, ct_start_col);
+    PRNTERR2(msg_line, "Misplaced symbol \"%s\" found in line %d, column %d", tok_string, line_no, ct_start_col);
   } else {
-    sprintf(msg_line,
-            "Misplaced keyword \"%s\" found "
-            "in line %d, column %d",
-            ct_ptr, line_no, ct_start_col);
+    PRNTERR2(msg_line, "Misplaced keyword \"%s\" found in line %d, column %d", ct_ptr, line_no, ct_start_col);
   }
-
-  PRNTERR(msg_line);
-
   exit(12);
 }
 
@@ -2001,10 +1945,7 @@ static void make_rules_map(void) {
     } else if (IS_A_TERMINAL(rulehdr[i].lhs)) {
       char temp[SYMBOL_SIZE + 1];
       restore_symbol(temp, RETRIEVE_STRING(rulehdr[i].lhs));
-      sprintf(msg_line,
-              "In rule %d: terminal \"%s\" used as left hand side",
-              i, temp);
-      PRNTERR(msg_line);
+      PRNTERR2(msg_line, "In rule %d: terminal \"%s\" used as left hand side", i, temp);
       PRNTERR("Processing terminated due to input errors.");
       exit(12);
     } else rules[i].lhs = rulehdr[i].lhs;
@@ -2289,10 +2230,7 @@ next_line: {
   if (l > output_size) {
     for (j = l - 1; j >= output_size; j--) {
       if (text[j] != ' ') {
-        sprintf(msg_line,
-                "Size of output line \"%s\""
-                " is greater than OUTPUT_SIZE (%d), it was %lu", text, output_size, strlen(text));
-        PRNTERR(msg_line);
+        PRNTERR2(msg_line, "Size of output line \"%s\" is greater than OUTPUT_SIZE (%d), it was %lu", text, output_size, strlen(text));
         break;
       }
     }

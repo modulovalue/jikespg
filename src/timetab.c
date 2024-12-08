@@ -69,8 +69,7 @@ static void remap_symbols(void) {
   }
   PRNT2(msg_line, "Number of Reductions saved by default: %d", default_saves);
 
-  int state_no;
-  for ALL_LA_STATES(state_no) {
+  for ALL_LA_STATES2 {
     ordered_state[state_no] = state_no;
     row_size[state_no] = 0;
     sh = shift[lastats[state_no].shift_number];
@@ -159,7 +158,7 @@ static void remap_symbols(void) {
       red.map[i].symbol = symbol_map[red.map[i].symbol];
   }
 
-  for ALL_LA_STATES(state_no) {
+  for ALL_LA_STATES2 {
     red = lastats[state_no].reduce;
     for (int i = 1; i <= red.size; i++)
       red.map[i].symbol = symbol_map[red.map[i].symbol];
@@ -398,9 +397,7 @@ static void print_tables(void) {
   la_state_offset = offset;
 
   if (offset > MAX_TABLE_SIZE + 1) {
-    sprintf(msg_line, "Table contains entries that are > "
-            "%ld; Processing stopped.", MAX_TABLE_SIZE + 1);
-    PRNTERR(msg_line);
+    PRNTERR2(msg_line, "Table contains entries that are > %ld; Processing stopped.", MAX_TABLE_SIZE + 1);
     exit(12);
   }
 
@@ -461,10 +458,7 @@ static void print_tables(void) {
       }
 
       if (result_act > MAX_TABLE_SIZE + 1) {
-        sprintf(msg_line,
-                "Table contains look-ahead shift entry that is >"
-                " %ld; Processing stopped.", MAX_TABLE_SIZE + 1);
-        PRNTERR(msg_line);
+        PRNTERR2(msg_line, "Table contains look-ahead shift entry that is >%ld; Processing stopped.", MAX_TABLE_SIZE + 1);
         return;
       }
 

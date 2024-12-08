@@ -650,7 +650,6 @@ static void print_error_maps(void) {
   int i;
   int k;
   int offset;
-  int symbol;
 
   long num_bytes;
 
@@ -674,7 +673,7 @@ static void print_error_maps(void) {
     /* amount of space in the bit_string representation of sets  */
     /* as well as time when operations are performed on those    */
     /* bit-strings.                                              */
-    for ALL_TERMINALS(symbol) {
+    for ALL_TERMINALS2 {
       original[symbol_map[symbol]] = symbol;
     }
   }
@@ -685,6 +684,7 @@ static void print_error_maps(void) {
     sh = shift[statset[state_no].shift_number];
     as_size[state_no] = sh.size;
     for (i = 1; i <= sh.size; i++) {
+      int symbol;
       if (table_opt == OPTIMIZE_TIME) {
         symbol = original[sh.map[i].symbol];
       } else {
@@ -696,6 +696,7 @@ static void print_error_maps(void) {
     red = reduce[state_no];
     as_size[state_no] += red.size;
     for (i = 1; i <= red.size; i++) {
+      int symbol;
       if (table_opt == OPTIMIZE_TIME) {
         symbol = original[red.map[i].symbol];
       } else {
@@ -773,7 +774,7 @@ static void print_error_maps(void) {
   for ALL_STATES2 {
     as_size[state_no] = gd_index[state_no + 1] - gd_index[state_no];
     for (i = gd_index[state_no]; i <= gd_index[state_no + 1] - 1; i++) {
-      symbol = gd_range[i] - num_terminals;
+      int symbol = gd_range[i] - num_terminals;
       NTSET_BIT_IN(naction_symbols, state_no, symbol);
     }
   }
@@ -791,8 +792,7 @@ static void print_error_maps(void) {
   /* Compute and write out the base of the NACTION_SYMBOLS map.*/
   naction_symbols_base = Allocate_int_array(num_states + 1);
   for ALL_STATES2 {
-    naction_symbols_base[state_list[state_no]] =
-        ABS(state_start[state_list[state_no]]);
+    naction_symbols_base[state_list[state_no]] = ABS(state_start[state_list[state_no]]);
   }
   if (java_bit) {
     prnt_shorts("\n    public final static char nasb[] = {0,\n",
@@ -828,9 +828,9 @@ static void print_error_maps(void) {
   temp = Allocate_int_array(num_symbols + 1);
 
   if (table_opt == OPTIMIZE_SPACE) {
-    for ALL_TERMINALS(symbol)
+    for ALL_TERMINALS2 {
       temp[symbol_map[symbol]] = symno[symbol].name_index;
-
+    }
     if (num_names <= (java_bit ? 127 : 255)) {
       if (java_bit) {
         prnt_shorts
@@ -860,8 +860,9 @@ static void print_error_maps(void) {
     /* We write the name_index of each non_terminal symbol. The array */
     /* TEMP is used to remap the NAME_INDEX values based on the new   */
     /* symbol numberings.                                             */
-    for ALL_NON_TERMINALS(symbol)
+    for ALL_NON_TERMINALS2 {
       temp[symbol_map[symbol]] = symno[symbol].name_index;
+    }
 
     if (num_names <= (java_bit ? 127 : 255)) {
       if (java_bit) {
@@ -893,8 +894,9 @@ static void print_error_maps(void) {
     /* Compute and list space required for NON_TERMINAL_INDEX map.   */
     PRNT2(msg_line, "    Storage required for NON_TERMINAL_INDEX map: %ld Bytes", num_bytes);
   } else {
-    for ALL_SYMBOLS(symbol)
+    for ALL_SYMBOLS2 {
       temp[symbol_map[symbol]] = symno[symbol].name_index;
+    }
     if (num_names <= (java_bit ? 127 : 255)) {
       if (java_bit) {
         prnt_shorts
@@ -1254,8 +1256,7 @@ static void print_symbols(void) {
       tok[0] = escape;
       PRNT2(line, "Escaped symbol %s is an invalid C variable.\n", tok);
     } else if (strpbrk(tok, "!%^&*()-+={}[];:\"`~|\\,.<>/?\'") != NULL) {
-      sprintf(line, "%s may be an invalid variable name.\n", tok);
-      PRNT(line);
+      PRNT2(line, "%s may be an invalid variable name.\n", tok);
     }
 
     sprintf(line, "      %s%s%s = %i,\n",
@@ -1610,26 +1611,25 @@ static void print_externs(void) {
 }
 
 static void print_space_tables(void) {
-  int *check,
-      *action;
+  int *check;
+  int *action;
 
-  int la_state_offset,
-      i,
-      j,
-      k,
-      indx,
-      act,
-      result_act,
-      default_count = 0,
-      goto_count = 0,
-      goto_reduce_count = 0,
-      reduce_count = 0,
-      la_shift_count = 0,
-      shift_count = 0,
-      shift_reduce_count = 0;
+  int la_state_offset;
+  int i;
+  int j;
+  int k;
+  int indx;
+  int act;
+  long result_act;
+  int default_count = 0;
+  int goto_count = 0;
+  int goto_reduce_count = 0;
+  int reduce_count = 0;
+  int la_shift_count = 0;
+  int shift_count = 0;
+  int shift_reduce_count = 0;
 
-  int rule_no,
-      symbol;
+  int rule_no;
 
   long offset;
 
@@ -1649,9 +1649,7 @@ static void print_space_tables(void) {
     la_state_offset = error_act;
 
   if (offset > MAX_TABLE_SIZE + 1) {
-    sprintf(msg_line, "Table contains entries that are > "
-            "%ld; Processing stopped.", MAX_TABLE_SIZE + 1);
-    PRNTERR(msg_line);
+    PRNTERR2(msg_line, "Table contains entries that are > %ld; Processing stopped.", MAX_TABLE_SIZE + 1);
     exit(12);
   }
 
@@ -1691,7 +1689,7 @@ static void print_space_tables(void) {
     indx = state_index[state_no];
     go_to = statset[state_no].go_to;
     for (j = 1; j <= go_to.size; j++) {
-      symbol = go_to.map[j].symbol;
+      int symbol = go_to.map[j].symbol;
       i = indx + symbol;
       if (goto_default_bit || nt_check_bit)
         check[i] = symbol;
@@ -1901,7 +1899,7 @@ static void print_space_tables(void) {
     indx = term_state_index[state_no];
     sh = shift[new_state_element[state_no].shift_number];
     for (j = 1; j <= sh.size; j++) {
-      symbol = sh.map[j].symbol;
+      int symbol = sh.map[j].symbol;
       act = sh.map[j].action;
       if (!shift_default_bit || act != shiftdf[symbol]) {
         i = indx + symbol;
@@ -1919,10 +1917,7 @@ static void print_space_tables(void) {
         }
 
         if (result_act > MAX_TABLE_SIZE + 1) {
-          sprintf(msg_line,
-                  "Table contains look-ahead shift entry that is >"
-                  " %ld; Processing stopped.", MAX_TABLE_SIZE + 1);
-          PRNTERR(msg_line);
+          PRNTERR2(msg_line, "Table contains look-ahead shift entry that is >%ld; Processing stopped.", MAX_TABLE_SIZE + 1);
           return;
         }
 
@@ -1932,7 +1927,7 @@ static void print_space_tables(void) {
 
     red = new_state_element[state_no].reduce;
     for (j = 1; j <= red.size; j++) {
-      symbol = red.map[j].symbol;
+      int symbol = red.map[j].symbol;
       rule_no = red.map[j].rule_number;
       i = indx + symbol;
       check[i] = symbol;
@@ -1951,65 +1946,62 @@ static void print_space_tables(void) {
   }
 
   PRNT("\n\nActions in Compressed Tables:");
-  sprintf(msg_line, "     Number of Shifts: %d", shift_count);
-  PRNT(msg_line);
 
-  sprintf(msg_line, "     Number of Shift/Reduces: %d", shift_reduce_count);
-  PRNT(msg_line);
+  PRNT2(msg_line, "     Number of Shifts: %d", shift_count);
+
+  PRNT2(msg_line, "     Number of Shift/Reduces: %d", shift_reduce_count);
 
   if (max_la_state > num_states) {
-    sprintf(msg_line,
-            "     Number of Look-Ahead Shifts: %d",
-            la_shift_count);
-    PRNT(msg_line);
+    PRNT2(msg_line, "     Number of Look-Ahead Shifts: %d", la_shift_count);
   }
 
-  sprintf(msg_line, "     Number of Gotos: %d", goto_count);
-  PRNT(msg_line);
+  PRNT2(msg_line, "     Number of Gotos: %d", goto_count);
 
-  sprintf(msg_line, "     Number of Goto/Reduces: %d", goto_reduce_count);
-  PRNT(msg_line);
+  PRNT2(msg_line, "     Number of Goto/Reduces: %d", goto_reduce_count);
 
-  sprintf(msg_line, "     Number of Reduces: %d", reduce_count);
-  PRNT(msg_line);
+  PRNT2(msg_line, "     Number of Reduces: %d", reduce_count);
 
-  sprintf(msg_line, "     Number of Defaults: %d", default_count);
-  PRNT(msg_line);
+  PRNT2(msg_line, "     Number of Defaults: %d", default_count);
 
   /* Write Terminal Check Table.                                      */
   if (num_terminals <= (java_bit ? 127 : 255)) {
-    if (java_bit)
+    if (java_bit) {
       prnt_ints("\n    public final static byte term_check[] = {0,\n",
                 1, term_check_size, 15, check);
-    else
+    } else {
       prnt_ints("\nconst unsigned char  CLASS_HEADER term_check[] = {0,\n",
                 1, term_check_size, 15, check);
+    }
   } else {
-    if (java_bit)
+    if (java_bit) {
       prnt_ints("\n    public final static char term_check[] = {0,\n",
                 1, term_check_size, 15, check);
-    else
+    } else {
       prnt_ints("\nconst unsigned short CLASS_HEADER term_check[] = {0,\n",
                 1, term_check_size, 15, check);
+    }
   }
 
   /* Write Terminal Action Table.                                      */
-  if (java_bit)
+  if (java_bit) {
     prnt_ints("\n    public final static char term_action[] = {0,\n",
               1, term_action_size, 10, action);
-  else
+  } else {
     prnt_ints("\nconst unsigned short CLASS_HEADER term_action[] = {0,\n",
               1, term_action_size, 10, action);
+  }
 
   /* If GOTO_DEFAULT is requested, we print out the GOTODEF vector.   */
   if (goto_default_bit) {
-    if (java_bit)
+    if (java_bit) {
       mystrcpy("\n    public final static char default_goto[] = {0,\n");
-    else mystrcpy("\nconst unsigned short CLASS_HEADER default_goto[] = {0,\n");
+    } else {
+      mystrcpy("\nconst unsigned short CLASS_HEADER default_goto[] = {0,\n");
+    }
 
     padline();
     k = 0;
-    for ALL_NON_TERMINALS(symbol) {
+    for ALL_NON_TERMINALS2 {
       act = gotodef[symbol];
 
       if (act < 0)
@@ -2104,7 +2096,7 @@ static void print_space_tables(void) {
       indx = shift_check_index[i];
       sh = shift[real_shift_number[i]];
       for (j = 1; j <= sh.size; j++) {
-        symbol = sh.map[j].symbol;
+        int symbol = sh.map[j].symbol;
         check[indx + symbol] = symbol;
       }
     }
@@ -2147,22 +2139,20 @@ static void print_space_tables(void) {
 
     padline();
     k = 0;
-    for ALL_TERMINALS(symbol) {
+    for ALL_TERMINALS2 {
       act = shiftdf[symbol];
-      if (act < 0)
+      if (act < 0) {
         result_act = -act + error_act;
-      else if (act == 0)
+      } else if (act == 0) {
         result_act = error_act;
-      else if (act > num_states)
+      } else if (act > num_states) {
         result_act = state_index[act];
-      else
+      } else {
         result_act = state_index[act] + num_rules;
+      }
 
       if (result_act > MAX_TABLE_SIZE + 1) {
-        sprintf(msg_line,
-                "Table contains look-ahead shift entry that is >"
-                " %ld; Processing stopped.", MAX_TABLE_SIZE + 1);
-        PRNTERR(msg_line);
+        PRNTERR2(msg_line, "Table contains look-ahead shift entry that is >%ld; Processing stopped.", MAX_TABLE_SIZE + 1);
         return;
       }
 
@@ -2194,11 +2184,9 @@ static void print_space_tables(void) {
 
   if (!byte_check_bit) {
     if (java_bit) {
-      PRNT("\n***Warning: Base Check vector contains value "
-        "> 127. 16-bit words used.");
+      PRNT("\n***Warning: Base Check vector contains value > 127. 16-bit words used.");
     } else {
-      PRNT("\n***Warning: Base Check vector contains value "
-        "> 255. 16-bit words used.");
+      PRNT("\n***Warning: Base Check vector contains value > 255. 16-bit words used.");
     }
   }
 
@@ -2259,9 +2247,7 @@ static void print_time_tables(void) {
     la_state_offset = error_act;
 
   if (offset > MAX_TABLE_SIZE + 1) {
-    sprintf(msg_line, "Table contains entries that are > "
-            "%ld; Processing stopped.", MAX_TABLE_SIZE + 1);
-    PRNTERR(msg_line);
+    PRNTERR2(msg_line, "Table contains entries that are > %ld; Processing stopped.", MAX_TABLE_SIZE + 1);
     exit(12);
   }
 
@@ -2325,10 +2311,7 @@ static void print_time_tables(void) {
       }
 
       if (result_act > MAX_TABLE_SIZE + 1) {
-        sprintf(msg_line,
-                "Table contains look-ahead shift entry that is >"
-                " %ld; Processing stopped.", MAX_TABLE_SIZE + 1);
-        PRNTERR(msg_line);
+        PRNTERR2(msg_line, "Table contains look-ahead shift entry that is >%ld; Processing stopped.", MAX_TABLE_SIZE + 1);
         return;
       }
 
@@ -2369,13 +2352,10 @@ static void print_time_tables(void) {
   }
 
   PRNT("\n\nActions in Compressed Tables:");
-  sprintf(msg_line, "     Number of Shifts: %d", shift_count);
-  PRNT(msg_line);
 
-  sprintf(msg_line,
-          "     Number of Shift/Reduces: %d",
-          shift_reduce_count);
-  PRNT(msg_line);
+  PRNT2(msg_line, "     Number of Shifts: %d", shift_count);
+
+  PRNT2(msg_line, "     Number of Shift/Reduces: %d", shift_reduce_count);
 
   if (max_la_state > num_states) {
     sprintf(msg_line,
@@ -2384,18 +2364,13 @@ static void print_time_tables(void) {
     PRNT(msg_line);
   }
 
-  sprintf(msg_line, "     Number of Gotos: %d", goto_count);
-  PRNT(msg_line);
+  PRNT2(msg_line, "     Number of Gotos: %d", goto_count);
 
-  sprintf(msg_line,
-          "     Number of Goto/Reduces: %d", goto_reduce_count);
-  PRNT(msg_line);
+  PRNT2(msg_line, "     Number of Goto/Reduces: %d", goto_reduce_count);
 
-  sprintf(msg_line, "     Number of Reduces: %d", reduce_count);
-  PRNT(msg_line);
+  PRNT2(msg_line, "     Number of Reduces: %d", reduce_count);
 
-  sprintf(msg_line, "     Number of Defaults: %d", default_count);
-  PRNT(msg_line);
+  PRNT2(msg_line, "     Number of Defaults: %d", default_count);
 
   if (error_maps_bit || debug_bit) {
     for ALL_STATES2 {
@@ -2634,11 +2609,9 @@ static void print_time_tables(void) {
 
   if (!byte_check_bit) {
     if (java_bit) {
-      PRNT("\n***Warning: Base Check vector contains value "
-        "> 127. 16-bit words used.");
+      PRNT("\n***Warning: Base Check vector contains value > 127. 16-bit words used.");
     } else {
-      PRNT("\n***Warning: Base Check vector contains value "
-        "> 255. 16-bit words used.");
+      PRNT("\n***Warning: Base Check vector contains value > 255. 16-bit words used.");
     }
   }
 

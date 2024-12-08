@@ -149,36 +149,27 @@ int main(const int argc, char *argv[]) {
     PRNT2(msg_line, "Number of Scopes: %d", num_scopes);
   }
 
-  sprintf(msg_line, "Number of States: %d", num_states);
-  PRNT(msg_line);
+  PRNT2(msg_line, "Number of States: %d", num_states);
 
   if (max_la_state > num_states) {
-    sprintf(msg_line, "Number of look-ahead states: %d", max_la_state - num_states);
-    PRNT(msg_line);
+    PRNT2(msg_line, "Number of look-ahead states: %d", max_la_state - num_states);
   }
 
-  sprintf(msg_line, "Number of Shift actions: %ld", num_shifts);
-  PRNT(msg_line);
+  PRNT2(msg_line, "Number of Shift actions: %ld", num_shifts);
 
-  sprintf(msg_line, "Number of Goto actions: %ld", num_gotos);
-  PRNT(msg_line);
+  PRNT2(msg_line, "Number of Goto actions: %ld", num_gotos);
 
   if (read_reduce_bit) {
-    sprintf(msg_line, "Number of Shift/Reduce actions: %ld", num_shift_reduces);
-    PRNT(msg_line);
+    PRNT2(msg_line, "Number of Shift/Reduce actions: %ld", num_shift_reduces);
 
-    sprintf(msg_line, "Number of Goto/Reduce actions: %ld", num_goto_reduces);
-    PRNT(msg_line);
+    PRNT2(msg_line, "Number of Goto/Reduce actions: %ld", num_goto_reduces);
   }
 
-  sprintf(msg_line, "Number of Reduce actions: %ld", num_reductions);
-  PRNT(msg_line);
+  PRNT2(msg_line, "Number of Reduce actions: %ld", num_reductions);
 
-  sprintf(msg_line, "Number of Shift-Reduce conflicts: %ld", num_sr_conflicts);
-  PRNT(msg_line);
+  PRNT2(msg_line, "Number of Shift-Reduce conflicts: %ld", num_sr_conflicts);
 
-  sprintf(msg_line, "Number of Reduce-Reduce conflicts: %ld", num_rr_conflicts);
-  PRNT(msg_line);
+  PRNT2(msg_line, "Number of Reduce-Reduce conflicts: %ld", num_rr_conflicts);
 
   /* If the removal of single productions is requested, do  */
   /* so now.                                                */

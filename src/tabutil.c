@@ -174,8 +174,7 @@ void sortdes(long array[], long count[], const long low, const long high, const 
 /* is copied, and the old space is released.                               */
 void reallocate(void) {
   if (table_size == MAX_TABLE_SIZE) {
-    sprintf(msg_line, "Table has exceeded maximum limit of %ld", MAX_TABLE_SIZE);
-    PRNTERR(msg_line);
+    PRNTERR2(msg_line, "Table has exceeded maximum limit of %ld", MAX_TABLE_SIZE);
     exit(12);
   }
 
@@ -184,11 +183,10 @@ void reallocate(void) {
 
   if (verbose_bit) {
     if (table_opt == OPTIMIZE_TIME) {
-      sprintf(msg_line, "Reallocating storage for TIME table, adding %ld entries", table_size - old_size);
+      PRNT2(msg_line, "Reallocating storage for TIME table, adding %ld entries", table_size - old_size);
     } else {
-      sprintf(msg_line, "Reallocating storage for SPACE table, adding %ld entries", table_size - old_size);
+      PRNT2(msg_line, "Reallocating storage for SPACE table, adding %ld entries", table_size - old_size);
     }
-    PRNT(msg_line);
   }
 
   long *n = Allocate_long_array(table_size + 1);

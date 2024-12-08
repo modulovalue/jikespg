@@ -68,29 +68,29 @@ static const int IOBUFFER_SIZE = 655360;
 
 /**                         ITERATION MACROS                      **/
 /* The following macros (ALL_) are used to iterate over a sequence.*/
-// TODO • replace with no param
-#define ALL_LA_STATES(indx) (indx = num_states + 1; indx <= max_la_state; indx++)
+#define ALL_LA_STATES2 (int state_no = num_states + 1; state_no <= max_la_state; state_no++)
 
 // TODO • replace with no param
 #define ALL_TERMINALS(indx) (indx = 1; indx <= num_terminals; indx++)
 
-// TODO • replace with no param
-#define ALL_TERMINALS_BACKWARDS(indx) (indx = num_terminals; indx >= 1; indx--)
+#define ALL_TERMINALS2 (int symbol = 1; symbol <= num_terminals; symbol++)
+
+#define ALL_TERMINALS_BACKWARDS (int symbol = num_terminals; symbol >= 1; symbol--)
 
 // TODO • replace with no param
 #define ALL_NON_TERMINALS(indx) (indx = num_terminals + 1; indx <= num_symbols; indx++)
 
-// TODO • replace with no param
-#define ALL_NON_TERMINALS_BACKWARDS(indx) (indx = num_symbols; indx >= num_terminals + 1; indx--)
+#define ALL_NON_TERMINALS2 (int symbol = num_terminals + 1; symbol <= num_symbols; symbol++)
+
+#define ALL_NON_TERMINALS_BACKWARDS (int symbol = num_symbols; symbol >= num_terminals + 1; symbol--)
 
 // TODO • replace with no param
 #define ALL_SYMBOLS(indx) (indx = 1; indx <= num_symbols; indx++)
 
-// TODO • replace with no param
-#define ALL_ITEMS(indx) (indx = 1; indx <= num_items; indx++)
+#define ALL_SYMBOLS2 (int symbol = 1; symbol <= num_symbols; symbol++)
 
 // TODO • replace with no param
-#define ALL_STATES(indx) (indx = 1; indx <= num_states; indx++)
+#define ALL_ITEMS(indx) (indx = 1; indx <= num_items; indx++)
 
 #define ALL_STATES2 (int state_no = 1; state_no <= num_states; state_no++)
 
@@ -640,6 +640,10 @@ static void PRNTERR(char *msg) {
   fprintf(syslis, "***ERROR: %s\n", msg);
   ENDPAGE_CHECK();
 }
+
+#define PRNTERR2(msg, ...) \
+  sprintf(msg, __VA_ARGS__); \
+  PRNTERR(msg); \
 
 /* The following two macros check whether the value of an             */
 /* integer variable exceeds the maximum limit for a short or a long   */

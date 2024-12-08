@@ -1,6 +1,6 @@
 
 
- IBM Research Jikes Parser Generator    1.2 Sun Dec  8 02:38:58 2024       Page 1
+ IBM Research Jikes Parser Generator    1.2 Sun Dec  8 11:25:45 2024       Page 1
 
 %OPTIONS nogoto-default,esc=$,os=100,action,actfile=lpgact.c,noem
 ***ERROR: "OS" is an invalid option
@@ -21,7 +21,7 @@ Options in effect:
 This grammar is LALR(1).
 
 
- IBM Research Jikes Parser Generator    1.2 Sun Dec  8 02:38:58 2024       Page 2
+ IBM Research Jikes Parser Generator    1.2 Sun Dec  8 11:25:45 2024       Page 2
 
 
 Number of Terminals: 19
