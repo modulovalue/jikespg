@@ -673,12 +673,12 @@ static void print_error_maps(void) {
     /* amount of space in the bit_string representation of sets  */
     /* as well as time when operations are performed on those    */
     /* bit-strings.                                              */
-    for ALL_TERMINALS2 {
+    for ALL_TERMINALS3(symbol) {
       original[symbol_map[symbol]] = symbol;
     }
   }
 
-  for ALL_STATES2 {
+  for ALL_STATES3(state_no) {
     struct shift_header_type sh;
     struct reduce_header_type red;
     sh = shift[statset[state_no].shift_number];
@@ -714,7 +714,7 @@ static void print_error_maps(void) {
   /* Compute and write out the base of the ACTION_SYMBOLS map. */
   action_symbols_base = Allocate_int_array(num_states + 1);
 
-  for ALL_STATES2 {
+  for ALL_STATES3(state_no) {
     action_symbols_base[state_list[state_no]] =
         ABS(state_start[state_list[state_no]]);
   }
@@ -725,16 +725,11 @@ static void print_error_maps(void) {
     prnt_shorts("\nconst unsigned short CLASS_HEADER asb[] = {0,\n",
                 1, num_states, 10, action_symbols_base);
   }
-
   ffree(action_symbols_base);
-
   /* Compute and write out the range of the ACTION_SYMBOLS map. */
   offset = state_start[num_states + 1];
   action_symbols_range = Allocate_int_array(offset);
-
-  compute_action_symbols_range(state_start, state_stack,
-                               state_list, action_symbols_range);
-
+  compute_action_symbols_range(state_start, state_stack, state_list, action_symbols_range);
   for (i = 0; i < offset - 1; i++) {
     if (action_symbols_range[i] > (java_bit ? 127 : 255)) {
       byte_terminal_range = 0;
@@ -771,7 +766,7 @@ static void print_error_maps(void) {
   PRNT2(msg_line, "    Storage required for ACTION_SYMBOLS_RANGE map: %ld Bytes", num_bytes);
   ffree(action_symbols_range);
   /* We now repeat the same process for the domain of the GOTO table.    */
-  for ALL_STATES2 {
+  for ALL_STATES3(state_no) {
     as_size[state_no] = gd_index[state_no + 1] - gd_index[state_no];
     for (i = gd_index[state_no]; i <= gd_index[state_no + 1] - 1; i++) {
       int symbol = gd_range[i] - num_terminals;
@@ -791,7 +786,7 @@ static void print_error_maps(void) {
   }
   /* Compute and write out the base of the NACTION_SYMBOLS map.*/
   naction_symbols_base = Allocate_int_array(num_states + 1);
-  for ALL_STATES2 {
+  for ALL_STATES3(state_no) {
     naction_symbols_base[state_list[state_no]] = ABS(state_start[state_list[state_no]]);
   }
   if (java_bit) {
@@ -814,10 +809,8 @@ static void print_error_maps(void) {
                 0, offset - 2, 10, naction_symbols_range);
   }
 
-  num_bytes = 2 * num_states;
-  PRNT2(msg_line, "    Storage required for NACTION_SYMBOLS_BASE map: %ld Bytes", num_bytes);
-  num_bytes = 2 * (offset - 1);
-  PRNT2(msg_line, "    Storage required for NACTION_SYMBOLS_RANGE map: %ld Bytes", (long) 2 * (offset - 1));
+  PRNT2(msg_line, "    Storage required for NACTION_SYMBOLS_BASE map: %d Bytes", 2 * num_states);
+  PRNT2(msg_line, "    Storage required for NACTION_SYMBOLS_RANGE map: %d Bytes", 2 * (offset - 1));
 
   ffree(naction_symbols_range);
 
@@ -828,7 +821,7 @@ static void print_error_maps(void) {
   temp = Allocate_int_array(num_symbols + 1);
 
   if (table_opt == OPTIMIZE_SPACE) {
-    for ALL_TERMINALS2 {
+    for ALL_TERMINALS3(symbol) {
       temp[symbol_map[symbol]] = symno[symbol].name_index;
     }
     if (num_names <= (java_bit ? 127 : 255)) {
@@ -860,7 +853,7 @@ static void print_error_maps(void) {
     /* We write the name_index of each non_terminal symbol. The array */
     /* TEMP is used to remap the NAME_INDEX values based on the new   */
     /* symbol numberings.                                             */
-    for ALL_NON_TERMINALS2 {
+    for ALL_NON_TERMINALS3(symbol) {
       temp[symbol_map[symbol]] = symno[symbol].name_index;
     }
 
@@ -894,7 +887,7 @@ static void print_error_maps(void) {
     /* Compute and list space required for NON_TERMINAL_INDEX map.   */
     PRNT2(msg_line, "    Storage required for NON_TERMINAL_INDEX map: %ld Bytes", num_bytes);
   } else {
-    for ALL_SYMBOLS2 {
+    for ALL_SYMBOLS3(symbol) {
       temp[symbol_map[symbol]] = symno[symbol].name_index;
     }
     if (num_names <= (java_bit ? 127 : 255)) {
@@ -1246,7 +1239,7 @@ static void print_symbols(void) {
     strcpy(line, "enum {\n");
 
   /* We write the terminal symbols map.                    */
-  for ALL_TERMINALS2 {
+  for ALL_TERMINALS3(symbol) {
     char *tok = RETRIEVE_STRING(symbol);
     fprintf(syssym, "%s", line);
     if (tok[0] == '\n' || tok[0] == escape) {
@@ -1457,46 +1450,32 @@ static void print_externs(void) {
   if (c_bit || cpp_bit) {
     fprintf(sysprs, "%s const unsigned char  rhs[];\n", c_bit ? "extern" : "    static");
     if (check_size > 0 || table_opt == OPTIMIZE_TIME) {
-      bool small = byte_check_bit && !error_maps_bit;
+      const bool small = byte_check_bit && !error_maps_bit;
       fprintf(sysprs, "%s const %s check_table[];\n"
               "%s const %s *%s;\n",
               c_bit ? "extern" : "    static",
               small ? "unsigned char " : "  signed short",
               c_bit ? "extern" : "    static",
               small ? "unsigned char " : "  signed short",
-              table_opt == OPTIMIZE_TIME
-                ? "check"
-                : "base_check");
+              table_opt == OPTIMIZE_TIME ? "check" : "base_check");
     }
     fprintf(sysprs, "%s const unsigned short lhs[];\n"
             "%s const unsigned short *%s;\n",
             c_bit ? "extern" : "    static",
             c_bit ? "extern" : "    static",
-            table_opt == OPTIMIZE_TIME
-              ? "action"
-              : "base_action");
-
-    if (goto_default_bit)
-      fprintf(sysprs, "%s const unsigned short default_goto[];\n",
-              c_bit ? "extern" : "    static");
-
+            table_opt == OPTIMIZE_TIME ? "action" : "base_action");
+    if (goto_default_bit) {
+      fprintf(sysprs, "%s const unsigned short default_goto[];\n", c_bit ? "extern" : "    static");
+    }
     if (table_opt == OPTIMIZE_SPACE) {
-      fprintf(sysprs, "%s const unsigned %s term_check[];\n",
-              c_bit ? "extern" : "    static",
-              num_terminals <= (java_bit ? 127 : 255) ? "char " : "short");
-      fprintf(sysprs, "%s const unsigned short term_action[];\n",
-              c_bit ? "extern" : "    static");
+      fprintf(sysprs, "%s const unsigned %s term_check[];\n", c_bit ? "extern" : "    static", num_terminals <= (java_bit ? 127 : 255) ? "char " : "short");
+      fprintf(sysprs, "%s const unsigned short term_action[];\n", c_bit ? "extern" : "    static");
 
       if (shift_default_bit) {
-        fprintf(sysprs, "%s const unsigned short default_reduce[];\n",
-                c_bit ? "extern" : "    static");
-        fprintf(sysprs, "%s const unsigned short shift_state[];\n",
-                c_bit ? "extern" : "    static");
-        fprintf(sysprs, "%s const unsigned %s shift_check[];\n",
-                c_bit ? "extern" : "    static",
-                num_terminals <= (java_bit ? 127 : 255) ? "char " : "short");
-        fprintf(sysprs, "%s const unsigned short default_shift[];\n",
-                c_bit ? "extern" : "    static");
+        fprintf(sysprs, "%s const unsigned short default_reduce[];\n", c_bit ? "extern" : "    static");
+        fprintf(sysprs, "%s const unsigned short shift_state[];\n", c_bit ? "extern" : "    static");
+        fprintf(sysprs, "%s const unsigned %s shift_check[];\n", c_bit ? "extern" : "    static", num_terminals <= (java_bit ? 127 : 255) ? "char " : "short");
+        fprintf(sysprs, "%s const unsigned short default_shift[];\n", c_bit ? "extern" : "    static");
       }
     }
 
@@ -1677,7 +1656,7 @@ static void print_space_tables(void) {
   }
 
   /*  Now update the non-terminal tables with the non-terminal actions.*/
-  for ALL_STATES2 {
+  for ALL_STATES3(state_no) {
     struct goto_header_type go_to;
 
     indx = state_index[state_no];
@@ -1705,7 +1684,7 @@ static void print_space_tables(void) {
         check[i] = 0;
     }
 
-    for ALL_STATES2 {
+    for ALL_STATES3(state_no) {
       check[state_index[state_no]] = -state_no;
     }
   }
@@ -1837,7 +1816,7 @@ static void print_space_tables(void) {
     for (i = 1; i <= max_indx; i++) {
       check[i] = OMEGA;
     }
-    for ALL_STATES2 {
+    for ALL_STATES3(state_no) {
       check[state_index[state_no]] = state_no;
     }
 
@@ -1995,7 +1974,7 @@ static void print_space_tables(void) {
 
     padline();
     k = 0;
-    for ALL_NON_TERMINALS2 {
+    for ALL_NON_TERMINALS3(symbol) {
       act = gotodef[symbol];
 
       if (act < 0)
@@ -2133,7 +2112,7 @@ static void print_space_tables(void) {
 
     padline();
     k = 0;
-    for ALL_TERMINALS2 {
+    for ALL_TERMINALS3(symbol) {
       act = shiftdf[symbol];
       if (act < 0) {
         result_act = -act + error_act;
@@ -2371,7 +2350,7 @@ static void print_time_tables(void) {
   PRNT2(msg_line, "     Number of Defaults: %d", default_count);
 
   if (error_maps_bit || debug_bit) {
-    for ALL_STATES2 {
+    for ALL_STATES3(state_no) {
       check[state_index[state_no]] = -state_no;
     }
   }
@@ -2512,7 +2491,7 @@ static void print_time_tables(void) {
     for (i = 1; i <= max_indx; i++) {
       check[i] = OMEGA;
     }
-    for ALL_STATES2 {
+    for ALL_STATES3(state_no) {
       check[state_index[state_no]] = state_no;
     }
 
@@ -2567,7 +2546,7 @@ static void print_time_tables(void) {
     for (i = 0; i <= num_symbols; i++)
       default_map[i] = error_act;
 
-    for ALL_NON_TERMINALS2 {
+    for ALL_NON_TERMINALS3(symbol) {
       act = gotodef[symbol];
       if (act < 0)
         result_act = -act;

@@ -20,7 +20,7 @@ void ptstats(void) {
   fprintf(syslis, "Shift STATES: ");
 
   /* iterate over the states */
-  for ALL_STATES2 {
+  for ALL_STATES3(state_no) {
     print_state(state_no);
     max_size = 0;
     /* Compute the size of the largest symbol.  The MAX_SIZE cannot */
@@ -117,7 +117,7 @@ void ptstats(void) {
     PR_HEADING();
     fprintf(syslis, "Look-Ahead STATES:");
   }
-  for ALL_LA_STATES2 {
+  for ALL_LA_STATES3(state_no) {
     char buffer[PRINT_LINE_SIZE + 1];
 
     int i = number_len(state_no) + 8; /* 8 = length of "STATE" */

@@ -515,7 +515,6 @@ void print_item(const int item_no) {
 /* the KERNEL and ADEQUATE items of the actions in the GOTO and SHIFT maps.  */
 void print_state(const int state_no) {
   int
-      i,
       item_no;
 
   struct node *q;
@@ -536,11 +535,11 @@ void print_state(const int state_no) {
 
   /* INITIALIZATION -----------------------------------------------------------*/
 
-  for ALL_STATES2 {
+  for ALL_STATES3(state_no) {
     state_seen[state_no] = false;
   }
 
-  for ALL_ITEMS2 {
+  for ALL_ITEMS3(item_no) {
     item_seen[item_no] = false;
   }
 
@@ -548,7 +547,7 @@ void print_state(const int state_no) {
 
   /* END OF INITIALIZATION ----------------------------------------------------*/
 
-  i = number_len(state_no) + 8; /* 8 = length("STATE") + 2 spaces + newline*/
+  int i = number_len(state_no) + 8; /* 8 = length("STATE") + 2 spaces + newline*/
   fill_in(buffer, PRINT_LINE_SIZE - i, '-');
 
   fprintf(syslis, "\n\n\nSTATE %d %s", state_no, buffer);

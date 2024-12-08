@@ -39,7 +39,7 @@ static void remap_symbols(void) {
     frequency_symbol[i] = i;
     frequency_count[i] = 0;
   }
-  for ALL_STATES2 {
+  for ALL_STATES3(state_no) {
     ordered_state[state_no] = state_no;
     row_size[state_no] = 0;
     sh = shift[statset[state_no].shift_number];
@@ -69,7 +69,7 @@ static void remap_symbols(void) {
   }
   PRNT2(msg_line, "Number of Reductions saved by default: %d", default_saves);
 
-  for ALL_LA_STATES2 {
+  for ALL_LA_STATES3(state_no) {
     ordered_state[state_no] = state_no;
     row_size[state_no] = 0;
     sh = shift[lastats[state_no].shift_number];
@@ -149,7 +149,7 @@ static void remap_symbols(void) {
   /* the new mapping of the symbols.                                   */
   /* The states are sorted in descending order based on the number of  */
   /* actions defined on them.                                          */
-  for ALL_STATES2 {
+  for ALL_STATES3(state_no) {
     go_to = statset[state_no].go_to;
     for (int i = 1; i <= go_to.size; i++) /* Remap Goto map */
       go_to.map[i].symbol = symbol_map[go_to.map[i].symbol];
@@ -158,7 +158,7 @@ static void remap_symbols(void) {
       red.map[i].symbol = symbol_map[red.map[i].symbol];
   }
 
-  for ALL_LA_STATES2 {
+  for ALL_LA_STATES3(state_no) {
     red = lastats[state_no].reduce;
     for (int i = 1; i <= red.size; i++)
       red.map[i].symbol = symbol_map[red.map[i].symbol];
@@ -688,7 +688,7 @@ static void print_tables(void) {
       default_map[i] = error_act;
     }
 
-    for ALL_NON_TERMINALS(symbol) {
+    for ALL_NON_TERMINALS3(symbol) {
       act = gotodef[symbol];
       if (act < 0)
         result_act = -act;
@@ -727,7 +727,7 @@ static void print_tables(void) {
     for (int i = 1; i <= max_indx; i++) {
       action[i] = OMEGA;
     }
-    for ALL_STATES2 {
+    for ALL_STATES3(state_no) {
       action[state_index[state_no]] = state_no;
     }
 

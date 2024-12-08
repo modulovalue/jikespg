@@ -40,64 +40,60 @@ static void remap_non_terminals(void) {
   frequency_count -= num_terminals + 1;
   long *row_size = Allocate_long_array(num_states + 1);
 
-  for ALL_NON_TERMINALS(i) {
+  for ALL_NON_TERMINALS3(i) {
     frequency_symbol[i] = i;
     frequency_count[i] = 0;
   }
-  for ALL_STATES2 {
+  for ALL_STATES3(state_no) {
     ordered_state[state_no] = state_no;
     row_size[state_no] = 0;
     go_to = statset[state_no].go_to;
     for (i = 1; i <= go_to.size; i++) {
       row_size[state_no]++;
-      int symbol = go_to.map[i].symbol;
+      const int symbol = go_to.map[i].symbol;
       frequency_count[symbol]++;
     }
   }
-
   /* The non-terminals are sorted in descending order based on the      */
   /* number of actions defined on then, and they are remapped based on  */
   /* the new arrangement obtained by the sorting.                       */
-  sortdes(frequency_symbol, frequency_count,
-          num_terminals + 1, num_symbols, num_states);
-
-  for ALL_NON_TERMINALS(i)
+  sortdes(frequency_symbol, frequency_count, num_terminals + 1, num_symbols, num_states);
+  for ALL_NON_TERMINALS3(i) {
     symbol_map[frequency_symbol[i]] = i;
-
+  }
   /*    All non-terminal entries in the state automaton are updated     */
   /* accordingly.  We further subtract NUM_TERMINALS from each          */
   /* non-terminal to make them fall in the range [1..NUM_NON_TERMINLS]  */
   /* instead of [NUM_TERMINALS+1..NUM_SYMBOLS].                         */
-  for ALL_STATES2 {
+  for ALL_STATES3(state_no) {
     go_to = statset[state_no].go_to;
     for (i = 1; i <= go_to.size; i++)
       go_to.map[i].symbol = symbol_map[go_to.map[i].symbol] - num_terminals;
   }
-
   /* If Goto-Default was requested, we find out how many non-terminals  */
   /* were eliminated as a result, and adjust the GOTO-DEFAULT map,      */
   /* based on the new mapping of the non-terminals.                     */
   if (goto_default_bit) {
     short *temp_goto_default = Allocate_short_array(num_non_terminals);
     temp_goto_default -= num_terminals + 1;
-
-    for (last_symbol = num_symbols;
-         last_symbol > num_terminals; last_symbol--)
-      if (frequency_count[last_symbol] != 0)
+    for (last_symbol = num_symbols; last_symbol > num_terminals; last_symbol--) {
+      if (frequency_count[last_symbol] != 0) {
         break;
+      }
+    }
     last_symbol -= num_terminals;
     PRNT2(msg_line, "Number of non-terminals eliminated: %d", num_non_terminals - last_symbol);
-
     /* Remap the GOTO-DEFAULT map.                                */
     /* to hold the original map.                                  */
-    for ALL_NON_TERMINALS2 {
+    for ALL_NON_TERMINALS3(symbol) {
       temp_goto_default[symbol_map[symbol]] = gotodef[symbol];
     }
     gotodef += num_terminals + 1;
     ffree(gotodef);
     gotodef = temp_goto_default;
-  } else
+  } else {
     last_symbol = num_non_terminals;
+  }
 
   /* The states are sorted in descending order based on the number of   */
   /* actions defined on them, and they are remapped based on the new    */
@@ -151,7 +147,7 @@ static void overlap_nt_rows(void) {
   /* We now iterate over all the states in their new sorted order as */
   /* indicated by the variable STATE_NO, and determine an "overlap"  */
   /* position for them.                                              */
-  for ALL_STATES2 {
+  for ALL_STATES3(state_no) {
     const int state_no__ = ordered_state[state_no];
 
     /* INDX is set to the beginning of the list of available slots  */
@@ -522,7 +518,7 @@ static void merge_shift_domains(void) {
 
   /*   Compute the frequencies, and remap the terminal symbols         */
   /* accordingly.                                                      */
-  for ALL_TERMINALS2 {
+  for ALL_TERMINALS3(symbol) {
     frequency_symbol[symbol] = symbol;
     frequency_count[symbol] = 0;
   }
@@ -539,7 +535,7 @@ static void merge_shift_domains(void) {
   sortdes(frequency_symbol, frequency_count, 1, num_terminals,
           shift_domain_count);
 
-  for ALL_TERMINALS2 {
+  for ALL_TERMINALS3(symbol) {
     symbol_map[frequency_symbol[symbol]] = symbol;
   }
 
@@ -565,7 +561,7 @@ static void merge_shift_domains(void) {
   /* If ERROR_MAPS are requested, we also have to remap the original   */
   /* REDUCE maps.                                                      */
   if (error_maps_bit) {
-    for ALL_STATES2 {
+    for ALL_STATES3(state_no) {
       red = reduce[state_no];
       for (i = 1; i <= red.size; i++)
         red.map[i].symbol = symbol_map[red.map[i].symbol];
@@ -574,7 +570,7 @@ static void merge_shift_domains(void) {
 
   /* Remap the SHIFT_DEFAULT map.                             */
   temp_shift_default = Allocate_short_array(num_terminals + 1);
-  for ALL_TERMINALS2 {
+  for ALL_TERMINALS3(symbol) {
     temp_shift_default[symbol_map[symbol]] = shiftdf[symbol];
   }
   ffree(shiftdf);
@@ -766,7 +762,7 @@ static void overlay_sim_t_rows(void) {
     else
       red = reduce[state_no];
 
-    for ALL_TERMINALS(j)
+    for ALL_TERMINALS3(j)
       reduce_action[j] = OMEGA;
     for (j = 1; j <= red.size; j++) {
       rule_no = red.map[j].rule_number;
@@ -875,7 +871,7 @@ static void overlay_sim_t_rows(void) {
     new_red = Allocate_reduce_map(reduce_size);
     new_red.map[0].symbol = DEFAULT_SYMBOL;
     new_red.map[0].rule_number = default_rule;
-    for ALL_TERMINALS2 {
+    for ALL_TERMINALS3(symbol) {
       if (reduce_action[symbol] != OMEGA) {
         if (reduce_action[symbol] != default_rule) {
           new_red.map[reduce_size].symbol = symbol;
@@ -915,7 +911,7 @@ static void overlay_sim_t_rows(void) {
         new_red.map[j].rule_number = accept_act;
       }
     } else {
-      for ALL_TERMINALS(j) {
+      for ALL_TERMINALS3(j) {
         reduce_action[j] = OMEGA;
       }
       for (; state_no != NIL; state_no = state_list[state_no]) {
@@ -966,7 +962,7 @@ static void overlay_sim_t_rows(void) {
   /* We now reorder the terminal states based on the number of actions */
   /* in them, and remap the terminal symbols if they were not already  */
   /* remapped in the previous block for the SHIFT_CHECK vector.        */
-  for ALL_TERMINALS2 {
+  for ALL_TERMINALS3(symbol) {
     frequency_symbol[symbol] = symbol;
     frequency_count[symbol] = 0;
   }
@@ -1009,7 +1005,7 @@ static void overlay_sim_t_rows(void) {
 
   if (!shift_default_bit) {
     sortdes(frequency_symbol, frequency_count, 1, num_terminals, num_terminal_states);
-    for ALL_TERMINALS2 {
+    for ALL_TERMINALS3(symbol) {
       symbol_map[frequency_symbol[symbol]] = symbol;
     }
     symbol_map[DEFAULT_SYMBOL] = DEFAULT_SYMBOL;
@@ -1033,7 +1029,7 @@ static void overlay_sim_t_rows(void) {
     /* If ERROR_MAPS are requested, we also have to remap the original   */
     /* REDUCE maps.                                                      */
     if (error_maps_bit) {
-      for ALL_STATES2 {
+      for ALL_STATES3(state_no) {
         red = reduce[state_no];
         for (i = 1; i <= red.size; i++)
           red.map[i].symbol = symbol_map[red.map[i].symbol];
@@ -1291,7 +1287,7 @@ static void print_tables(void) {
   *output_ptr++ = '\n';
 
   /* We write the terminal symbols map.                    */
-  for ALL_TERMINALS2 {
+  for ALL_TERMINALS3(symbol) {
     tok = RETRIEVE_STRING(symbol);
     if (tok[0] == '\n') /* we're dealing with special symbol?  */
       tok[0] = escape; /* replace initial marker with escape. */
@@ -1322,7 +1318,7 @@ static void print_tables(void) {
   }
 
   /* We write the non-terminal symbols map.                */
-  for ALL_NON_TERMINALS2 {
+  for ALL_NON_TERMINALS3(symbol) {
     int len;
     tok = RETRIEVE_STRING(symbol);
     if (tok[0] == '\n') /* we're dealing with special symbol?  */
@@ -1385,9 +1381,8 @@ static void print_tables(void) {
   }
 
   /*  Now update the non-terminal tables with the non-terminal actions.*/
-  for ALL_STATES2 {
+  for ALL_STATES3(state_no) {
     struct goto_header_type go_to;
-
     indx = state_index[state_no];
     go_to = statset[state_no].go_to;
     for (j = 1; j <= go_to.size; j++) {
@@ -1574,7 +1569,7 @@ static void print_tables(void) {
   /* If GOTO_DEFAULT is requested, we print out the GOTODEF vector.   */
   if (goto_default_bit) {
     k = 0;
-    for ALL_NON_TERMINALS2 {
+    for ALL_NON_TERMINALS3(symbol) {
       act = gotodef[symbol];
       if (act < 0)
         result_act = -act;
@@ -1679,7 +1674,7 @@ static void print_tables(void) {
     }
 
     k = 0;
-    for ALL_TERMINALS2 {
+    for ALL_TERMINALS3(symbol) {
       act = shiftdf[symbol];
       if (act < 0) {
         result_act = -act + error_act;
@@ -1721,7 +1716,7 @@ static void print_tables(void) {
     for (i = 1; i <= max_indx; i++) {
       action[i] = OMEGA;
     }
-    for ALL_STATES2 {
+    for ALL_STATES3(state_no) {
       action[state_index[state_no]] = state_no;
     }
 

@@ -289,7 +289,7 @@ void process_error_maps(void) {
     symbol_root[symbol] = OMEGA;
   }
 
-  for ALL_NON_TERMINALS(lhs_symbol) {
+  for ALL_NON_TERMINALS3(lhs_symbol) {
     int symbol;
     if (table_opt == OPTIMIZE_TIME) {
       symbol = symbol_map[lhs_symbol];
@@ -297,7 +297,7 @@ void process_error_maps(void) {
       symbol = symbol_map[lhs_symbol] - num_terminals;
     }
     symbol_root[symbol] = lhs_symbol;
-    for ALL_TERMINALS2 {
+    for ALL_TERMINALS3(symbol) {
       if (IS_IN_SET(follow, lhs_symbol + 1, symbol + 1)) {
         symbol_count[symbol]++;
       }
@@ -327,7 +327,7 @@ void process_error_maps(void) {
   for (int symbol = 1; symbol <= non_terminal_ubound; symbol++) {
     lhs_symbol = symbol_root[symbol];
     if (lhs_symbol != OMEGA) {
-      for ALL_TERMINALS2 {
+      for ALL_TERMINALS3(symbol) {
         if (IS_IN_SET(follow, lhs_symbol + 1, symbol + 1)) {
           field(symbol_map[symbol], 4);
           k++;
@@ -363,7 +363,7 @@ void process_error_maps(void) {
 
   /* We now write out the states in sorted order: SORTED_STATE. */
   k = 0;
-  for ALL_STATES2 {
+  for ALL_STATES3(state_no) {
     field(ordered_state[state_no], 6);
     k++;
     if (k == 12) {
@@ -418,7 +418,7 @@ void process_error_maps(void) {
     /* amount of space in the bit_string representation of sets  */
     /* as well as time when operations are performed on those    */
     /* bit-strings.                                              */
-    for ALL_TERMINALS2 {
+    for ALL_TERMINALS3(symbol) {
       original[symbol_map[symbol]] = symbol;
     }
   }
@@ -426,7 +426,7 @@ void process_error_maps(void) {
   /* NOTE that the arrays ACTION_SYMBOLS and NACTION_SYMBOLS are global  */
   /* variables that are allocated in the procedure PROCESS_TABLES by     */
   /* calloc which automatically initializes them to 0.                   */
-  for ALL_STATES2 {
+  for ALL_STATES3(state_no) {
     struct shift_header_type sh;
     struct reduce_header_type red;
 
@@ -465,7 +465,7 @@ void process_error_maps(void) {
   /* The starting locations are contained in the STATE_START vector.   */
   offset = state_start[num_states + 1];
   k = 0;
-  for ALL_STATES2 {
+  for ALL_STATES3(state_no) {
     field(ABS(state_start[state_list[state_no]]), 6);
     k++;
     if (k == 12) {
@@ -513,7 +513,7 @@ void process_error_maps(void) {
   ffree(action_symbols_range);
 
   /* We now repeat the same process for the domain of the GOTO table.    */
-  for ALL_STATES2 {
+  for ALL_STATES3(state_no) {
     as_size[state_no] = gd_index[state_no + 1] - gd_index[state_no];
     for (state_no = gd_index[state_no]; state_no < gd_index[state_no + 1]; state_no++) {
       int symbol = gd_range[state_no] - num_terminals;
@@ -541,7 +541,7 @@ void process_error_maps(void) {
   offset = state_start[num_states + 1];
 
   k = 0;
-  for ALL_STATES2 {
+  for ALL_STATES3(state_no) {
     field(ABS(state_start[state_list[state_no]]), 6);
     k++;
     if (k == 12) {
@@ -600,7 +600,7 @@ void process_error_maps(void) {
   /* keep count of the number of states associated with each symbol.     */
   /* For space tables, the TRANSITION_STATES map is written as two       */
   /* separate tables: SHIFT_STATES and GOTO_STATES.                      */
-  for ALL_SYMBOLS2 {
+  for ALL_SYMBOLS3(symbol) {
     symbol_root[symbol] = NIL;
     symbol_count[symbol] = 0;
   }
@@ -679,7 +679,7 @@ void process_error_maps(void) {
     offset = 1;
     field(offset, 6); /* Offset of the first state */
     k = 1;
-    for ALL_NON_TERMINALS2 {
+    for ALL_NON_TERMINALS3(symbol) {
       offset += symbol_count[symbol];
       field(offset, 6);
       k++;
@@ -697,7 +697,7 @@ void process_error_maps(void) {
     /* We now write out the range elements of GOTO_STATES whose domain   */
     /* is a non-terminal symbol.                                         */
     k = 0;
-    for ALL_NON_TERMINALS2 {
+    for ALL_NON_TERMINALS3(symbol) {
       for (int state_no = symbol_root[symbol];
            state_no != NIL; state_no = state_stack[state_no]) {
         field(state_index[state_no] + num_rules, 6);
@@ -777,12 +777,12 @@ void process_error_maps(void) {
   temp = Allocate_int_array(num_symbols + 1);
 
   if (table_opt == OPTIMIZE_TIME) {
-    for ALL_SYMBOLS2 {
+    for ALL_SYMBOLS3(symbol) {
       temp[symbol_map[symbol]] = symno[symbol].name_index;
     }
 
     k = 0;
-    for ALL_SYMBOLS2 {
+    for ALL_SYMBOLS3(symbol) {
       field(temp[symbol], 4);
       k++;
       if (k == 18) {
@@ -797,12 +797,12 @@ void process_error_maps(void) {
       BUFFER_CHECK(systab);
     }
   } else {
-    for ALL_TERMINALS2 {
+    for ALL_TERMINALS3(symbol) {
       temp[symbol_map[symbol]] = symno[symbol].name_index;
     }
 
     k = 0;
-    for ALL_TERMINALS2 {
+    for ALL_TERMINALS3(symbol) {
       field(temp[symbol], 4);
       k++;
       if (k == 18) {
@@ -820,12 +820,12 @@ void process_error_maps(void) {
     /* We write the name_index of each non_terminal symbol. The     */
     /* array TEMP is used to remap the NAME_INDEX values based on   */
     /* the new symbol numberings.                                   */
-    for ALL_NON_TERMINALS2 {
+    for ALL_NON_TERMINALS3(symbol) {
       temp[symbol_map[symbol]] = symno[symbol].name_index;
     }
 
     k = 0;
-    for ALL_NON_TERMINALS2 {
+    for ALL_NON_TERMINALS3(symbol) {
       field(temp[symbol], 4);
       k++;
       if (k == 18) {
@@ -1064,11 +1064,11 @@ void compute_action_symbols_range(const long *state_start,
   /* Recall that if STATE_START has a negative value, then the set in  */
   /* question is sharing elements and does not need to be processed.   */
   int k = 0;
-  for ALL_SYMBOLS(j) {
+  for ALL_SYMBOLS3(j) {
     symbol_list[j] = OMEGA; /* Initialize all links to OMEGA */
   }
 
-  for ALL_STATES2 {
+  for ALL_STATES3(state_no) {
     const int state_no__ = state_list[state_no];
     if (state_start[state_no__] > 0) {
       int symbol_root = 0; /* Add "fence" element: 0 to list */
@@ -1119,7 +1119,6 @@ void compute_naction_symbols_range(const long *state_start,
                                    const long *state_stack,
                                    const long *state_list,
                                    int *naction_symbols_range) {
-  int j;
   int state;
   int symbol;
 
@@ -1129,10 +1128,11 @@ void compute_naction_symbols_range(const long *state_start,
   /* Recall that if STATE_START has a negative value, then the set in  */
   /* question is sharing elements and does not need to be processed.   */
   int k = 0;
-  for ALL_SYMBOLS(j)
+  for ALL_SYMBOLS3(j) {
     symbol_list[j] = OMEGA; /* Initialize all links to OMEGA */
+  }
 
-  for ALL_STATES2 {
+  for ALL_STATES3(state_no) {
     const int state_no__ = state_list[state_no];
     if (state_start[state_no__] > 0) {
       int symbol_root = 0; /* Add "fence" element: 0 to list */
@@ -1145,7 +1145,7 @@ void compute_naction_symbols_range(const long *state_start,
       for (bool end_node = (state = state_no__) == NIL;
            !end_node; end_node = state == state_no__) {
         state = state_stack[state];
-        for (j = gd_index[state];
+        for (int j = gd_index[state];
              j <= gd_index[state + 1] - 1; j++) {
           symbol = gd_range[j];
           if (symbol_list[symbol] == OMEGA) {

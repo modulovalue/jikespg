@@ -52,7 +52,7 @@ void mkstats(void) {
     produce();
 
   /* Free space trapped by the CLOSURE and CLITEMS maps.                */
-  for ALL_NON_TERMINALS(j) {
+  for ALL_NON_TERMINALS3(j) {
     struct node *p;
 
     struct node *q = clitems[j];
@@ -159,7 +159,7 @@ static void mklr0(void) {
   }
 
   nt_root = NIL;
-  for ALL_NON_TERMINALS(i) {
+  for ALL_NON_TERMINALS3(i) {
     nt_list[i] = OMEGA;
   }
 

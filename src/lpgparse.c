@@ -1840,12 +1840,12 @@ static void make_names_map(void) {
   if (error_image == DEFAULT_SYMBOL)
     symno[DEFAULT_SYMBOL].name_index = symno[accept_image].name_index;
 
-  for ALL_TERMINALS2 {
+  for ALL_TERMINALS3(symbol) {
     if (symno[symbol].name_index == OMEGA)
       symno[symbol].name_index = name_map(RETRIEVE_STRING(symbol));
   }
 
-  for ALL_NON_TERMINALS2 {
+  for ALL_NON_TERMINALS3(symbol) {
     if (symno[symbol].name_index == OMEGA) {
       if (names_opt == MAXIMUM_NAMES)
         symno[symbol].name_index = name_map(RETRIEVE_STRING(symbol));
@@ -2058,7 +2058,7 @@ next_line: {
             strcpy(temp2, " ... ");
           else /* Copy right-hand-side symbols to temp2 */
           {
-            for ENTIRE_RHS(j, rule_no) {
+            for ENTIRE_RHS3(j, rule_no) {
               restore_symbol(symbol, RETRIEVE_STRING(rhs_sym[j]));
               if (strlen(temp2) + strlen(symbol) + 1 < max_len) {
                 strcat(temp2, BLANK);
@@ -2523,7 +2523,7 @@ static void display_input(void) {
       }
     }
 
-    for ENTIRE_RHS(i, rule_no) {
+    for ENTIRE_RHS3(i, rule_no) {
       restore_symbol(temp, RETRIEVE_STRING(rhs_sym[i]));
       if (strlen(temp) + strlen(line) > PRINT_LINE_SIZE - 1) {
         char tempbuffer1[SYMBOL_SIZE + 1];

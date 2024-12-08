@@ -168,11 +168,11 @@ static void compute_read(void) {
   if (la_base == NULL)
     nospace(__FILE__, __LINE__);
 
-  for ALL_STATES2 {
+  for ALL_STATES3(state_no) {
     la_base[state_no] = OMEGA;
   }
 
-  for ALL_STATES2 {
+  for ALL_STATES3(state_no) {
     for (const struct node *p = lalr_level <= 1 && single_complete_item[state_no]
                                   ? NULL
                                   : statset[state_no].complete_items;
@@ -250,7 +250,7 @@ static void compute_read(void) {
   /* used to keep track of Follow sets that have been initialized. If  */
   /* another set needs to be initialized with a value that has been    */
   /* already computed, LA_BASE is used to retrieve the value.          */
-  for ALL_STATES2 {
+  for ALL_STATES3(state_no) {
     la_base[state_no] = OMEGA;
   }
 
@@ -261,7 +261,7 @@ static void compute_read(void) {
   if (la_set == NULL)
     nospace(__FILE__, __LINE__);
 
-  for ALL_STATES2 {
+  for ALL_STATES3(state_no) {
     const struct goto_header_type go_to = statset[state_no].go_to;
     for (i = 1; i <= go_to.size; i++) {
       const int la_ptr = go_to.map[i].laptr;
@@ -438,7 +438,7 @@ static void build_in_stat(void) {
   struct node *q;
   int i;
 
-  for ALL_STATES2 {
+  for ALL_STATES3(state_no) {
     int n = statset[state_no].shift_number;
     const struct shift_header_type sh = shift[n];
     for (i = 1; i <= sh.size; ++i) {
@@ -486,7 +486,6 @@ static void build_in_stat(void) {
 void mkrdcts(void) {
   int item_no;
   int rule_no;
-  int i;
   int n;
 
   struct node *q;
@@ -562,12 +561,12 @@ void mkrdcts(void) {
   /* any look-ahead at all.                                             */
   build_in_stat();
 
-  for ALL_STATES2 {
+  for ALL_STATES3(state_no) {
     no_shift_on_error_sym[state_no] = true;
     if (default_opt == 5) {
       n = statset[state_no].shift_number;
       const struct shift_header_type sh = shift[n];
-      for (i = 1; i <= sh.size; ++i) {
+      for (int i = 1; i <= sh.size; ++i) {
         if (sh.map[i].symbol == error_image)
           no_shift_on_error_sym[state_no] = false;
       }
@@ -617,7 +616,7 @@ void mkrdcts(void) {
   if (reduce == NULL)
     nospace(__FILE__, __LINE__);
 
-  for ALL_RULES(i)
+  for ALL_RULES3(i)
     rule_count[i] = 0;
 
   /* We are now ready to construct the reduce map. First, we      */
@@ -630,7 +629,7 @@ void mkrdcts(void) {
   /* We iterate over the states, compute the lookahead sets,      */
   /* resolve conflicts (if multiple lookahead is requested) and/or*/
   /* report the conflicts if requested...                         */
-  for ALL_STATES2 {
+  for ALL_STATES3(state_no) {
     int default_rule = OMEGA;
     int symbol_root = NIL;
 
@@ -680,7 +679,7 @@ void mkrdcts(void) {
         } else
           compute_la(state_no, item_no, look_ahead);
 
-        for ALL_TERMINALS2 {
+        for ALL_TERMINALS3(symbol) {
         /* for all symbols in la set */
           if (IS_ELEMENT(look_ahead, symbol)) {
             struct node *p = Allocate_node();
@@ -753,7 +752,7 @@ void mkrdcts(void) {
            q != NULL; q = q->next) {
         item_no = q->value;
         rule_no = item_table[item_no].rule_number;
-        int symbol = rules[rule_no].lhs;
+        const int symbol = rules[rule_no].lhs;
         reduce_size += rule_count[rule_no];
         if (rule_count[rule_no] > n &&
             no_shift_on_error_sym[state_no] &&
@@ -848,7 +847,7 @@ void mkrdcts(void) {
   /* transformed with the addition of new states and new          */
   /* transitions. In such a case, we reconstruct the IN_STAT map. */
   if (lalr_level > 1 || single_productions_bit) {
-    for ALL_STATES2 {
+    for ALL_STATES3(state_no) {
       /* First, clear out the previous map */
       if (in_stat[state_no] != NULL) {
         q = in_stat[state_no]->next; /* point to root */

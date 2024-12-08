@@ -669,11 +669,11 @@ static void conflicts_initialization(void) {
   /* of the form [x .A y] where x and y are arbitrary strings, and A is  */
   /* a non-terminal. This map is also used in retracing a path from the  */
   /* Start item to any other item.                                       */
-  for ALL_NON_TERMINALS2 {
+  for ALL_NON_TERMINALS3(symbol) {
     nt_items[symbol] = NIL;
   }
 
-  for ALL_ITEMS2 {
+  for ALL_ITEMS3(item_no) {
     if (IS_A_NON_TERMINAL(item_table[item_no].symbol)) {
       item_list[item_no] = nt_items[item_table[item_no].symbol];
       nt_items[item_table[item_no].symbol] = item_no;
@@ -1218,7 +1218,7 @@ static struct state_element *state_to_resolve_conflicts
     /* If new conflicts are detected and we are already at the     */
     /* lookahead level requested, we terminate the computation...  */
     count = 0;
-    for ALL_TERMINALS2 {
+    for ALL_TERMINALS3(symbol) {
       if (IS_ELEMENT(look_ahead, symbol)) {
         count++;
         if (action[symbol] == NULL) {
@@ -1485,7 +1485,7 @@ void init_rmpself(const SET_PTR produces) {
   /* nonterminal is offset by the value num_terminals (to distinguish*/
   /* it from the terminals),it must therefore be adjusted accordingly*/
   /* when dereferencing an element in the range of the produces map. */
-  for ALL_NON_TERMINALS(nt)
+  for ALL_NON_TERMINALS3(nt)
     rmpself[nt] = IS_IN_NTSET(produces, nt, nt - num_terminals);
 }
 
@@ -1510,18 +1510,18 @@ void init_lalrk_process(void) {
     if (shift_table == NULL)
       nospace(__FILE__, __LINE__);
 
-    for ALL_NON_TERMINALS2 {
+    for ALL_NON_TERMINALS3(symbol) {
       not_lrk = not_lrk || rmpself[symbol];
     }
 
     cyclic = Allocate_boolean_array(num_states + 1);
     index_of = Allocate_short_array(num_states + 1);
     stack = Allocate_short_array(num_states + 1);
-    for ALL_STATES2 {
+    for ALL_STATES3(state_no) {
       index_of[state_no] = OMEGA;
     }
     top = 0;
-    for ALL_STATES2 {
+    for ALL_STATES3(state_no) {
       if (index_of[state_no] == OMEGA) {
         compute_cyclic(state_no);
       }
@@ -1812,7 +1812,7 @@ void create_lastats(void) {
   /* for a given state. It is initialized here to the empty map.     */
   /* The array shift_count is used to count how many references      */
   /* there are to each shift map.                                    */
-  for ALL_TERMINALS2 {
+  for ALL_TERMINALS3(symbol) {
     shift_action[symbol] = OMEGA;
   }
 
@@ -1820,7 +1820,7 @@ void create_lastats(void) {
     shift_count[i] = 0;
   }
 
-  for ALL_STATES2 {
+  for ALL_STATES3(state_no) {
     shift_count[statset[state_no].shift_number]++;
   }
 
@@ -1857,7 +1857,7 @@ void create_lastats(void) {
     struct shift_header_type sh = shift[shift_no];
     int shift_root = NIL;
     for (int i = 1; i <= sh.size; i++) {
-      int symbol = sh.map[i].symbol;
+      const int symbol = sh.map[i].symbol;
       shift_action[symbol] = sh.map[i].action;
       shift_list[symbol] = shift_root;
       shift_root = symbol;

@@ -197,7 +197,7 @@ int main(const int argc, char *argv[]) {
       /* needed).                                                */
       ffree(rhs_sym);
       if (adequate_item != NULL) {
-        for ALL_RULES2 {
+        for ALL_RULES3(rule_no) {
           struct node *q = adequate_item[rule_no];
           if (q != NULL) {
             free_nodes(q, q);
@@ -210,7 +210,7 @@ int main(const int argc, char *argv[]) {
         ffree(item_table);
       }
 
-      for ALL_STATES2 {
+      for ALL_STATES3(state_no) {
         struct node *head = in_stat[state_no];
         if (head != NULL) {
           head = head->next;

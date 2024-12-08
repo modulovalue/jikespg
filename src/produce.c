@@ -125,7 +125,7 @@ void produce(void) {
   /* Also, we count the number of error rules and verify that they are */
   /* in the right format.                                              */
   int item_root = NIL;
-  for ALL_NON_TERMINALS(nt) {
+  for ALL_NON_TERMINALS3(nt) {
     for (bool end_node = (p = clitems[nt]) == NULL;
          !end_node; end_node = p == clitems[nt]) {
       p = p->next;
@@ -185,12 +185,12 @@ void produce(void) {
   /* We make sure that each non-terminal A is not present in its own  */
   /* PRODUCES set since we are interested in the non-reflexive        */
   /* (positive) transitive closure.                                   */
-  for ALL_SYMBOLS2 {
+  for ALL_SYMBOLS3(symbol) {
     index_of[symbol] = OMEGA;
   }
 
   top = 0;
-  for ALL_NON_TERMINALS(nt) {
+  for ALL_NON_TERMINALS3(nt) {
     if (index_of[nt] == OMEGA)
       compute_produces(nt);
     NTRESET_BIT_IN(produces, nt, nt - num_terminals);
@@ -211,27 +211,27 @@ void produce(void) {
   /* At the end of this process, the nonterminal elements whose       */
   /* NT_LIST values are still OMEGA are precisely the nonterminal     */
   /* symbols that are never used as candidates.                       */
-  for ALL_NON_TERMINALS(i)
+  for ALL_NON_TERMINALS3(i)
     nt_list[i] = OMEGA;
   nt_list[accept_image] = NIL;
 
-  for ALL_STATES2 {
+  for ALL_STATES3(state_no) {
     const struct goto_header_type go_to = statset[state_no].go_to;
     int nt_root = NIL;
     INIT_NTSET(set);
-
     for (i = 1; i <= go_to.size; i++) {
-      int symbol = go_to.map[i].symbol;
+      const int symbol = go_to.map[i].symbol;
       const int state = go_to.map[i].action;
-      if (state < 0)
+      if (state < 0) {
         rule_no = -state;
-      else {
+      } else {
         q = statset[state].kernel_items;
         item_no = q->value;
-        if (q->next != NULL)
+        if (q->next != NULL) {
           rule_no = 0;
-        else
+        } else {
           rule_no = item_table[item_no].rule_number;
+        }
       }
       if (rule_no == 0 || RHS_SIZE(rule_no) != 1) {
         nt_list[symbol] = nt_root;
@@ -258,7 +258,7 @@ void produce(void) {
   gd_index = Allocate_short_array(num_states + 2);
   gd_range = Allocate_short_array(gotodom_size + 1);
 
-  for ALL_STATES2 {
+  for ALL_STATES3(state_no) {
     gd_index[state_no] = n + 1;
     for (p = goto_domain[state_no]; p != NULL; q = p, p = p->next)
       gd_range[++n] = p->value;
@@ -276,7 +276,7 @@ void produce(void) {
     /* if a nullable nonterminal was assigned a name by default      */
     /* (nonterminals that were "named" by default are identified     */
     /* with negative indices), that name is also removed.            */
-    for ALL_NON_TERMINALS2 {
+    for ALL_NON_TERMINALS3(symbol) {
       if (nt_list[symbol] == OMEGA)
         symno[symbol].name_index = symno[accept_image].name_index;
       else if (symno[symbol].name_index < 0) {
@@ -292,7 +292,7 @@ void produce(void) {
     for (i = 1; i <= num_names; i++)
       name_used[i] = false;
 
-    for ALL_SYMBOLS2 {
+    for ALL_SYMBOLS3(symbol) {
       name_used[symno[symbol].name_index] = true;
     }
 
@@ -305,7 +305,7 @@ void produce(void) {
     }
     num_names = n;
 
-    for ALL_SYMBOLS2 {
+    for ALL_SYMBOLS3(symbol) {
       symno[symbol].name_index = names_map[symno[symbol].name_index];
     }
   }
@@ -316,12 +316,12 @@ void produce(void) {
     fprintf(syslis, "\nName map:\n");
     output_line_no += 2;
 
-    for ALL_SYMBOLS2 {
+    for ALL_SYMBOLS3(symbol) {
       if (symno[symbol].name_index != symno[accept_image].name_index) {
         print_name_map(symbol);
       }
     }
-    for ALL_SYMBOLS2 {
+    for ALL_SYMBOLS3(symbol) {
       if (symbol != accept_image && symno[symbol].name_index == symno[accept_image].name_index) {
         print_name_map(symbol);
       }
@@ -474,7 +474,7 @@ static void process_scopes(void) {
     nospace(__FILE__, __LINE__);
   produces -= (num_terminals + 1) * non_term_set_size;
 
-  for ALL_NON_TERMINALS(nt) {
+  for ALL_NON_TERMINALS3(nt) {
     NTSET_BIT_IN(right_produces, nt, nt - num_terminals);
     NTSET_BIT_IN(produces, nt, nt - num_terminals);
 
@@ -502,12 +502,12 @@ static void process_scopes(void) {
 
   /* Complete the construction of the LEFT_produces map for       */
   /* non_terminals using the digraph algorithm.                   */
-  for ALL_NON_TERMINALS(nt) {
+  for ALL_NON_TERMINALS3(nt) {
     index_of[nt] = OMEGA;
   }
 
   top = 0;
-  for ALL_NON_TERMINALS(nt) {
+  for ALL_NON_TERMINALS3(nt) {
     if (index_of[nt] == OMEGA) {
       compute_produces(nt);
     }
@@ -526,7 +526,7 @@ static void process_scopes(void) {
   }
   produces -= (num_terminals + 1) * non_term_set_size;
 
-  for ALL_NON_TERMINALS(nt) {
+  for ALL_NON_TERMINALS3(nt) {
     NTSET_BIT_IN(produces, nt, nt - num_terminals);
 
     direct_produces[nt] = NULL;
@@ -555,7 +555,7 @@ static void process_scopes(void) {
   /*                                                              */
   /* Since $ACC =>* x A y for all nonterminal A in the grammar, a */
   /* single call to COMPUTE_PRODUCES does the trick.              */
-  for ALL_NON_TERMINALS(nt) {
+  for ALL_NON_TERMINALS3(nt) {
     index_of[nt] = OMEGA;
   }
   top = 0;
@@ -563,10 +563,10 @@ static void process_scopes(void) {
 
   /* Construct a mapping from each non_terminal A into the set of     */
   /* items of the form [B  ->  x . A y].                              */
-  for ALL_NON_TERMINALS(nt)
+  for ALL_NON_TERMINALS3(nt)
     item_of[nt] = NIL;
 
-  for ALL_ITEMS2 {
+  for ALL_ITEMS3(item_no) {
     dot_symbol = item_table[item_no].symbol;
     if (IS_A_NON_TERMINAL(dot_symbol)) {
       next_item[item_no] = item_of[dot_symbol];
@@ -584,12 +584,12 @@ static void process_scopes(void) {
   /* longest prefix encountered.  This is subsequently used to        */
   /* bucket sort the scoped items in descending order of the length    */
   /* of their prefixes.                                               */
-  for ALL_ITEMS2 {
+  for ALL_ITEMS3(item_no) {
     item_list[item_no] = OMEGA;
   }
 
   item_root = NIL;
-  for ALL_ITEMS2 {
+  for ALL_ITEMS3(item_no) {
     dot_symbol = item_table[item_no].symbol;
     if (dot_symbol == error_image) {
       if (item_table[item_no].dot != 0 &&
@@ -614,7 +614,7 @@ static void process_scopes(void) {
               break;
           }
           if (IS_A_NON_TERMINAL(symbol)) {
-            for ALL_NON_TERMINALS(nt)
+            for ALL_NON_TERMINALS3(nt)
               symbol_seen[nt] = false;
             symbol = get_shift_symbol(symbol);
           }
@@ -638,7 +638,7 @@ static void process_scopes(void) {
   for (i = 0; i < SCOPE_SIZE; i++)
     scope_table[i] = NIL;
 
-  for ALL_NON_TERMINALS(nt)
+  for ALL_NON_TERMINALS3(nt)
     symbol_seen[nt] = false;
 
   for (int item_no = item_root; item_no != NIL; item_no = item_list[item_no]) {
@@ -655,10 +655,10 @@ static void process_scopes(void) {
   /* the left-hand side of a rule containing scopes into the set of    */
   /* states that has a transition on the nonterminal in question.      */
   nt_root = NIL;
-  for ALL_NON_TERMINALS(nt)
+  for ALL_NON_TERMINALS3(nt)
     states_of[nt] = NULL;
 
-  for ALL_STATES2 {
+  for ALL_STATES3(state_no) {
     struct goto_header_type go_to;
 
     go_to = statset[state_no].go_to;
@@ -844,7 +844,7 @@ process_scope_states: {
     if (IS_A_TERMINAL(symbol))
       scope[i].look_ahead = symbol;
     else {
-      for ALL_NON_TERMINALS(j)
+      for ALL_NON_TERMINALS3(j)
         symbol_seen[j] = false;
       scope[i].look_ahead = get_shift_symbol(symbol);
     }
@@ -926,7 +926,7 @@ static bool is_scope(const int item_no) {
   if (item_table[item_no].dot > 0) {
     return true;
   }
-  for ALL_NON_TERMINALS(nt) {
+  for ALL_NON_TERMINALS3(nt) {
     symbol_seen[nt] = false;
   }
   return scope_check(lhs_symbol, target, lhs_symbol);
