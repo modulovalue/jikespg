@@ -769,8 +769,9 @@ static void print_tables(void) {
 void cmprtim(void) {
   remap_symbols();
   overlap_tables();
-  if (c_bit || cpp_bit || java_bit)
+  if (c_bit || cpp_bit || java_bit) {
     print_time_parser();
-  else
+  } else {
     print_tables();
+  }
 }

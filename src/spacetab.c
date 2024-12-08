@@ -1734,25 +1734,22 @@ void cmprspa(void) {
   symbol_map = Allocate_int_array(num_symbols + 1);
   state_list = Allocate_long_array(max_la_state + 1);
   shift_on_error_symbol = Allocate_boolean_array(max_la_state + 1);
-  new_state_element = (struct new_state_type *)
-      calloc(max_la_state + 1,
-             sizeof(struct new_state_type));
-  if (new_state_element == NULL)
+  new_state_element = (struct new_state_type *) calloc(max_la_state + 1, sizeof(struct new_state_type));
+  if (new_state_element == NULL) {
     nospace(__FILE__, __LINE__);
-
-  new_state_element_reduce_nodes = (struct node **)
-      calloc(max_la_state + 1,
-             sizeof(struct node *));
-  if (new_state_element_reduce_nodes == NULL)
+  }
+  new_state_element_reduce_nodes = (struct node **) calloc(max_la_state + 1, sizeof(struct node *));
+  if (new_state_element_reduce_nodes == NULL) {
     nospace(__FILE__, __LINE__);
-
+  }
   remap_non_terminals();
   overlap_nt_rows();
   merge_similar_t_rows();
   overlay_sim_t_rows();
   overlap_t_rows();
-  if (c_bit || cpp_bit || java_bit)
+  if (c_bit || cpp_bit || java_bit) {
     print_space_parser();
-  else
+  } else {
     print_tables();
+  }
 }

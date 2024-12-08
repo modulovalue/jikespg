@@ -938,7 +938,7 @@ static void print_error_maps(void) {
     for (int i = 1; i <= num_scopes; i++) {
       scope[i].look_ahead = symbol_map[scope[i].look_ahead];
       if (table_opt == OPTIMIZE_SPACE) {
-        scope[i].lhs_symbol = symbol_map[scope[i].lhs_symbol]- num_terminals;
+        scope[i].lhs_symbol = symbol_map[scope[i].lhs_symbol] - num_terminals;
       } else {
         scope[i].lhs_symbol = symbol_map[scope[i].lhs_symbol];
       }
@@ -1582,7 +1582,6 @@ static void print_externs(void) {
 static void print_space_tables(void) {
   int *check;
   int *action;
-
   int la_state_offset;
   int k;
   int indx;
@@ -1595,19 +1594,13 @@ static void print_space_tables(void) {
   int la_shift_count = 0;
   int shift_count = 0;
   int shift_reduce_count = 0;
-
   int rule_no;
-
   long offset;
-
   check = Allocate_int_array(table_size + 1);
   action = Allocate_int_array(table_size + 1);
-
   output_ptr = &output_buffer[0];
-
   /* Prepare header card with proper information, and write it out. */
   offset = error_act;
-
   if (lalr_level > 1) {
     if (read_reduce_bit) {
       offset += num_rules;
@@ -1626,7 +1619,6 @@ static void print_space_tables(void) {
   for (int i = 1; i <= (int) action_size; i++) {
     action[i] = error_act;
   }
-
   /*    Update the default non-terminal action of each state with the */
   /* appropriate corresponding terminal state starting index.         */
   for (int i = 1; i <= num_terminal_states; i++) {
@@ -1649,7 +1641,6 @@ static void print_space_tables(void) {
       }
     }
   }
-
   /*  Now update the non-terminal tables with the non-terminal actions.*/
   for ALL_STATES3(state_no) {
     struct goto_header_type go_to;
@@ -1671,7 +1662,6 @@ static void print_space_tables(void) {
       }
     }
   }
-
   if (error_maps_bit || debug_bit) {
     if (check_size == 0) {
       check_size = action_size;
@@ -1684,13 +1674,13 @@ static void print_space_tables(void) {
     }
   }
   for (int i = 1; i <= check_size; i++) {
-    if (check[i] < 0 || check[i] > (java_bit ? 127 : 255))
+    if (check[i] < 0 || check[i] > (java_bit ? 127 : 255)) {
       byte_check_bit = false;
+    }
   }
-
-  if (c_bit)
+  if (c_bit) {
     mystrcpy("\n#define CLASS_HEADER\n\n");
-  else if (cpp_bit) {
+  } else if (cpp_bit) {
     mystrcpy("\n#define CLASS_HEADER ");
     mystrcpy(prs_tag);
     mystrcpy("_table::\n\n");
@@ -1701,12 +1691,12 @@ static void print_space_tables(void) {
     mystrcpy(def_tag);
     mystrcpy("\n{\n");
   }
-
   /* Write size of right hand side of rules followed by CHECK table.   */
-  if (java_bit)
+  if (java_bit) {
     mystrcpy("    public final static byte rhs[] = {0,\n");
-  else mystrcpy("const unsigned char  CLASS_HEADER rhs[] = {0,\n");
-
+  } else {
+    mystrcpy("const unsigned char  CLASS_HEADER rhs[] = {0,\n");
+  }
   padline();
   k = 0;
   for (int i = 1; i <= num_rules; i++) {
@@ -1722,24 +1712,26 @@ static void print_space_tables(void) {
   }
   *(output_ptr - 1) = '\n';
   BUFFER_CHECK(sysdcl);
-
-  if (java_bit)
+  if (java_bit) {
     mystrcpy("    };\n");
-  else mystrcpy("                 };\n");
-
+  } else {
+    mystrcpy("                 };\n");
+  }
   *output_ptr++ = '\n';
-
   if (check_size > 0) {
     if (byte_check_bit && !error_maps_bit) {
-      if (java_bit)
+      if (java_bit) {
         mystrcpy("    public final static byte check_table[] = {\n");
-      else mystrcpy("const unsigned char  CLASS_HEADER check_table[] = {\n");
+      } else {
+        mystrcpy("const unsigned char  CLASS_HEADER check_table[] = {\n");
+      }
     } else {
-      if (java_bit)
+      if (java_bit) {
         mystrcpy("    public final static short check_table[] = {\n");
-      else mystrcpy("const   signed short CLASS_HEADER check_table[] = {\n");
+      } else {
+        mystrcpy("const   signed short CLASS_HEADER check_table[] = {\n");
+      }
     }
-
     padline();
     k = 0;
     for (int i = 1; i <= check_size; i++) {
@@ -1755,35 +1747,33 @@ static void print_space_tables(void) {
     }
     *(output_ptr - 1) = '\n';
     BUFFER_CHECK(sysdcl);
-
-    if (java_bit)
+    if (java_bit) {
       mystrcpy("    };\n");
-    else mystrcpy("                 };\n");
-    *output_ptr++ = '\n';
-
-    if (byte_check_bit && !error_maps_bit) {
-      if (java_bit)
-        mystrcpy("    public final static byte base_check(int i)"
-          "\n    {\n        return check_table[i - (NUM_RULES + 1)];\n    }\n");
-      else
-        mystrcpy("const unsigned char  *CLASS_HEADER base_check = "
-          "&(check_table[0]) - (NUM_RULES + 1);\n");
     } else {
-      if (java_bit)
-        mystrcpy("    public final static short base_check(int i) "
-          "\n    {\n        return check_table[i - (NUM_RULES + 1)];\n    }\n");
-      else
-        mystrcpy("const   signed short *CLASS_HEADER base_check = "
-          "&(check_table[0]) - (NUM_RULES + 1);\n");
+      mystrcpy("                 };\n");
+    }
+    *output_ptr++ = '\n';
+    if (byte_check_bit && !error_maps_bit) {
+      if (java_bit) {
+        mystrcpy("    public final static byte base_check(int i)\n    {\n        return check_table[i - (NUM_RULES + 1)];\n    }\n");
+      } else {
+        mystrcpy("const unsigned char  *CLASS_HEADER base_check = &(check_table[0]) - (NUM_RULES + 1);\n");
+      }
+    } else {
+      if (java_bit) {
+        mystrcpy("    public final static short base_check(int i) \n    {\n        return check_table[i - (NUM_RULES + 1)];\n    }\n");
+      } else {
+        mystrcpy("const   signed short *CLASS_HEADER base_check = &(check_table[0]) - (NUM_RULES + 1);\n");
+      }
     }
     *output_ptr++ = '\n';
   }
-
   /* Write left hand side symbol of rules followed by ACTION table.    */
-  if (java_bit)
+  if (java_bit) {
     mystrcpy("    public final static char lhs[] = {0,\n");
-  else mystrcpy("const unsigned short CLASS_HEADER lhs[] = {0,\n");
-
+  } else {
+    mystrcpy("const unsigned short CLASS_HEADER lhs[] = {0,\n");
+  }
   padline();
   k = 0;
   for (int i = 1; i <= num_rules; i++) {
@@ -1797,7 +1787,6 @@ static void print_space_tables(void) {
       k = 0;
     }
   }
-
   *output_ptr++ = '\n';
   *output_ptr++ = '\n';
   BUFFER_CHECK(sysdcl);
@@ -1837,9 +1826,11 @@ static void print_space_tables(void) {
     *(output_ptr - 1) = '\n';
     BUFFER_CHECK(sysdcl);
   }
-  if (java_bit)
+  if (java_bit) {
     mystrcpy("    };\n");
-  else mystrcpy("                 };\n");
+  } else {
+    mystrcpy("                 };\n");
+  }
   *output_ptr++ = '\n';
   BUFFER_CHECK(sysdcl);
   if (java_bit) {
@@ -1905,53 +1896,36 @@ static void print_space_tables(void) {
       action[indx] = rule_no;
     }
   }
-
   PRNT("\n\nActions in Compressed Tables:");
-
   PRNT2(msg_line, "     Number of Shifts: %d", shift_count);
-
   PRNT2(msg_line, "     Number of Shift/Reduces: %d", shift_reduce_count);
-
   if (max_la_state > num_states) {
     PRNT2(msg_line, "     Number of Look-Ahead Shifts: %d", la_shift_count);
   }
-
   PRNT2(msg_line, "     Number of Gotos: %d", goto_count);
-
   PRNT2(msg_line, "     Number of Goto/Reduces: %d", goto_reduce_count);
-
   PRNT2(msg_line, "     Number of Reduces: %d", reduce_count);
-
   PRNT2(msg_line, "     Number of Defaults: %d", default_count);
-
   /* Write Terminal Check Table.                                      */
   if (num_terminals <= (java_bit ? 127 : 255)) {
     if (java_bit) {
-      prnt_ints("\n    public final static byte term_check[] = {0,\n",
-                1, term_check_size, 15, check);
+      prnt_ints("\n    public final static byte term_check[] = {0,\n", 1, term_check_size, 15, check);
     } else {
-      prnt_ints("\nconst unsigned char  CLASS_HEADER term_check[] = {0,\n",
-                1, term_check_size, 15, check);
+      prnt_ints("\nconst unsigned char  CLASS_HEADER term_check[] = {0,\n", 1, term_check_size, 15, check);
     }
   } else {
     if (java_bit) {
-      prnt_ints("\n    public final static char term_check[] = {0,\n",
-                1, term_check_size, 15, check);
+      prnt_ints("\n    public final static char term_check[] = {0,\n", 1, term_check_size, 15, check);
     } else {
-      prnt_ints("\nconst unsigned short CLASS_HEADER term_check[] = {0,\n",
-                1, term_check_size, 15, check);
+      prnt_ints("\nconst unsigned short CLASS_HEADER term_check[] = {0,\n", 1, term_check_size, 15, check);
     }
   }
-
   /* Write Terminal Action Table.                                      */
   if (java_bit) {
-    prnt_ints("\n    public final static char term_action[] = {0,\n",
-              1, term_action_size, 10, action);
+    prnt_ints("\n    public final static char term_action[] = {0,\n", 1, term_action_size, 10, action);
   } else {
-    prnt_ints("\nconst unsigned short CLASS_HEADER term_action[] = {0,\n",
-              1, term_action_size, 10, action);
+    prnt_ints("\nconst unsigned short CLASS_HEADER term_action[] = {0,\n", 1, term_action_size, 10, action);
   }
-
   /* If GOTO_DEFAULT is requested, we print out the GOTODEF vector.   */
   if (goto_default_bit) {
     if (java_bit) {
@@ -1959,19 +1933,17 @@ static void print_space_tables(void) {
     } else {
       mystrcpy("\nconst unsigned short CLASS_HEADER default_goto[] = {0,\n");
     }
-
     padline();
     k = 0;
     for ALL_NON_TERMINALS3(symbol) {
       act = gotodef[symbol];
-
-      if (act < 0)
+      if (act < 0) {
         result_act = -act;
-      else if (act == 0)
+      } else if (act == 0) {
         result_act = error_act;
-      else
+      } else {
         result_act = state_index[act] + num_rules;
-
+      }
       itoc(result_act);
       *output_ptr++ = COMMA;
       k++;
@@ -1982,21 +1954,23 @@ static void print_space_tables(void) {
         k = 0;
       }
     }
-
     if (k != 0) {
       *(output_ptr - 1) = '\n';
       BUFFER_CHECK(sysdcl);
     }
-    if (java_bit)
+    if (java_bit) {
       mystrcpy("    };\n");
-    else mystrcpy("                 };\n");
+    } else {
+      mystrcpy("                 };\n");
+    }
   }
 
   if (shift_default_bit) {
-    if (java_bit)
+    if (java_bit) {
       mystrcpy("\n    public final static char default_reduce[] = {0,\n");
-    else mystrcpy("\nconst unsigned short CLASS_HEADER default_reduce[] = {0,\n");
-
+    } else {
+      mystrcpy("\nconst unsigned short CLASS_HEADER default_reduce[] = {0,\n");
+    }
     padline();
     k = 0;
     for (int i = 1; i <= num_terminal_states; i++) {
@@ -2012,19 +1986,20 @@ static void print_space_tables(void) {
         k = 0;
       }
     }
-
     if (k != 0) {
       *(output_ptr - 1) = '\n';
       BUFFER_CHECK(sysdcl);
     }
-    if (java_bit)
+    if (java_bit) {
       mystrcpy("    };\n");
-    else mystrcpy("                 };\n");
-
-    if (java_bit)
+    } else {
+      mystrcpy("                 };\n");
+    }
+    if (java_bit) {
       mystrcpy("\n    public final static char shift_state[] = {0,\n");
-    else mystrcpy("\nconst unsigned short CLASS_HEADER shift_state[] = {0,\n");
-
+    } else {
+      mystrcpy("\nconst unsigned short CLASS_HEADER shift_state[] = {0,\n");
+    }
     padline();
     k = 0;
     for (int i = 1; i <= num_terminal_states; i++) {
@@ -2038,7 +2013,6 @@ static void print_space_tables(void) {
         k = 0;
       }
     }
-
     if (k != 0) {
       *(output_ptr - 1) = '\n';
       BUFFER_CHECK(sysdcl);
@@ -2101,7 +2075,6 @@ static void print_space_tables(void) {
     } else {
       mystrcpy("\nconst unsigned short CLASS_HEADER default_shift[] = {0,\n");
     }
-
     padline();
     k = 0;
     for ALL_TERMINALS3(symbol) {
@@ -2115,12 +2088,10 @@ static void print_space_tables(void) {
       } else {
         result_act = state_index[act] + num_rules;
       }
-
       if (result_act > MAX_TABLE_SIZE + 1) {
         PRNTERR2(msg_line, "Table contains look-ahead shift entry that is >%ld; Processing stopped.", MAX_TABLE_SIZE + 1);
         return;
       }
-
       itoc(result_act);
       *output_ptr++ = COMMA;
       k++;
@@ -2131,7 +2102,6 @@ static void print_space_tables(void) {
         k = 0;
       }
     }
-
     if (k != 0) {
       *(output_ptr - 1) = '\n';
       BUFFER_CHECK(sysdcl);
@@ -2142,14 +2112,11 @@ static void print_space_tables(void) {
       mystrcpy("                 };\n");
     }
   }
-
   ffree(check);
   ffree(action);
-
   if (error_maps_bit) {
     print_error_maps();
   }
-
   if (!byte_check_bit) {
     if (java_bit) {
       PRNT("\n***Warning: Base Check vector contains value > 127. 16-bit words used.");
@@ -2157,7 +2124,6 @@ static void print_space_tables(void) {
       PRNT("\n***Warning: Base Check vector contains value > 255. 16-bit words used.");
     }
   }
-
   if (!byte_terminal_range) {
     if (java_bit) {
       PRNT("***Warning: Terminal symbol > 127. 16-bit words used.");
@@ -2165,18 +2131,15 @@ static void print_space_tables(void) {
       PRNT("***Warning: Terminal symbol > 255. 16-bit words used.");
     }
   }
-
   if (java_bit) {
     mystrcpy("}\n");
   }
-
   fwrite(output_buffer, sizeof(char), output_ptr - &output_buffer[0], sysdcl);
 }
 
 static void print_time_tables(void) {
   long *action;
   long *check;
-
   int la_shift_count = 0;
   int shift_count = 0;
   int goto_count = 0;
@@ -2184,26 +2147,18 @@ static void print_time_tables(void) {
   int reduce_count = 0;
   int shift_reduce_count = 0;
   int goto_reduce_count = 0;
-
   int indx;
   int la_state_offset;
   int act;
   int result_act;
   int k;
-
   short default_rule;
-
   long offset;
-
   state_list = Allocate_long_array(max_la_state + 1);
-
   output_ptr = &output_buffer[0];
-
   check = next;
   action = previous;
-
   offset = error_act;
-
   if (lalr_level > 1) {
     if (read_reduce_bit) {
       offset += num_rules;
@@ -2212,12 +2167,10 @@ static void print_time_tables(void) {
   } else {
     la_state_offset = error_act;
   }
-
   if (offset > MAX_TABLE_SIZE + 1) {
     PRNTERR2(msg_line, "Table contains entries that are > %ld; Processing stopped.", MAX_TABLE_SIZE + 1);
     exit(12);
   }
-
   /* Initialize all unfilled slots with default values.                */
   /* RECALL that the vector "check" is aliased to the vector "next".   */
   indx = first_index;
@@ -2229,7 +2182,6 @@ static void print_time_tables(void) {
   for (int i = (int) action_size + 1; i <= (int) table_size; i++) {
     check[i] = DEFAULT_SYMBOL;
   }
-
   /* We set the rest of the table with the proper table entries.       */
   for (int state_no = 1; state_no <= max_la_state; state_no++) {
     struct shift_header_type sh;
@@ -2260,7 +2212,6 @@ static void print_time_tables(void) {
       sh = shift[statset[state_no].shift_number];
       red = reduce[state_no];
     }
-
     for (int j = 1; j <= sh.size; j++) {
       int symbol = sh.map[j].symbol;
       int i = indx + symbol;
@@ -2276,15 +2227,12 @@ static void print_time_tables(void) {
         result_act = -act + error_act;
         shift_reduce_count++;
       }
-
       if (result_act > MAX_TABLE_SIZE + 1) {
         PRNTERR2(msg_line, "Table contains look-ahead shift entry that is >%ld; Processing stopped.", MAX_TABLE_SIZE + 1);
         return;
       }
-
       action[i] = result_act;
     }
-
     /*   We now initialize the elements reserved for reduce actions in   */
     /* the current state.                                                */
     default_rule = red.map[0].rule_number;
@@ -2294,14 +2242,14 @@ static void print_time_tables(void) {
         int i = indx + symbol;
         check[i] = symbol;
         act = red.map[j].rule_number;
-        if (rules[act].lhs == accept_image)
+        if (rules[act].lhs == accept_image) {
           action[i] = accept_act;
-        else
+        } else {
           action[i] = act;
+        }
         reduce_count++;
       }
     }
-
     /*   We now initialize the element reserved for the DEFAULT reduce   */
     /* action of the current state.  If error maps are requested,  the   */
     /* default slot is initialized to the original state number, and the */
@@ -2310,35 +2258,24 @@ static void print_time_tables(void) {
     int i = indx + DEFAULT_SYMBOL;
     check[i] = DEFAULT_SYMBOL;
     act = red.map[0].rule_number;
-    if (act == OMEGA)
+    if (act == OMEGA) {
       action[i] = error_act;
-    else {
+    } else {
       action[i] = act;
       default_count++;
     }
   }
-
   PRNT("\n\nActions in Compressed Tables:");
-
   PRNT2(msg_line, "     Number of Shifts: %d", shift_count);
-
   PRNT2(msg_line, "     Number of Shift/Reduces: %d", shift_reduce_count);
-
   if (max_la_state > num_states) {
-    sprintf(msg_line,
-            "     Number of Look-Ahead Shifts: %d",
-            la_shift_count);
+    sprintf(msg_line, "     Number of Look-Ahead Shifts: %d", la_shift_count);
     PRNT(msg_line);
   }
-
   PRNT2(msg_line, "     Number of Gotos: %d", goto_count);
-
   PRNT2(msg_line, "     Number of Goto/Reduces: %d", goto_reduce_count);
-
   PRNT2(msg_line, "     Number of Reduces: %d", reduce_count);
-
   PRNT2(msg_line, "     Number of Defaults: %d", default_count);
-
   if (error_maps_bit || debug_bit) {
     for ALL_STATES3(state_no) {
       check[state_index[state_no]] = -state_no;
@@ -2349,7 +2286,6 @@ static void print_time_tables(void) {
       byte_check_bit = 0;
     }
   }
-
   if (c_bit) {
     mystrcpy("\n#define CLASS_HEADER\n\n");
   } else if (cpp_bit) {
@@ -2363,14 +2299,12 @@ static void print_time_tables(void) {
     mystrcpy(def_tag);
     mystrcpy("\n{\n");
   }
-
   /* Write size of right hand side of rules followed by CHECK table.   */
   if (java_bit) {
     mystrcpy("    public final static byte rhs[] = {0,\n");
   } else {
     mystrcpy("const unsigned char  CLASS_HEADER rhs[] = {0,\n");
   }
-
   padline();
   k = 0;
   for (int i = 1; i <= num_rules; i++) {
@@ -2386,14 +2320,12 @@ static void print_time_tables(void) {
   }
   *(output_ptr - 1) = '\n';
   BUFFER_CHECK(sysdcl);
-
   if (java_bit) {
     mystrcpy("    };\n");
   } else {
     mystrcpy("                 };\n");
   }
   *output_ptr++ = '\n';
-
   /* Write CHECK table.                                            */
   if (byte_check_bit && !error_maps_bit) {
     if (java_bit) {
@@ -2408,7 +2340,6 @@ static void print_time_tables(void) {
       mystrcpy("const   signed short CLASS_HEADER check_table[] = {\n");
     }
   }
-
   padline();
   k = 0;
   for (int i = 1; i <= (int) table_size; i++) {
@@ -2424,34 +2355,34 @@ static void print_time_tables(void) {
   }
   *(output_ptr - 1) = '\n';
   BUFFER_CHECK(sysdcl);
-
-  if (java_bit)
+  if (java_bit) {
     mystrcpy("    };\n");
-  else mystrcpy("                 };\n");
+  } else {
+    mystrcpy("                 };\n");
+  }
   *output_ptr++ = '\n';
   BUFFER_CHECK(sysdcl);
 
   if (byte_check_bit && !error_maps_bit) {
-    if (java_bit)
-      mystrcpy("    public final static byte check(int i) "
-        "\n    {\n        return check_table[i - (NUM_RULES + 1)];\n    }\n");
-    else
-      mystrcpy("const unsigned char  *CLASS_HEADER check = "
-        "&(check_table[0]) - (NUM_RULES + 1);\n");
+    if (java_bit) {
+      mystrcpy("    public final static byte check(int i) \n    {\n        return check_table[i - (NUM_RULES + 1)];\n    }\n");
+    } else {
+      mystrcpy("const unsigned char  *CLASS_HEADER check = &(check_table[0]) - (NUM_RULES + 1);\n");
+    }
   } else {
-    if (java_bit)
-      mystrcpy("    public final static short check(int i) "
-        "\n    {\n        return check_table[i - (NUM_RULES + 1)];\n    }\n");
-    else
-      mystrcpy("const   signed short *CLASS_HEADER check = "
-        "&(check_table[0]) - (NUM_RULES + 1);\n");
+    if (java_bit) {
+      mystrcpy("    public final static short check(int i) \n    {\n        return check_table[i - (NUM_RULES + 1)];\n    }\n");
+    } else {
+      mystrcpy("const   signed short *CLASS_HEADER check = &(check_table[0]) - (NUM_RULES + 1);\n");
+    }
   }
   *output_ptr++ = '\n';
-
   /* Write left hand side symbol of rules followed by ACTION table.    */
-  if (java_bit)
+  if (java_bit) {
     mystrcpy("    public final static char lhs[] = {0,\n");
-  else mystrcpy("const unsigned short CLASS_HEADER lhs[] = {0,\n");
+  } else {
+    mystrcpy("const unsigned short CLASS_HEADER lhs[] = {0,\n");
+  }
   padline();
   k = 0;
   for (int i = 1; i <= num_rules; i++) {
@@ -2465,16 +2396,13 @@ static void print_time_tables(void) {
       k = 0;
     }
   }
-
   *output_ptr++ = '\n';
   *output_ptr++ = '\n';
   BUFFER_CHECK(sysdcl);
   padline();
   k = 0;
-
   if (error_maps_bit) {
     int max_indx;
-
     /* Construct a map from new state numbers into original      */
     /*   state numbers using the array check[]                   */
     max_indx = accept_act - num_rules - 1;
@@ -2484,7 +2412,6 @@ static void print_time_tables(void) {
     for ALL_STATES3(state_no) {
       check[state_index[state_no]] = state_no;
     }
-
     int j = num_states + 1;
     for (int i = max_indx; i >= 1; i--) {
       int state_no = check[i];
@@ -2505,20 +2432,20 @@ static void print_time_tables(void) {
       k = 0;
     }
   }
-
   if (k != 0) {
     *(output_ptr - 1) = '\n';
     BUFFER_CHECK(sysdcl);
   }
-  if (java_bit)
+  if (java_bit) {
     mystrcpy("    };\n");
-  else mystrcpy("                 };\n");
+  } else {
+    mystrcpy("                 };\n");
+  }
   *output_ptr++ = '\n';
   BUFFER_CHECK(sysdcl);
-
-  if (java_bit)
+  if (java_bit) {
     mystrcpy("    public final static char action[] = lhs;\n");
-  else mystrcpy("const unsigned short *CLASS_HEADER action = lhs;\n");
+  } else mystrcpy("const unsigned short *CLASS_HEADER action = lhs;\n");
   *output_ptr++ = '\n';
 
   /* If GOTO_DEFAULT is requested, we print out the GOTODEF vector.   */
@@ -2546,7 +2473,6 @@ static void print_time_tables(void) {
       }
       default_map[symbol_map[symbol]] = result_act;
     }
-
     for (int symbol = 1; symbol <= num_symbols; symbol++) {
       itoc(default_map[symbol]);
       *output_ptr++ = COMMA;
@@ -2558,22 +2484,22 @@ static void print_time_tables(void) {
         k = 0;
       }
     }
-
     if (k != 0) {
       *(output_ptr - 1) = '\n';
       BUFFER_CHECK(sysdcl);
     }
-    if (java_bit)
+    if (java_bit) {
       mystrcpy("    };\n");
-    else mystrcpy("                 };\n");
+    } else {
+      mystrcpy("                 };\n");
+    }
   }
 
   ffree(next);
   ffree(previous);
-
-  if (error_maps_bit)
+  if (error_maps_bit) {
     print_error_maps();
-
+  }
   if (!byte_check_bit) {
     if (java_bit) {
       PRNT("\n***Warning: Base Check vector contains value > 127. 16-bit words used.");
@@ -2581,7 +2507,6 @@ static void print_time_tables(void) {
       PRNT("\n***Warning: Base Check vector contains value > 255. 16-bit words used.");
     }
   }
-
   if (!byte_terminal_range) {
     if (java_bit) {
       PRNT("***Warning: Terminal symbol > 127. 16-bit words used.");
@@ -2589,32 +2514,26 @@ static void print_time_tables(void) {
       PRNT("***Warning: Terminal symbol > 255. 16-bit words used.");
     }
   }
-
-  if (java_bit)
+  if (java_bit) {
     mystrcpy("}\n");
-
-  fwrite(output_buffer, sizeof(char),
-         output_ptr - &output_buffer[0], sysdcl);
+  }
+  fwrite(output_buffer, sizeof(char), output_ptr - &output_buffer[0], sysdcl);
 }
 
 void print_space_parser(void) {
   init_parser_files();
-
   print_space_tables();
   print_symbols();
   print_definitions();
   print_externs();
-
   exit_parser_files();
 }
 
 void print_time_parser(void) {
   init_parser_files();
-
   print_time_tables();
   print_symbols();
   print_definitions();
   print_externs();
-
   exit_parser_files();
 }

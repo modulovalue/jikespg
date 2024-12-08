@@ -91,7 +91,7 @@ static void act16(void)
 }
 
 /* macro_name_symbol ::= OR */
-#line 197 "jikespg.g"
+#line 196 "jikespg.g"
 static void bad_macro_name(void)
 {
     PRNTERR2(msg_line, "Reserved symbol cannot be used as macro name. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -99,7 +99,7 @@ static void bad_macro_name(void)
 }
 
 /* macro_name_symbol ::= BLOCK */
-#line 212 "jikespg.g"
+#line 211 "jikespg.g"
 static void act21(void)
 {
     PRNTERR2(msg_line, "Macro name not supplied for macro definition. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -107,7 +107,7 @@ static void act21(void)
 }
 
 /* macro_name_symbol ::= DEFINE_KEY */
-#line 221 "jikespg.g"
+#line 220 "jikespg.g"
 static void act22(void)
 {
     PRNTERR2(msg_line, "Macro keyword misplaced. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -115,7 +115,7 @@ static void act22(void)
 }
 
 /* macro_block ::= OR */
-#line 233 "jikespg.g"
+#line 232 "jikespg.g"
 static void definition_expected(void)
 {
     PRNTERR2(msg_line, "Definition block expected where symbol found. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -123,14 +123,14 @@ static void definition_expected(void)
 }
 
 /* terminal_symbol ::= SYMBOL */
-#line 259 "jikespg.g"
+#line 258 "jikespg.g"
 static void process_terminal(void)
 {
     assign_symbol_no(SYM1.name, OMEGA);
 }
 
 /* terminal_symbol ::= DEFINE_KEY */
-#line 271 "jikespg.g"
+#line 270 "jikespg.g"
 static void bad_terminal(void)
 {
     PRNTERR2(msg_line, "Keyword  has been misplaced in Terminal section.  Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -138,7 +138,7 @@ static void bad_terminal(void)
 }
 
 /* terminal_symbol ::= BLOCK */
-#line 282 "jikespg.g"
+#line 281 "jikespg.g"
 static void act37(void)
 {
     PRNTERR2(msg_line, "Misplaced block found in TERMINALS section.  Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -146,7 +146,7 @@ static void act37(void)
 }
 
 /* alias_definition ::= alias_lhs produces alias_rhs */
-#line 295 "jikespg.g"
+#line 294 "jikespg.g"
 static void act39(void)
 {
     register int image;
@@ -274,7 +274,7 @@ static void act39(void)
 }
 
 /* bad_alias_rhs ::= DEFINE_KEY */
-#line 455 "jikespg.g"
+#line 454 "jikespg.g"
 static void bad_alias_rhs(void)
 {
     PRNTERR2(msg_line, "Misplaced keyword found in Alias section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -282,7 +282,7 @@ static void bad_alias_rhs(void)
 }
 
 /* bad_alias_rhs ::= BLOCK */
-#line 468 "jikespg.g"
+#line 467 "jikespg.g"
 static void act57(void)
 {
     PRNTERR2(msg_line, "Misplaced block found in Alias section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -290,7 +290,7 @@ static void act57(void)
 }
 
 /* bad_alias_lhs ::= EMPTY_SYMBOL */
-#line 481 "jikespg.g"
+#line 480 "jikespg.g"
 static void act59(void)
 {
     PRNTERR2(msg_line, "Empty symbol cannot be aliased. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -298,7 +298,7 @@ static void act59(void)
 }
 
 /* bad_alias_lhs ::= produces */
-#line 490 "jikespg.g"
+#line 489 "jikespg.g"
 static void missing_quote(void)
 {
     PRNTERR2(msg_line, "Symbol must be quoted when used as a grammar symbol. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -306,7 +306,7 @@ static void missing_quote(void)
 }
 
 /* start_symbol ::= SYMBOL */
-#line 506 "jikespg.g"
+#line 505 "jikespg.g"
 static void act63(void)
 {
     assign_symbol_no(SYM1.name, OMEGA);
@@ -326,7 +326,7 @@ static void act63(void)
 }
 
 /* start_symbol ::= OR */
-#line 527 "jikespg.g"
+#line 526 "jikespg.g"
 static void bad_start_symbol(void)
 {
     PRNTERR2(msg_line, "Symbol cannot be used as Start symbol. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -334,7 +334,7 @@ static void bad_start_symbol(void)
 }
 
 /* start_symbol ::= BLOCK */
-#line 542 "jikespg.g"
+#line 541 "jikespg.g"
 static void act68(void)
 {
     PRNTERR2(msg_line, "Misplaced block found in Start section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -342,7 +342,7 @@ static void act68(void)
 }
 
 /* start_symbol ::= DEFINE_KEY */
-#line 551 "jikespg.g"
+#line 550 "jikespg.g"
 static void misplaced_keyword_found_in_START_section(void)
 {
     PRNTERR2(msg_line, "Misplaced keyword found in START section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -350,7 +350,7 @@ static void misplaced_keyword_found_in_START_section(void)
 }
 
 /* rules_block ::= RULES_KEY */
-#line 567 "jikespg.g"
+#line 566 "jikespg.g"
 static void act73(void)
 {
 
@@ -367,14 +367,14 @@ static void act73(void)
 }
 
 /* rules_block ::= RULES_KEY rule_list */
-#line 585 "jikespg.g"
+#line 584 "jikespg.g"
 static void act74(void)
 {
     build_symno();
 }
 
 /* rule_list ::= {action_block} SYMBOL produces */
-#line 599 "jikespg.g"
+#line 598 "jikespg.g"
 static void act77(void)
 {
     assign_symbol_no(SYM2.name, OMEGA);
@@ -411,7 +411,7 @@ static void act77(void)
 }
 
 /* rule_list ::= rule_list OR */
-#line 638 "jikespg.g"
+#line 637 "jikespg.g"
 static void act78(void)
 {
     num_rules++;
@@ -431,7 +431,7 @@ static void act78(void)
 }
 
 /* rule_list ::= rule_list SYMBOL produces */
-#line 659 "jikespg.g"
+#line 658 "jikespg.g"
 static void act79(void)
 {
     num_rules++;
@@ -452,7 +452,7 @@ static void act79(void)
 }
 
 /* rule_list ::= rule_list ERROR_SYMBOL */
-#line 686 "jikespg.g"
+#line 685 "jikespg.g"
 static void act82(void)
 {
     if (error_image == DEFAULT_SYMBOL)
@@ -477,7 +477,7 @@ static void act82(void)
 }
 
 /* rule_list ::= rule_list SYMBOL */
-#line 712 "jikespg.g"
+#line 711 "jikespg.g"
 static void act83(void)
 {
     assign_symbol_no(SYM2.name, OMEGA);
@@ -505,7 +505,7 @@ static void act83(void)
 }
 
 /* rule_list ::= OR */
-#line 741 "jikespg.g"
+#line 740 "jikespg.g"
 static void bad_first_symbol_in_RULES_section(void)
 {
     PRNTERR2(msg_line, "First symbol in Rules section is not a valid left-hand side.\n Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -513,7 +513,7 @@ static void bad_first_symbol_in_RULES_section(void)
 }
 
 /* rule_list ::= rule_list OR produces */
-#line 756 "jikespg.g"
+#line 755 "jikespg.g"
 static void rule_without_left_hand_side(void)
 {
     PRNTERR2(msg_line, "Rule without left-hand-side.  Line %ld, column %d", SYM3.start_line, SYM3.start_column);
@@ -521,7 +521,7 @@ static void rule_without_left_hand_side(void)
 }
 
 /* rule_list ::= rule_list keyword produces */
-#line 769 "jikespg.g"
+#line 768 "jikespg.g"
 static void act91(void)
 {
     sprintf(msg_line, "Misplaced keyword found in Rules section Line %ld, column %d",  SYM2.start_line, SYM2.start_column);
@@ -529,7 +529,7 @@ static void act91(void)
 }
 
 /* action_block ::= BLOCK */
-#line 779 "jikespg.g"
+#line 778 "jikespg.g"
 static void act92(void)
 {
     if (action_bit)
@@ -537,7 +537,7 @@ static void act92(void)
 }
 
 /* action_block ::= HBLOCK */
-#line 788 "jikespg.g"
+#line 787 "jikespg.g"
 static void act93(void)
 {
     if (action_bit)
@@ -545,7 +545,7 @@ static void act93(void)
 }
 
 /* keyword ::= DEFINE_KEY */
-#line 798 "jikespg.g"
+#line 797 "jikespg.g"
 static void misplaced_keyword_found_in_RULES_section(void)
 {
     sprintf(msg_line,"Misplaced keyword found in RULES section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -553,7 +553,7 @@ static void misplaced_keyword_found_in_RULES_section(void)
 }
 
 /* names_definition ::= name produces name */
-#line 819 "jikespg.g"
+#line 818 "jikespg.g"
 static void act100(void)
 {
     if (error_maps_bit)
@@ -599,7 +599,7 @@ static void act100(void)
 }
 
 /* bad_name ::= DEFINE_KEY */
-#line 886 "jikespg.g"
+#line 885 "jikespg.g"
 static void misplaced_keyword_found_in_NAMES_section(void)
 {
     PRNTERR2(msg_line, "Keyword  has been misplaced in NAMES section.  Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -607,7 +607,7 @@ static void misplaced_keyword_found_in_NAMES_section(void)
 }
 
 /* bad_name ::= BLOCK */
-#line 905 "jikespg.g"
+#line 904 "jikespg.g"
 static void act116(void)
 {
     PRNTERR2(msg_line, "Misplaced action block found in NAMES section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -615,7 +615,7 @@ static void act116(void)
 }
 
 /* bad_name ::= MACRO_NAME */
-#line 914 "jikespg.g"
+#line 913 "jikespg.g"
 static void act117(void)
 {
     PRNTERR2(msg_line, "Misplaced macro name found in NAMES section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -623,7 +623,7 @@ static void act117(void)
 }
 
 /* [terminals_block] ::= */
-#line 931 "jikespg.g"
+#line 930 "jikespg.g"
 static void process_TERMINALS_section(void)
 {
     num_terminals = num_symbols;
@@ -642,7 +642,7 @@ static void process_TERMINALS_section(void)
 }
 
 /* [alias_block] ::= */
-#line 954 "jikespg.g"
+#line 953 "jikespg.g"
 static void process_ALIAS_section(void)
 {
 
@@ -688,7 +688,7 @@ static void process_ALIAS_section(void)
 }
 
 /* {terminal_symbol} ::= */
-#line 1026 "jikespg.g"
+#line 1025 "jikespg.g"
 static void act132(void)
 {
     assign_symbol_no(kempty, OMEGA);

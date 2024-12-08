@@ -437,9 +437,9 @@ struct shift_header_type allocate_shift_map(int size, char *file, long line);
 
 struct reduce_header_type allocate_reduce_map(int size, char *file, long line);
 
-void cmprspa(void);
-
 void cmprtim(void);
+
+void cmprspa(void);
 
 void compute_la(int state_no, int item_no, SET_PTR look_ahead);
 
