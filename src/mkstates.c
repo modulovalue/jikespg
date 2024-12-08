@@ -108,7 +108,6 @@ static void mklr0(void) {
 
   int goto_size,
       shift_size,
-      i,
       next_item_no,
       item_no,
       symbol,
@@ -152,7 +151,7 @@ static void mklr0(void) {
 
   state_root = NULL;
 
-  for (i = 0; i <= num_terminals; i++) {
+  for (int i = 0; i <= num_terminals; i++) {
     shift_action[i] = OMEGA;
   }
 
@@ -423,15 +422,16 @@ static void mklr0(void) {
            p_inner = p_inner->next_shift) {
         sh = p_inner->lr0_shift;
         if (sh.size == shift_size) {
-          for (i = 1; i <= shift_size; i++) /* Compare shift maps */
-          {
-            if (sh.map[i].action != shift_action[sh.map[i].symbol]) {
+          int ii;
+          /* Compare shift maps */
+          for (ii = 1; ii <= shift_size; ii++) {
+            if (sh.map[ii].action != shift_action[sh.map[ii].symbol]) {
               break;
             }
           }
 
-          if (i > shift_size) /* Are they equal ? */
-          {
+          /* Are they equal ? */
+          if (ii > shift_size) {
             state->lr0_shift = sh;
             state->shift_number = p_inner->shift_number;
             for (symbol = shift_root;

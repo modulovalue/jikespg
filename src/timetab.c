@@ -160,14 +160,16 @@ static void remap_symbols(void) {
 
   for ALL_LA_STATES3(state_no) {
     red = lastats[state_no].reduce;
-    for (int i = 1; i <= red.size; i++)
+    for (int i = 1; i <= red.size; i++) {
       red.map[i].symbol = symbol_map[red.map[i].symbol];
+    }
   }
 
   for (int i = 1; i <= num_shift_maps; i++) {
     sh = shift[i];
-    for (j = 1; j <= sh.size; j++)
+    for (int j = 1; j <= sh.size; j++) {
       sh.map[j].symbol = symbol_map[sh.map[j].symbol];
+    }
   }
 
   sortdes(ordered_state, row_size, 1, max_la_state, num_symbols);
@@ -378,7 +380,6 @@ static void print_tables(void) {
   long la_state_offset;
   int act;
   long result_act;
-  int j;
   int k;
   int symbol;
 
@@ -420,7 +421,7 @@ static void print_tables(void) {
       red = lastats[state_no].reduce;
     } else {
       go_to = statset[state_no].go_to;
-      for (j = 1; j <= go_to.size; j++) {
+      for (int j = 1; j <= go_to.size; j++) {
         symbol = go_to.map[j].symbol;
         long i = indx + symbol;
         if (goto_default_bit || nt_check_bit) {
@@ -440,8 +441,7 @@ static void print_tables(void) {
       sh = shift[statset[state_no].shift_number];
       red = reduce[state_no];
     }
-
-    for (j = 1; j <= sh.size; j++) {
+    for (int j = 1; j <= sh.size; j++) {
       symbol = sh.map[j].symbol;
       long i = indx + symbol;
       check[i] = symbol;
@@ -456,19 +456,16 @@ static void print_tables(void) {
         result_act = -act + error_act;
         shift_reduce_count++;
       }
-
       if (result_act > MAX_TABLE_SIZE + 1) {
         PRNTERR2(msg_line, "Table contains look-ahead shift entry that is >%ld; Processing stopped.", MAX_TABLE_SIZE + 1);
         return;
       }
-
       action[i] = result_act;
     }
-
     /*   We now initialize the elements reserved for reduce actions in   */
     /* the current state.                                                */
     default_rule = red.map[0].rule_number;
-    for (j = 1; j <= red.size; j++) {
+    for (int j = 1; j <= red.size; j++) {
       if (red.map[j].rule_number != default_rule) {
         symbol = red.map[j].symbol;
         long i = indx + symbol;
@@ -730,7 +727,7 @@ static void print_tables(void) {
     for ALL_STATES3(state_no) {
       action[state_index[state_no]] = state_no;
     }
-    j = num_states + 1;
+    int j = num_states + 1;
     for (long i = max_indx; i >= 1; i--) {
       long state_no = action[i];
       if (state_no != OMEGA) {

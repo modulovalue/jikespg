@@ -78,14 +78,11 @@ void produce(void) {
   /*       since given the above rule, we say that                 */
   /*       C right-most produces A.                                */
   /*                                                               */
+  int item_no;
+  int rule_no;
 
-  int item_no,
-      rule_no,
-      i;
-
-  struct node
-      *p,
-      *q;
+  struct node *p;
+  struct node *q;
 
   stack = Allocate_short_array(num_symbols + 1);
   index_of = Allocate_short_array(num_symbols + 1);
@@ -131,7 +128,7 @@ void produce(void) {
       item_no = p->value;
       int symbol = item_table[item_no].symbol;
       if (IS_A_NON_TERMINAL(symbol)) {
-        i = item_table[item_no].suffix_index;
+        int i = item_table[item_no].suffix_index;
         if (IS_IN_SET(first, i, empty) &&
             !IS_IN_NTSET(produces, symbol, nt - num_terminals)) {
           NTSET_BIT_IN(produces, symbol, nt - num_terminals);
@@ -142,14 +139,16 @@ void produce(void) {
         }
       }
       rule_no = item_table[item_no].rule_number;
-      for (i = 0; i < RHS_SIZE(rule_no); i++) {
-        if (item_table[item_no + i].symbol == error_image)
+      int ii;
+      for (ii = 0; ii < RHS_SIZE(rule_no); ii++) {
+        if (item_table[item_no + ii].symbol == error_image) {
           break;
+        }
       }
-      item_no += i;
+      item_no += ii;
       symbol = item_table[item_no].symbol;
       if (symbol == error_image) {
-        if (IS_A_NON_TERMINAL(item_table[item_no + 1].symbol) && i > 0) {
+        if (IS_A_NON_TERMINAL(item_table[item_no + 1].symbol) && ii > 0) {
           symbol = item_table[item_no + 2].symbol;
           if (symbol == empty)
             num_error_rules++;
@@ -216,7 +215,7 @@ void produce(void) {
     const struct goto_header_type go_to = statset[state_no].go_to;
     int nt_root = NIL;
     INIT_NTSET(set);
-    for (i = 1; i <= go_to.size; i++) {
+    for (int i = 1; i <= go_to.size; i++) {
       const int symbol = go_to.map[i].symbol;
       const int state = go_to.map[i].action;
       if (state < 0) {
@@ -286,15 +285,16 @@ void produce(void) {
 
 
     /* Adjust name map to remove unused elements and update SYMNO map. */
-    for (i = 1; i <= num_names; i++)
+    for (int i = 1; i <= num_names; i++) {
       name_used[i] = false;
+    }
 
     for ALL_SYMBOLS3(symbol) {
       name_used[symno[symbol].name_index] = true;
     }
 
     n = 0;
-    for (i = 1; i <= num_names; i++) {
+    for (int i = 1; i <= num_names; i++) {
       if (name_used[i]) {
         name[++n] = name[i];
         names_map[i] = n;
@@ -405,14 +405,10 @@ static void process_scopes(void) {
   struct node **states_of;
 
   int num_state_sets = 0,
-      i,
-      j,
-      k,
       n;
 
   int max_prefix_length = 0,
       dot_symbol,
-      symbol,
       item_root,
       rule_no,
       nt_root;
@@ -477,7 +473,7 @@ static void process_scopes(void) {
       for (int item_no = p->value;
            IS_A_NON_TERMINAL(item_table[item_no].symbol);
            item_no++) {
-        symbol = item_table[item_no].symbol;
+        int symbol = item_table[item_no].symbol;
         if (!IS_IN_NTSET(produces, nt, symbol - num_terminals)) {
           NTSET_BIT_IN(produces, nt, symbol - num_terminals);
           q = Allocate_node();
@@ -527,7 +523,7 @@ static void process_scopes(void) {
       p = p->next;
       for (int item_no = p->value;
            item_table[item_no].symbol != empty; item_no++) {
-        symbol = item_table[item_no].symbol;
+        int symbol = item_table[item_no].symbol;
         if (IS_A_NON_TERMINAL(symbol)) {
           if (!IS_IN_NTSET(produces, nt, symbol - num_terminals)) {
             NTSET_BIT_IN(produces, nt, symbol - num_terminals);
@@ -592,29 +588,29 @@ static void process_scopes(void) {
         }
       }
     } else if (IS_A_NON_TERMINAL(dot_symbol)) {
-      symbol = rules[item_table[item_no].rule_number].lhs;
-      if (!IS_IN_SET(first, item_table[item_no].suffix_index,
-                     empty) &&
+      int symbol = rules[item_table[item_no].rule_number].lhs;
+      if (!IS_IN_SET(first, item_table[item_no].suffix_index, empty) &&
           IS_IN_NTSET(produces, dot_symbol, symbol - num_terminals)) {
         if (is_scope(item_no)) {
-          for (i = item_no + 1; ; i++) {
-            symbol = item_table[i].symbol;
+          int ii;
+          for (ii = item_no + 1; ; ii++) {
+            symbol = item_table[ii].symbol;
             if (IS_A_TERMINAL(symbol))
               break;
             if (!null_nt[symbol])
               break;
           }
           if (IS_A_NON_TERMINAL(symbol)) {
-            for ALL_NON_TERMINALS3(nt)
+            for ALL_NON_TERMINALS3(nt) {
               symbol_seen[nt] = false;
+            }
             symbol = get_shift_symbol(symbol);
           }
-
-          if (symbol != empty && item_list[i] == OMEGA) {
-            item_list[i] = item_root;
-            item_root = i;
+          if (symbol != empty && item_list[ii] == OMEGA) {
+            item_list[ii] = item_root;
+            item_root = ii;
             max_prefix_length = MAX(max_prefix_length,
-                                    item_table[i].dot);
+                                    item_table[ii].dot);
           }
         }
       }
@@ -626,15 +622,15 @@ static void process_scopes(void) {
   /* identify the set of left-hand side symbols associated with the    */
   /* scopes.                                                           */
   scope_table = Allocate_short_array(SCOPE_SIZE);
-  for (i = 0; i < SCOPE_SIZE; i++)
+  for (int i = 0; i < SCOPE_SIZE; i++) {
     scope_table[i] = NIL;
-
-  for ALL_NON_TERMINALS3(nt)
+  }
+  for ALL_NON_TERMINALS3(nt) {
     symbol_seen[nt] = false;
-
+  }
   for (int item_no = item_root; item_no != NIL; item_no = item_list[item_no]) {
     rule_no = item_table[item_no].rule_number;
-    symbol = rules[rule_no].lhs;
+    int symbol = rules[rule_no].lhs;
     num_scopes = num_scopes + 1;
     symbol_seen[symbol] = true;
     prefix_index[item_no] = insert_prefix(item_no);
@@ -653,8 +649,8 @@ static void process_scopes(void) {
     struct goto_header_type go_to;
 
     go_to = statset[state_no].go_to;
-    for (i = 1; i <= go_to.size; i++) {
-      symbol = go_to.map[i].symbol;
+    for (int i = 1; i <= go_to.size; i++) {
+      int symbol = go_to.map[i].symbol;
       if (symbol_seen[symbol]) {
         if (states_of[symbol] == NULL) {
           nt_list[symbol] = nt_root;
@@ -708,7 +704,7 @@ process_scope_states: {
     state_list = Allocate_short_array(num_states + 1);
     bucket = Allocate_short_array(max_prefix_length + 1);
 
-    for (symbol = nt_root, i = 1; symbol != NIL; symbol = nt_list[symbol], i++) {
+    for (int symbol = nt_root, i = 1; symbol != NIL; symbol = nt_list[symbol], i++) {
       list[i] = i;
       ordered_symbol[i] = symbol;
       EMPTY_COLLECTION_SET(collection, i);
@@ -721,8 +717,8 @@ process_scope_states: {
 
     partset(collection, element_size, list, start, stack, num_state_sets, 1);
 
-    for (i = 1; i <= num_state_sets; i++) {
-      symbol = ordered_symbol[i];
+    for (int i = 1; i <= num_state_sets; i++) {
+      int symbol = ordered_symbol[i];
       state_index[symbol] = ABS(start[i]);
     }
     scope_state_size = start[num_state_sets + 1] - 1;
@@ -733,19 +729,19 @@ process_scope_states: {
     scope_right_side = Allocate_int_array(scope_rhs_size + 1);
     scope_state = Allocate_short_array(scope_state_size + 1);
 
-    k = 0;
-    for (i = 0; i <= num_states; i++)
+    int k = 0;
+    for (int i = 0; i <= num_states; i++) {
       state_list[i] = OMEGA;
+    }
 
-    for (i = 1; i <= num_state_sets; i++) {
+    for (int i = 1; i <= num_state_sets; i++) {
       if (start[i] > 0) {
         state_root = 0;
         state_list[state_root] = NIL;
-
-        for (end_node = (j = i) == NIL;
-             !end_node; end_node = j == i) {
+        int j;
+        for (end_node = (j = i) == NIL; !end_node; end_node = j == i) {
           j = stack[j];
-          symbol = ordered_symbol[j];
+          int symbol = ordered_symbol[j];
           for (p = states_of[symbol]; p != NULL; p = p->next) {
             state_no_inner = p->value;
             if (state_list[state_no_inner] == OMEGA) {
@@ -754,9 +750,7 @@ process_scope_states: {
             }
           }
         }
-
-        for (state_no_inner = state_root;
-             state_no_inner != NIL; state_no_inner = state_root) {
+        for (state_no_inner = state_root; state_no_inner != NIL; state_no_inner = state_root) {
           state_root = state_list[state_no_inner];
           state_list[state_no_inner] = OMEGA;
           k++;
@@ -765,7 +759,7 @@ process_scope_states: {
       }
     }
 
-    for (symbol = nt_root; symbol != NIL; symbol = nt_list[symbol]) {
+    for (int symbol = nt_root; symbol != NIL; symbol = nt_list[symbol]) {
       for (p = states_of[symbol]; p != NULL; q = p, p = p->next) {
       }
       free_nodes(states_of[symbol], q);
@@ -783,23 +777,25 @@ process_scope_states: {
     /*                                                                     */
     /* and both of them are applicable in a given context with similar     */
     /* result, then we always want A ::= x . y to be used.                 */
-    for (i = 1; i <= max_prefix_length; i++) {
+    for (int i = 1; i <= max_prefix_length; i++) {
       bucket[i] = NIL;
     }
     for (int item_no = item_root; item_no != NIL; item_no = item_list[item_no]) {
       int tail;
       k = item_table[item_no].dot;
-      for (i = bucket[k]; i != NIL; tail = i, i = next_item[i]) {
+      int ii;
+      for (ii = bucket[k]; ii != NIL; tail = ii, ii = next_item[ii]) {
         if (RHS_SIZE(item_table[item_no].rule_number) >=
-            RHS_SIZE(item_table[i].rule_number)) {
+            RHS_SIZE(item_table[ii].rule_number)) {
           break;
         }
       }
-
-      next_item[item_no] = i;
-      if (i == bucket[k])
+      next_item[item_no] = ii;
+      if (ii == bucket[k]) {
         bucket[k] = item_no; /* insert at the beginning */
-      else next_item[tail] = item_no; /* insert in middle or end */
+      } else {
+        next_item[tail] = item_no; /* insert in middle or end */
+      }
     }
 
     /* Reconstruct list of scoped items in sorted order. Since we want   */
@@ -807,7 +803,7 @@ process_scope_states: {
     /* proceeding to the largest one and insert the items from each      */
     /* bucket in LIFO order in ITEM_LIST.                                */
     item_root = NIL;
-    for (k = 1; k <= max_prefix_length; k++) {
+    for (int k = 1; k <= max_prefix_length; k++) {
       for (int item_no = bucket[k]; item_no != NIL; item_no = next_item[item_no]) {
         item_list[item_no] = item_root;
         item_root = item_no;
@@ -826,12 +822,12 @@ process_scope_states: {
 
   /* Next, we initialize the remaining fields of the SCOPE structure.  */
   int item_no = item_root;
-  for (i = 1; item_no != NIL; i++) {
+  for (int i = 1; item_no != NIL; i++) {
     scope[i].prefix = prefix_index[item_no];
     scope[i].suffix = suffix_index[item_no];
     rule_no = item_table[item_no].rule_number;
     scope[i].lhs_symbol = rules[rule_no].lhs;
-    symbol = rhs_sym[rules[rule_no].rhs + item_table[item_no].dot];
+    int symbol = rhs_sym[rules[rule_no].rhs + item_table[item_no].dot];
     if (IS_A_TERMINAL(symbol))
       scope[i].look_ahead = symbol;
     else {
@@ -843,12 +839,12 @@ process_scope_states: {
     item_no = item_list[item_no];
   }
 
-  for (j = 1; j <= scope_top; j++) {
+  for (int j = 1; j <= scope_top; j++) {
     if (scope_element[j].item < 0) {
       item_no = -scope_element[j].item;
       rule_no = item_table[item_no].rule_number;
       n = scope_element[j].index;
-      for (k = rules[rule_no].rhs + item_table[item_no].dot - 1;
+      for (int k = rules[rule_no].rhs + item_table[item_no].dot - 1;
            k >= rules[rule_no].rhs; /* symbols before dot*/
            k--)
         scope_right_side[n++] = rhs_sym[k];
@@ -856,10 +852,10 @@ process_scope_states: {
       item_no = scope_element[j].item;
       rule_no = item_table[item_no].rule_number;
       n = scope_element[j].index;
-      for (k = rules[rule_no].rhs + item_table[item_no].dot;
+      for (int k = rules[rule_no].rhs + item_table[item_no].dot;
            k < rules[rule_no + 1].rhs; /* symbols after dot */
            k++) {
-        symbol = rhs_sym[k];
+        int symbol = rhs_sym[k];
         if (IS_A_NON_TERMINAL(symbol)) {
           if (!null_nt[symbol])
             scope_right_side[n++] = rhs_sym[k];
@@ -968,18 +964,17 @@ static bool scope_check(const int lhs_symbol, const int target, const int source
 /* table, the prefix of a given item, ITEM_NO, is encoded as         */
 /* -ITEM_NO, whereas the suffix of that item is encoded as +ITEM_NO. */
 static int insert_prefix(const int item_no) {
-  int i;
-
   unsigned long hash_address = 0;
 
   const int rule_no = item_table[item_no].rule_number;
-  for (i = rules[rule_no].rhs; /* symbols before dot */
-       i < rules[rule_no].rhs + item_table[item_no].dot; i++)
-    hash_address += rhs_sym[i];
+  int ii;
+  for (ii = rules[rule_no].rhs; /* symbols before dot */
+       ii < rules[rule_no].rhs + item_table[item_no].dot; ii++)
+    hash_address += rhs_sym[ii];
 
-  i = hash_address % SCOPE_SIZE;
+  ii = hash_address % SCOPE_SIZE;
 
-  for (int j = scope_table[i]; j != NIL; j = scope_element[j].link) {
+  for (int j = scope_table[ii]; j != NIL; j = scope_element[j].link) {
     if (is_prefix_equal(scope_element[j].item, item_no)) {
       return scope_element[j].index;
     }
@@ -987,8 +982,8 @@ static int insert_prefix(const int item_no) {
   scope_top++;
   scope_element[scope_top].item = -item_no;
   scope_element[scope_top].index = scope_rhs_size + 1;
-  scope_element[scope_top].link = scope_table[i];
-  scope_table[i] = scope_top;
+  scope_element[scope_top].link = scope_table[ii];
+  scope_table[ii] = scope_top;
   scope_rhs_size += item_table[item_no].dot + 1;
   return scope_element[scope_top].index;
 }
@@ -1026,37 +1021,35 @@ static bool is_prefix_equal(const int item_no, const int item_no2) {
 /* When inserting a suffix into the table, all nullable nonterminals */
 /* in the suffix are disregarded.                                    */
 static int insert_suffix(const int item_no) {
-  int i,
-      num_elements = 0;
-
+  int num_elements = 0;
   unsigned long hash_address = 0;
-
   const int rule_no = item_table[item_no].rule_number;
-  for (i = rules[rule_no].rhs + item_table[item_no].dot;
-       i < rules[rule_no + 1].rhs; /* symbols after dot */
-       i++) {
-    if (IS_A_NON_TERMINAL(rhs_sym[i])) {
-      if (!null_nt[rhs_sym[i]]) {
-        hash_address += rhs_sym[i];
+  int ii;
+  for (ii = rules[rule_no].rhs + item_table[item_no].dot;
+       ii < rules[rule_no + 1].rhs; /* symbols after dot */
+       ii++) {
+    if (IS_A_NON_TERMINAL(rhs_sym[ii])) {
+      if (!null_nt[rhs_sym[ii]]) {
+        hash_address += rhs_sym[ii];
         num_elements++;
       }
-    } else if (rhs_sym[i] != error_image) {
-      hash_address += rhs_sym[i];
+    } else if (rhs_sym[ii] != error_image) {
+      hash_address += rhs_sym[ii];
       num_elements++;
     }
   }
 
-  i = hash_address % SCOPE_SIZE;
+  ii = hash_address % SCOPE_SIZE;
 
-  for (int j = scope_table[i]; j != NIL; j = scope_element[j].link) {
+  for (int j = scope_table[ii]; j != NIL; j = scope_element[j].link) {
     if (is_suffix_equal(scope_element[j].item, item_no))
       return scope_element[j].index;
   }
   scope_top++;
   scope_element[scope_top].item = item_no;
   scope_element[scope_top].index = scope_rhs_size + 1;
-  scope_element[scope_top].link = scope_table[i];
-  scope_table[i] = scope_top;
+  scope_element[scope_top].link = scope_table[ii];
+  scope_table[ii] = scope_top;
 
   scope_rhs_size += num_elements + 1;
 
@@ -1137,15 +1130,15 @@ static void print_scopes(void) {
     int len = PRINT_LINE_SIZE - 5;
     print_large_token(line, tok, "", len);
     strcat(line, " ::= ");
-    int i = PRINT_LINE_SIZE / 2 - 1;
-    const int offset = MIN(strlen(line) - 1, i);
+    const int offset = MIN(strlen(line) - 1, PRINT_LINE_SIZE / 2 - 1);
     len = PRINT_LINE_SIZE - (offset + 4);
     /* locate end of list */
-    for (i = scope[k].prefix; scope_right_side[i] != 0; i++) {
+    int ii;
+    for (ii = scope[k].prefix; scope_right_side[ii] != 0; ii++) {
     }
     /* symbols before dot */
-    for (i = i - 1; i >= scope[k].prefix; i--) {
-      symbol = scope_right_side[i];
+    for (ii = ii - 1; ii >= scope[k].prefix; ii--) {
+      symbol = scope_right_side[ii];
       restore_symbol(tok, RETRIEVE_STRING(symbol));
       if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 4) {
         fprintf(syslis, "\n%s", line);
@@ -1161,8 +1154,8 @@ static void print_scopes(void) {
     strcat(line, " .");
     len = PRINT_LINE_SIZE - (offset + 1);
 
-    for (i = scope[k].suffix; scope_right_side[i] != 0; i++) {
-      symbol = scope_right_side[i];
+    for (ii = scope[k].suffix; scope_right_side[ii] != 0; ii++) {
+      symbol = scope_right_side[ii];
       restore_symbol(tok, RETRIEVE_STRING(symbol));
       if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 1) {
         fprintf(syslis, "\n%s", line);

@@ -34,18 +34,16 @@ static bool allocate_more_space(cell ***base, long *size, long *base_size) {
   /* reallocated.                                                       */
   /*                                                                    */
   const long k = *size >> LOG_BLKSIZE; /* which segment? */
-  if (k == *base_size) /* base overflow? reallocate */
-  {
-    register long i = *base_size;
-
+  if (k == *base_size) {
+    /* base overflow? reallocate */
     *base_size += BASE_INCREMENT;
-    *base = (cell **)
-        (*base == NULL ? malloc(sizeof(cell *) * *base_size) : realloc(*base, sizeof(cell *) * *base_size));
-    if (*base == (cell **) NULL)
+    *base = (cell **) (*base == NULL ? malloc(sizeof(cell *) * *base_size) : realloc(*base, sizeof(cell *) * *base_size));
+    if (*base == (cell **) NULL) {
       return false;
-
-    for (i = i; i < *base_size; i++)
+    }
+    for (register long i = *base_size; i < *base_size; i++) {
       (*base)[i] = NULL;
+    }
   }
 
   /* If the Ast slot "k" does not already contain a segment, We try to  */
@@ -305,11 +303,11 @@ bool *allocate_boolean_array(const long size, char *file, const long line) {
 /* FILL_IN is a subroutine that pads a buffer, STRING,  with CHARACTER a     */
 /* certain AMOUNT of times.                                                  */
 void fill_in(char string[], const int amount, const char character) {
-  int i;
-  for (i = 0; i <= amount; i++) {
-    string[i] = character;
+  int ii;
+  for (ii = 0; ii <= amount; ii++) {
+    string[ii] = character;
   }
-  string[i] = '\0';
+  string[ii] = '\0';
 }
 
 /* QCKSRT is a quicksort algorithm that takes as arguments an array of       */
@@ -448,12 +446,11 @@ void print_item(const int item_no) {
   int len = PRINT_LINE_SIZE - 5;
   print_large_token(line, tok, "", len);
   strcat(line, " ::= ");
-  int i = PRINT_LINE_SIZE / 2 - 1;
-  const int offset = MIN(strlen(line) - 1, i);
+  const int offset = MIN(strlen(line) - 1, PRINT_LINE_SIZE / 2 - 1);
   len = PRINT_LINE_SIZE - (offset + 4);
-  i = rules[rule_no].rhs; /* symbols before dot */
-  for (const int k = rules[rule_no].rhs + item_table[item_no].dot - 1; i <= k; i++) {
-    symbol = rhs_sym[i];
+  int sbd = rules[rule_no].rhs; /* symbols before dot */
+  for (const int k = rules[rule_no].rhs + item_table[item_no].dot - 1; sbd <= k; sbd++) {
+    symbol = rhs_sym[sbd];
     restore_symbol(tok, RETRIEVE_STRING(symbol));
     if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE - 4) {
       fprintf(syslis, "\n%s", line);
@@ -466,7 +463,7 @@ void print_item(const int item_no) {
   }
 
   /* We now add a DOT "." to the output line and print the remaining   */
-  /* symbols in the right hand side.  If ITEM_NO is a complete item,   */
+  /* symbols on the right hand side.  If ITEM_NO is a complete item,   */
   /* we also print the rule number.                                    */
   if (item_table[item_no].dot == 0 || item_table[item_no].symbol == empty)
     strcpy(tok, ".");
@@ -474,7 +471,7 @@ void print_item(const int item_no) {
     strcpy(tok, " .");
   strcat(line, tok);
   len = PRINT_LINE_SIZE - (offset + 1);
-  for (i = rules[rule_no].rhs +
+  for (int i = rules[rule_no].rhs +
            item_table[item_no].dot; /* symbols after dot*/
        i <= rules[rule_no + 1].rhs - 1; i++) {
     symbol = rhs_sym[i];
@@ -541,8 +538,7 @@ void print_state(const int state_no) {
 
   /* END OF INITIALIZATION ----------------------------------------------------*/
 
-  int i = number_len(state_no) + 8; /* 8 = length("STATE") + 2 spaces + newline*/
-  fill_in(buffer, PRINT_LINE_SIZE - i, '-');
+  fill_in(buffer, PRINT_LINE_SIZE - (number_len(state_no) + 8 /* 8 = length("STATE") + 2 spaces + newline*/), '-');
 
   fprintf(syslis, "\n\n\nSTATE %d %s", state_no, buffer);
 
@@ -598,7 +594,7 @@ void print_state(const int state_no) {
   /* look-ahead state contains shift actions, and retrieve the next    */
   /* state from one of those shift actions.                            */
   const struct shift_header_type sh = shift[statset[state_no].shift_number];
-  for (i = 1; i <= sh.size; i++) {
+  for (int i = 1; i <= sh.size; i++) {
     int next_state = sh.map[i].action;
     while (next_state > num_states) {
       const struct shift_header_type next_sh = shift[lastats[next_state].shift_number];
@@ -628,14 +624,14 @@ void print_state(const int state_no) {
 
   /* GOTOS and GOTO-REDUCES are analogous to SHIFTS and SHIFT-REDUCES. */
   const struct goto_header_type go_to = statset[state_no].go_to;
-  for (i = 1; i <= go_to.size; i++) {
+  for (int i = 1; i <= go_to.size; i++) {
     if (go_to.map[i].action > 0) {
       q = statset[go_to.map[i].action].kernel_items;
       if (q == NULL) /* single production state? */
         q = statset[go_to.map[i].action].complete_items;
-    } else
+    } else {
       q = adequate_item[-go_to.map[i].action];
-
+    }
     for (; q != NULL; q = q->next) {
       item_no = q->value - 1;
       if (!item_seen[item_no]) {

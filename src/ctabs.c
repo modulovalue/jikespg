@@ -489,16 +489,11 @@ static void exit_parser_files(void) {
 static void print_c_names(void) {
   int *name_len = Allocate_int_array(num_names + 1);
   long num_bytes = 0;
-  int i;
-  int k;
-
   max_name_length = 0;
   mystrcpy("\nconst char  CLASS_HEADER string_buffer[] = {0,\n");
-
   int n = 0;
-  int j = 0;
   padline();
-  for (i = 1; i <= num_names; i++) {
+  for (int i = 1; i <= num_names; i++) {
     char tok[SYMBOL_SIZE + 1];
     strcpy(tok, RETRIEVE_NAME(i));
     name_len[i] = strlen(tok);
@@ -506,8 +501,8 @@ static void print_c_names(void) {
     if (max_name_length < name_len[i]) {
       max_name_length = name_len[i];
     }
-    k = 0;
-    for (j = 0; j < name_len[i]; j++) {
+    int k = 0;
+    for (int j = 0; j < name_len[i]; j++) {
       *output_ptr++ = '\'';
       if (tok[k] == '\'' || tok[k] == '\\') {
         *output_ptr++ = '\\';
@@ -544,9 +539,9 @@ static void print_c_names(void) {
   mystrcpy("\nconst unsigned short CLASS_HEADER name_start[] = {0,\n");
 
   padline();
-  j = 1;
-  k = 0;
-  for (i = 1; i <= num_names; i++) {
+  int j = 1;
+  int k = 0;
+  for (int i = 1; i <= num_names; i++) {
     itoc(j);
     *output_ptr++ = COMMA;
     j += name_len[i];
@@ -647,7 +642,6 @@ static void print_error_maps(void) {
   int *naction_symbols_base;
   int *naction_symbols_range;
 
-  int i;
   int k;
   int offset;
 
@@ -683,7 +677,7 @@ static void print_error_maps(void) {
     struct reduce_header_type red;
     sh = shift[statset[state_no].shift_number];
     as_size[state_no] = sh.size;
-    for (i = 1; i <= sh.size; i++) {
+    for (int i = 1; i <= sh.size; i++) {
       int symbol;
       if (table_opt == OPTIMIZE_TIME) {
         symbol = original[sh.map[i].symbol];
@@ -695,7 +689,7 @@ static void print_error_maps(void) {
 
     red = reduce[state_no];
     as_size[state_no] += red.size;
-    for (i = 1; i <= red.size; i++) {
+    for (int i = 1; i <= red.size; i++) {
       int symbol;
       if (table_opt == OPTIMIZE_TIME) {
         symbol = original[red.map[i].symbol];
@@ -730,7 +724,7 @@ static void print_error_maps(void) {
   offset = state_start[num_states + 1];
   action_symbols_range = Allocate_int_array(offset);
   compute_action_symbols_range(state_start, state_stack, state_list, action_symbols_range);
-  for (i = 0; i < offset - 1; i++) {
+  for (int i = 0; i < offset - 1; i++) {
     if (action_symbols_range[i] > (java_bit ? 127 : 255)) {
       byte_terminal_range = 0;
       break;
@@ -768,7 +762,7 @@ static void print_error_maps(void) {
   /* We now repeat the same process for the domain of the GOTO table.    */
   for ALL_STATES3(state_no) {
     as_size[state_no] = gd_index[state_no + 1] - gd_index[state_no];
-    for (i = gd_index[state_no]; i <= gd_index[state_no + 1] - 1; i++) {
+    for (int i = gd_index[state_no]; i <= gd_index[state_no + 1] - 1; i++) {
       int symbol = gd_range[i] - num_terminals;
       NTSET_BIT_IN(naction_symbols, state_no, symbol);
     }
@@ -777,7 +771,7 @@ static void print_error_maps(void) {
   ffree(as_size);
   ffree(naction_symbols);
   /* Remap non-terminals */
-  for (i = 1; i <= gotodom_size; i++) {
+  for (int i = 1; i <= gotodom_size; i++) {
     if (table_opt == OPTIMIZE_SPACE) {
       gd_range[i] = symbol_map[gd_range[i]] - num_terminals;
     } else {
@@ -933,37 +927,34 @@ static void print_error_maps(void) {
     PRNT2(msg_line, "    Storage required for SYMBOL_INDEX map: %ld Bytes", num_bytes);
   }
   if (num_scopes > 0) {
-    int j;
     short root = 0;
     short *list;
     list = Allocate_short_array(scope_rhs_size + 1);
-
-    for (i = 1; i <= scope_rhs_size; i++) {
-      if (scope_right_side[i] != 0)
+    for (int i = 1; i <= scope_rhs_size; i++) {
+      if (scope_right_side[i] != 0) {
         scope_right_side[i] = symbol_map[scope_right_side[i]];
+      }
     }
-
-    for (i = 1; i <= num_scopes; i++) {
+    for (int i = 1; i <= num_scopes; i++) {
       scope[i].look_ahead = symbol_map[scope[i].look_ahead];
-      if (table_opt == OPTIMIZE_SPACE)
-        scope[i].lhs_symbol = symbol_map[scope[i].lhs_symbol]
-                              - num_terminals;
-      else
+      if (table_opt == OPTIMIZE_SPACE) {
+        scope[i].lhs_symbol = symbol_map[scope[i].lhs_symbol]- num_terminals;
+      } else {
         scope[i].lhs_symbol = symbol_map[scope[i].lhs_symbol];
+      }
     }
     /* Mark all elements of prefix strings. */
-    for (i = 1; i <= scope_rhs_size; i++)
+    for (int i = 1; i <= scope_rhs_size; i++) {
       list[i] = -1;
-
-    for (i = 1; i <= num_scopes; i++) {
+    }
+    for (int i = 1; i <= num_scopes; i++) {
       if (list[scope[i].suffix] < 0) {
         list[scope[i].suffix] = root;
         root = scope[i].suffix;
       }
     }
-
     for (; root != 0; root = list[root]) {
-      for (j = root; scope_right_side[j] != 0; j++) {
+      for (int j = root; scope_right_side[j] != 0; j++) {
         k = scope_right_side[j];
         scope_right_side[j] = temp[k];
       }
@@ -988,7 +979,7 @@ static void print_error_maps(void) {
 
     padline();
     k = 0;
-    for (i = 1; i <= num_scopes; i++) {
+    for (int i = 1; i <= num_scopes; i++) {
       itoc(scope[i].prefix);
       *output_ptr++ = COMMA;
       k++;
@@ -1019,7 +1010,7 @@ static void print_error_maps(void) {
 
     padline();
     k = 0;
-    for (i = 1; i <= num_scopes; i++) {
+    for (int i = 1; i <= num_scopes; i++) {
       itoc(scope[i].suffix);
       *output_ptr++ = COMMA;
       k++;
@@ -1050,7 +1041,7 @@ static void print_error_maps(void) {
 
     padline();
     k = 0;
-    for (i = 1; i <= num_scopes; i++) {
+    for (int i = 1; i <= num_scopes; i++) {
       itoc(scope[i].lhs_symbol);
       *output_ptr++ = COMMA;
       k++;
@@ -1081,7 +1072,7 @@ static void print_error_maps(void) {
 
     padline();
     k = 0;
-    for (i = 1; i <= num_scopes; i++) {
+    for (int i = 1; i <= num_scopes; i++) {
       itoc(scope[i].look_ahead);
       *output_ptr++ = COMMA;
       k++;
@@ -1112,7 +1103,7 @@ static void print_error_maps(void) {
 
     padline();
     k = 0;
-    for (i = 1; i <= num_scopes; i++) {
+    for (int i = 1; i <= num_scopes; i++) {
       itoc(scope[i].state_set);
       *output_ptr++ = COMMA;
       k++;
@@ -1127,9 +1118,11 @@ static void print_error_maps(void) {
       *(output_ptr - 1) = '\n';
       BUFFER_CHECK(sysdcl);
     }
-    if (java_bit)
+    if (java_bit) {
       mystrcpy("    };\n");
-    else mystrcpy("                          };\n");
+    } else {
+      mystrcpy("                          };\n");
+    }
 
     if (num_symbols <= (java_bit ? 127 : 255)) {
       if (java_bit) {
@@ -1159,11 +1152,12 @@ static void print_error_maps(void) {
 
     padline();
     k = 0;
-    for (i = 1; i <= scope_state_size; i++) {
-      if (scope_state[i] == 0)
+    for (int i = 1; i <= scope_state_size; i++) {
+      if (scope_state[i] == 0) {
         itoc(0);
-      else
+      } else {
         itoc(state_index[scope_state[i]] + num_rules);
+      }
       *output_ptr++ = COMMA;
       k++;
       if (k == 10 && i != scope_state_size) {
@@ -1200,12 +1194,14 @@ static void print_error_maps(void) {
       struct node *q;
 
       q = statset[state_no].kernel_items;
+      int i;
       if (q != NULL) {
         int item_no;
         item_no = q->value - 1;
         i = item_table[item_no].symbol;
-      } else i = 0;
-
+      } else {
+        i = 0;
+      }
       itoc(symbol_map[i]);
       *output_ptr++ = COMMA;
       k++;
@@ -1588,8 +1584,6 @@ static void print_space_tables(void) {
   int *action;
 
   int la_state_offset;
-  int i;
-  int j;
   int k;
   int indx;
   int act;
@@ -1615,29 +1609,29 @@ static void print_space_tables(void) {
   offset = error_act;
 
   if (lalr_level > 1) {
-    if (read_reduce_bit)
+    if (read_reduce_bit) {
       offset += num_rules;
+    }
     la_state_offset = offset;
-  } else
+  } else {
     la_state_offset = error_act;
-
+  }
   if (offset > MAX_TABLE_SIZE + 1) {
     PRNTERR2(msg_line, "Table contains entries that are > %ld; Processing stopped.", MAX_TABLE_SIZE + 1);
     exit(12);
   }
-
-  for (i = 1; i <= check_size; i++)
+  for (int i = 1; i <= check_size; i++) {
     check[i] = DEFAULT_SYMBOL;
-
-  for (i = 1; i <= (int) action_size; i++)
+  }
+  for (int i = 1; i <= (int) action_size; i++) {
     action[i] = error_act;
+  }
 
   /*    Update the default non-terminal action of each state with the */
   /* appropriate corresponding terminal state starting index.         */
-  for (i = 1; i <= num_terminal_states; i++) {
+  for (int i = 1; i <= num_terminal_states; i++) {
     indx = term_state_index[i];
     int state_no = new_state_element[i].image;
-
     /*   Update the action link between the non-terminal and terminal    */
     /* tables.  If error-maps are requested, an indirect linking is made */
     /* as follows:                                                       */
@@ -1645,8 +1639,9 @@ static void print_space_tables(void) {
     /* a new vector START_TERMINAL_STATE indexable by state numbers      */
     /* identifies the starting point of each state in the terminal table.*/
     if (state_no <= num_states) {
-      for (; state_no != NIL; state_no = state_list[state_no])
+      for (; state_no != NIL; state_no = state_list[state_no]) {
         action[state_index[state_no]] = indx;
+      }
     } else {
       for (; state_no != NIL; state_no = state_list[state_no]) {
         act = la_state_offset + indx;
@@ -1658,14 +1653,14 @@ static void print_space_tables(void) {
   /*  Now update the non-terminal tables with the non-terminal actions.*/
   for ALL_STATES3(state_no) {
     struct goto_header_type go_to;
-
     indx = state_index[state_no];
     go_to = statset[state_no].go_to;
-    for (j = 1; j <= go_to.size; j++) {
+    for (int j = 1; j <= go_to.size; j++) {
       int symbol = go_to.map[j].symbol;
-      i = indx + symbol;
-      if (goto_default_bit || nt_check_bit)
+      int i = indx + symbol;
+      if (goto_default_bit || nt_check_bit) {
         check[i] = symbol;
+      }
       act = go_to.map[j].action;
       if (act > 0) {
         action[i] = state_index[act] + num_rules;
@@ -1680,15 +1675,15 @@ static void print_space_tables(void) {
   if (error_maps_bit || debug_bit) {
     if (check_size == 0) {
       check_size = action_size;
-      for (i = 0; i <= check_size; i++)
+      for (int i = 0; i <= check_size; i++) {
         check[i] = 0;
+      }
     }
-
     for ALL_STATES3(state_no) {
       check[state_index[state_no]] = -state_no;
     }
   }
-  for (i = 1; i <= check_size; i++) {
+  for (int i = 1; i <= check_size; i++) {
     if (check[i] < 0 || check[i] > (java_bit ? 127 : 255))
       byte_check_bit = false;
   }
@@ -1714,7 +1709,7 @@ static void print_space_tables(void) {
 
   padline();
   k = 0;
-  for (i = 1; i <= num_rules; i++) {
+  for (int i = 1; i <= num_rules; i++) {
     k++;
     if (k > 15) {
       *output_ptr++ = '\n';
@@ -1747,7 +1742,7 @@ static void print_space_tables(void) {
 
     padline();
     k = 0;
-    for (i = 1; i <= check_size; i++) {
+    for (int i = 1; i <= check_size; i++) {
       k++;
       if (k > 10) {
         *output_ptr++ = '\n';
@@ -1791,7 +1786,7 @@ static void print_space_tables(void) {
 
   padline();
   k = 0;
-  for (i = 1; i <= num_rules; i++) {
+  for (int i = 1; i <= num_rules; i++) {
     itoc(symbol_map[rules[i].lhs] - num_terminals);
     *output_ptr++ = COMMA;
     k++;
@@ -1808,20 +1803,17 @@ static void print_space_tables(void) {
   BUFFER_CHECK(sysdcl);
   padline();
   k = 0;
-
   if (error_maps_bit) {
     int max_indx;
-
     max_indx = accept_act - num_rules - 1;
-    for (i = 1; i <= max_indx; i++) {
+    for (int i = 1; i <= max_indx; i++) {
       check[i] = OMEGA;
     }
     for ALL_STATES3(state_no) {
       check[state_index[state_no]] = state_no;
     }
-
-    j = num_states + 1;
-    for (i = max_indx; i >= 1; i--) {
+    int j = num_states + 1;
+    for (int i = max_indx; i >= 1; i--) {
       int state_no = check[i];
       if (state_no != OMEGA) {
         j--;
@@ -1830,8 +1822,7 @@ static void print_space_tables(void) {
       }
     }
   }
-
-  for (i = 1; i <= (int) action_size; i++) {
+  for (int i = 1; i <= (int) action_size; i++) {
     itoc(action[i]);
     *output_ptr++ = COMMA;
     k++;
@@ -1842,7 +1833,6 @@ static void print_space_tables(void) {
       k = 0;
     }
   }
-
   if (k != 0) {
     *(output_ptr - 1) = '\n';
     BUFFER_CHECK(sysdcl);
@@ -1852,32 +1842,30 @@ static void print_space_tables(void) {
   else mystrcpy("                 };\n");
   *output_ptr++ = '\n';
   BUFFER_CHECK(sysdcl);
-
-  if (java_bit)
+  if (java_bit) {
     mystrcpy("    public final static char base_action[] = lhs;\n");
-  else mystrcpy("const unsigned short *CLASS_HEADER base_action = lhs;\n");
+  } else {
+    mystrcpy("const unsigned short *CLASS_HEADER base_action = lhs;\n");
+  }
   *output_ptr++ = '\n';
-
   /* Initialize the terminal tables,and update with terminal actions. */
-  for (i = 1; i <= term_check_size; i++)
+  for (int i = 1; i <= term_check_size; i++) {
     check[i] = DEFAULT_SYMBOL;
-
-  for (i = 1; i <= term_action_size; i++)
+  }
+  for (int i = 1; i <= term_action_size; i++) {
     action[i] = error_act;
-
+  }
   for (int state_no = 1; state_no <= num_terminal_states; state_no++) {
     struct shift_header_type sh;
     struct reduce_header_type red;
-
     indx = term_state_index[state_no];
     sh = shift[new_state_element[state_no].shift_number];
-    for (j = 1; j <= sh.size; j++) {
+    for (int j = 1; j <= sh.size; j++) {
       int symbol = sh.map[j].symbol;
       act = sh.map[j].action;
       if (!shift_default_bit || act != shiftdf[symbol]) {
-        i = indx + symbol;
+        int i = indx + symbol;
         check[i] = symbol;
-
         if (act > num_states) {
           result_act = state_index[act];
           la_shift_count++;
@@ -1897,25 +1885,25 @@ static void print_space_tables(void) {
         action[i] = result_act;
       }
     }
-
     red = new_state_element[state_no].reduce;
-    for (j = 1; j <= red.size; j++) {
+    for (int j = 1; j <= red.size; j++) {
       int symbol = red.map[j].symbol;
       rule_no = red.map[j].rule_number;
-      i = indx + symbol;
+      int i = indx + symbol;
       check[i] = symbol;
       action[i] = rule_no;
       reduce_count++;
     }
-
     rule_no = red.map[0].rule_number;
-    if (rule_no != error_act)
+    if (rule_no != error_act) {
       default_count++;
+    }
     check[indx] = DEFAULT_SYMBOL;
-    if (shift_default_bit)
+    if (shift_default_bit) {
       action[indx] = state_no;
-    else
+    } else {
       action[indx] = rule_no;
+    }
   }
 
   PRNT("\n\nActions in Compressed Tables:");
@@ -2011,9 +1999,8 @@ static void print_space_tables(void) {
 
     padline();
     k = 0;
-    for (i = 1; i <= num_terminal_states; i++) {
+    for (int i = 1; i <= num_terminal_states; i++) {
       struct reduce_header_type red;
-
       red = new_state_element[i].reduce;
       itoc(red.map[0].rule_number);
       *output_ptr++ = COMMA;
@@ -2040,7 +2027,7 @@ static void print_space_tables(void) {
 
     padline();
     k = 0;
-    for (i = 1; i <= num_terminal_states; i++) {
+    for (int i = 1; i <= num_terminal_states; i++) {
       itoc(shift_check_index[shift_image[i]]);
       *output_ptr++ = COMMA;
       k++;
@@ -2056,59 +2043,64 @@ static void print_space_tables(void) {
       *(output_ptr - 1) = '\n';
       BUFFER_CHECK(sysdcl);
     }
-    if (java_bit)
+    if (java_bit) {
       mystrcpy("    };\n");
-    else mystrcpy("                 };\n");
-
-    for (i = 1; i <= shift_check_size; i++)
+    } else {
+      mystrcpy("                 };\n");
+    }
+    for (int i = 1; i <= shift_check_size; i++) {
       check[i] = DEFAULT_SYMBOL;
-
-    for (i = 1; i <= shift_domain_count; i++) {
+    }
+    for (int i = 1; i <= shift_domain_count; i++) {
       struct shift_header_type sh;
-
       indx = shift_check_index[i];
       sh = shift[real_shift_number[i]];
-      for (j = 1; j <= sh.size; j++) {
+      for (int j = 1; j <= sh.size; j++) {
         int symbol = sh.map[j].symbol;
         check[indx + symbol] = symbol;
       }
     }
-
     if (num_terminals <= (java_bit ? 127 : 255)) {
-      if (java_bit)
+      if (java_bit) {
         mystrcpy("\n    public final static byte shift_check[] = {0,\n");
-      else mystrcpy("\nconst unsigned char  CLASS_HEADER shift_check[] = {0,\n");
+      } else {
+        mystrcpy("\nconst unsigned char  CLASS_HEADER shift_check[] = {0,\n");
+      }
     } else {
-      if (java_bit)
+      if (java_bit) {
         mystrcpy("\n    public final static char shift_check[] = {0,\n");
-      else mystrcpy("\nconst unsigned short CLASS_HEADER shift_check[] = {0,\n");
+      } else {
+        mystrcpy("\nconst unsigned short CLASS_HEADER shift_check[] = {0,\n");
+      }
     }
-
     padline();
     k = 0;
-    for (i = 1; i <= shift_check_size; i++) {
-      itoc(check[i]);
+    int ii;
+    for (ii = 1; ii <= shift_check_size; ii++) {
+      itoc(check[ii]);
       *output_ptr++ = COMMA;
       k++;
-      if (k == 10 && i != shift_check_size) {
+      if (k == 10 && ii != shift_check_size) {
         *output_ptr++ = '\n';
         BUFFER_CHECK(sysdcl);
         padline();
         k = 0;
       }
     }
-
     if (k != 0) {
       *(output_ptr - 1) = '\n';
       BUFFER_CHECK(sysdcl);
     }
-    if (java_bit)
+    if (java_bit) {
       mystrcpy("    };\n");
-    else mystrcpy("                 };\n");
-
-    if (java_bit)
+    } else {
+      mystrcpy("                 };\n");
+    }
+    if (java_bit) {
       mystrcpy("\n    public final static char default_shift[] = {0,\n");
-    else mystrcpy("\nconst unsigned short CLASS_HEADER default_shift[] = {0,\n");
+    } else {
+      mystrcpy("\nconst unsigned short CLASS_HEADER default_shift[] = {0,\n");
+    }
 
     padline();
     k = 0;
@@ -2132,7 +2124,7 @@ static void print_space_tables(void) {
       itoc(result_act);
       *output_ptr++ = COMMA;
       k++;
-      if (k == 10 && i != num_terminals) {
+      if (k == 10 && ii != num_terminals) {
         *output_ptr++ = '\n';
         BUFFER_CHECK(sysdcl);
         padline();
@@ -2197,8 +2189,6 @@ static void print_time_tables(void) {
   int la_state_offset;
   int act;
   int result_act;
-  int i;
-  int j;
   int k;
 
   short default_rule;
@@ -2231,12 +2221,12 @@ static void print_time_tables(void) {
   /* Initialize all unfilled slots with default values.                */
   /* RECALL that the vector "check" is aliased to the vector "next".   */
   indx = first_index;
-  for (i = indx; i != NIL && i <= (int) action_size; i = indx) {
+  for (int i = indx; i != NIL && i <= (int) action_size; i = indx) {
     indx = next[i];
     check[i] = DEFAULT_SYMBOL;
     action[i] = error_act;
   }
-  for (i = (int) action_size + 1; i <= (int) table_size; i++) {
+  for (int i = (int) action_size + 1; i <= (int) table_size; i++) {
     check[i] = DEFAULT_SYMBOL;
   }
 
@@ -2250,9 +2240,9 @@ static void print_time_tables(void) {
       red = lastats[state_no].reduce;
     } else {
       struct goto_header_type go_to = statset[state_no].go_to;
-      for (j = 1; j <= go_to.size; j++) {
+      for (int j = 1; j <= go_to.size; j++) {
         int symbol = go_to.map[j].symbol;
-        i = indx + symbol;
+        int i = indx + symbol;
         if (goto_default_bit || nt_check_bit) {
           check[i] = symbol;
         } else {
@@ -2271,9 +2261,9 @@ static void print_time_tables(void) {
       red = reduce[state_no];
     }
 
-    for (j = 1; j <= sh.size; j++) {
+    for (int j = 1; j <= sh.size; j++) {
       int symbol = sh.map[j].symbol;
-      i = indx + symbol;
+      int i = indx + symbol;
       check[i] = symbol;
       act = sh.map[j].action;
       if (act > num_states) {
@@ -2298,10 +2288,10 @@ static void print_time_tables(void) {
     /*   We now initialize the elements reserved for reduce actions in   */
     /* the current state.                                                */
     default_rule = red.map[0].rule_number;
-    for (j = 1; j <= red.size; j++) {
+    for (int j = 1; j <= red.size; j++) {
       if (red.map[j].rule_number != default_rule) {
         int symbol = red.map[j].symbol;
-        i = indx + symbol;
+        int i = indx + symbol;
         check[i] = symbol;
         act = red.map[j].rule_number;
         if (rules[act].lhs == accept_image)
@@ -2317,7 +2307,7 @@ static void print_time_tables(void) {
     /* default slot is initialized to the original state number, and the */
     /* corresponding element of the DEFAULT_REDUCE array is initialized. */
     /* Otherwise it is initialized to the rule number in question.       */
-    i = indx + DEFAULT_SYMBOL;
+    int i = indx + DEFAULT_SYMBOL;
     check[i] = DEFAULT_SYMBOL;
     act = red.map[0].rule_number;
     if (act == OMEGA)
@@ -2354,7 +2344,7 @@ static void print_time_tables(void) {
       check[state_index[state_no]] = -state_no;
     }
   }
-  for (i = 1; i <= (int) table_size; i++) {
+  for (int i = 1; i <= (int) table_size; i++) {
     if (check[i] < 0 || check[i] > (java_bit ? 127 : 255)) {
       byte_check_bit = 0;
     }
@@ -2383,7 +2373,7 @@ static void print_time_tables(void) {
 
   padline();
   k = 0;
-  for (i = 1; i <= num_rules; i++) {
+  for (int i = 1; i <= num_rules; i++) {
     k++;
     if (k > 15) {
       *output_ptr++ = '\n';
@@ -2421,7 +2411,7 @@ static void print_time_tables(void) {
 
   padline();
   k = 0;
-  for (i = 1; i <= (int) table_size; i++) {
+  for (int i = 1; i <= (int) table_size; i++) {
     k++;
     if (k > 10) {
       *output_ptr++ = '\n';
@@ -2464,7 +2454,7 @@ static void print_time_tables(void) {
   else mystrcpy("const unsigned short CLASS_HEADER lhs[] = {0,\n");
   padline();
   k = 0;
-  for (i = 1; i <= num_rules; i++) {
+  for (int i = 1; i <= num_rules; i++) {
     itoc(symbol_map[rules[i].lhs]);
     *output_ptr++ = COMMA;
     k++;
@@ -2488,15 +2478,15 @@ static void print_time_tables(void) {
     /* Construct a map from new state numbers into original      */
     /*   state numbers using the array check[]                   */
     max_indx = accept_act - num_rules - 1;
-    for (i = 1; i <= max_indx; i++) {
+    for (int i = 1; i <= max_indx; i++) {
       check[i] = OMEGA;
     }
     for ALL_STATES3(state_no) {
       check[state_index[state_no]] = state_no;
     }
 
-    j = num_states + 1;
-    for (i = max_indx; i >= 1; i--) {
+    int j = num_states + 1;
+    for (int i = max_indx; i >= 1; i--) {
       int state_no = check[i];
       if (state_no != OMEGA) {
         ordered_state[--j] = i + num_rules;
@@ -2504,7 +2494,7 @@ static void print_time_tables(void) {
       }
     }
   }
-  for (i = 1; i <= (int) action_size; i++) {
+  for (int i = 1; i <= (int) action_size; i++) {
     itoc(action[i]);
     *output_ptr++ = COMMA;
     k++;
@@ -2534,26 +2524,26 @@ static void print_time_tables(void) {
   /* If GOTO_DEFAULT is requested, we print out the GOTODEF vector.   */
   if (goto_default_bit) {
     short *default_map;
-
     default_map = Allocate_short_array(num_symbols + 1);
-
-    if (java_bit)
+    if (java_bit) {
       mystrcpy("\n    public final static char default_goto[] = {0,\n");
-    else mystrcpy("\nconst unsigned short CLASS_HEADER default_goto[] = {0,\n");
-
+    } else {
+      mystrcpy("\nconst unsigned short CLASS_HEADER default_goto[] = {0,\n");
+    }
     padline();
     k = 0;
-    for (i = 0; i <= num_symbols; i++)
+    for (int i = 0; i <= num_symbols; i++) {
       default_map[i] = error_act;
-
+    }
     for ALL_NON_TERMINALS3(symbol) {
       act = gotodef[symbol];
-      if (act < 0)
+      if (act < 0) {
         result_act = -act;
-      else if (act > 0)
+      } else if (act > 0) {
         result_act = state_index[act] + num_rules;
-      else
+      } else {
         result_act = error_act;
+      }
       default_map[symbol_map[symbol]] = result_act;
     }
 

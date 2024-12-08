@@ -916,19 +916,16 @@ static bool is_terminal_rhs(short *rhs_start,
 /* NOTE: The suffix indentified by ROOT and TAIL is presumed not to be empty.*/
 /*       That is, ROOT <= TAIL !!!                                           */
 static short first_map(const int root, const int tail) {
-  int
-      j,
-      k;
-
   for (int i = first_table[rhs_sym[root]]; i != NIL; i = first_element[i].link) {
-    for (j = root + 1,
-         k = first_element[i].suffix_root + 1;
-         j <= tail && k <= first_element[i].suffix_tail;
-         j++, k++) {
-      if (rhs_sym[j] != rhs_sym[k])
+    int k;
+    int jj;
+    for (jj = root + 1, k = first_element[i].suffix_root + 1;
+         jj <= tail && k <= first_element[i].suffix_tail;
+         jj++, k++) {
+      if (rhs_sym[jj] != rhs_sym[k])
         break;
     }
-    if (j > tail && k > first_element[i].suffix_tail) {
+    if (jj > tail && k > first_element[i].suffix_tail) {
       return i;
     }
   }

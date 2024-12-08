@@ -78,18 +78,18 @@ int main(const int argc, char *argv[]) {
   if (dot == NULL) {
     strcpy(lis_file, tmpbuf);
     strcpy(tab_file, tmpbuf);
-    int i;
-    for (i = 0; i < 5; i++) {
-      file_prefix[i] = tmpbuf[i];
+    int ii;
+    for (ii = 0; ii < 5; ii++) {
+      file_prefix[ii] = tmpbuf[ii];
     }
-    file_prefix[i] = '\0';
+    file_prefix[ii] = '\0';
   } else {
-    int i;
+    int ii;
     /* if file name contains an extension copy up to the dot */
-    for (i = 0; i < 5 && tmpbuf + i != dot; i++) {
-      file_prefix[i] = tmpbuf[i];
+    for (ii = 0; ii < 5 && tmpbuf + ii != dot; ii++) {
+      file_prefix[ii] = tmpbuf[ii];
     }
-    file_prefix[i] = '\0';
+    file_prefix[ii] = '\0';
     memcpy(lis_file, tmpbuf, dot - tmpbuf);
     memcpy(tab_file, tmpbuf, dot - tmpbuf);
     lis_file[dot - tmpbuf] = '\0';

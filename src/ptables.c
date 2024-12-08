@@ -105,11 +105,10 @@ static void compute_goto_default(void) {
 
   struct action_element *q;
 
-  int i,
-      goto_count = 0,
+  int goto_count = 0,
       goto_reduce_count = 0;
 
-  /* Set up a a pool of temporary space.                            */
+  /* Set up a pool of temporary space.                            */
   reset_temporary_space();
 
   gotodef = Allocate_short_array(num_non_terminals);
@@ -128,7 +127,7 @@ static void compute_goto_default(void) {
   /* This loop is analoguous to the loop in PROCESS_SHIFT_ACTIONS.   */
   for ALL_STATES3(state_no) {
     go_to = statset[state_no].go_to;
-    for (i = 1; i <= go_to.size; i++) {
+    for (int i = 1; i <= go_to.size; i++) {
       const int symbol = go_to.map[i].symbol;
       const int act = go_to.map[i].action;
       for (q = action_count[symbol]; q != NULL; q = q->next) {
@@ -177,7 +176,7 @@ static void compute_goto_default(void) {
   for ALL_STATES3(state_no) {
     int k = 0;
     go_to = statset[state_no].go_to;
-    for (i = 1; i <= go_to.size; i++) {
+    for (int i = 1; i <= go_to.size; i++) {
       if (gotodef[go_to.map[i].symbol] != go_to.map[i].action) {
         k++;
         go_to.map[k].symbol = go_to.map[i].symbol;

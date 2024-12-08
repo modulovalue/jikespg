@@ -68,7 +68,6 @@ static const int IOBUFFER_SIZE = 655360;
 
 /**                         ITERATION MACROS                      **/
 /* The following macros (ALL_) are used to iterate over a sequence.*/
-#define ALL_LA_STATES3(x) (int x = num_states + 1; x <= max_la_state; x++)
 
 #define ALL_TERMINALS3(x) (int x = 1; x <= num_terminals; x++)
 
@@ -80,9 +79,11 @@ static const int IOBUFFER_SIZE = 655360;
 
 #define ALL_SYMBOLS3(x) (int x = 1; x <= num_symbols; x++)
 
-#define ALL_ITEMS3(x) (int x = 1; x <= num_items; x++)
+#define ALL_LA_STATES3(x) (int x = num_states + 1; x <= max_la_state; x++)
 
 #define ALL_STATES3(x) (int x = 1; x <= num_states; x++)
+
+#define ALL_ITEMS3(x) (int x = 1; x <= num_items; x++)
 
 #define ALL_RULES3(x) (int x = 0; x <= num_rules; x++)
 

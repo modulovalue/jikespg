@@ -58,8 +58,6 @@ struct node *lpgaccess(const int state_no, const int item_no) {
 /* and B is a non-terminal, involved in the paths. GOTO_INDX points to the   */
 /* GOTO_ELEMENT of (STATE_NO, A).                                            */
 static void trace_lalr_path(const int state_no, const int goto_indx) {
-  int i;
-
   struct node *p;
   struct node *r;
 
@@ -101,10 +99,11 @@ static void trace_lalr_path(const int state_no, const int goto_indx) {
       struct node *w = lpgaccess(state_no, item);
       for (struct node *t = w; t != NULL; p = t, t = t->next) {
         const struct goto_header_type go_to_inner = statset[t->value].go_to;
-        for (i = 1; go_to_inner.map[i].symbol != symbol; i++) {
+        int ii;
+        for (ii = 1; go_to_inner.map[ii].symbol != symbol; ii++) {
         }
-        if (go_to_inner.map[i].laptr == OMEGA)
-          trace_lalr_path(t->value, i);
+        if (go_to_inner.map[ii].laptr == OMEGA)
+          trace_lalr_path(t->value, ii);
       }
 
       free_nodes(w, p);
@@ -128,15 +127,13 @@ static void trace_lalr_path(const int state_no, const int goto_indx) {
 /*  These sets are initialized to the set of terminals that can immediately  */
 /* follow the non-terminal in the state to which it can shift (READ set).    */
 static void compute_read(void) {
-  int item_no,
-      rule_no,
-      lhs_symbol,
-      i;
+  int item_no;
+  int rule_no;
+  int lhs_symbol;
 
-  struct node
-      *q,
-      *s,
-      *v;
+  struct node *q;
+  struct node *s;
+  struct node *v;
 
   if (lalr_level > 1 || single_productions_bit) {
     read_set = (SET_PTR)
@@ -184,10 +181,11 @@ static void compute_read(void) {
         v = lpgaccess(state_no, item_no);
         for (s = v; s != NULL; q = s, s = s->next) {
           const struct goto_header_type go_to = statset[s->value].go_to;
-          for (i = 1; go_to.map[i].symbol != lhs_symbol; i++) {
+          int ii;
+          for (ii = 1; go_to.map[ii].symbol != lhs_symbol; ii++) {
           }
-          if (go_to.map[i].laptr == OMEGA) {
-            trace_lalr_path(s->value, i);
+          if (go_to.map[ii].laptr == OMEGA) {
+            trace_lalr_path(s->value, ii);
           }
         }
 
@@ -216,10 +214,11 @@ static void compute_read(void) {
           v = lpgaccess(state_no, item_no);
           for (s = v; s != NULL; q = s, s = s->next) {
             const struct goto_header_type go_to = statset[s->value].go_to;
-            for (i = 1; go_to.map[i].symbol != lhs_symbol; i++) {
+            int ii;
+            for (ii = 1; go_to.map[ii].symbol != lhs_symbol; ii++) {
             }
-            if (go_to.map[i].laptr == OMEGA)
-              trace_lalr_path(s->value, i);
+            if (go_to.map[ii].laptr == OMEGA)
+              trace_lalr_path(s->value, ii);
           }
 
           free_nodes(v, q);
@@ -263,7 +262,7 @@ static void compute_read(void) {
 
   for ALL_STATES3(state_no) {
     const struct goto_header_type go_to = statset[state_no].go_to;
-    for (i = 1; i <= go_to.size; i++) {
+    for (int i = 1; i <= go_to.size; i++) {
       const int la_ptr = go_to.map[i].laptr;
       if (la_ptr != OMEGA) /* Follow Look-ahead needed */
       {
@@ -319,8 +318,6 @@ static void compute_read(void) {
 /*                                                                           */
 /* The same digraph algorithm used in MKFIRST is used for this computation.  */
 void la_traverse(const int state_no, const int goto_indx, int *stack_top) {
-  int i;
-
   struct node *r;
 
   const struct goto_header_type go_to = statset[state_no].go_to;
@@ -355,15 +352,16 @@ void la_traverse(const int state_no, const int goto_indx, int *stack_top) {
         /* RULE to its left hand side (SYMBOL). Q points to the   */
         /* GOTO_ELEMENT in question.                              */
         const struct goto_header_type go_to_inner = statset[t->value].go_to;
-        for (i = 1; go_to_inner.map[i].symbol != symbol; i++) {
+        int ii;
+        for (ii = 1; go_to_inner.map[ii].symbol != symbol; ii++) {
         }
-        if (la_index[go_to_inner.map[i].laptr] == OMEGA) {
-          la_traverse(t->value, i, stack_top);
+        if (la_index[go_to_inner.map[ii].laptr] == OMEGA) {
+          la_traverse(t->value, ii, stack_top);
         }
         SET_UNION(la_set, la_ptr,
-                  la_set, go_to_inner.map[i].laptr);
+                  la_set, go_to_inner.map[ii].laptr);
         la_index[la_ptr] = MIN(la_index[la_ptr],
-                               la_index[go_to_inner.map[i].laptr]);
+                               la_index[go_to_inner.map[ii].laptr]);
       }
 
       free_nodes(w, s);
@@ -373,11 +371,10 @@ void la_traverse(const int state_no, const int goto_indx, int *stack_top) {
   if (la_index[la_ptr] == indx) /* Top of a SCC */
   {
     s = stack_root;
-
-    for (i = stack_root->value; i != la_ptr;
-         stack_root = stack_root->next, i = stack_root->value) {
-      ASSIGN_SET(la_set, i, la_set, la_ptr);
-      la_index[i] = INFINITY;
+    for (int ii = stack_root->value; ii != la_ptr;
+         stack_root = stack_root->next, ii = stack_root->value) {
+      ASSIGN_SET(la_set, ii, la_set, la_ptr);
+      la_index[ii] = INFINITY;
       (*stack_top)--; /* one element was popped from the stack; */
     }
     la_index[la_ptr] = INFINITY;
@@ -394,9 +391,6 @@ void la_traverse(const int state_no, const int goto_indx, int *stack_top) {
 /* terminals for the given item in the given state and places the answer in  */
 /* the set LOOK_AHEAD.                                                       */
 void compute_la(const int state_no, const int item_no, const SET_PTR look_ahead) {
-  int
-      i;
-
   struct node *r;
 
   stack_root = NULL;
@@ -414,15 +408,16 @@ void compute_la(const int state_no, const int item_no, const SET_PTR look_ahead)
     /* Search for GOTO action in Access-State after reducing rule to */
     /* its left hand side(LHS_SYMBOL). Q points to the state.        */
     const struct goto_header_type go_to = statset[s->value].go_to;
-    for (i = 1; go_to.map[i].symbol != lhs_symbol; i++) {
+    int ii;
+    for (ii = 1; go_to.map[ii].symbol != lhs_symbol; ii++) {
     }
     /* If look-ahead after left hand side is not yet computed, */
     /* LA_TRAVERSE the graph to compute it.                    */
-    if (la_index[go_to.map[i].laptr] == OMEGA) {
+    if (la_index[go_to.map[ii].laptr] == OMEGA) {
       int stack_top = 0;
-      la_traverse(s->value, i, &stack_top);
+      la_traverse(s->value, ii, &stack_top);
     }
-    SET_UNION(look_ahead, 0, la_set, go_to.map[i].laptr);
+    SET_UNION(look_ahead, 0, la_set, go_to.map[ii].laptr);
   }
 
   RESET_BIT(look_ahead, empty); /* empty not valid look-ahead */
@@ -436,20 +431,19 @@ void compute_la(const int state_no, const int item_no, const SET_PTR look_ahead)
 /* states that contain transitions to the state in question.          */
 static void build_in_stat(void) {
   struct node *q;
-  int i;
 
   for ALL_STATES3(state_no) {
     int n = statset[state_no].shift_number;
     const struct shift_header_type sh = shift[n];
-    for (i = 1; i <= sh.size; ++i) {
+    for (int i = 1; i <= sh.size; ++i) {
       n = sh.map[i].action;
       if (n > 0 && n <= num_states) /* A shift action? */
       {
         q = Allocate_node();
         q->value = state_no;
-        if (in_stat[n] == NULL)
+        if (in_stat[n] == NULL) {
           q->next = q;
-        else {
+        } else {
           q->next = in_stat[n]->next;
           in_stat[n]->next = q;
         }
@@ -458,15 +452,15 @@ static void build_in_stat(void) {
     }
 
     const struct goto_header_type go_to = statset[state_no].go_to;
-    for (i = 1; i <= go_to.size; i++) {
+    for (int i = 1; i <= go_to.size; i++) {
       n = go_to.map[i].action;
-      if (n > 0) /* A goto action */
-      {
+      /* A goto action */
+      if (n > 0) {
         q = Allocate_node();
         q->value = state_no;
-        if (in_stat[n] == NULL)
+        if (in_stat[n] == NULL) {
           q->next = q;
-        else {
+        } else {
           q->next = in_stat[n]->next;
           in_stat[n]->next = q;
         }

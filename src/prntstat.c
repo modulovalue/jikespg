@@ -104,9 +104,9 @@ void ptstats(void) {
   for ALL_LA_STATES3(state_no) {
     char buffer[PRINT_LINE_SIZE + 1];
 
-    int i = number_len(state_no) + 8; /* 8 = length of "STATE" */
+    int ii = number_len(state_no) + 8; /* 8 = length of "STATE" */
     /* + 2 spaces + newline  */
-    fill_in(buffer, PRINT_LINE_SIZE - i, '-');
+    fill_in(buffer, PRINT_LINE_SIZE - ii, '-');
     fprintf(syslis, "\n\n\nSTATE %d %s", state_no, buffer);
     /* Print the set of states that have transitions to STATE_NO. */
     if (lastats[state_no].in_state == state_no) {
@@ -119,15 +119,15 @@ void ptstats(void) {
       /* for printing of headers for actions to be taken on    */
       /* the symbols.                                          */
       sh = shift[lastats[state_no].shift_number];
-      for (i = 1; i <= sh.size; i++) {
-        symbol = sh.map[i].symbol;
+      for (ii = 1; ii <= sh.size; ii++) {
+        symbol = sh.map[ii].symbol;
         restore_symbol(temp, RETRIEVE_STRING(symbol));
         max_size = MAX(max_size, strlen(temp));
       }
 
       red = lastats[state_no].reduce;
-      for (i = 1; i <= red.size; i++) {
-        symbol = red.map[i].symbol;
+      for (ii = 1; ii <= red.size; ii++) {
+        symbol = red.map[ii].symbol;
         restore_symbol(temp, RETRIEVE_STRING(symbol));
         max_size = MAX(max_size, strlen(temp));
       }
@@ -139,25 +139,25 @@ void ptstats(void) {
       /* 3) Print all reduce actions.                           */
       /* 4) If there is a default then print it.                */
       fprintf(syslis, "\n");
-      for (i = 1; i <= sh.size; i++) {
-        symbol = sh.map[i].symbol;
+      for (ii = 1; ii <= sh.size; ii++) {
+        symbol = sh.map[ii].symbol;
         restore_symbol(temp, RETRIEVE_STRING(symbol));
         print_large_token(line, temp, "", max_size);
-        number = ABS(sh.map[i].action);
-        if (sh.map[i].action > (short) num_states) {
+        number = ABS(sh.map[ii].action);
+        if (sh.map[ii].action > (short) num_states) {
           fprintf(syslis, "\n%-*s    La/Sh  %d", max_size, line, number);
-        } else if (sh.map[i].action > 0) {
+        } else if (sh.map[ii].action > 0) {
           fprintf(syslis, "\n%-*s    Shift  %d", max_size, line, number);
         } else {
           fprintf(syslis, "\n%-*s    Sh/Rd  %d", max_size, line, number);
         }
       }
       fprintf(syslis, "\n");
-      for (i = 1; i <= red.size; i++) {
-        symbol = red.map[i].symbol;
+      for (ii = 1; ii <= red.size; ii++) {
+        symbol = red.map[ii].symbol;
         restore_symbol(temp, RETRIEVE_STRING(symbol));
         print_large_token(line, temp, "", max_size);
-        number = red.map[i].rule_number;
+        number = red.map[ii].rule_number;
         fprintf(syslis, "\n%-*s    Reduce %d", max_size, line, number);
       }
       if (default_opt > 0 && red.map[0].rule_number != OMEGA) {

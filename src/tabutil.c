@@ -1054,8 +1054,7 @@ void compute_action_symbols_range(const long *state_start,
                                   const long *state_stack,
                                   const long *state_list,
                                   int *action_symbols_range) {
-  int j,
-      state,
+  int state,
       symbol;
 
   short *symbol_list = Allocate_short_array(num_symbols + 1);
@@ -1078,11 +1077,10 @@ void compute_action_symbols_range(const long *state_start,
       /* that has not yet been processed into the list.            */
       /* Continue until stack is empty...                          */
       /* Recall that the stack is represented by a circular queue. */
-      for (bool end_node = (state = state_no__) == NIL;
-           !end_node; end_node = state == state_no__) {
+      for (bool end_node = (state = state_no__) == NIL; !end_node; end_node = state == state_no__) {
         state = state_stack[state];
         const struct shift_header_type sh = shift[statset[state].shift_number];
-        for (j = 1; j <= sh.size; j++) {
+        for (int j = 1; j <= sh.size; j++) {
           symbol = sh.map[j].symbol;
           if (symbol_list[symbol] == OMEGA) {
             symbol_list[symbol] = symbol_root;
@@ -1091,7 +1089,7 @@ void compute_action_symbols_range(const long *state_start,
         }
 
         const struct reduce_header_type red = reduce[state];
-        for (j = 1; j <= red.size; j++) {
+        for (int j = 1; j <= red.size; j++) {
           symbol = red.map[j].symbol;
           if (symbol_list[symbol] == OMEGA) {
             symbol_list[symbol] = symbol_root;

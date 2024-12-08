@@ -35,23 +35,20 @@ static int line_no = 0;
 
 /* This procedure opens all relevant files and processes the input grammar.*/
 void process_input(void) {
-  unsigned c;
-
   /* Open input grammar file. If the file cannot be opened and that file name */
   /* did not have an extension, then the extension ".g" is added to the file  */
   /* name and we try again. If no file can be found an error message is       */
   /* issued and the program halts.                                            */
   if ((sysgrm = fopen(grm_file, "r")) == (FILE *) NULL) {
-    register int i;
-
-    for (i = strlen(grm_file); i > 0 &&
-                               grm_file[i] != '.' &&
-                               grm_file[i] != '/' && /* Unix */
-                               grm_file[i] != '\\'; /* Dos  */
-         i--) {
+    register int ii;
+    for (ii = strlen(grm_file); ii > 0 &&
+                               grm_file[ii] != '.' &&
+                               grm_file[ii] != '/' && /* Unix */
+                               grm_file[ii] != '\\'; /* Dos  */
+         ii--) {
     }
 
-    if (grm_file[i] != '.') {
+    if (grm_file[ii] != '.') {
       strcat(grm_file, ".g");
       if ((sysgrm = fopen(grm_file, "r")) == (FILE *) NULL) {
         fprintf(stderr,
@@ -83,15 +80,15 @@ void process_input(void) {
 
   /* Complete the initialization of the code array used to replace the        */
   /* builtin functions isalpha, isdigit and isspace.                          */
-  for (c = 'a'; c <= 'z'; c++) {
+  for (unsigned c = 'a'; c <= 'z'; c++) {
     if (isalpha(c))
       code[c] = ALPHA_CODE;
   }
-  for (c = 'A'; c <= 'Z'; c++) {
+  for (unsigned c = 'A'; c <= 'Z'; c++) {
     if (isalpha(c))
       code[c] = ALPHA_CODE;
   }
-  for (c = '0'; c <= '9'; c++) {
+  for (unsigned c = '0'; c <= '9'; c++) {
     if (isdigit(c))
       code[c] = DIGIT_CODE;
   }
@@ -260,16 +257,13 @@ static bool strxeq(char *s1, char *s2) {
 /* certain setting just by their appearance, and valued options which are    */
 /* followed by an equal sign and the value to be assigned to them.           */
 static void options(void) {
-  char *c,
-      token[MAX_PARM_SIZE + 1],
-      temp[MAX_PARM_SIZE + 1],
-      delim;
-
-  register int
-      j;
+  char token[MAX_PARM_SIZE + 1];
+  char temp[MAX_PARM_SIZE + 1];
+  char delim;
 
   bool flag;
 
+  char *c;
   /* If we scan the comment sign, we stop processing the rest of the */
   /* parameter string.                                               */
   for (c = parm; *c != '\0'; c++) {
@@ -300,7 +294,7 @@ static void options(void) {
             parm[i] != ' '))
       i++;
 
-    for (j = 0; j < i; j++) /* Fold actual parameter */
+    for (int j = 0; j < i; j++) /* Fold actual parameter */
     {
       token[j] = TOUPPER(parm[j]);
       temp[j] = parm[j];
@@ -470,7 +464,7 @@ static void options(void) {
         continue;
       }
 
-      j = i;
+      int j = i;
       while (parm[i] != '\0' && /* find next delimeter */
              (parm[i] != ',' &&
               parm[i] != '/' &&
@@ -693,8 +687,7 @@ static void process_options_lines(void) {
 
   static char ooptions[9] = " OPTIONS";
 
-  int top = 0,
-      i;
+  int top = 0;
 
   strcpy(old_parm, parm); /* Save new options passed to program */
   ooptions[0] = escape; /* "ooptions" always uses default escape symbol */
@@ -735,7 +728,7 @@ static void process_options_lines(void) {
     /* line.  If we are at the end of the buffer, read in more data...   */
     p1 = line_end + 1;
     if (bufend == input_buffer + IOBUFFER_SIZE) {
-      i = bufend - p1;
+      int i = bufend - p1;
       if (i < MAX_LINE_SIZE) {
         strcpy(input_buffer, p1);
         bufend = &input_buffer[i];
@@ -950,7 +943,7 @@ static void process_options_lines(void) {
 
   PRNT("Options in effect:");
   strcpy(output_line, "    ");
-  for (i = 1; i <= top; i++) {
+  for (int i = 1; i <= top; i++) {
     if (strlen(output_line) + strlen(opt_string[i]) > PRINT_LINE_SIZE - 1) {
       PRNT(output_line);
       strcpy(output_line, "    ");
@@ -1637,9 +1630,8 @@ static void build_symno(void) {
 
 /*     Process all semantic actions and generate action file.               */
 static void process_actions(void) {
-  register int i,
-      k,
-      len;
+  register int k;
+  register int len;
   register char *p;
 
   char line[MAX_LINE_SIZE + 1];
@@ -1669,8 +1661,9 @@ static void process_actions(void) {
   }
 
   macro_table = Allocate_short_array(HT_SIZE);
-  for (i = 0; i < HT_SIZE; i++)
+  for (int i = 0; i < HT_SIZE; i++) {
     macro_table[i] = NIL;
+  }
 
   bufend = &input_buffer[0];
   read_input();
@@ -1681,7 +1674,7 @@ static void process_actions(void) {
   line_no = 1;
 
   /* Read in all the macro definitions and insert them into macro_table. */
-  for (i = 0; i < num_defs; i++) {
+  for (int i = 0; i < num_defs; i++) {
     defelmt[i].macro = (char *)
         calloc(defelmt[i].length + 2, sizeof(char));
     if (defelmt[i].macro == (char *) NULL)
@@ -1736,7 +1729,7 @@ static void process_actions(void) {
     display_input();
 
   /* Read in all the action blocks and process them.                          */
-  for (i = 0; i < num_acts; i++) {
+  for (int i = 0; i < num_acts; i++) {
     for (; line_no < actelmt[i].start_line; line_no++) {
       while (*p1 != '\n')
         p1++;
@@ -1821,7 +1814,7 @@ static void process_actions(void) {
     }
   }
 
-  for (i = 0; i < num_defs; i++) {
+  for (int i = 0; i < num_defs; i++) {
     ffree(defelmt[i].macro);
   }
 
@@ -1877,8 +1870,7 @@ static void make_names_map(void) {
 static void make_rules_map(void) {
   register struct node *ptr;
 
-  register int i = 0,
-      rhs_ct = 0;
+  register int rhs_ct = 0;
 
   rules = (struct ruletab_type *)
       calloc(num_rules + 2, sizeof(struct ruletab_type));
@@ -1890,55 +1882,55 @@ static void make_rules_map(void) {
   num_items += num_rules + 1;
   SHORT_CHECK(num_items);
 
+  register int ii = 0;
   /* Put starting rules from start symbol linked list in rule and rhs table    */
   if (start_symbol_root != NULL) {
     /* Turn circular list into linear */
     register struct node *q = start_symbol_root;
     start_symbol_root = q->next;
     q->next = NULL;
-
     for (ptr = start_symbol_root; ptr != NULL; ptr = ptr->next) {
-      rules[i].lhs = accept_image;
-      rules[i].sp = 0;
-      rules[i++].rhs = rhs_ct;
-      if (ptr->value != empty)
+      rules[ii].lhs = accept_image;
+      rules[ii].sp = 0;
+      rules[ii++].rhs = rhs_ct;
+      if (ptr->value != empty) {
         rhs_sym[rhs_ct++] = ptr->value;
+      }
     }
-
     free_nodes(start_symbol_root, q);
   }
 
   /*   In this loop, the grammar is placed in the rule table structure and the */
   /* right-hand sides are placed in the RHS table.  A check is made to prevent */
   /* terminals from being used as left hand sides.                             */
-  for (i = i; i <= num_rules; i++) {
-    rules[i].rhs = rhs_ct;
-    ptr = rulehdr[i].rhs_root;
+  for (ii = ii; ii <= num_rules; ii++) {
+    rules[ii].rhs = rhs_ct;
+    ptr = rulehdr[ii].rhs_root;
     if (ptr != NULL) /* not am empty right-hand side? */
     {
       do {
         ptr = ptr->next;
         rhs_sym[rhs_ct++] = ptr->value;
-      } while (ptr != rulehdr[i].rhs_root);
+      } while (ptr != rulehdr[ii].rhs_root);
       ptr = ptr->next; /* point to 1st element */
-      rules[i].sp = rulehdr[i].sp && ptr == rulehdr[i].rhs_root;
-      if (rules[i].sp)
+      rules[ii].sp = rulehdr[ii].sp && ptr == rulehdr[ii].rhs_root;
+      if (rules[ii].sp)
         num_single_productions++;
-      free_nodes(ptr, rulehdr[i].rhs_root);
+      free_nodes(ptr, rulehdr[ii].rhs_root);
     } else
-      rules[i].sp = false;
+      rules[ii].sp = false;
 
-    if (rulehdr[i].lhs == OMEGA) {
+    if (rulehdr[ii].lhs == OMEGA) {
       if (list_bit) /* Proper LHS will be updated after printing */
-        rules[i].lhs = OMEGA;
-      else rules[i].lhs = rules[i - 1].lhs;
-    } else if (IS_A_TERMINAL(rulehdr[i].lhs)) {
+        rules[ii].lhs = OMEGA;
+      else rules[ii].lhs = rules[ii - 1].lhs;
+    } else if (IS_A_TERMINAL(rulehdr[ii].lhs)) {
       char temp[SYMBOL_SIZE + 1];
-      restore_symbol(temp, RETRIEVE_STRING(rulehdr[i].lhs));
-      PRNTERR2(msg_line, "In rule %d: terminal \"%s\" used as left hand side", i, temp);
+      restore_symbol(temp, RETRIEVE_STRING(rulehdr[ii].lhs));
+      PRNTERR2(msg_line, "In rule %d: terminal \"%s\" used as left hand side", ii, temp);
       PRNTERR("Processing terminated due to input errors.");
       exit(12);
-    } else rules[i].lhs = rulehdr[i].lhs;
+    } else rules[ii].lhs = rulehdr[ii].lhs;
   }
 
   rules[num_rules + 1].rhs = rhs_ct; /* Fence !! */
@@ -1974,8 +1966,6 @@ static void free_line(struct line_elemt *p) {
 /* the action file.                                                          */
 static void process_action_line(FILE *sysout, char *text,
                                 const int line_no, const int rule_no) {
-  register int j;
-
   char temp1[MAX_LINE_SIZE + 1];
   char suffix[MAX_LINE_SIZE + 1];
   char symbol[SYMBOL_SIZE + 1];
@@ -2031,29 +2021,30 @@ next_line: {
       {
         if (strxeq(text + k, krule_text)) {
           char temp2[MAX_LINE_SIZE + 1];
+          int jj;
           if (k + 10 != text_len) {
             strcpy(temp1, text + k + 10);
             /* Remove trailing blanks */
-            for (j = strlen(temp1) - 1; j >= 0 && temp1[j] == ' '; j--) {
+            for (jj = strlen(temp1) - 1; jj >= 0 && temp1[jj] == ' '; jj--) {
             }
             /* if not a string of blanks */
-            if (j != 0) {
-              temp1[++j] = '\0';
+            if (jj != 0) {
+              temp1[++jj] = '\0';
             } else {
               temp1[0] = '\0';
             }
           } else {
             temp1[0] = '\0';
-            j = 0;
+            jj = 0;
           }
-          const register int max_len = output_size - k - j;
-
-          restore_symbol(temp2,
-                         RETRIEVE_STRING(rules[rule_no].lhs));
-          if (rules[rule_no].sp) /* if a single production */
+          const register int max_len = output_size - k - jj;
+          restore_symbol(temp2, RETRIEVE_STRING(rules[rule_no].lhs));
+          /* if a single production */
+          if (rules[rule_no].sp) {
             strcat(temp2, " ->");
-          else
+          } else {
             strcat(temp2, " ::=");
+          }
 
           if (strlen(temp2) > max_len)
             strcpy(temp2, " ... ");
@@ -2146,13 +2137,14 @@ next_line: {
       /* Macro in question is not one of the predefined macros. Try user-defined   */
       /* macro list.                                                               */
       /* find next delimeter */
-      for (j = k + 1; j < text_len && !IsSpace(text[j]); ++j) {
+      int jj;
+      for (jj = k + 1; jj < text_len && !IsSpace(text[jj]); ++jj) {
       }
-      memcpy(symbol, text + k, j - k); /* copy macro name into symbol */
-      symbol[j - k] = '\0';
+      memcpy(symbol, text + k, jj - k); /* copy macro name into symbol */
+      symbol[jj - k] = '\0';
       /* Is there any text after macro ? */
-      if (j < text_len) {
-        strcpy(suffix, text + j); /* Copy rest of text into "suffix". */
+      if (jj < text_len) {
+        strcpy(suffix, text + jj); /* Copy rest of text into "suffix". */
       } else {
         suffix[0] = '\0';
       }
@@ -2207,7 +2199,7 @@ next_line: {
         strcat(text, symbol);
         if (suffix[0] != '\0')
           strcat(text, suffix);
-        k = j;
+        k = jj;
       }
 
     proceed:
@@ -2220,7 +2212,7 @@ next_line: {
   /* line.                                                                     */
   const unsigned long l = strlen(text);
   if (l > output_size) {
-    for (j = l - 1; j >= output_size; j--) {
+    for (int j = l - 1; j >= output_size; j--) {
       if (text[j] != ' ') {
         PRNTERR2(msg_line, "Size of output line \"%s\" is greater than OUTPUT_SIZE (%d), it was %lu", text, output_size, strlen(text));
         break;
@@ -2380,8 +2372,7 @@ static void process_aliases(void) {
 /* beginning at the proper offset, it is laid out on successive lines,       */
 /* beginning at the proper offset.                                           */
 static void display_input(void) {
-  register int j,
-      len,
+  register int len,
       offset,
       symb;
   char line[PRINT_LINE_SIZE + 1],
@@ -2390,7 +2381,7 @@ static void display_input(void) {
   /* Print the Macro definitions, if any.   */
   if (num_defs > 0) {
     fprintf(syslis, "\nDefined Symbols:\n\n");
-    for (j = 0; j < num_defs; j++) {
+    for (int j = 0; j < num_defs; j++) {
       fill_in(line, PRINT_LINE_SIZE - (strlen(blockb) + 1), '-');
       fprintf(syslis, "\n\n%s\n%s%s\n", defelmt[j].name, blockb, line);
       for (const char *ptr = defelmt[j].macro; *ptr != '\0'; ptr++) {
@@ -2451,7 +2442,6 @@ static void display_input(void) {
   /*    Print the Rules     */
   fprintf(syslis, "\nRules:\n\n");
   for (register int rule_no = 0; rule_no <= num_rules; rule_no++) {
-    register int i;
     symb = rules[rule_no].lhs;
     sprintf(line, "%-4d  ", rule_no);
     if (symb != OMEGA) {
@@ -2461,18 +2451,16 @@ static void display_input(void) {
         fprintf(syslis, "\n%s", line);
         memmove(temp, temp + (PRINT_LINE_SIZE - 12),
                 sizeof(temp) - (PRINT_LINE_SIZE - 12));
-        i = PRINT_LINE_SIZE - 12;
-        print_large_token(line, temp, "       ", i);
+        print_large_token(line, temp, "       ", PRINT_LINE_SIZE - 12);
       } else {
         strcat(line, temp);
       }
       if (rules[rule_no].sp) {
         strcat(line, " -> ");
-      } else
+      } else {
         strcat(line, " ::= ");
-
-      i = PRINT_LINE_SIZE / 2 + 1;
-      offset = MIN(strlen(line) - 1, i);
+      }
+      offset = MIN(strlen(line) - 1, PRINT_LINE_SIZE / 2 + 1);
       len = PRINT_LINE_SIZE - offset - 1;
     } else {
       symb = rules[rule_no - 1].lhs;
@@ -2483,14 +2471,15 @@ static void display_input(void) {
           strncat(line, temp, PRINT_LINE_SIZE - 12);
           fprintf(syslis, "\n%s", line);
           memmove(temp, temp + (PRINT_LINE_SIZE - 12), sizeof(temp) - (PRINT_LINE_SIZE - 12));
-          i = PRINT_LINE_SIZE - 12;
-          print_large_token(line, temp, "       ", i);
-        } else
+          print_large_token(line, temp, "       ", PRINT_LINE_SIZE - 12);
+        } else {
           strcat(line, temp);
+        }
         strcat(line, "  -> ");
       } else {
-        for (i = 1; i <= offset - 7; i++)
+        for (int i = 1; i <= offset - 7; i++) {
           strcat(line, BLANK);
+        }
         strcat(line, "| ");
       }
     }
@@ -2501,7 +2490,7 @@ static void display_input(void) {
         char tempbuffer1[SYMBOL_SIZE + 1];
         fprintf(syslis, "\n%s", line);
         strcpy(tempbuffer1, BLANK);
-        for (j = 1; j < offset + 1; j++) {
+        for (int j = 1; j < offset + 1; j++) {
           strcat(tempbuffer1, BLANK);
         }
         print_large_token(line, temp, tempbuffer1, len);

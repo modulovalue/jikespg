@@ -244,16 +244,15 @@ static void compute_sp_action(const short state_no, const short symbol, const sh
 /* Sp_default_action tries to determine the highest rule that may be  */
 /* reached via a sequence of SP reductions.                           */
 static short sp_default_action(const short state_no, short rule_no) {
-  int i;
-
   const struct goto_header_type go_to = statset[state_no].go_to;
 
   /* While the rule we have at hand is a single production, ...         */
   while (IS_SP_RULE(rule_no)) {
     const int lhs_symbol = rules[rule_no].lhs;
-    for (i = 1; go_to.map[i].symbol != lhs_symbol; i++) {
+    int ii;
+    for (ii = 1; go_to.map[ii].symbol != lhs_symbol; ii++) {
     }
-    int action = go_to.map[i].action;
+    int action = go_to.map[ii].action;
     if (action < 0) /* goto-reduce action? */
     {
       action = -action;
@@ -267,8 +266,8 @@ static short sp_default_action(const short state_no, short rule_no) {
       /* Enter the state action and look for preferably a SP rule   */
       /* or some rule with right-hand size 1.                       */
       const struct reduce_header_type red = reduce[action];
-      for (i = 1; i <= red.size; i++) {
-        action = red.map[i].rule_number;
+      for (ii = 1; ii <= red.size; ii++) {
+        action = red.map[ii].rule_number;
         if (IS_SP_RULE(action)) {
           best_rule = action;
           break;
@@ -295,18 +294,18 @@ static short sp_default_action(const short state_no, short rule_no) {
 /* found, otherwise it returns the most suitable default action.      */
 static int sp_nt_action(const short state_no, const int lhs_symbol, const short la_symbol) {
   const struct goto_header_type go_to = statset[state_no].go_to;
-  int i;
-  for (i = 1; go_to.map[i].symbol != lhs_symbol; i++) {
+  int ii;
+  for (ii = 1; go_to.map[ii].symbol != lhs_symbol; ii++) {
   }
-  int action = go_to.map[i].action;
+  int action = go_to.map[ii].action;
   if (action < 0) {
     action = -action;
   } else {
     const struct reduce_header_type red = reduce[action];
     action = OMEGA;
-    for (i = 1; i <= red.size; i++) {
-      const int rule_no = red.map[i].rule_number;
-      if (red.map[i].symbol == la_symbol) {
+    for (ii = 1; ii <= red.size; ii++) {
+      const int rule_no = red.map[ii].rule_number;
+      if (red.map[ii].symbol == la_symbol) {
         action = rule_no;
         break;
       } else if (action == OMEGA && IS_SP_RULE(rule_no))
@@ -572,8 +571,7 @@ void remove_single_productions(void) {
       symbol,
       lhs_symbol,
       action,
-      item_no,
-      j;
+      item_no;
 
   bool end_node;
 
@@ -983,7 +981,7 @@ void remove_single_productions(void) {
   /* We now adjust all references to a lookahead state. The idea is */
   /* offset the number associated with each lookahead state by the  */
   /* number of new SP states that were added.                       */
-  for (j = 1; j <= num_shift_maps; j++) {
+  for (int j = 1; j <= num_shift_maps; j++) {
     sh = shift[j];
     for (int i = 1; i <= sh.size; i++) {
       if (sh.map[i].action > num_states)
@@ -1156,16 +1154,16 @@ void remove_single_productions(void) {
         /* we leave the loop prematurely, the search index j is not   */
         /* NIL, and it identifies the shift map in the hash table     */
         /* that matched the shift_transition.                         */
-        for (j = shift_table[hash_address];
-             j != NIL; j = new_shift[j].link) {
-          sh2 = shift[new_shift[j].shift_number];
+        int jj;
+        for (jj = shift_table[hash_address]; jj != NIL; jj = new_shift[jj].link) {
+          sh2 = shift[new_shift[jj].shift_number];
           if (sh.size == sh2.size) {
-            int i;
-            for (i = 1; i <= sh.size; i++)
-              if (sh2.map[i].action != shift_transition[sh2.map[i].symbol]) {
+            int ii;
+            for (ii = 1; ii <= sh.size; ii++)
+              if (sh2.map[ii].action != shift_transition[sh2.map[ii].symbol]) {
                 break;
               }
-            if (i > sh.size)
+            if (ii > sh.size)
               break; /* for (j = shift_table[ ... */
           }
         }
@@ -1174,7 +1172,7 @@ void remove_single_productions(void) {
         /* the table, it is inserted.  Otherwise, we have a match,    */
         /* and STATE_NO is reset to share the shift map previously    */
         /* inserted that matches its shift map.                       */
-        if (j == NIL) {
+        if (jj == NIL) {
           sh2 = Allocate_shift_map(sh.size);
           for (int i = 1; i <= sh.size; i++) {
             symbol = sh.map[i].symbol;
@@ -1189,7 +1187,7 @@ void remove_single_productions(void) {
           new_shift[top].link = shift_table[hash_address];
           shift_table[hash_address] = top;
         } else {
-          statset[state_no].shift_number = new_shift[j].shift_number;
+          statset[state_no].shift_number = new_shift[jj].shift_number;
         }
       }
     }
