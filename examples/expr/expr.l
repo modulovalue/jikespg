@@ -1,9 +1,10 @@
 
 
- IBM Research Jikes Parser Generator    1.2 Sun Dec  8 01:25:01 2024       Page 1
+ IBM Research Jikes Parser Generator    1.2 Sun Dec  8 02:39:48 2024       Page 1
 
 %OPTIONS gp=java,act,tab,an=expract.java,hn=exprhdr.java,tab=space,fp=expr,prefix=TK_,
 %OPTIONS nogoto-default,output-size=125,name=max,error-maps
+***ERROR: "OUTPUT-SIZE" is an invalid option
 
 Options in effect:
     ACTION  ACTFILE-NAME=expract.java  BLOCKB=/.  BLOCKE=./  BYTE  CONFLICTS  
@@ -11,7 +12,7 @@ Options in effect:
     FILE-PREFIX=expr  NOFIRST  NOFOLLOW  GENERATE-PARSER=JAVA  NOGOTO-DEFAULT
     HACTFILE-NAME=exprhdr.java  HBLOCKB=/:  HBLOCKE=:/  LALR=1  NOLIST  
     MAX-DISTANCE=30  MIN-DISTANCE=3  NAMES=MAXIMUM  NONT-CHECK  ORMARK=|  
-    OUTPUT-SIZE=125  PREFIX=TK_  READ-REDUCE  NOSCOPES  NOSHIFT-DEFAULT  
+    OUTPUT-SIZE=5000  PREFIX=TK_  READ-REDUCE  NOSCOPES  NOSHIFT-DEFAULT  
     NOSINGLE-PRODUCTIONS  STACK-SIZE=128  NOSTATES  SUFFIX=  TABLE=SPACE  
     TRACE=CONFLICTS  NOVERBOSE  WARNINGS  NOXREF  
 
@@ -20,7 +21,7 @@ Options in effect:
 This grammar is LALR(1).
 
 
- IBM Research Jikes Parser Generator    1.2 Sun Dec  8 01:25:01 2024       Page 2
+ IBM Research Jikes Parser Generator    1.2 Sun Dec  8 02:39:48 2024       Page 2
 
 
 Number of Terminals: 9

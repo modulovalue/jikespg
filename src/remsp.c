@@ -570,7 +570,6 @@ void remove_single_productions(void) {
       sp_rule_count,
       sp_action_count,
       rule_no,
-      state_no,
       symbol,
       lhs_symbol,
       action,
@@ -730,18 +729,21 @@ void remove_single_productions(void) {
   sp_state_root = NULL;
   max_sp_state = num_states;
 
-  for ALL_STATES(state_no)
+  for ALL_STATES2 {
     update_action[state_no] = NULL;
+  }
 
-  for ALL_NON_TERMINALS(i)
+  for ALL_NON_TERMINALS(i) {
     is_conflict_symbol[i] = false;
+  }
 
   symbol_root = NIL;
-  for ALL_SYMBOLS(i)
+  for ALL_SYMBOLS(i) {
     symbol_list[i] = OMEGA;
+  }
 
   /* Traverse all regular states and process the relevant ones.     */
-  for ALL_STATES(state_no) {
+  for ALL_STATES2 {
     new_action[state_no] = NULL;
 
     go_to = statset[state_no].go_to;
@@ -969,7 +971,7 @@ void remove_single_productions(void) {
     /* gd_index, we set each new element to point to the same     */
     /* index as its previous element, making it point to a null   */
     /* slice.                                                     */
-    for (state_no = num_states + 2;
+    for (int state_no = num_states + 2;
          state_no <= max_sp_state + 1; state_no++)
       gd_index[state_no] = gd_index[state_no - 1];
   }
@@ -980,7 +982,7 @@ void remove_single_productions(void) {
   if (in_stat == NULL)
     nospace(__FILE__, __LINE__);
 
-  for (state_no = num_states + 1; state_no <= max_sp_state; state_no++)
+  for (int state_no = num_states + 1; state_no <= max_sp_state; state_no++)
     in_stat[state_no] = NULL;
 
   /* We now adjust all references to a lookahead state. The idea is */
@@ -994,7 +996,7 @@ void remove_single_productions(void) {
     }
   }
 
-  for (state_no = num_states + 1; state_no <= max_la_state; state_no++) {
+  for (int state_no = num_states + 1; state_no <= max_la_state; state_no++) {
     if (lastats[state_no].in_state > num_states)
       lastats[state_no].in_state += max_sp_state - num_states;
   }
@@ -1010,7 +1012,7 @@ void remove_single_productions(void) {
     int default_rule,
         reduce_size;
 
-    state_no = state->state_number;
+    int state_no = state->state_number;
 
     /* These states are identified as special SP states since     */
     /* they have no kernel items. They also have no goto and      */
@@ -1081,7 +1083,7 @@ void remove_single_productions(void) {
 
   /* For each state with updates or new actions, take appropriate   */
   /* actions.                                                       */
-  for ALL_STATES(state_no) {
+  for ALL_STATES2 {
     /* Update reduce actions for final items of single productions*/
     /* that are in non-final states.                              */
     if (update_action[state_no] != NULL) {
@@ -1203,7 +1205,7 @@ void remove_single_productions(void) {
   /* Free all nodes used in the construction of the conflict_symbols*/
   /* map as this map is no longer useful and its size is based on   */
   /* the base value of num_states.                                  */
-  for ALL_STATES(state_no) {
+  for ALL_STATES2 {
     if (conflict_symbols[state_no] != NULL) {
       p = conflict_symbols[state_no]->next;
       free_nodes(p, conflict_symbols[state_no]);

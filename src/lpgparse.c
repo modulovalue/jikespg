@@ -1928,7 +1928,7 @@ static void make_names_map(void) {
     nospace(__FILE__, __LINE__);
 
   for (register int i = 0; i < HT_SIZE; i++) {
-    for (register struct hash_type *p = hash_table[i]; p != NULL; p = p->link) {
+    for (const register struct hash_type *p = hash_table[i]; p != NULL; p = p->link) {
       if (p->name_index != OMEGA)
         name[p->name_index] = p->st_ptr;
     }

@@ -193,9 +193,8 @@ int main(const int argc, char *argv[]) {
   /* If the tables are requested, we process them.          */
   if (table_opt != 0) {
     if (goto_default_bit && nt_check_bit) {
-      PRNTERR("The options GOTO_DEFAULT and NT_CHECK are incompatible.  Tables not generated");
+      PRNTERR("The options GOTO_DEFAULT and NT_CHECK are incompatible. Tables not generated");
     } else {
-      int state_no;
 
       num_entries = max_la_state + num_shifts + num_shift_reduces
                     + num_gotos + num_goto_reduces
@@ -217,10 +216,11 @@ int main(const int argc, char *argv[]) {
         ffree(adequate_item);
       }
 
-      if (!error_maps_bit)
+      if (!error_maps_bit) {
         ffree(item_table);
+      }
 
-      for ALL_STATES(state_no) {
+      for ALL_STATES2 {
         struct node *head = in_stat[state_no];
         if (head != NULL) {
           head = head->next;

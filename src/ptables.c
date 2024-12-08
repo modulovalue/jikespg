@@ -44,8 +44,7 @@ static void process_shift_actions(struct action_element **action_count,
 /* the grammar. Its task is to assign to each element of SHIFTDF, the action*/
 /* most frequently defined on the symbol in question.                       */
 static void compute_shift_default(void) {
-  int state_no,
-      symbol,
+  int symbol,
       shift_count = 0,
       shift_reduce_count = 0;
 
@@ -60,11 +59,12 @@ static void compute_shift_default(void) {
 
   /* For each state, invoke PROCESS_SHIFT_ACTIONS to process the     */
   /* shift map associated with that state.                           */
-  for ALL_STATES(state_no) {
+  for ALL_STATES2 {
     process_shift_actions(action_count,
                           statset[state_no].shift_number);
   }
 
+  int state_no;
   for ALL_LA_STATES(state_no) {
     process_shift_actions(action_count,
                           lastats[state_no].shift_number);
@@ -112,8 +112,7 @@ static void compute_goto_default(void) {
   struct action_element
       *q;
 
-  int state_no,
-      symbol,
+  int symbol,
       i,
       goto_count = 0,
       goto_reduce_count = 0;
@@ -135,7 +134,7 @@ static void compute_goto_default(void) {
   /* non-terminal. A count of how many occurences of each action     */
   /* is also kept.                                                   */
   /* This loop is analoguous to the loop in PROCESS_SHIFT_ACTIONS.   */
-  for ALL_STATES(state_no) {
+  for ALL_STATES2 {
     go_to = statset[state_no].go_to;
     for (i = 1; i <= go_to.size; i++) {
       symbol = go_to.map[i].symbol;
@@ -183,7 +182,7 @@ static void compute_goto_default(void) {
 
   /*   We now iterate over the automaton and eliminate all GOTO actions  */
   /* for which there is a DEFAULT.                                       */
-  for ALL_STATES(state_no) {
+  for ALL_STATES2 {
     int k = 0;
     go_to = statset[state_no].go_to;
     for (i = 1; i <= go_to.size; i++) {
@@ -211,9 +210,7 @@ static void compute_goto_default(void) {
 /* Remap symbols, apply transition default actions  and call           */
 /* appropriate table compression routine.                              */
 void process_tables(void) {
-  int i,
-      state_no,
-      rule_no,
+  int rule_no,
       symbol;
 
   struct reduce_header_type red;
@@ -235,35 +232,38 @@ void process_tables(void) {
   /* Remap all the symbols used in GD_RANGE.                     */
   /* Remap all the symbols used in the range of SCOPE.           */
   /* Release space trapped by the maps IN_STAT and FIRST.        */
-  for ALL_STATES(state_no) {
+  for ALL_STATES2 {
     const struct goto_header_type go_to = statset[state_no].go_to;
-    for (i = 1; i <= go_to.size; i++) {
+    for (int i = 1; i <= go_to.size; i++) {
       go_to.map[i].symbol--;
     }
     red = reduce[state_no];
-    for (i = 1; i <= red.size; i++)
+    for (int i = 1; i <= red.size; i++)
       red.map[i].symbol--;
   }
+  int state_no;
   for ALL_LA_STATES(state_no) {
     red = lastats[state_no].reduce;
-    for (i = 1; i <= red.size; i++)
+    for (int i = 1; i <= red.size; i++)
       red.map[i].symbol--;
   }
 
-  for (i = 1; i <= gotodom_size; i++)
+  for (int i = 1; i <= gotodom_size; i++) {
     gd_range[i]--;
+  }
 
-  for (i = 1; i <= num_scopes; i++) {
+  for (int i = 1; i <= num_scopes; i++) {
     scope[i].lhs_symbol--;
     scope[i].look_ahead--;
   }
-  for (i = 1; i <= scope_rhs_size; i++) {
+
+  for (int i = 1; i <= scope_rhs_size; i++) {
     if (scope_right_side[i] != 0)
       scope_right_side[i]--;
   }
 
   /* Remap all symbols in the domain of the Shift maps.              */
-  for (i = 1; i <= num_shift_maps; i++) {
+  for (int i = 1; i <= num_shift_maps; i++) {
     const struct shift_header_type sh = shift[i];
     for (int j = 1; j <= sh.size; j++)
       sh.map[j].symbol--;
@@ -275,6 +275,7 @@ void process_tables(void) {
 
   /* Remap the dot symbols in ITEM_TABLE.                            */
   if (error_maps_bit) {
+    int i;
     for ALL_ITEMS(i)
       item_table[i].symbol--;
   }
@@ -332,8 +333,8 @@ void process_tables(void) {
   if (states_bit) {
     PR_HEADING();
     fprintf(syslis, "\nMapping of new state numbers into original numbers:\n");
-    for ALL_STATES(i) {
-      fprintf(syslis, "\n%5ld  ==>>  %5ld", ordered_state[i], state_list[i]);
+    for ALL_STATES2 {
+      fprintf(syslis, "\n%5ld  ==>>  %5ld", ordered_state[state_no], state_list[state_no]);
     }
     fprintf(syslis, "\n");
   }

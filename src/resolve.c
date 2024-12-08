@@ -1517,7 +1517,6 @@ void init_lalrk_process(void) {
 
   if (lalr_level > 1) {
     int symbol;
-    int state_no;
     shift_table = (struct state_element **)
         calloc(SHIFT_TABLE_SIZE,
                sizeof(struct state_element *));
@@ -1530,12 +1529,14 @@ void init_lalrk_process(void) {
     cyclic = Allocate_boolean_array(num_states + 1);
     index_of = Allocate_short_array(num_states + 1);
     stack = Allocate_short_array(num_states + 1);
-    for ALL_STATES(state_no)
+    for ALL_STATES2 {
       index_of[state_no] = OMEGA;
+    }
     top = 0;
-    for ALL_STATES(state_no) {
-      if (index_of[state_no] == OMEGA)
+    for ALL_STATES2 {
+      if (index_of[state_no] == OMEGA) {
         compute_cyclic(state_no);
+      }
       not_lrk = not_lrk || cyclic[state_no];
     }
 
@@ -1797,8 +1798,7 @@ void create_lastats(void) {
 
   int
       i,
-      symbol,
-      state_no;
+      symbol;
 
   /* Allocate LASTATS structure to permanently construct lookahead   */
   /* states and reallocate SHIFT map as we may have to construct     */
@@ -1829,14 +1829,17 @@ void create_lastats(void) {
   /* for a given state. It is initialized here to the empty map.     */
   /* The array shift_count is used to count how many references      */
   /* there are to each shift map.                                    */
-  for ALL_TERMINALS(symbol)
+  for ALL_TERMINALS(symbol) {
     shift_action[symbol] = OMEGA;
+  }
 
-  for (i = 0; i <= max_la_state; i++)
+  for (i = 0; i <= max_la_state; i++) {
     shift_count[i] = 0;
+  }
 
-  for ALL_STATES(state_no)
+  for ALL_STATES2 {
     shift_count[statset[state_no].shift_number]++;
+  }
 
   /* Traverse the list of lookahead states and initialize the        */
   /* final lastat element appropriately. Also, construct a mapping   */
@@ -1851,7 +1854,7 @@ void create_lastats(void) {
     if (p->shift.size != 0)
       shift[p->shift_number] = p->shift;
 
-    state_no = p->in_state;
+    const int state_no = p->in_state;
     if (state_no <= num_states) {
       if (new_shift_actions[state_no] == NULL) {
         state_list[state_no] = state_root;
@@ -1864,8 +1867,7 @@ void create_lastats(void) {
 
   /* We now traverse the list of initial states that can shift into  */
   /* lookahead states and update their shift map appropriately.      */
-  for (state_no = state_root;
-       state_no != NIL; state_no = state_list[state_no]) {
+  for (int state_no = state_root; state_no != NIL; state_no = state_list[state_no]) {
     /* Copy the shift map associated with STATE_NO into the direct */
     /* access map SHIFT_ACTION.                                    */
     const int shift_no = statset[state_no].shift_number;

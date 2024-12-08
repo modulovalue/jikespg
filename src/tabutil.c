@@ -249,10 +249,9 @@ void process_error_maps(void) {
   int offset;
   int item_no;
   int lhs_symbol;
-  int state_no;
   int symbol;
   int max_len;
-  int i;
+  int state_no;
   int k;
   int terminal_ubound;
   int non_terminal_ubound;
@@ -301,8 +300,8 @@ void process_error_maps(void) {
       symbol = symbol_map[lhs_symbol] - num_terminals;
     }
     symbol_root[symbol] = lhs_symbol;
-    for ALL_TERMINALS(i) {
-      if (IS_IN_SET(follow, lhs_symbol + 1, i + 1)) {
+    for ALL_TERMINALS(state_no) {
+      if (IS_IN_SET(follow, lhs_symbol + 1, state_no + 1)) {
         symbol_count[symbol]++;
       }
     }
@@ -331,9 +330,9 @@ void process_error_maps(void) {
   for (symbol = 1; symbol <= non_terminal_ubound; symbol++) {
     lhs_symbol = symbol_root[symbol];
     if (lhs_symbol != OMEGA) {
-      for ALL_TERMINALS(i) {
-        if (IS_IN_SET(follow, lhs_symbol + 1, i + 1)) {
-          field(symbol_map[i], 4);
+      for ALL_TERMINALS(state_no) {
+        if (IS_IN_SET(follow, lhs_symbol + 1, state_no + 1)) {
+          field(symbol_map[state_no], 4);
           k++;
           if (k == 18) {
             *output_ptr++ = '\n';
@@ -367,8 +366,8 @@ void process_error_maps(void) {
 
   /* We now write out the states in sorted order: SORTED_STATE. */
   k = 0;
-  for ALL_STATES(i) {
-    field(ordered_state[i], 6);
+  for ALL_STATES2 {
+    field(ordered_state[state_no], 6);
     k++;
     if (k == 12) {
       *output_ptr++ = '\n';
@@ -388,8 +387,8 @@ void process_error_maps(void) {
   /* We now write a vector parallel to SORTED_STATE that gives us the */
   /* original number associated with the state: ORIGINAL_STATE.       */
   k = 0;
-  for (i = 1; i <= num_states; i++) {
-    field(state_list[i], 6);
+  for (state_no = 1; state_no <= num_states; state_no++) {
+    field(state_list[state_no], 6);
     k++;
     if (k == 12) {
       *output_ptr++ = '\n';
@@ -429,27 +428,27 @@ void process_error_maps(void) {
   /* NOTE that the arrays ACTION_SYMBOLS and NACTION_SYMBOLS are global  */
   /* variables that are allocated in the procedure PROCESS_TABLES by     */
   /* calloc which automatically initializes them to 0.                   */
-  for ALL_STATES(state_no) {
+  for ALL_STATES2 {
     struct shift_header_type sh;
     struct reduce_header_type red;
 
     sh = shift[statset[state_no].shift_number];
     as_size[state_no] = sh.size;
-    for (i = 1; i <= sh.size; i++) {
+    for (state_no = 1; state_no <= sh.size; state_no++) {
       if (table_opt == OPTIMIZE_TIME)
-        symbol = original[sh.map[i].symbol];
+        symbol = original[sh.map[state_no].symbol];
       else
-        symbol = sh.map[i].symbol;
+        symbol = sh.map[state_no].symbol;
       SET_BIT_IN(action_symbols, state_no, symbol);
     }
 
     red = reduce[state_no];
     as_size[state_no] += red.size;
-    for (i = 1; i <= red.size; i++) {
+    for (state_no = 1; state_no <= red.size; state_no++) {
       if (table_opt == OPTIMIZE_TIME)
-        symbol = original[red.map[i].symbol];
+        symbol = original[red.map[state_no].symbol];
       else
-        symbol = red.map[i].symbol;
+        symbol = red.map[state_no].symbol;
       SET_BIT_IN(action_symbols, state_no, symbol);
     }
   }
@@ -464,8 +463,8 @@ void process_error_maps(void) {
   /* The starting locations are contained in the STATE_START vector.   */
   offset = state_start[num_states + 1];
   k = 0;
-  for ALL_STATES(i) {
-    field(ABS(state_start[state_list[i]]), 6);
+  for ALL_STATES2 {
+    field(ABS(state_start[state_list[state_no]]), 6);
     k++;
     if (k == 12) {
       *output_ptr++ = '\n';
@@ -484,8 +483,8 @@ void process_error_maps(void) {
                                state_list, action_symbols_range);
 
   k = 0;
-  for (i = 0; i < offset - 1; i++) {
-    field(action_symbols_range[i], 4);
+  for (state_no = 0; state_no < offset - 1; state_no++) {
+    field(action_symbols_range[state_no], 4);
     k++;
     if (k == 18) {
       *output_ptr++ = '\n';
@@ -512,10 +511,10 @@ void process_error_maps(void) {
   ffree(action_symbols_range);
 
   /* We now repeat the same process for the domain of the GOTO table.    */
-  for ALL_STATES(state_no) {
+  for ALL_STATES2 {
     as_size[state_no] = gd_index[state_no + 1] - gd_index[state_no];
-    for (i = gd_index[state_no]; i < gd_index[state_no + 1]; i++) {
-      symbol = gd_range[i] - num_terminals;
+    for (state_no = gd_index[state_no]; state_no < gd_index[state_no + 1]; state_no++) {
+      symbol = gd_range[state_no] - num_terminals;
       NTSET_BIT_IN(naction_symbols, state_no, symbol);
     }
   }
@@ -526,12 +525,12 @@ void process_error_maps(void) {
   ffree(as_size);
   ffree(naction_symbols);
 
-  for (i = 1; i <= gotodom_size; i++) /* Remap non-terminals */
+  for (state_no = 1; state_no <= gotodom_size; state_no++) /* Remap non-terminals */
   {
     if (table_opt == OPTIMIZE_TIME)
-      gd_range[i] = symbol_map[gd_range[i]];
+      gd_range[state_no] = symbol_map[gd_range[state_no]];
     else
-      gd_range[i] = symbol_map[gd_range[i]] - num_terminals;
+      gd_range[state_no] = symbol_map[gd_range[state_no]] - num_terminals;
   }
 
   /* We now write the starting location for each state in the      */
@@ -540,8 +539,8 @@ void process_error_maps(void) {
   offset = state_start[num_states + 1];
 
   k = 0;
-  for ALL_STATES(i) {
-    field(ABS(state_start[state_list[i]]), 6);
+  for ALL_STATES2 {
+    field(ABS(state_start[state_list[state_no]]), 6);
     k++;
     if (k == 12) {
       *output_ptr++ = '\n';
@@ -560,8 +559,8 @@ void process_error_maps(void) {
                                 state_list, naction_symbols_range);
 
   k = 0;
-  for (i = 0; i < offset - 1; i++) {
-    field(naction_symbols_range[i], 4);
+  for (state_no = 0; state_no < offset - 1; state_no++) {
+    field(naction_symbols_range[state_no], 4);
     k++;
     if (k == 18) {
       *output_ptr++ = '\n';
@@ -604,18 +603,18 @@ void process_error_maps(void) {
     symbol_count[symbol] = 0;
   }
 
-  for (state_no = 2; state_no <= num_states; state_no++) {
+  for (int state_no = 2; state_no <= num_states; state_no++) {
     struct node *q;
 
     q = statset[state_no].kernel_items;
-    if (q == NULL) /* is the state a single production state? */
-    {
+    if (q == NULL) {
+      /* is the state a single production state? */
       q = statset[state_no].complete_items; /* pick arbitrary item */
     }
 
     item_no = q->value - 1;
-    i = item_table[item_no].symbol;
-    symbol = symbol_map[i];
+    state_no = item_table[item_no].symbol;
+    symbol = symbol_map[state_no];
     state_stack[state_no] = symbol_root[symbol];
     symbol_root[symbol] = state_no;
     symbol_count[symbol]++;
@@ -644,7 +643,7 @@ void process_error_maps(void) {
   /* tables or TRANSITION_STATES for time tables.                      */
   k = 0;
   for (symbol = 1; symbol <= terminal_ubound; symbol++) {
-    for (state_no = symbol_root[symbol];
+    for (int state_no = symbol_root[symbol];
          state_no != NIL; state_no = state_stack[state_no]) {
       field(state_index[state_no] + num_rules, 6);
       k++;
@@ -698,7 +697,7 @@ void process_error_maps(void) {
     /* is a non-terminal symbol.                                         */
     k = 0;
     for ALL_NON_TERMINALS(symbol) {
-      for (state_no = symbol_root[symbol];
+      for (int state_no = symbol_root[symbol];
            state_no != NIL; state_no = state_stack[state_no]) {
         field(state_index[state_no] + num_rules, 6);
         k++;
@@ -737,10 +736,10 @@ void process_error_maps(void) {
   /* We write out the names map.                                       */
   num_bytes = 0;
   max_len = 0;
-  for (i = 1; i <= num_names; i++) {
+  for (state_no = 1; state_no <= num_names; state_no++) {
     int name_len;
 
-    strcpy(tok, RETRIEVE_NAME(i));
+    strcpy(tok, RETRIEVE_NAME(state_no));
     if (tok[0] == '\n') /* we're dealing with special symbol?  */
       tok[0] = escape; /* replace initial marker with escape. */
     name_len = strlen(tok);
@@ -873,23 +872,23 @@ void process_error_maps(void) {
   PRNT2(msg_line, "    Storage required for indirect NAME map: %ld Bytes", num_bytes + offset);
 
   if (scopes_bit) {
-    for (i = 1; i <= scope_rhs_size; i++) {
-      if (scope_right_side[i] != 0)
-        scope_right_side[i] = symbol_map[scope_right_side[i]];
+    for (state_no = 1; state_no <= scope_rhs_size; state_no++) {
+      if (scope_right_side[state_no] != 0)
+        scope_right_side[state_no] = symbol_map[scope_right_side[state_no]];
     }
 
-    for (i = 1; i <= num_scopes; i++) {
-      scope[i].look_ahead = symbol_map[scope[i].look_ahead];
+    for (state_no = 1; state_no <= num_scopes; state_no++) {
+      scope[state_no].look_ahead = symbol_map[scope[state_no].look_ahead];
       if (table_opt == OPTIMIZE_TIME)
-        scope[i].lhs_symbol = symbol_map[scope[i].lhs_symbol];
+        scope[state_no].lhs_symbol = symbol_map[scope[state_no].lhs_symbol];
       else
-        scope[i].lhs_symbol = symbol_map[scope[i].lhs_symbol]
+        scope[state_no].lhs_symbol = symbol_map[scope[state_no].lhs_symbol]
                               - num_terminals;
     }
 
     k = 0;
-    for (i = 1; i <= num_scopes; i++) {
-      field(scope[i].prefix, 4);
+    for (state_no = 1; state_no <= num_scopes; state_no++) {
+      field(scope[state_no].prefix, 4);
       k++;
       if (k == 18) {
         *output_ptr++ = '\n';
@@ -904,8 +903,8 @@ void process_error_maps(void) {
     }
 
     k = 0;
-    for (i = 1; i <= num_scopes; i++) {
-      field(scope[i].suffix, 4);
+    for (state_no = 1; state_no <= num_scopes; state_no++) {
+      field(scope[state_no].suffix, 4);
       k++;
       if (k == 18) {
         *output_ptr++ = '\n';
@@ -920,8 +919,8 @@ void process_error_maps(void) {
     }
 
     k = 0;
-    for (i = 1; i <= num_scopes; i++) {
-      field(scope[i].lhs_symbol, 4);
+    for (state_no = 1; state_no <= num_scopes; state_no++) {
+      field(scope[state_no].lhs_symbol, 4);
       k++;
       if (k == 18) {
         *output_ptr++ = '\n';
@@ -936,8 +935,8 @@ void process_error_maps(void) {
     }
 
     k = 0;
-    for (i = 1; i <= num_scopes; i++) {
-      field(scope[i].look_ahead, 4);
+    for (state_no = 1; state_no <= num_scopes; state_no++) {
+      field(scope[state_no].look_ahead, 4);
       k++;
       if (k == 18) {
         *output_ptr++ = '\n';
@@ -952,8 +951,8 @@ void process_error_maps(void) {
     }
 
     k = 0;
-    for (i = 1; i <= num_scopes; i++) {
-      field(scope[i].state_set, 4);
+    for (state_no = 1; state_no <= num_scopes; state_no++) {
+      field(scope[state_no].state_set, 4);
       k++;
       if (k == 18) {
         *output_ptr++ = '\n';
@@ -968,8 +967,8 @@ void process_error_maps(void) {
     }
 
     k = 0;
-    for (i = 1; i <= scope_rhs_size; i++) {
-      field(scope_right_side[i], 4);
+    for (state_no = 1; state_no <= scope_rhs_size; state_no++) {
+      field(scope_right_side[state_no], 4);
       k++;
       if (k == 18) {
         *output_ptr++ = '\n';
@@ -984,11 +983,11 @@ void process_error_maps(void) {
     }
 
     k = 0;
-    for (i = 1; i <= scope_state_size; i++) {
-      if (scope_state[i] == 0)
+    for (state_no = 1; state_no <= scope_state_size; state_no++) {
+      if (scope_state[state_no] == 0)
         field(0, 6);
       else
-        field(state_index[scope_state[i]] + num_rules, 6);
+        field(state_index[scope_state[state_no]] + num_rules, 6);
       k++;
       if (k == 12) {
         *output_ptr++ = '\n';
@@ -1049,8 +1048,7 @@ void compute_action_symbols_range(const long *state_start,
                                   const long *state_stack,
                                   const long *state_list,
                                   int *action_symbols_range) {
-  int i,
-      j,
+  int j,
       state,
       symbol;
 
@@ -1064,9 +1062,9 @@ void compute_action_symbols_range(const long *state_start,
     symbol_list[j] = OMEGA; /* Initialize all links to OMEGA */
   }
 
-  for ALL_STATES(i) {
-    const int state_no = state_list[i];
-    if (state_start[state_no] > 0) {
+  for ALL_STATES2 {
+    const int state_no__ = state_list[state_no];
+    if (state_start[state_no__] > 0) {
       int symbol_root = 0; /* Add "fence" element: 0 to list */
       symbol_list[symbol_root] = NIL;
 
@@ -1074,8 +1072,8 @@ void compute_action_symbols_range(const long *state_start,
       /* that has not yet been processed into the list.            */
       /* Continue until stack is empty...                          */
       /* Recall that the stack is represented by a circular queue. */
-      for (bool end_node = (state = state_no) == NIL;
-           !end_node; end_node = state == state_no) {
+      for (bool end_node = (state = state_no__) == NIL;
+           !end_node; end_node = state == state_no__) {
         state = state_stack[state];
         const struct shift_header_type sh = shift[statset[state].shift_number];
         for (j = 1; j <= sh.size; j++) {
@@ -1115,7 +1113,6 @@ void compute_naction_symbols_range(const long *state_start,
                                    const long *state_stack,
                                    const long *state_list,
                                    int *naction_symbols_range) {
-  int i;
   int j;
   int state;
   int symbol;
@@ -1129,9 +1126,9 @@ void compute_naction_symbols_range(const long *state_start,
   for ALL_SYMBOLS(j)
     symbol_list[j] = OMEGA; /* Initialize all links to OMEGA */
 
-  for ALL_STATES(i) {
-    const int state_no = state_list[i];
-    if (state_start[state_no] > 0) {
+  for ALL_STATES2 {
+    const int state_no__ = state_list[state_no];
+    if (state_start[state_no__] > 0) {
       int symbol_root = 0; /* Add "fence" element: 0 to list */
       symbol_list[symbol_root] = NIL;
 
@@ -1139,8 +1136,8 @@ void compute_naction_symbols_range(const long *state_start,
       /* that has not yet been processed into the list.            */
       /* Continue until stack is empty...                          */
       /* Recall that the stack is represented by a circular queue. */
-      for (bool end_node = (state = state_no) == NIL;
-           !end_node; end_node = state == state_no) {
+      for (bool end_node = (state = state_no__) == NIL;
+           !end_node; end_node = state == state_no__) {
         state = state_stack[state];
         for (j = gd_index[state];
              j <= gd_index[state + 1] - 1; j++) {

@@ -79,8 +79,7 @@ void produce(void) {
   /*       C right-most produces A.                                */
   /*                                                               */
 
-  int state_no,
-      item_no,
+  int item_no,
       rule_no,
       symbol,
       nt,
@@ -216,7 +215,7 @@ void produce(void) {
     nt_list[i] = OMEGA;
   nt_list[accept_image] = NIL;
 
-  for ALL_STATES(state_no) {
+  for ALL_STATES2 {
     const struct goto_header_type go_to = statset[state_no].go_to;
     int nt_root = NIL;
     INIT_NTSET(set);
@@ -259,7 +258,7 @@ void produce(void) {
   gd_index = Allocate_short_array(num_states + 2);
   gd_range = Allocate_short_array(gotodom_size + 1);
 
-  for ALL_STATES(state_no) {
+  for ALL_STATES2 {
     gd_index[state_no] = n + 1;
     for (p = goto_domain[state_no]; p != NULL; q = p, p = p->next)
       gd_range[++n] = p->value;
@@ -423,7 +422,6 @@ static void process_scopes(void) {
       item_root,
       item_no,
       rule_no,
-      state_no,
       nt_root;
 
   bool end_node;
@@ -502,13 +500,15 @@ static void process_scopes(void) {
 
   /* Complete the construction of the LEFT_produces map for       */
   /* non_terminals using the digraph algorithm.                   */
-  for ALL_NON_TERMINALS(nt)
+  for ALL_NON_TERMINALS(nt) {
     index_of[nt] = OMEGA;
+  }
 
   top = 0;
   for ALL_NON_TERMINALS(nt) {
-    if (index_of[nt] == OMEGA)
+    if (index_of[nt] == OMEGA) {
       compute_produces(nt);
+    }
   }
   left_produces = produces;
 
@@ -656,7 +656,7 @@ static void process_scopes(void) {
   for ALL_NON_TERMINALS(nt)
     states_of[nt] = NULL;
 
-  for ALL_STATES(state_no) {
+  for ALL_STATES2 {
     struct goto_header_type go_to;
 
     go_to = statset[state_no].go_to;

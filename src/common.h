@@ -68,26 +68,39 @@ static const int IOBUFFER_SIZE = 655360;
 
 /**                         ITERATION MACROS                      **/
 /* The following macros (ALL_) are used to iterate over a sequence.*/
+// TODO • replace with no param
 #define ALL_LA_STATES(indx) (indx = num_states + 1; indx <= max_la_state; indx++)
 
+// TODO • replace with no param
 #define ALL_TERMINALS(indx) (indx = 1; indx <= num_terminals; indx++)
 
+// TODO • replace with no param
 #define ALL_TERMINALS_BACKWARDS(indx) (indx = num_terminals; indx >= 1; indx--)
 
+// TODO • replace with no param
 #define ALL_NON_TERMINALS(indx) (indx = num_terminals + 1; indx <= num_symbols; indx++)
 
+// TODO • replace with no param
 #define ALL_NON_TERMINALS_BACKWARDS(indx) (indx = num_symbols; indx >= num_terminals + 1; indx--)
 
+// TODO • replace with no param
 #define ALL_SYMBOLS(indx) (indx = 1; indx <= num_symbols; indx++)
 
+// TODO • replace with no param
 #define ALL_ITEMS(indx) (indx = 1; indx <= num_items; indx++)
 
+// TODO • replace with no param
 #define ALL_STATES(indx) (indx = 1; indx <= num_states; indx++)
 
+#define ALL_STATES2 (int state_no = 1; state_no <= num_states; state_no++)
+
+// TODO • replace with no param
 #define ALL_RULES(indx) (indx = 0; indx <= num_rules; indx++)
 
+// TODO • replace with no param
 #define ALL_RULES_BACKWARDS(indx) (indx = num_rules; indx >= 0; indx--)
 
+// TODO • replace with no param
 #define ENTIRE_RHS(indx, rule_no) (indx = rules[rule_no].rhs; indx < rules[(rule_no) + 1].rhs; indx++)
 
 extern const char HEADER_INFO[];

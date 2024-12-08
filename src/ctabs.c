@@ -650,7 +650,6 @@ static void print_error_maps(void) {
   int i;
   int k;
   int offset;
-  int state_no;
   int symbol;
 
   long num_bytes;
@@ -680,7 +679,7 @@ static void print_error_maps(void) {
     }
   }
 
-  for ALL_STATES(state_no) {
+  for ALL_STATES2 {
     struct shift_header_type sh;
     struct reduce_header_type red;
     sh = shift[statset[state_no].shift_number];
@@ -714,9 +713,9 @@ static void print_error_maps(void) {
   /* Compute and write out the base of the ACTION_SYMBOLS map. */
   action_symbols_base = Allocate_int_array(num_states + 1);
 
-  for ALL_STATES(i) {
-    action_symbols_base[state_list[i]] =
-        ABS(state_start[state_list[i]]);
+  for ALL_STATES2 {
+    action_symbols_base[state_list[state_no]] =
+        ABS(state_start[state_list[state_no]]);
   }
   if (java_bit) {
     prnt_shorts("\n    public final static char asb[] = {0,\n",
@@ -771,7 +770,7 @@ static void print_error_maps(void) {
   PRNT2(msg_line, "    Storage required for ACTION_SYMBOLS_RANGE map: %ld Bytes", num_bytes);
   ffree(action_symbols_range);
   /* We now repeat the same process for the domain of the GOTO table.    */
-  for ALL_STATES(state_no) {
+  for ALL_STATES2 {
     as_size[state_no] = gd_index[state_no + 1] - gd_index[state_no];
     for (i = gd_index[state_no]; i <= gd_index[state_no + 1] - 1; i++) {
       symbol = gd_range[i] - num_terminals;
@@ -791,9 +790,9 @@ static void print_error_maps(void) {
   }
   /* Compute and write out the base of the NACTION_SYMBOLS map.*/
   naction_symbols_base = Allocate_int_array(num_states + 1);
-  for ALL_STATES(i) {
-    naction_symbols_base[state_list[i]] =
-        ABS(state_start[state_list[i]]);
+  for ALL_STATES2 {
+    naction_symbols_base[state_list[state_no]] =
+        ABS(state_start[state_list[state_no]]);
   }
   if (java_bit) {
     prnt_shorts("\n    public final static char nasb[] = {0,\n",
@@ -1202,7 +1201,7 @@ static void print_error_maps(void) {
     *output_ptr++ = '0';
     *output_ptr++ = COMMA;
     k = 1;
-    for (state_no = 2; state_no <= num_states; state_no++) {
+    for (int state_no = 2; state_no <= num_states; state_no++) {
       struct node *q;
 
       q = statset[state_no].kernel_items;
@@ -1461,13 +1460,9 @@ static void print_externs(void) {
   }
 
   if (c_bit || cpp_bit) {
-    fprintf(sysprs, "%s const unsigned char  rhs[];\n",
-            c_bit ? "extern" : "    static");
-
+    fprintf(sysprs, "%s const unsigned char  rhs[];\n", c_bit ? "extern" : "    static");
     if (check_size > 0 || table_opt == OPTIMIZE_TIME) {
-      bool small;
-      small = byte_check_bit && !error_maps_bit;
-
+      bool small = byte_check_bit && !error_maps_bit;
       fprintf(sysprs, "%s const %s check_table[];\n"
               "%s const %s *%s;\n",
               c_bit ? "extern" : "    static",
@@ -1478,10 +1473,8 @@ static void print_externs(void) {
                 ? "check"
                 : "base_check");
     }
-
     fprintf(sysprs, "%s const unsigned short lhs[];\n"
             "%s const unsigned short *%s;\n",
-
             c_bit ? "extern" : "    static",
             c_bit ? "extern" : "    static",
             table_opt == OPTIMIZE_TIME
@@ -1636,8 +1629,7 @@ static void print_space_tables(void) {
       shift_reduce_count = 0;
 
   int rule_no,
-      symbol,
-      state_no;
+      symbol;
 
   long offset;
 
@@ -1673,7 +1665,7 @@ static void print_space_tables(void) {
   /* appropriate corresponding terminal state starting index.         */
   for (i = 1; i <= num_terminal_states; i++) {
     indx = term_state_index[i];
-    state_no = new_state_element[i].image;
+    int state_no = new_state_element[i].image;
 
     /*   Update the action link between the non-terminal and terminal    */
     /* tables.  If error-maps are requested, an indirect linking is made */
@@ -1693,7 +1685,7 @@ static void print_space_tables(void) {
   }
 
   /*  Now update the non-terminal tables with the non-terminal actions.*/
-  for ALL_STATES(state_no) {
+  for ALL_STATES2 {
     struct goto_header_type go_to;
 
     indx = state_index[state_no];
@@ -1721,8 +1713,9 @@ static void print_space_tables(void) {
         check[i] = 0;
     }
 
-    for ALL_STATES(state_no)
+    for ALL_STATES2 {
       check[state_index[state_no]] = -state_no;
+    }
   }
   for (i = 1; i <= check_size; i++) {
     if (check[i] < 0 || check[i] > (java_bit ? 127 : 255))
@@ -1849,14 +1842,16 @@ static void print_space_tables(void) {
     int max_indx;
 
     max_indx = accept_act - num_rules - 1;
-    for (i = 1; i <= max_indx; i++)
+    for (i = 1; i <= max_indx; i++) {
       check[i] = OMEGA;
-    for ALL_STATES(state_no)
+    }
+    for ALL_STATES2 {
       check[state_index[state_no]] = state_no;
+    }
 
     j = num_states + 1;
     for (i = max_indx; i >= 1; i--) {
-      state_no = check[i];
+      int state_no = check[i];
       if (state_no != OMEGA) {
         j--;
         ordered_state[j] = i + num_rules;
@@ -1899,7 +1894,7 @@ static void print_space_tables(void) {
   for (i = 1; i <= term_action_size; i++)
     action[i] = error_act;
 
-  for (state_no = 1; state_no <= num_terminal_states; state_no++) {
+  for (int state_no = 1; state_no <= num_terminal_states; state_no++) {
     struct shift_header_type sh;
     struct reduce_header_type red;
 
@@ -2241,8 +2236,7 @@ static void print_time_tables(void) {
       i,
       j,
       k,
-      symbol,
-      state_no;
+      symbol;
 
   short default_rule;
 
@@ -2284,7 +2278,7 @@ static void print_time_tables(void) {
     check[i] = DEFAULT_SYMBOL;
 
   /* We set the rest of the table with the proper table entries.       */
-  for (state_no = 1; state_no <= max_la_state; state_no++) {
+  for (int state_no = 1; state_no <= max_la_state; state_no++) {
     struct shift_header_type sh;
     struct reduce_header_type red;
 
@@ -2404,7 +2398,7 @@ static void print_time_tables(void) {
   PRNT(msg_line);
 
   if (error_maps_bit || debug_bit) {
-    for ALL_STATES(state_no) {
+    for ALL_STATES2 {
       check[state_index[state_no]] = -state_no;
     }
   }
@@ -2542,14 +2536,16 @@ static void print_time_tables(void) {
     /* Construct a map from new state numbers into original      */
     /*   state numbers using the array check[]                   */
     max_indx = accept_act - num_rules - 1;
-    for (i = 1; i <= max_indx; i++)
+    for (i = 1; i <= max_indx; i++) {
       check[i] = OMEGA;
-    for ALL_STATES(state_no)
+    }
+    for ALL_STATES2 {
       check[state_index[state_no]] = state_no;
+    }
 
     j = num_states + 1;
     for (i = max_indx; i >= 1; i--) {
-      state_no = check[i];
+      int state_no = check[i];
       if (state_no != OMEGA) {
         ordered_state[--j] = i + num_rules;
         state_list[j] = state_no;

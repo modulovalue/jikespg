@@ -536,11 +536,13 @@ void print_state(const int state_no) {
 
   /* INITIALIZATION -----------------------------------------------------------*/
 
-  for ALL_STATES(i)
-    state_seen[i] = false;
+  for ALL_STATES2 {
+    state_seen[state_no] = false;
+  }
 
-  for ALL_ITEMS(i)
+  for ALL_ITEMS(i) {
     item_seen[i] = false;
+  }
 
   int kernel_size = 0;
 

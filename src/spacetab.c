@@ -29,7 +29,6 @@ static void remap_non_terminals(void) {
   struct goto_header_type go_to;
 
   int i,
-      state_no,
       symbol;
 
   /*   The variable FREQUENCY_SYMBOL is used to hold the non-terminals  */
@@ -46,7 +45,7 @@ static void remap_non_terminals(void) {
     frequency_symbol[i] = i;
     frequency_count[i] = 0;
   }
-  for ALL_STATES(state_no) {
+  for ALL_STATES2 {
     ordered_state[state_no] = state_no;
     row_size[state_no] = 0;
     go_to = statset[state_no].go_to;
@@ -70,7 +69,7 @@ static void remap_non_terminals(void) {
   /* accordingly.  We further subtract NUM_TERMINALS from each          */
   /* non-terminal to make them fall in the range [1..NUM_NON_TERMINLS]  */
   /* instead of [NUM_TERMINALS+1..NUM_SYMBOLS].                         */
-  for ALL_STATES(state_no) {
+  for ALL_STATES2 {
     go_to = statset[state_no].go_to;
     for (i = 1; i <= go_to.size; i++)
       go_to.map[i].symbol = symbol_map[go_to.map[i].symbol] - num_terminals;
@@ -118,7 +117,6 @@ static void remap_non_terminals(void) {
 /* stored in the vector STATE_INDEX.                                        */
 static void overlap_nt_rows(void) {
   int indx;
-  int k;
   int i;
 
   long num_bytes;
@@ -153,14 +151,14 @@ static void overlap_nt_rows(void) {
   /* We now iterate over all the states in their new sorted order as */
   /* indicated by the variable STATE_NO, and determine an "overlap"  */
   /* position for them.                                              */
-  for ALL_STATES(k) {
-    const int state_no = ordered_state[k];
+  for ALL_STATES2 {
+    const int state_no__ = ordered_state[state_no];
 
     /* INDX is set to the beginning of the list of available slots  */
     /* and we try to determine if it might be a valid starting      */
     /* position.  If not, INDX is moved to the next element, and we */
     /* repeat the process until a valid position is found.          */
-    const struct goto_header_type go_to = statset[state_no].go_to;
+    const struct goto_header_type go_to = statset[state_no__].go_to;
     indx = first_index;
 
   look_for_match_in_base_table:
@@ -208,7 +206,7 @@ static void overlap_nt_rows(void) {
     next[indx] = OMEGA;
     if (indx > max_indx)
       max_indx = indx;
-    state_index[state_no] = indx;
+    state_index[state_no__] = indx;
   }
 
   if (goto_default_bit || nt_check_bit)
@@ -446,8 +444,7 @@ static void merge_shift_domains(void) {
       percentage,
       shift_size,
       shift_no,
-      symbol,
-      state_no;
+      symbol;
 
   long num_bytes;
 
@@ -488,7 +485,7 @@ static void merge_shift_domains(void) {
   num_table_entries = 0;
   shift_domain_count = 0;
 
-  for (state_no = 1; state_no <= num_terminal_states; state_no++) {
+  for (int state_no = 1; state_no <= num_terminal_states; state_no++) {
     shift_no = new_state_element[state_no].shift_number;
     for (i = 1; i <= num_terminals; i++)
       shift_symbols[i] = false;
@@ -566,7 +563,7 @@ static void merge_shift_domains(void) {
       sh.map[j].symbol = symbol_map[sh.map[j].symbol];
   }
 
-  for (state_no = 1; state_no <= num_terminal_states; state_no++) {
+  for (int state_no = 1; state_no <= num_terminal_states; state_no++) {
     red = new_state_element[state_no].reduce;
     for (i = 1; i <= red.size; i++)
       red.map[i].symbol = symbol_map[red.map[i].symbol];
@@ -575,7 +572,7 @@ static void merge_shift_domains(void) {
   /* If ERROR_MAPS are requested, we also have to remap the original   */
   /* REDUCE maps.                                                      */
   if (error_maps_bit) {
-    for ALL_STATES(state_no) {
+    for ALL_STATES2 {
       red = reduce[state_no];
       for (i = 1; i <= red.size; i++)
         red.map[i].symbol = symbol_map[red.map[i].symbol];
@@ -735,7 +732,6 @@ static void overlay_sim_t_rows(void) {
       k,
       i,
       rule_no,
-      state_no,
       symbol,
       default_rule,
       state_subset_root,
@@ -779,7 +775,7 @@ static void overlay_sim_t_rows(void) {
     /* out the first state (STATE_NO) from the group of states involved, */
     /* initialize REDUCE_ACTION with its reduce map, and count the number*/
     /* of reductions associated with each rule in that state.            */
-    state_no = new_state_element[i].image;
+    int state_no = new_state_element[i].image;
     if (state_no > num_states)
       red = lastats[state_no].reduce;
     else
@@ -804,7 +800,7 @@ static void overlay_sim_t_rows(void) {
     state_list[state_subset_root] = NIL;
     state_root = NIL;
 
-    for (state_no = state_set_root;
+    for (int state_no = state_set_root;
          state_no != NIL; state_no = state_set_root) {
       state_set_root = state_list[state_set_root];
 
@@ -919,7 +915,7 @@ static void overlay_sim_t_rows(void) {
   /* group of states being processed may be reused for the new  merged */
   /* state.                                                            */
   for (i = single_root; i != NIL; i = new_state_element[i].thread) {
-    state_no = new_state_element[i].image;
+    int state_no = new_state_element[i].image;
     q = new_state_element_reduce_nodes[i];
     rule_no = q->value;
     free_nodes(q, q);
@@ -962,7 +958,7 @@ static void overlay_sim_t_rows(void) {
   /* Groups of states that have no reductions are also compatible.     */
   /* Their default is ERROR_ACTION.                                    */
   for (i = empty_root; i != NIL; i = new_state_element[i].thread) {
-    state_no = new_state_element[i].image;
+    int state_no = new_state_element[i].image;
     if (state_no > num_states) {
       red = lastats[state_no].reduce;
     } else {
@@ -1003,7 +999,7 @@ static void overlay_sim_t_rows(void) {
       }
     }
 
-    for (state_no = state_list[new_state_element[i].image];
+    for (int state_no = state_list[new_state_element[i].image];
          state_no != NIL; state_no = state_list[state_no]) {
       num_shifts_saved += row_size[i];
     }
@@ -1050,7 +1046,7 @@ static void overlay_sim_t_rows(void) {
         sh.map[j].symbol = symbol_map[sh.map[j].symbol];
     }
 
-    for (state_no = 1; state_no <= num_terminal_states; state_no++) {
+    for (int state_no = 1; state_no <= num_terminal_states; state_no++) {
       red = new_state_element[state_no].reduce;
       for (i = 1; i <= red.size; i++)
         red.map[i].symbol = symbol_map[red.map[i].symbol];
@@ -1059,7 +1055,7 @@ static void overlay_sim_t_rows(void) {
     /* If ERROR_MAPS are requested, we also have to remap the original   */
     /* REDUCE maps.                                                      */
     if (error_maps_bit) {
-      for ALL_STATES(state_no) {
+      for ALL_STATES2 {
         red = reduce[state_no];
         for (i = 1; i <= red.size; i++)
           red.map[i].symbol = symbol_map[red.map[i].symbol];
@@ -1282,8 +1278,7 @@ static void print_tables(void) {
       shift_count = 0,
       shift_reduce_count = 0,
       rule_no,
-      symbol,
-      state_no;
+      symbol;
 
   char *tok;
 
@@ -1411,7 +1406,7 @@ static void print_tables(void) {
   /* appropriate corresponding terminal state starting index.         */
   for (i = 1; i <= num_terminal_states; i++) {
     indx = term_state_index[i];
-    state_no = new_state_element[i].image;
+    int state_no = new_state_element[i].image;
 
     /*   Update the action link between the non-terminal and terminal    */
     /* tables.  If error-maps are requested, an indirect linking is made */
@@ -1432,7 +1427,7 @@ static void print_tables(void) {
   }
 
   /*  Now update the non-terminal tables with the non-terminal actions.*/
-  for ALL_STATES(state_no) {
+  for ALL_STATES2 {
     struct goto_header_type go_to;
 
     indx = state_index[state_no];
@@ -1514,7 +1509,7 @@ static void print_tables(void) {
   for (i = 1; i <= term_action_size; i++)
     action[i] = error_act;
 
-  for (state_no = 1; state_no <= num_terminal_states; state_no++) {
+  for (int state_no = 1; state_no <= num_terminal_states; state_no++) {
     struct shift_header_type sh;
     struct reduce_header_type red;
 
@@ -1666,7 +1661,7 @@ static void print_tables(void) {
     *output_ptr++ = '\n';
 
     k = 0;
-    for (state_no = 1; state_no <= num_terminal_states; state_no++) {
+    for (int state_no = 1; state_no <= num_terminal_states; state_no++) {
       struct reduce_header_type red;
       red = new_state_element[state_no].reduce;
       field(red.map[0].rule_number, 4);
@@ -1691,7 +1686,7 @@ static void print_tables(void) {
     }
 
     k = 0;
-    for (state_no = 1; state_no <= num_terminal_states; state_no++) {
+    for (int state_no = 1; state_no <= num_terminal_states; state_no++) {
       field(shift_check_index[shift_image[state_no]], 4);
       k++;
       if (k == 18) {
@@ -1780,14 +1775,16 @@ static void print_tables(void) {
     int max_indx;
 
     max_indx = accept_act - num_rules - 1;
-    for (i = 1; i <= max_indx; i++)
+    for (i = 1; i <= max_indx; i++) {
       action[i] = OMEGA;
-    for ALL_STATES(state_no)
+    }
+    for ALL_STATES2 {
       action[state_index[state_no]] = state_no;
+    }
 
     j = num_states + 1;
     for (i = max_indx; i >= 1; i--) {
-      state_no = action[i];
+      int state_no = action[i];
       if (state_no != OMEGA) {
         j--;
         ordered_state[j] = i + num_rules;

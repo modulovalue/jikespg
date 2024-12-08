@@ -7,7 +7,6 @@ static char hostfile[] = __FILE__;
 /*          PT_STATS prints all the states of the parser.                    */
 void ptstats(void) {
   int max_size;
-  int state_no;
   int symbol;
   int number;
 
@@ -21,7 +20,7 @@ void ptstats(void) {
   fprintf(syslis, "Shift STATES: ");
 
   /* iterate over the states */
-  for ALL_STATES(state_no) {
+  for ALL_STATES2 {
     print_state(state_no);
     max_size = 0;
     /* Compute the size of the largest symbol.  The MAX_SIZE cannot */
@@ -118,6 +117,7 @@ void ptstats(void) {
     PR_HEADING();
     fprintf(syslis, "Look-Ahead STATES:");
   }
+  int state_no;
   for ALL_LA_STATES(state_no) {
     char buffer[PRINT_LINE_SIZE + 1];
 

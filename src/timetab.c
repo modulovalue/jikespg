@@ -19,7 +19,6 @@ static void remap_symbols(void) {
   struct reduce_header_type red;
 
   long symbol;
-  int state_no;
 
   ordered_state = Allocate_long_array(max_la_state + 1);
   symbol_map = Allocate_int_array(num_symbols + 1);
@@ -40,7 +39,7 @@ static void remap_symbols(void) {
     frequency_symbol[i] = i;
     frequency_count[i] = 0;
   }
-  for ALL_STATES(state_no) {
+  for ALL_STATES2 {
     ordered_state[state_no] = state_no;
     row_size[state_no] = 0;
     sh = shift[statset[state_no].shift_number];
@@ -70,6 +69,7 @@ static void remap_symbols(void) {
   }
   PRNT2(msg_line, "Number of Reductions saved by default: %d", default_saves);
 
+  int state_no;
   for ALL_LA_STATES(state_no) {
     ordered_state[state_no] = state_no;
     row_size[state_no] = 0;
@@ -150,7 +150,7 @@ static void remap_symbols(void) {
   /* the new mapping of the symbols.                                   */
   /* The states are sorted in descending order based on the number of  */
   /* actions defined on them.                                          */
-  for ALL_STATES(state_no) {
+  for ALL_STATES2 {
     go_to = statset[state_no].go_to;
     for (int i = 1; i <= go_to.size; i++) /* Remap Goto map */
       go_to.map[i].symbol = symbol_map[go_to.map[i].symbol];
@@ -382,7 +382,6 @@ static void print_tables(void) {
   int j;
   int k;
   int symbol;
-  long state_no;
 
   char *tok;
 
@@ -417,7 +416,7 @@ static void print_tables(void) {
     check[i] = DEFAULT_SYMBOL;
 
   /* We set the rest of the table with the proper table entries.       */
-  for (state_no = 1; state_no <= max_la_state; state_no++) {
+  for (long state_no = 1; state_no <= max_la_state; state_no++) {
     indx = state_index[state_no];
     if (state_no > num_states) {
       sh = shift[lastats[state_no].shift_number];
@@ -731,14 +730,16 @@ static void print_tables(void) {
   /* During the backward iteration,  we construct the list as a stack. */
   if (error_maps_bit || states_bit) {
     long max_indx = accept_act - num_rules - 1;
-    for (int i = 1; i <= max_indx; i++)
+    for (int i = 1; i <= max_indx; i++) {
       action[i] = OMEGA;
-    for ALL_STATES(state_no)
+    }
+    for ALL_STATES2 {
       action[state_index[state_no]] = state_no;
+    }
 
     j = num_states + 1;
     for (long i = max_indx; i >= 1; i--) {
-      state_no = action[i];
+      long state_no = action[i];
       if (state_no != OMEGA) {
         j--;
         ordered_state[j] = i + num_rules;

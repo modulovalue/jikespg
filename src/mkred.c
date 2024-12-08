@@ -100,7 +100,7 @@ static void trace_lalr_path(const int state_no, const int goto_indx) {
       const int symbol = rules[item_table[item].rule_number].lhs;
       struct node *w = lpgaccess(state_no, item);
       for (struct node *t = w; t != NULL; p = t, t = t->next) {
-        struct goto_header_type go_to_inner = statset[t->value].go_to;
+        const struct goto_header_type go_to_inner = statset[t->value].go_to;
         for (i = 1; go_to_inner.map[i].symbol != symbol; i++) {
         }
         if (go_to_inner.map[i].laptr == OMEGA)
@@ -128,8 +128,7 @@ static void trace_lalr_path(const int state_no, const int goto_indx) {
 /*  These sets are initialized to the set of terminals that can immediately  */
 /* follow the non-terminal in the state to which it can shift (READ set).    */
 static void compute_read(void) {
-  int state_no,
-      item_no,
+  int item_no,
       rule_no,
       lhs_symbol,
       i;
@@ -169,10 +168,11 @@ static void compute_read(void) {
   if (la_base == NULL)
     nospace(__FILE__, __LINE__);
 
-  for ALL_STATES(i)
-    la_base[i] = OMEGA;
+  for ALL_STATES2 {
+    la_base[state_no] = OMEGA;
+  }
 
-  for ALL_STATES(state_no) {
+  for ALL_STATES2 {
     for (const struct node *p = lalr_level <= 1 && single_complete_item[state_no]
                                   ? NULL
                                   : statset[state_no].complete_items;
@@ -250,8 +250,9 @@ static void compute_read(void) {
   /* used to keep track of Follow sets that have been initialized. If  */
   /* another set needs to be initialized with a value that has been    */
   /* already computed, LA_BASE is used to retrieve the value.          */
-  for ALL_STATES(i)
-    la_base[i] = OMEGA;
+  for ALL_STATES2 {
+    la_base[state_no] = OMEGA;
+  }
 
   la_index = Allocate_short_array(la_top + 1);
 
@@ -260,7 +261,7 @@ static void compute_read(void) {
   if (la_set == NULL)
     nospace(__FILE__, __LINE__);
 
-  for ALL_STATES(state_no) {
+  for ALL_STATES2 {
     const struct goto_header_type go_to = statset[state_no].go_to;
     for (i = 1; i <= go_to.size; i++) {
       const int la_ptr = go_to.map[i].laptr;
@@ -353,7 +354,7 @@ void la_traverse(const int state_no, const int goto_indx, int *stack_top) {
         /* Search for GOTO action in access-state after reducing  */
         /* RULE to its left hand side (SYMBOL). Q points to the   */
         /* GOTO_ELEMENT in question.                              */
-        struct goto_header_type go_to_inner = statset[t->value].go_to;
+        const struct goto_header_type go_to_inner = statset[t->value].go_to;
         for (i = 1; go_to_inner.map[i].symbol != symbol; i++) {
         }
         if (la_index[go_to_inner.map[i].laptr] == OMEGA) {
@@ -435,10 +436,9 @@ void compute_la(const int state_no, const int item_no, const SET_PTR look_ahead)
 /* states that contain transitions to the state in question.          */
 static void build_in_stat(void) {
   struct node *q;
-  int state_no,
-      i;
+  int i;
 
-  for ALL_STATES(state_no) {
+  for ALL_STATES2 {
     int n = statset[state_no].shift_number;
     const struct shift_header_type sh = shift[n];
     for (i = 1; i <= sh.size; ++i) {
@@ -484,9 +484,7 @@ static void build_in_stat(void) {
 /* For a complete description of the lookahead algorithm used in this        */
 /* program, see Charles, PhD thesis, NYU 1991.                               */
 void mkrdcts(void) {
-  int
-      state_no,
-      item_no,
+  int item_no,
       rule_no,
       symbol,
       i,
@@ -566,9 +564,8 @@ void mkrdcts(void) {
   /* any look-ahead at all.                                             */
   build_in_stat();
 
-  for ALL_STATES(state_no) {
+  for ALL_STATES2 {
     no_shift_on_error_sym[state_no] = true;
-
     if (default_opt == 5) {
       n = statset[state_no].shift_number;
       const struct shift_header_type sh = shift[n];
@@ -635,7 +632,7 @@ void mkrdcts(void) {
   /* We iterate over the states, compute the lookahead sets,      */
   /* resolve conflicts (if multiple lookahead is requested) and/or*/
   /* report the conflicts if requested...                         */
-  for ALL_STATES(state_no) {
+  for ALL_STATES2 {
     int default_rule = OMEGA;
     int symbol_root = NIL;
 
@@ -854,7 +851,7 @@ void mkrdcts(void) {
   /* transformed with the addition of new states and new          */
   /* transitions. In such a case, we reconstruct the IN_STAT map. */
   if (lalr_level > 1 || single_productions_bit) {
-    for ALL_STATES(state_no) {
+    for ALL_STATES2 {
       /* First, clear out the previous map */
       if (in_stat[state_no] != NULL) {
         q = in_stat[state_no]->next; /* point to root */
