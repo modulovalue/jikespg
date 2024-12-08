@@ -56,9 +56,9 @@ static void compute_closure(int lhs_symbol);
 static void compute_produces(int symbol);
 
 static struct f_element_type {
-  short suffix_root,
-      suffix_tail,
-      link;
+  short suffix_root;
+  short suffix_tail;
+  short link;
 } *first_element;
 
 static struct node **direct_produces;
@@ -86,15 +86,15 @@ static SET_PTR produces;
 /* Since these sets are simply partitions of the set of items, they are kept*/
 /* all in a sequential list in the array NEXT_ITEM.  The roots of the lists */
 /* are placed in the arrays T_ITEMS and NT_ITEMS.                           */
-static short *stack,
-    *index_of,
-    *lhs_rule,
-    *next_rule,
-    *first_table,
-    *first_item_of,
-    *next_item,
-    *nt_items,
-    *nt_list;
+static short *stack;
+static short *index_of;
+static short *lhs_rule;
+static short *next_rule;
+static short *first_table;
+static short *first_item_of;
+static short *next_item;
+static short *nt_items;
+static short *nt_list;
 
 static int top;
 
@@ -120,7 +120,6 @@ void mkfirst(void) {
   nt_first = (SET_PTR) calloc(num_non_terminals, term_set_size * sizeof(BOOLEAN_CELL));
   if (nt_first == NULL)
     nospace(__FILE__, __LINE__);
-
   nt_first -= (num_terminals + 1) * term_set_size;
   next_item = Allocate_short_array(num_items + 1);
   nt_items = Allocate_short_array(num_non_terminals);
@@ -148,48 +147,42 @@ void mkfirst(void) {
     }
     lhs_rule[symbol] = rule_no;
   }
-
   /* Check if there are any non-terminals that do not produce  */
   /* any rules.                                                */
-
   no_rules_produced();
-
   /* Construct the CLOSURE map of non-terminals.               */
   closure = (struct node **)
       calloc(num_non_terminals, sizeof(struct node *));
   if (closure == NULL)
     nospace(__FILE__, __LINE__);
   closure -= num_terminals + 1;
-
   for ALL_NON_TERMINALS3(symbol) {
     index_of[symbol] = OMEGA;
   }
-
   top = 0;
   for ALL_NON_TERMINALS3(nt) {
-    if (index_of[nt] == OMEGA)
+    if (index_of[nt] == OMEGA) {
       compute_closure(nt);
+    }
   }
-
   /* Construct the NULL_NT map for non-terminals.              */
   /* A non-terminal B is said to be nullable if either:        */
   /*    B -> %empty  or  B -> B1 B2 B3 ... Bk  where Bi is     */
   /*                         nullable for 1 <= i <= k          */
   null_nt = Allocate_boolean_array(num_non_terminals);
   null_nt -= num_terminals + 1;
-
   nullables_computation();
-
   /* Construct the FIRST map for non-terminals and also a list */
   /* of non-terminals whose first set is empty.                */
-  for ALL_NON_TERMINALS3(symbol)
+  for ALL_NON_TERMINALS3(symbol) {
     index_of[symbol] = OMEGA;
+  }
   top = 0;
   for ALL_NON_TERMINALS3(nt) {
-    if (index_of[nt] == OMEGA)
+    if (index_of[nt] == OMEGA) {
       compute_first(nt);
+    }
   }
-
   /*  Since every input source will be followed by the EOFT    */
   /*  symbol, FIRST[accept_image] cannot contain empty but     */
   /*  instead must contain the EOFT symbol.                    */
@@ -198,33 +191,27 @@ void mkfirst(void) {
     RESET_BIT_IN(nt_first, accept_image, empty);
     SET_BIT_IN(nt_first, accept_image, eoft_image);
   }
-
   /* Check whether there are any non-terminals that do not       */
   /* generate any terminal strings. If so, signal error and stop.*/
-
   check_non_terminals();
-
   /* Construct the ITEM_TABLE, FIRST_ITEM_OF, and NT_ITEMS maps. */
-
   first_table = Allocate_short_array(num_symbols + 1);
-
   for ALL_SYMBOLS3(symbol) /* Initialize FIRST_TABLE to NIL */
+  {
     first_table[symbol] = NIL;
-
+  }
   top = 1;
   const int first_of_empty = top;
   first_element[first_of_empty].suffix_root = 1;
   first_element[first_of_empty].suffix_tail = 0;
-
-  for ALL_NON_TERMINALS3(symbol)
+  for ALL_NON_TERMINALS3(symbol) {
     nt_items[symbol] = NIL;
-
+  }
   int item_no = 0;
   item_table[item_no].rule_number = 0;
   item_table[item_no].symbol = empty;
   item_table[item_no].dot = 0;
   item_table[item_no].suffix_index = NIL;
-
   for ALL_RULES3(rule_no) {
     first_item_of[rule_no] = item_no + 1;
     int j = 0;
@@ -235,31 +222,28 @@ void mkfirst(void) {
       item_table[item_no].rule_number = rule_no;
       item_table[item_no].symbol = symbol;
       item_table[item_no].dot = j;
-
       if (lalr_level > 1 ||
           IS_A_NON_TERMINAL(symbol) ||
           symbol == error_image) {
-        if (i == k)
+        if (i == k) {
           item_table[item_no].suffix_index = first_of_empty;
-        else
+        } else {
           item_table[item_no].suffix_index = first_map(i + 1, k);
-      } else
+        }
+      } else {
         item_table[item_no].suffix_index = NIL;
-
+      }
       if (IS_A_NON_TERMINAL(symbol)) {
         next_item[item_no] = nt_items[symbol];
         nt_items[symbol] = item_no;
       }
       j++;
     }
-
     item_table[++item_no].rule_number = rule_no;
     item_table[item_no].symbol = empty;
     item_table[item_no].dot = j;
     item_table[item_no].suffix_index = NIL;
   }
-
-
   /* We now compute the first set for all suffixes that were     */
   /* inserted in the FIRST_TABLE map. There are TOP such suffixes*/
   /* Extra space is also allocated to compute the first set for  */
@@ -270,14 +254,12 @@ void mkfirst(void) {
   /* The first element in the FIRST table contains the first sets*/
   /* for the empty sequence.                                     */
   num_first_sets = top;
-
   for (end_node = (rule_no = lhs_rule[accept_image]) == NIL;
        !end_node;
        end_node = rule_no == lhs_rule[accept_image]) {
     rule_no = next_rule[rule_no];
     num_first_sets++;
   }
-
   first = (SET_PTR)
       calloc(num_first_sets + 1, term_set_size * sizeof(BOOLEAN_CELL));
   if (first == NULL)
@@ -286,7 +268,6 @@ void mkfirst(void) {
     s_first(first_element[i].suffix_root,
             first_element[i].suffix_tail, i);
   }
-
   rule_no = lhs_rule[accept_image];
   for (int i = top + 1; i <= num_first_sets; i++) {
     rule_no = next_rule[rule_no];
@@ -295,7 +276,6 @@ void mkfirst(void) {
     INIT_FIRST(i);
     SET_BIT_IN(first, i, eoft_image);
   }
-
   /* If the READ/REDUCE option is on, we precalculate the kernel */
   /* of the final states which simply consists of the last item  */
   /* in  the corresponding rule.  Rules with the ACCEPT          */
@@ -306,7 +286,6 @@ void mkfirst(void) {
       calloc(num_rules + 1, sizeof(struct node *));
   if (adequate_item == NULL)
     nospace(__FILE__, __LINE__);
-
   if (read_reduce_bit) {
     for ALL_RULES3(rule_no) {
       const int j = RHS_SIZE(rule_no);
@@ -320,8 +299,6 @@ void mkfirst(void) {
         adequate_item[rule_no] = NULL;
     }
   }
-
-
   /* Construct the CLITEMS map. Each element of CLITEMS points   */
   /* to a circular linked list of items.                         */
   clitems = (struct node **)
@@ -329,26 +306,23 @@ void mkfirst(void) {
   if (clitems == NULL)
     nospace(__FILE__, __LINE__);
   clitems -= num_terminals + 1;
-
   for ALL_NON_TERMINALS3(nt) {
     clitems[nt] = NULL;
-
     for (end_node = (rule_no = lhs_rule[nt]) == NIL;
          !end_node;
          end_node = rule_no == lhs_rule[nt]) {
       rule_no = next_rule[rule_no];
       struct node *p = Allocate_node();
       p->value = first_item_of[rule_no];
-      if (clitems[nt] == NULL)
+      if (clitems[nt] == NULL) {
         p->next = p;
-      else {
+      } else {
         p->next = clitems[nt]->next;
         clitems[nt]->next = p;
       }
       clitems[nt] = p;
     }
   }
-
   /* If LALR_LEVEL > 1, we need to calculate RMPSELF, a set that */
   /* identifies the nonterminals that can right-most produce     */
   /* themselves. In order to compute RMPSELF, the map PRODUCES   */
@@ -361,13 +335,11 @@ void mkfirst(void) {
     if (produces == NULL)
       nospace(__FILE__, __LINE__);
     produces -= (num_terminals + 1) * non_term_set_size;
-
     direct_produces = (struct node **)
         calloc(num_non_terminals, sizeof(struct node *));
     if (direct_produces == NULL)
       nospace(__FILE__, __LINE__);
     direct_produces -= num_terminals + 1;
-
     for ALL_NON_TERMINALS3(nt) {
       struct node *p;
       for (end_node = (p = clitems[nt]) == NULL; !end_node; end_node = p == clitems[nt]) {
@@ -386,26 +358,22 @@ void mkfirst(void) {
         }
       }
     }
-
     /* Complete the construction of the RIGHT_MOST_PRODUCES map */
     /* for non-terminals using the digraph algorithm.           */
-    for ALL_NON_TERMINALS3(nt)
+    for ALL_NON_TERMINALS3(nt) {
       index_of[nt] = OMEGA;
-
+    }
     top = 0;
     for ALL_NON_TERMINALS3(nt) {
       if (index_of[nt] == OMEGA)
         compute_produces(nt);
     }
-
     init_rmpself(produces);
-
     produces += (num_terminals + 1) * non_term_set_size;
     ffree(produces);
     direct_produces += num_terminals + 1;
     ffree(direct_produces);
   }
-
   /* Construct the FOLLOW map if                                 */
   /*   1) an SLR table is requested                              */
   /*   2) if we have to print the FOLLOW map                     */
@@ -419,20 +387,18 @@ void mkfirst(void) {
     if (follow == NULL)
       nospace(__FILE__, __LINE__);
     follow -= (num_terminals + 1) * term_set_size;
-
     SET_BIT_IN(follow, accept_image, eoft_image);
-
-    for ALL_NON_TERMINALS3(symbol)
+    for ALL_NON_TERMINALS3(symbol) {
       index_of[symbol] = OMEGA;
-
+    }
     index_of[accept_image] = INFINITY; /* mark computed */
     top = 0;
-
     for ALL_NON_TERMINALS3(nt) {
       if (index_of[nt] == OMEGA) /* not yet computed ? */
+      {
         compute_follow(nt);
+      }
     }
-
     /*  Initialize FIRST for suffixes that can follow each starting*/
     /* non-terminal ( except the main symbol) with the FOLLOW set */
     /* of the non-terminal in question.                            */
@@ -450,27 +416,26 @@ void mkfirst(void) {
       }
     }
   }
-
   /* If WARNINGS option is turned on, the unreachable symbols in */
   /* the grammar are printed.                                    */
-  if (warnings_bit)
+  if (warnings_bit) {
     print_unreachables();
-
+  }
   /* If a Cross_Reference listing is requested, it is generated  */
   /* here.                                                       */
-  if (xref_bit)
+  if (xref_bit) {
     print_xref();
-
+  }
   /* If a listing of the FIRST map is requested, it is generated */
   /* here.                                                       */
-  if (first_bit)
+  if (first_bit) {
     print_nt_first();
-
+  }
   /* If a listing of the FOLLOW map is requested, it is generated */
   /* here.                                                        */
-  if (follow_bit)
+  if (follow_bit) {
     print_follow_map();
-
+  }
   /* Free allocated arrays.                                      */
   nt_first += (num_terminals + 1) * term_set_size;
   ffree(nt_first);
@@ -543,23 +508,18 @@ static void compute_closure(const int lhs_symbol) {
   struct node *p;
   struct node *q;
   bool end_node;
-
   short *nont_list = Allocate_short_array(num_non_terminals);
   nont_list -= num_terminals + 1; /* Temporary direct        */
   /* access set for closure. */
   stack[++top] = lhs_symbol;
   const int indx = top;
   index_of[lhs_symbol] = indx;
-
   for ALL_NON_TERMINALS3(i) {
     nont_list[i] = OMEGA;
   }
-
   nont_list[lhs_symbol] = NIL;
   int nt_root = lhs_symbol;
-
   closure[lhs_symbol] = NULL; /* Permanent closure set. Linked list */
-
   for (end_node = (rule_no = lhs_rule[lhs_symbol]) == NIL;
        !end_node; /* Iterate over all rules of LHS_SYMBOL */
        end_node = rule_no == lhs_rule[lhs_symbol]) {
@@ -570,15 +530,13 @@ static void compute_closure(const int lhs_symbol) {
     if (IS_A_NON_TERMINAL(symbol)) {
       if (nont_list[symbol] == OMEGA) {
         if (index_of[symbol] == OMEGA) /* if first time seen */
+        {
           compute_closure(symbol);
-
-        index_of[lhs_symbol] = MIN(index_of[lhs_symbol],
-                                   index_of[symbol]);
+        }
+        index_of[lhs_symbol] = MIN(index_of[lhs_symbol], index_of[symbol]);
         nont_list[symbol] = nt_root;
         nt_root = symbol;
-
         /* add closure[symbol] to closure of LHS_SYMBOL.  */
-
         for (end_node = (q = closure[symbol]) == NULL;
              !end_node;
              end_node = q == closure[symbol]) {
@@ -591,7 +549,6 @@ static void compute_closure(const int lhs_symbol) {
       }
     }
   }
-
   for (; nt_root != lhs_symbol; nt_root = nont_list[nt_root]) {
     p = Allocate_node();
     p->value = nt_root;
@@ -603,7 +560,6 @@ static void compute_closure(const int lhs_symbol) {
     }
     closure[lhs_symbol] = p;
   }
-
   if (index_of[lhs_symbol] == indx) {
     for (symbol = stack[top]; symbol != lhs_symbol; symbol = stack[--top]) {
       q = closure[symbol];
@@ -612,12 +568,10 @@ static void compute_closure(const int lhs_symbol) {
         free_nodes(p, q); /* free nodes used by CLOSURE[SYMBOL] */
         closure[symbol] = NULL;
       }
-
       p = Allocate_node();
       p->value = lhs_symbol;
       p->next = p;
       closure[symbol] = p;
-
       for (end_node = (q = closure[lhs_symbol]) == NULL;
            !end_node;
            end_node = q == closure[lhs_symbol]) {
@@ -630,7 +584,6 @@ static void compute_closure(const int lhs_symbol) {
           closure[symbol] = p;
         }
       }
-
       index_of[symbol] = INFINITY;
     }
     index_of[lhs_symbol] = INFINITY;
@@ -650,19 +603,17 @@ static void compute_closure(const int lhs_symbol) {
 static void nullables_computation(void) {
   int rule_no;
   bool changed = true;
-
   short *rhs_start = Allocate_short_array(NEXT_RULE_SIZE());
-
   /* First, mark all non-terminals as non-nullable.  Then initialize*/
   /* RHS_START. RHS_START is a mapping from each rule in the grammar*/
   /* into the next symbol in its right-hand side that has not yet   */
   /* proven to be nullable.                                         */
-  for ALL_NON_TERMINALS3(nt)
+  for ALL_NON_TERMINALS3(nt) {
     null_nt[nt] = false;
-
-  for ALL_RULES3(rule_no)
+  }
+  for ALL_RULES3(rule_no) {
     rhs_start[rule_no] = rules[rule_no].rhs;
-
+  }
   /* We now iterate over the rules and try to advance the RHS_START */
   /* pointer thru each right-hand side as far as we can.  If one or */
   /* more non-terminals are found to be nullable, they are marked   */
@@ -678,7 +629,6 @@ static void nullables_computation(void) {
   /* we quit the inner loop.                                        */
   while (changed) {
     changed = false;
-
     for ALL_NON_TERMINALS3(nt) {
       for (bool end_node = (rule_no = lhs_rule[nt]) == NIL;
            !null_nt[nt] && !end_node;
@@ -691,7 +641,6 @@ static void nullables_computation(void) {
       }
     }
   }
-
   ffree(rhs_start);
 }
 
@@ -705,12 +654,13 @@ static bool is_nullable_rhs(short *rhs_start, const int rule_no) {
        rhs_start[rule_no] <= rules[rule_no + 1].rhs - 1;
        rhs_start[rule_no]++) {
     const int symbol = rhs_sym[rhs_start[rule_no]];
-    if (IS_A_TERMINAL(symbol))
+    if (IS_A_TERMINAL(symbol)) {
       return false;
-    else if (!null_nt[symbol]) /* symbol is a non-terminal */
+    } else if (!null_nt[symbol]) /* symbol is a non-terminal */
+    {
       return false;
+    }
   }
-
   return true;
 }
 
@@ -724,11 +674,9 @@ static void compute_first(const int nt) {
   const SET_PTR temp_set = calloc(1, term_set_size * sizeof(BOOLEAN_CELL));
   if (temp_set == NULL)
     nospace(__FILE__, __LINE__);
-
   stack[++top] = nt;
   const int indx = top;
   index_of[nt] = indx;
-
   /* Iterate over all rules generated by non-terminal NT...     */
   /* In this application of the transitive closure algorithm,   */
   /*                                                            */
@@ -739,7 +687,6 @@ static void compute_first(const int nt) {
   /*    R(A, B) iff A ::= B1 B2 ... Bk B X                      */
   /*                                                            */
   /* where Bi is nullable for 1 <= i <= k                       */
-
   for (bool end_node = (rule_no = lhs_rule[nt]) == NIL;
        !end_node; /* Iterate over all rules produced by NT */
        end_node = rule_no == lhs_rule[nt]) {
@@ -760,16 +707,13 @@ static void compute_first(const int nt) {
         SET_BIT_IN(nt_first, nt, symbol);
         blocked = true;
       }
-
       if (blocked)
         break;
     }
-
     if (!blocked) {
       SET_BIT_IN(nt_first, nt, empty);
     }
   }
-
   if (index_of[nt] == indx) {
     for (symbol = stack[top]; symbol != nt; symbol = stack[--top]) {
       ASSIGN_SET(nt_first, symbol, nt_first, nt);
@@ -794,25 +738,20 @@ static void compute_first(const int nt) {
 /* This routine is structurally identical to COMPUTE_NULLABLES.              */
 static void check_non_terminals(void) {
   int nt_last;
-
   bool changed = true;
-
   short *rhs_start = Allocate_short_array(NEXT_RULE_SIZE());
   bool *produces_terminals = Allocate_boolean_array(num_non_terminals);
   produces_terminals -= num_terminals + 1;
-
   /* First, mark all non-terminals as not producing terminals. Then */
   /* initialize RHS_START. RHS_START is a mapping from each rule in */
   /* the grammar into the next symbol in its right-hand side that   */
   /* has not yet proven to be a symbol that generates terminals.    */
   for ALL_NON_TERMINALS3(nt)
     produces_terminals[nt] = false;
-
   produces_terminals[accept_image] = true;
-
-  for ALL_RULES3(rule_no)
+  for ALL_RULES3(rule_no) {
     rhs_start[rule_no] = rules[rule_no].rhs;
-
+  }
   /* We now iterate over the rules and try to advance the RHS_START */
   /* pointer to each right-hand side as far as we can.  If one or   */
   /* more non-terminals are found to be "all right", they are       */
@@ -828,7 +767,6 @@ static void check_non_terminals(void) {
   /* we quit the inner loop.                                        */
   while (changed) {
     changed = false;
-
     for ALL_NON_TERMINALS3(nt) {
       int rule_no;
       for (bool end_node = (rule_no = lhs_rule[nt]) == NIL;
@@ -842,7 +780,6 @@ static void check_non_terminals(void) {
       }
     }
   }
-
   /* Construct a list of all non-terminals that do not generate*/
   /* terminal strings.                                         */
   int nt_root = NIL;
@@ -855,7 +792,6 @@ static void check_non_terminals(void) {
       nt_last = nt;
     }
   }
-
   /* If there are non-terminal symbols that do not generate    */
   /* terminal strings, print them out and stop the program.    */
   if (nt_root != NIL) {
@@ -869,7 +805,6 @@ static void check_non_terminals(void) {
       PRNT(line);
       strcpy(line, "        "); /* 8 spaces */
     }
-
     for (int symbol = nt_root; symbol != NIL; symbol = nt_list[symbol]) {
       char tok[SYMBOL_SIZE + 1];
       restore_symbol(tok, RETRIEVE_STRING(symbol));
@@ -903,7 +838,6 @@ static bool is_terminal_rhs(short *rhs_start,
         return false;
     }
   }
-
   return true;
 }
 
@@ -943,14 +877,12 @@ static short first_map(const int root, const int tail) {
 /* in the sequence and places the result in the FIRST set indexable by INDEX.*/
 static void s_first(const int root, const int tail, const int index) {
   int symbol = root > tail ? empty : rhs_sym[root];
-
   if (IS_A_TERMINAL(symbol)) {
     INIT_FIRST(index);
     SET_BIT_IN(first, index, symbol); /* add it to set */
   } else {
     ASSIGN_SET(first, index, nt_first, symbol);
   }
-
   for (int i = root + 1; i <= tail && IS_IN_SET(first, index, empty); i++) {
     symbol = rhs_sym[i];
     RESET_BIT_IN(first, index, empty); /* remove EMPTY */
@@ -970,17 +902,18 @@ static void compute_produces(const int symbol) {
   stack[++top] = symbol;
   const int indx = top;
   index_of[symbol] = indx;
-
   for (struct node *p = direct_produces[symbol]; p != NULL; q = p, p = p->next) {
     new_symbol = p->value;
     if (index_of[new_symbol] == OMEGA) /* first time seen? */
+    {
       compute_produces(new_symbol);
+    }
     index_of[symbol] = MIN(index_of[symbol], index_of[new_symbol]);
     NTSET_UNION(produces, symbol, produces, new_symbol);
   }
-  if (direct_produces[symbol] != NULL)
+  if (direct_produces[symbol] != NULL) {
     free_nodes(direct_produces[symbol], q);
-
+  }
   if (index_of[symbol] == indx) /*symbol is SCC root */
   {
     for (new_symbol = stack[top];
@@ -988,7 +921,6 @@ static void compute_produces(const int symbol) {
       ASSIGN_NTSET(produces, new_symbol, produces, symbol);
       index_of[new_symbol] = INFINITY;
     }
-
     index_of[symbol] = INFINITY;
     top--;
   }
@@ -1004,13 +936,10 @@ static void compute_follow(const int nt) {
   const SET_PTR temp_set = calloc(1, term_set_size * sizeof(BOOLEAN_CELL));
   if (temp_set == NULL)
     nospace(__FILE__, __LINE__);
-
   /* FOLLOW[NT] was initialized to 0 for all non-terminals.     */
-
   stack[++top] = nt;
   const int indx = top;
   index_of[nt] = indx;
-
   for (int item_no = nt_items[nt]; item_no != NIL; item_no = next_item[item_no]) {
     /* iterate over all items of NT */
     ASSIGN_SET(temp_set, 0, first, item_table[item_no].suffix_index);
@@ -1025,7 +954,6 @@ static void compute_follow(const int nt) {
     }
     SET_UNION(follow, nt, temp_set, 0);
   }
-
   if (index_of[nt] == indx) {
     for (lhs_symbol = stack[top];
          lhs_symbol != nt; lhs_symbol = stack[--top]) {
@@ -1039,24 +967,21 @@ static void compute_follow(const int nt) {
 }
 
 static void print_unreachables(void) {
-
   char line[PRINT_LINE_SIZE + 1];
   char tok[SYMBOL_SIZE + 1];
-
   /* SYMBOL_LIST is used for two purposes:                       */
   /*  1) to mark symbols that are reachable from the Accepting   */
   /*        non-terminal.                                        */
   /*  2) to construct lists of symbols that are not reachable.   */
-
   int *symbol_list = Allocate_int_array(num_symbols + 1);
   for ALL_SYMBOLS3(symbol) {
     symbol_list[symbol] = OMEGA;
   }
   symbol_list[eoft_image] = NIL;
   symbol_list[empty] = NIL;
-  if (error_maps_bit)
+  if (error_maps_bit) {
     symbol_list[error_image] = NIL;
-
+  }
   /* Initialize a list consisting only of the Accept non-terminal.     */
   /* This list is a work pile of non-terminals to process as follows:  */
   /* Each non-terminal in the front of the list is removed in turn and */
@@ -1075,9 +1000,9 @@ static void print_unreachables(void) {
       rule_no = next_rule[rule_no];
       for ENTIRE_RHS3(i, rule_no) {
         const int symbol = rhs_sym[i];
-        if (IS_A_TERMINAL(symbol))
+        if (IS_A_TERMINAL(symbol)) {
           symbol_list[symbol] = NIL;
-        else if (symbol_list[symbol] == OMEGA) {
+        } else if (symbol_list[symbol] == OMEGA) {
           symbol_list[symbol] = nt_root;
           nt_root = symbol;
         }
@@ -1116,8 +1041,6 @@ static void print_unreachables(void) {
     }
     PRNT(line);
   }
-
-
   /* We now iterate (backward to keep things in order) over the  */
   /* non-terminals, and place each unreachable non-terminal in a */
   /* list.  If the list is not empty, we signal that these       */
@@ -1129,7 +1052,6 @@ static void print_unreachables(void) {
       nt_root = symbol;
     }
   }
-
   if (nt_root != NIL) {
     if (symbol_list[nt_root] != NIL) {
       PRNT("*** The following Non-Terminals are useless: ");
@@ -1143,13 +1065,13 @@ static void print_unreachables(void) {
       if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE) {
         PRNT(line);
         print_large_token(line, tok, "    ", LEN);
-      } else
+      } else {
         strcat(line, tok);
+      }
       strcat(line, BLANK);
     }
     PRNT(line);
   }
-
   ffree(symbol_list);
 }
 
@@ -1161,15 +1083,12 @@ static void print_unreachables(void) {
 /* First out.                                                                */
 static void print_xref(void) {
   int item_no;
-
   /* SORT_SYM is used to sort the symbols for cross_reference listing. */
   short *sort_sym = Allocate_short_array(num_symbols + 1);
   short *t_items = Allocate_short_array(num_terminals + 1);
-
   for ALL_TERMINALS3(symbol) {
     t_items[symbol] = NIL;
   }
-
   for ALL_RULES_BACKWARDS3(rule_no) {
     item_no = first_item_of[rule_no];
     for ENTIRE_RHS3(symbol, rule_no) {
@@ -1250,14 +1169,11 @@ static void quick_sym(short array[], const int h) {
   const int l = 1;
   /* Since no more than 2**15-1 symbols are allowed, the stack  */
   /* not grow past 14.                                          */
-
   int lostack[14];
   int histack[14];
-
   int top = 1;
   lostack[top] = l;
   histack[top] = h;
-
   while (top != 0) {
     int lower = lostack[top];
     int upper = histack[top--];

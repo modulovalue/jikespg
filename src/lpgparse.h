@@ -3,9 +3,7 @@
 #include "common.h"
 #include <string.h>
 
-/**                                                               **/
 /**                        OPTIONS DECLARATIONS                   **/
-/**                                                               **/
 /* The following static variables are used only in processing the  */
 /* options.                                                        */
 static const int OUTPUT_PARM_SIZE = MAX_PARM_SIZE + 7;
@@ -65,9 +63,6 @@ static const char *oaction = "ACTION",
     *ontcheck = "NTCHECK",
     *ooptimized = "OPTIMIZED",
     *oormark = "ORMARK",
-    // *ooutputsize2 = "OUTPUT-SIZE",
-    // *ooutputsize3 = "OUTPUT_SIZE",
-    // *ooutputsize = "OUTPUTSIZE",
     *oprefix = "PREFIX",
     *oreadreduce2 = "READ_REDUCE",
     *oreadreduce3 = "READ-REDUCE",
@@ -94,7 +89,6 @@ static const char *oaction = "ACTION",
     *owarnings = "WARNINGS",
     *oxref = "XREF";
 
-
 /**                                                               **/
 /**                        PARSING DECLARATIONS                   **/
 /**                                                               **/
@@ -109,28 +103,31 @@ static const char CTL_Z = '\x1a';
 /*                                                                 */
 /* The two character pointer variables, P1 and P2, are used in     */
 /* processing the io buffer, INPUT_BUFFER.                         */
-static char *p1,
-    *p2,
-    *input_buffer;
+static char *p1;
+static char *p2;
+static char *input_buffer;
 
-static char *linestart,
-    *bufend,
-    *ct_ptr;
+static char *linestart;
+static char *bufend;
+static char *ct_ptr;
 
-static short ct = 0, /* current token & related variables */
-    ct_start_col = 0,
-    ct_end_col = 0,
-    ct_length = 0;
+/* current token & related variables */
+static short ct = 0;
+static short ct_start_col = 0;
+static short ct_end_col = 0;
+static short ct_length = 0;
 
-static long ct_start_line = 0,
-    ct_end_line = 0;
+static long ct_start_line = 0;
+static long ct_end_line = 0;
 
-static int num_acts = 0, /* macro definition & action variables */
-    num_defs = 0;
+/* macro definition & action variables */
+static int num_acts = 0;
+static int num_defs = 0;
 
-static long defelmt_size = 0, /* macro definition & action vars */
-    actelmt_size = 0,
-    rulehdr_size = 0;
+/* macro definition & action vars */
+static long defelmt_size = 0;
+static long actelmt_size = 0;
+static long rulehdr_size = 0;
 
 struct rulehdr_type /* structure to store rule in first pass */
 {
@@ -141,23 +138,23 @@ struct rulehdr_type /* structure to store rule in first pass */
 
 struct defelmt_type /* structure to store location of macro def. */
 {
-  short next,
-      length,
-      start_column,
-      end_column;
+  short next;
+  short length;
+  short start_column;
+  short end_column;
   char *macro;
-  long start_line,
-      end_line;
+  long start_line;
+  long end_line;
   char name[SYMBOL_SIZE + 1];
 };
 
 struct actelmt_type /* structure to store location of action */
 {
-  long start_line,
-      end_line;
-  short rule_number,
-      start_column,
-      end_column;
+  long start_line;
+  long end_line;
+  short rule_number;
+  short start_column;
+  short end_column;
   bool header_block;
 };
 
@@ -225,7 +222,6 @@ static char kdefine[8] = " define",
     kinput_file[12] = " input_file",
     kcurrent_line[14] = " current_line",
     knext_line[11] = " next_line",
-
     /* Note that the next four keywords start with \n instead of     */
     /* the escape character.  This is to prevent the user from       */
     /* declaring a grammar symbol with the same name.  The           */
@@ -238,7 +234,6 @@ static char kdefine[8] = " define",
     kerror[7] = "\nerror",
     keoft[5] = "\neof",
     kaccept[5] = "\nacc",
-
     kstart_nt[7] = " start",
     keolt[5] = " eol";
 
@@ -247,10 +242,10 @@ static struct line_elemt {
   char line[MAX_LINE_SIZE + 1];
 } *line_pool_root = NULL;
 
-static int blockb_len,
-    blocke_len,
-    hblockb_len,
-    hblocke_len;
+static int blockb_len;
+static int blocke_len;
+static int hblockb_len;
+static int hblocke_len;
 
 static int stack_top = -1;
 

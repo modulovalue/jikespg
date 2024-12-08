@@ -9,15 +9,11 @@ void ptstats(void) {
   int max_size;
   int symbol;
   int number;
-
   struct shift_header_type sh;
   struct reduce_header_type red;
-
   char temp[SYMBOL_SIZE + 1];
   char line[MAX_LINE_SIZE + 1];
-
   fprintf(syslis, "Shift STATES: ");
-
   /* iterate over the states */
   for ALL_STATES3(state_no) {
     print_state(state_no);
@@ -64,7 +60,6 @@ void ptstats(void) {
         }
       }
     }
-
     if (go_to.size > 0) {
       fprintf(syslis, "\n");
       for (int i = 1; i <= go_to.size; i++) {
@@ -79,7 +74,6 @@ void ptstats(void) {
         }
       }
     }
-
     if (red.size != 0) {
       fprintf(syslis, "\n");
       for (int i = 1; i <= red.size; i++) {
@@ -103,7 +97,6 @@ void ptstats(void) {
   }
   for ALL_LA_STATES3(state_no) {
     char buffer[PRINT_LINE_SIZE + 1];
-
     int ii = number_len(state_no) + 8; /* 8 = length of "STATE" */
     /* + 2 spaces + newline  */
     fill_in(buffer, PRINT_LINE_SIZE - ii, '-');
@@ -124,16 +117,13 @@ void ptstats(void) {
         restore_symbol(temp, RETRIEVE_STRING(symbol));
         max_size = MAX(max_size, strlen(temp));
       }
-
       red = lastats[state_no].reduce;
       for (ii = 1; ii <= red.size; ii++) {
         symbol = red.map[ii].symbol;
         restore_symbol(temp, RETRIEVE_STRING(symbol));
         max_size = MAX(max_size, strlen(temp));
       }
-
       max_size = MIN(max_size, PRINT_LINE_SIZE - 17);
-
       /* 1) Print all Shift actions.                            */
       /* 2) Print all Goto actions.                             */
       /* 3) Print all reduce actions.                           */

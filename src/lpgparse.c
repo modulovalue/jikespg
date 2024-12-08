@@ -91,7 +91,6 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
   code['\r'] = SPACE_CODE;
   code['\v'] = SPACE_CODE;
   code['\f'] = SPACE_CODE;
-
   init_process(grm_file, output_files);
   process_grammar(grm_file);
   exit_process();
@@ -175,7 +174,6 @@ static void exit_process(void) {
     (string_table == (char *) NULL
        ? malloc(string_offset * sizeof(char))
        : realloc(string_table, string_offset * sizeof(char)));
-
     if (string_table == (char *) NULL)
       nospace(__FILE__, __LINE__);
   }
@@ -202,9 +200,9 @@ static char *translate(char *str, const int len) {
     str[i] = TOUPPER(str[i]);
   }
   return str;
-} /* end translate */
+}
 
-/* Compare two character strings s1 and s2 to check whether or not s2 */
+/* Compare two character strings s1 and s2 to check whether s2 */
 /* is a substring of s1.  The string s2 is assumed to be in lowercase */
 /* and NULL terminated. However, s1 does not have to (indeed, may not)*/
 /* be NULL terminated.                                                */
@@ -232,9 +230,7 @@ static void options(void) {
   char token[MAX_PARM_SIZE + 1];
   char temp[MAX_PARM_SIZE + 1];
   char delim;
-
   bool flag;
-
   char *c;
   /* If we scan the comment sign, we stop processing the rest of the */
   /* parameter string.                                               */
@@ -243,15 +239,13 @@ static void options(void) {
       break;
   }
   *c = '\0';
-
   register int i = 0;
-
   while (parm[i] != '\0' && /* Clean front of string */
          (parm[i] == ',' ||
           parm[i] == '/' ||
-          parm[i] == ' '))
+          parm[i] == ' ')) {
     i++;
-
+  }
   while (parm[i] != '\0') {
     /* Repeat until parm line is exhausted */
     /* Remove garbage in front */
@@ -261,9 +255,9 @@ static void options(void) {
            (parm[i] != ',' &&
             parm[i] != '/' &&
             parm[i] != '=' &&
-            parm[i] != ' '))
+            parm[i] != ' ')) {
       i++;
-
+    }
     for (int j = 0; j < i; j++) {
       /* Fold actual parameter */
       token[j] = TOUPPER(parm[j]);
@@ -281,12 +275,10 @@ static void options(void) {
     } else {
       delim = ' ';
     }
-
     register int len = strlen(token);
     if (len > MAX_PARM_SIZE) {
       token[MAX_PARM_SIZE] = '\0';
     }
-
     /*  We check whether we have a switch or a value parameter.                  */
     /* Each category is checked separately.  A match is made whenever            */
     /* a minimum unambiguous prefix of the token in question matches an          */
@@ -398,13 +390,13 @@ static void options(void) {
         } else {
           trace_opt = NOTRACE;
         }
-      } else if (memcmp(overbose, token, len) == 0)
+      } else if (memcmp(overbose, token, len) == 0) {
         verbose_bit = flag;
-      else if (memcmp(owarnings, token, len) == 0)
+      } else if (memcmp(owarnings, token, len) == 0) {
         warnings_bit = flag;
-      else if (memcmp(oxref, token, len) == 0)
+      } else if (memcmp(oxref, token, len) == 0) {
         xref_bit = flag;
-      else if (strcmp(token, "D") == 0 || strcmp(token, "DE") == 0) {
+      } else if (strcmp(token, "D") == 0 || strcmp(token, "DE") == 0) {
         PRNTERR2(msg_line, "\"%s\" is an ambiguous option: DEBUG, DEFAULT, DEFERRED ?", temp);
       } else if (strcmp(token, "DEF") == 0) {
         PRNTERR("\"DEF\" is an ambiguous option: DEFAULT, DEFERRED ?");
@@ -431,37 +423,35 @@ static void options(void) {
         PRNTERR2(msg_line, "Null string or blank is invalid for parameter %s", token);
         continue;
       }
-
       int j = i;
       while (parm[i] != '\0' && /* find next delimeter */
              (parm[i] != ',' &&
               parm[i] != '/' &&
               parm[i] != ' '))
         i++;
-
       memcpy(temp, parm+j, i - j); /* copy into TEMP */
       temp[i - j] = '\0';
       if (strcmp(token, "AN") == 0 ||
           memcmp(token, oactfile_name, len) == 0 ||
           memcmp(token, oactfile_name2, len) == 0 ||
-          memcmp(token, oactfile_name3, len) == 0)
+          memcmp(token, oactfile_name3, len) == 0) {
         strcpy(act_file, temp);
-      else if (strcmp(token, oblockb) == 0)
+      } else if (strcmp(token, oblockb) == 0) {
         strcpy(blockb, temp);
-      else if (strcmp(token, oblocke) == 0)
+      } else if (strcmp(token, oblocke) == 0) {
         strcpy(blocke, temp);
-      else if (memcmp(odefault, token, len) == 0) {
+      } else if (memcmp(odefault, token, len) == 0) {
         if (verify(temp)) {
           default_opt = MIN(atoi(temp), 5);
         } else {
           PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
         }
-      } else if (len >= 2 && memcmp(token, oescape, len) == 0)
+      } else if (len >= 2 && memcmp(token, oescape, len) == 0) {
         escape = temp[0];
-      else if (strcmp(token, "FP") == 0 ||
-               memcmp(token, ofile_prefix, len) == 0 ||
-               memcmp(token, ofile_prefix2, len) == 0 ||
-               memcmp(token, ofile_prefix3, len) == 0) {
+      } else if (strcmp(token, "FP") == 0 ||
+                 memcmp(token, ofile_prefix, len) == 0 ||
+                 memcmp(token, ofile_prefix2, len) == 0 ||
+                 memcmp(token, ofile_prefix3, len) == 0) {
         memcpy(file_prefix, temp, 5);
         file_prefix[MIN(5, strlen(temp))] = '\0';
       } else if (strcmp(token, "GP") == 0 ||
@@ -469,7 +459,6 @@ static void options(void) {
                  memcmp(ogenprsr2, token, len) == 0 ||
                  memcmp(ogenprsr3, token, len) == 0) {
         bool invalid_language = true;
-
         if (temp[0] == 'c' || temp[0] == 'C') {
           if (temp[1] == '\0') {
             c_bit = true;
@@ -494,7 +483,6 @@ static void options(void) {
           java_bit = true;
           invalid_language = false;
         }
-
         if (invalid_language) {
           PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
         }
@@ -502,13 +490,13 @@ static void options(void) {
                  (len >= 2 &&
                   (memcmp(token, ohactfile_name, len) == 0 ||
                    memcmp(token, ohactfile_name2, len) == 0 ||
-                   memcmp(token, ohactfile_name3, len) == 0)))
+                   memcmp(token, ohactfile_name3, len) == 0))) {
         strcpy(hact_file, temp);
-      else if (len >= 2 && strcmp(token, ohblockb) == 0)
+      } else if (len >= 2 && strcmp(token, ohblockb) == 0) {
         strcpy(hblockb, temp);
-      else if (len >= 2 && strcmp(token, ohblocke) == 0)
+      } else if (len >= 2 && strcmp(token, ohblocke) == 0) {
         strcpy(hblocke, temp);
-      else if (memcmp(olalr, token, len) == 0) {
+      } else if (memcmp(olalr, token, len) == 0) {
         len = strlen(temp);
         if (len > MAX_PARM_SIZE)
           temp[MAX_PARM_SIZE - 1] = '\0';
@@ -517,9 +505,9 @@ static void options(void) {
           PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
         } else {
           slr_bit = false;
-          if (memcmp(omax, translate(temp, len), len) == 0)
+          if (memcmp(omax, translate(temp, len), len) == 0) {
             lalr_level = MAXIMUM_LA_LEVEL;
-          else {
+          } else {
             lalr_level = atoi(temp);
             if (lalr_level > MAXIMUM_LA_LEVEL) {
               PRNTWNG2(msg_line, "\"%s\" exceeds maximum value of %d allowed for %s", temp, MAXIMUM_LA_LEVEL, token);
@@ -531,9 +519,9 @@ static void options(void) {
                  (memcmp(token, omaximum_distance, len) == 0 ||
                   memcmp(token, omaximum_distance2, len) == 0 ||
                   memcmp(token, omaximum_distance3, len) == 0)) {
-        if (verify(temp))
+        if (verify(temp)) {
           maximum_distance = atoi(temp);
-        else {
+        } else {
           PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
         }
       } else if (len >= 2 &&
@@ -547,15 +535,14 @@ static void options(void) {
         }
       } else if (memcmp(onames, token, len) == 0) {
         len = strlen(temp);
-        if (len >= 2 && memcmp(omax, translate(temp, len), len) == 0)
+        if (len >= 2 && memcmp(omax, translate(temp, len), len) == 0) {
           names_opt = MAXIMUM_NAMES;
-        else if (len >= 2 &&
-                 memcmp(omin, translate(temp, len), len) == 0)
+        } else if (len >= 2 && memcmp(omin, translate(temp, len), len) == 0) {
           names_opt = MINIMUM_NAMES;
-        else if (memcmp(translate(temp, len), ooptimized, len) == 0)
+        } else if (memcmp(translate(temp, len), ooptimized, len) == 0) {
           names_opt = OPTIMIZE_PHRASES;
-        else if ((temp[0] == 'm' || temp[0] == 'M') &&
-                 temp[1] != '\0') {
+        } else if ((temp[0] == 'm' || temp[0] == 'M') &&
+                   temp[1] != '\0') {
           PRNTERR2(msg_line, "\"M\" is an ambiguous value for %s: MAXIMUM, MINIMUM?", token);
         } else {
           PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
@@ -577,20 +564,20 @@ static void options(void) {
         //   } else {
         //     PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
         //   }
-      } else if (memcmp(token, oprefix, len) == 0)
+      } else if (memcmp(token, oprefix, len) == 0) {
         strcpy(prefix, temp);
-      else if (strcmp(token, "SS") == 0 ||
-               (memcmp(token, ostack_size, len) == 0 ||
-                memcmp(token, ostack_size2, len) == 0 ||
-                memcmp(token, ostack_size3, len) == 0)) {
+      } else if (strcmp(token, "SS") == 0 ||
+                 (memcmp(token, ostack_size, len) == 0 ||
+                  memcmp(token, ostack_size2, len) == 0 ||
+                  memcmp(token, ostack_size3, len) == 0)) {
         if (verify(temp)) {
           stack_size = atoi(temp);
         } else {
           PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
         }
-      } else if (len >= 2 && memcmp(token, osuffix, len) == 0)
+      } else if (len >= 2 && memcmp(token, osuffix, len) == 0) {
         strcpy(suffix, temp);
-      else if (len >= 2 && memcmp(token, otable, len) == 0) {
+      } else if (len >= 2 && memcmp(token, otable, len) == 0) {
         len = strlen(temp);
         if (len > MAX_PARM_SIZE) {
           temp[MAX_PARM_SIZE - 1] = '\0';
@@ -632,7 +619,6 @@ static void options(void) {
         PRNTERR2(msg_line, "\"%s\" is an invalid option", token);
       }
     }
-
     while (parm[i] != '\0' && /* clean after paramter */
            (parm[i] == ',' ||
             parm[i] == '/' ||
@@ -1735,8 +1721,9 @@ static void make_names_map(void) {
     nospace(__FILE__, __LINE__);
   for (register int i = 0; i < HT_SIZE; i++) {
     for (const register struct hash_type *p = hash_table[i]; p != NULL; p = p->link) {
-      if (p->name_index != OMEGA)
+      if (p->name_index != OMEGA) {
         name[p->name_index] = p->st_ptr;
+      }
     }
   }
 }
@@ -2035,8 +2022,9 @@ next_line: {
             strcpy(tail -> line, suffix);
             q->link = tail;
           }
-        } else
+        } else {
           tail = q;
+        }
         tail->link = NULL; /* make circular list linear */
         /* If there is space for the first macro line to be */
         /* added to the prefix then do it.                  */

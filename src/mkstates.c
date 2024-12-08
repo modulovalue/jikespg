@@ -25,10 +25,10 @@ struct state_element {
   short state_number;
 };
 
-static struct state_element **state_table,
-    **shift_table,
-    *state_root,
-    *state_tail;
+static struct state_element **state_table;
+static struct state_element **shift_table;
+static struct state_element *state_root;
+static struct state_element *state_tail;
 
 static short *shift_action;
 
@@ -39,33 +39,27 @@ static struct shift_header_type no_shifts_ptr;
 void mkstats(void) {
   no_gotos_ptr.size = 0; /* For states with no GOTOs */
   no_gotos_ptr.map = NULL;
-
   no_shifts_ptr.size = 0; /* For states with no SHIFTs */
   no_shifts_ptr.map = NULL;
-
   mklr0();
-
   if (error_maps_bit &&
-      (table_opt == OPTIMIZE_TIME || table_opt == OPTIMIZE_SPACE))
+      (table_opt == OPTIMIZE_TIME || table_opt == OPTIMIZE_SPACE)) {
     produce();
-
+  }
   /* Free space trapped by the CLOSURE and CLITEMS maps.                */
   for ALL_NON_TERMINALS3(j) {
     struct node *p;
-
     struct node *q = clitems[j];
     if (q != NULL) {
       p = q->next;
       free_nodes(p, q);
     }
-
     q = closure[j];
     if (q != NULL) {
       p = q->next;
       free_nodes(p, q);
     }
   }
-
   closure += num_terminals + 1;
   ffree(closure);
   clitems += num_terminals + 1;
@@ -90,41 +84,33 @@ static void mklr0(void) {
   /* actions are defined.                                          */
   /*   NT_LIST and NT_ROOT are used to build temporary lists of    */
   /* non-terminals.                                                */
-
-  struct node *p,
-      *q,
-      *r,
-      *new_item,
-      *tail,
-      *item_ptr,
-      **partition,
-      *closure_root,
-      *closure_tail;
-
-  struct state_element *state,
-      *new_state;
-
+  struct node *p;
+  struct node *q;
+  struct node *r;
+  struct node *new_item;
+  struct node *tail;
+  struct node *item_ptr;
+  struct node **partition;
+  struct node *closure_root;
+  struct node *closure_tail;
+  struct state_element *state;
+  struct state_element *new_state;
   bool end_node;
-
-  int goto_size,
-      shift_size,
-      next_item_no,
-      item_no,
-      symbol,
-      rule_no,
-      shift_root,
-      nt_root,
-      root;
-
+  int goto_size;
+  int shift_size;
+  int next_item_no;
+  int item_no;
+  int symbol;
+  int rule_no;
+  int shift_root;
+  int nt_root;
+  int root;
   struct goto_header_type go_to;
-
-  short *shift_list,
-      *nt_list,
-      *list;
-
+  short *shift_list;
+  short *nt_list;
+  short *list;
   /* Set up a a pool of temporary space.                            */
   reset_temporary_space();
-
   list = Allocate_short_array(num_symbols + 1);
   shift_action = Allocate_short_array(num_terminals + 1);
   shift_list = Allocate_short_array(num_terminals + 1);
@@ -144,26 +130,21 @@ static void mklr0(void) {
   if (shift_table == NULL) {
     nospace(__FILE__, __LINE__);
   }
-
   /* INITIALIZATION -----------------------------------------------------------*/
   goto_size = 0;
   shift_size = 0;
-
   state_root = NULL;
-
   for (int i = 0; i <= num_terminals; i++) {
     shift_action[i] = OMEGA;
   }
-
   nt_root = NIL;
   for ALL_NON_TERMINALS3(i) {
     nt_list[i] = OMEGA;
   }
-
   /* PARTITION, STATE_TABLE and SHIFT_TABLE are initialized by calloc */
-
+  /**/
   /* END OF INITIALIZATION ----------------------------------------------------*/
-
+  /**/
   /* Kernel of the first state consists of the first items in each */
   /* rule produced by Accept non-terminal.                         */
   q = NULL;
@@ -171,16 +152,13 @@ static void mklr0(void) {
        !end_node; /* Loop over circular list */
        end_node = p == clitems[accept_image]) {
     p = p->next;
-
     new_item = Allocate_node();
     new_item->value = p->value;
     new_item->next = q;
     q = new_item;
   }
-
   /* Insert first state in STATE_TABLE and keep constructing states*/
   /* until we no longer can.                                       */
-
   for (state = lr0_state_map(q); /* insert initial state */
        state != NULL; /* and process next state until no more */
        state = state->queue) {
@@ -198,13 +176,11 @@ static void mklr0(void) {
         {
           nt_list[symbol] = nt_root;
           nt_root = symbol;
-
           for (end_node = (p = closure[symbol]) == NULL;
                !end_node; /* Loop over circular list */
                end_node = p == closure[symbol]) {
             /* add its closure to list */
             p = p->next;
-
             if (nt_list[p->value] == OMEGA) {
               nt_list[p->value] = nt_root;
               nt_root = p->value;
@@ -213,7 +189,6 @@ static void mklr0(void) {
         }
       }
     }
-
     /*   We now construct lists of all start items that the closure    */
     /* non-terminals produce.  A map from each non-terminal to its set */
     /* start items has previously been computed in MKFIRST. (CLITEMS)  */
@@ -223,16 +198,13 @@ static void mklr0(void) {
     for (symbol = nt_root; symbol != NIL;
          nt_list[symbol] = OMEGA, symbol = nt_root) {
       nt_root = nt_list[symbol];
-
       for (end_node = (p = clitems[symbol]) == NULL;
            !end_node; /* Loop over circular list */
            end_node = p == clitems[symbol]) {
         p = p->next;
-
         item_no = p->value;
         new_item = Allocate_node();
         new_item->value = item_no;
-
         if (item_table[item_no].symbol == empty) /* complete item */
         {
           /* Add to COMPLETE_ITEMS set in state */
@@ -240,23 +212,24 @@ static void mklr0(void) {
           state->complete_items = new_item;
         } else {
           /* closure item, add to closure list */
-          if (closure_root == NULL)
+          if (closure_root == NULL) {
             closure_root = new_item;
-          else
+          } else {
             closure_tail->next = new_item;
+          }
           closure_tail = new_item;
         }
       }
     }
-
     if (closure_root != NULL) /* any non-complete closure items? */
     {
       /* construct list of them and kernel items */
       closure_tail->next = state->kernel_items;
       item_ptr = closure_root;
     } else /* else just consider kernel items */
+    {
       item_ptr = state->kernel_items;
-
+    }
     /*   In this loop, the PARTITION map is constructed. At this point,*/
     /* ITEM_PTR points to all the non_complete items in the closure of */
     /* the state, plus all the kernel items.  We note that the kernel  */
@@ -269,31 +242,33 @@ static void mklr0(void) {
       if (symbol != empty) /* incomplete item */
       {
         next_item_no = item_no + 1;
-
         if (partition[symbol] == NULL) {
           /* PARTITION not defined on symbol */
           list[symbol] = root; /* add to list */
           root = symbol;
           if (IS_A_TERMINAL(symbol)) /* Update transition count */
+          {
             shift_size++;
-          else
+          } else {
             goto_size++;
+          }
         }
         for (p = partition[symbol];
              p != NULL;
              tail = p, p = p->next) {
-          if (p->value > next_item_no)
+          if (p->value > next_item_no) {
             break;
+          }
         }
-
         r = Allocate_node();
         r->value = next_item_no;
         r->next = p;
-
         if (p == partition[symbol]) /* Insert at beginning */
+        {
           partition[symbol] = r;
-        else
+        } else {
           tail->next = r;
+        }
       } else /* Update complete item set with item from kernel */
       {
         p = Allocate_node();
@@ -302,24 +277,23 @@ static void mklr0(void) {
         state->complete_items = p;
       }
     }
-    if (closure_root != NULL)
+    if (closure_root != NULL) {
       free_nodes(closure_root, closure_tail);
-
+    }
     /* We now iterate over the set of partitions and update the state  */
     /* automaton and the transition maps: SHIFT and GOTO. Each         */
     /* partition represents the kernel of a state.                     */
     if (goto_size > 0) {
       go_to = Allocate_goto_map(goto_size);
       state->lr0_goto = go_to;
-    } else
+    } else {
       state->lr0_goto = no_gotos_ptr;
-
+    }
     shift_root = NIL;
     for (symbol = root;
          symbol != NIL; /* symbols on which transition is defined */
          symbol = list[symbol]) {
       short action = OMEGA;
-
       /* If the partition contains only one item, and it is adequate   */
       /* (i.e. the dot immediately follows the last symbol), and       */
       /* READ-REDUCE is requested, a new state is not created, and the */
@@ -337,18 +311,15 @@ static void mklr0(void) {
           }
         }
       }
-
       if (action == OMEGA) /* Not a Read-Reduce action */
       {
         new_state = lr0_state_map(q);
         action = new_state->state_number;
       }
-
       /* At this stage, the partition list has been freed (for an old */
       /* state or an ADEQUATE item), or used (for a new state).  The  */
       /* PARTITION field involved should be reset.                    */
       partition[symbol] = NULL; /* To be reused */
-
       /* At this point, ACTION contains the value of the state to Shift*/
       /* to, or rule to Read-Reduce on. If the symbol involved is a    */
       /* terminal, we update the Shift map; else, it is a non-terminal */
@@ -364,12 +335,12 @@ static void mklr0(void) {
         shift_action[symbol] = action;
         shift_list[symbol] = shift_root;
         shift_root = symbol;
-        if (action > 0)
+        if (action > 0) {
           num_shifts++;
-        else
+        } else {
           num_shift_reduces++;
+        }
       }
-
       /* NOTE that for Goto's we update the field LA_PTR of GOTO. This */
       /* field will be used later in the routine MKRDCTS to point to a */
       /* look-ahead set.                                               */
@@ -378,13 +349,13 @@ static void mklr0(void) {
         go_to.map[goto_size].action = action; /* state field  */
         go_to.map[goto_size].laptr = OMEGA; /* la_ptr field */
         goto_size--;
-        if (action > 0)
+        if (action > 0) {
           num_gotos++;
-        else
+        } else {
           num_goto_reduces++;
+        }
       }
     }
-
     /* We are now going to update the set of Shift-maps. Ths idea is   */
     /* to do a look-up in a hash table based on SHIFT_TABLE to see if  */
     /* the Shift map associated with the current state has already been*/
@@ -405,18 +376,14 @@ static void mklr0(void) {
     /* (at most) a totally insignificant amount of time.               */
   update_shift_maps: {
       unsigned long hash_address;
-
       struct shift_header_type sh;
-
       struct state_element *p_inner;
-
       hash_address = shift_size;
       for (symbol = shift_root;
            symbol != NIL; symbol = shift_list[symbol]) {
         hash_address += ABS(shift_action[symbol]);
       }
       hash_address %= SHIFT_TABLE_SIZE;
-
       for (p_inner = shift_table[hash_address];
            p_inner != NULL; /* Search has table for shift map */
            p_inner = p_inner->next_shift) {
@@ -429,7 +396,6 @@ static void mklr0(void) {
               break;
             }
           }
-
           /* Are they equal ? */
           if (ii > shift_size) {
             state->lr0_shift = sh;
@@ -444,7 +410,6 @@ static void mklr0(void) {
           }
         }
       }
-
       if (shift_size > 0) {
         sh = Allocate_shift_map(shift_size);
         num_shift_maps++;
@@ -453,11 +418,9 @@ static void mklr0(void) {
         state->shift_number = 0;
         sh = no_shifts_ptr;
       }
-
       state->lr0_shift = sh;
       state->next_shift = shift_table[hash_address];
       shift_table[hash_address] = state;
-
       for (symbol = shift_root; symbol != NIL; symbol = shift_list[symbol]) {
         sh.map[shift_size].symbol = symbol;
         sh.map[shift_size].action = shift_action[symbol];
@@ -465,10 +428,8 @@ static void mklr0(void) {
         shift_size--;
       }
     } /*end update_shift_maps */
-
   leave_update_shift_maps:;
   }
-
   /* Construct STATSET, a "compact" and final representation of        */
   /* State table, and SHIFT which is a set of all shift maps needed.   */
   /* NOTE that assignments to elements of SHIFT may occur more than    */
@@ -480,7 +441,6 @@ static void mklr0(void) {
   {
     int state_no;
     struct state_element *p_inner;
-
     /* If the grammar is LALR(k), k > 1, more states may be added and    */
     /* the size of the shift map increased.                              */
     shift = (struct shift_header_type *)
@@ -492,7 +452,6 @@ static void mklr0(void) {
         calloc(num_states + 1, sizeof(struct statset_type));
     if (statset == NULL)
       nospace(__FILE__, __LINE__);
-
     for (p_inner = state_root; p_inner != NULL; p_inner = p_inner->queue) {
       state_no = p_inner->state_number;
       statset[state_no].kernel_items = p_inner->kernel_items;
@@ -502,7 +461,6 @@ static void mklr0(void) {
       statset[state_no].go_to = p_inner->lr0_goto;
     }
   }
-
   ffree(list);
   ffree(shift_action);
   ffree(shift_list);
@@ -520,40 +478,33 @@ static void mklr0(void) {
 static struct state_element *lr0_state_map(struct node *kernel) {
   unsigned long hash_address = 0;
   struct node *p;
-
   /*       Compute the hash address.           */
   for (p = kernel; p != NULL; p = p->next) {
     hash_address += p->value;
   }
   hash_address %= STATE_TABLE_SIZE;
-
   /* Check whether a state is already defined by the KERNEL set.           */
   for (struct state_element *state_ptr = state_table[hash_address];
        state_ptr != NULL; state_ptr = state_ptr->link) {
-    struct node *q,
-        *r;
-
+    struct node *q;
+    struct node *r;
     for (p = state_ptr->kernel_items, q = kernel;
          p != NULL && q != NULL;
          p = p->next, r = q, q = q->next) {
       if (p->value != q->value)
         break;
     }
-
     /* Both P and Q are NULL? */
     if (p == q) {
       free_nodes(kernel, r);
       return state_ptr;
     }
   }
-
-
   /* Add a new state based on the KERNEL set.                        */
   struct state_element *ptr = talloc(sizeof(struct state_element));
   if (ptr == (struct state_element *) NULL) {
     nospace(__FILE__, __LINE__);
   }
-
   num_states++;
   SHORT_CHECK(num_states);
   ptr->queue = NULL;

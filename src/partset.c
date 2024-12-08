@@ -53,14 +53,10 @@ void partset(const SET_PTR collection,
   int size;
   int bctype;
   int index;
-
   short domain_table[STATE_TABLE_SIZE];
-
   int collection_size = num_states;
-
   if (from_process_scopes) {
-    bctype = num_states / SIZEOF_BC
-             + (num_states % SIZEOF_BC ? 1 : 0);
+    bctype = num_states / SIZEOF_BC + (num_states % SIZEOF_BC ? 1 : 0);
     collection_size = set_size;
     set_size = num_states;
   } else if (set_size == num_terminals) {
@@ -70,7 +66,6 @@ void partset(const SET_PTR collection,
     bctype = non_term_set_size;
     collection_size = num_states;
   }
-
   short *size_list = Allocate_short_array(set_size + 1);
   short *partition = Allocate_short_array(set_size + 1);
   short *domain_link = Allocate_short_array(collection_size + 1);
@@ -80,7 +75,6 @@ void partset(const SET_PTR collection,
   const SET_PTR temp_set = calloc(1, bctype * sizeof(BOOLEAN_CELL));
   if (temp_set == NULL)
     nospace(__FILE__, __LINE__);
-
   /* DOMAIN_TABLE is the base of a hash table used to compute the set */
   /* of unique subsets in COLLECTION. Collisions are resolved by links*/
   /* which are implemented in DOMAIN_LINK.                            */
@@ -90,18 +84,17 @@ void partset(const SET_PTR collection,
   /* subsets that are identical.  The elements of the list are placed */
   /* in the array NEXT.  When a state is at te root of a list, it is  */
   /* used as a representative of that list.                           */
-  for (int i = 0; i <= STATE_TABLE_UBOUND; i++)
+  for (int i = 0; i <= STATE_TABLE_UBOUND; i++) {
     domain_table[i] = NIL;
-
+  }
   /* We now iterate over the states and attempt to insert each */
   /* domain set into the hash table...                         */
   for (index = 1; index <= collection_size; index++) {
     unsigned long hash_address = 0;
-    for (int i = 0; i < bctype; i++)
+    for (int i = 0; i < bctype; i++) {
       hash_address += collection[index * bctype + i];
-
+    }
     hash_address %= STATE_TABLE_SIZE;
-
     /*  Next, we search the hash table to see if the subset was    */
     /* already inserted in it. If we find such a subset, we simply */
     /* add INDEX to a list associated with the subset found and    */
@@ -115,7 +108,6 @@ void partset(const SET_PTR collection,
         goto continu;
       }
     }
-
     /*  ...Subset indicated by INDEX not previously seen. Insert */
     /* it into the hash table, and initialize a new list with it.*/
     domain_link[index] = domain_table[hash_address];
@@ -123,16 +115,15 @@ void partset(const SET_PTR collection,
     head[index] = NIL; /* Start a new list */
   continu: ;
   }
-
   /* We now partition all the unique sets in the hash table    */
   /* based on the number of elements they contain...           */
   /* NEXT is also used to construct these lists.  Recall that  */
   /* the unique elements are roots of lists. Hence, their      */
   /* corresponding HEAD elements are used, but their           */
   /* corresponding NEXT field is still unused.                 */
-  for (int i = 0; i <= set_size; i++)
+  for (int i = 0; i <= set_size; i++) {
     partition[i] = NIL;
-
+  }
   for (index = 1; index <= collection_size; index++) {
     if (head[index] != OMEGA) /* Subset representative */
     {
@@ -141,7 +132,6 @@ void partset(const SET_PTR collection,
       partition[size] = index;
     }
   }
-
   /*     ...Construct a list of all the elements of PARTITION  */
   /* that are not empty.  Only elements in this list will be   */
   /* considered for subset merging later ...                   */
@@ -155,12 +145,12 @@ void partset(const SET_PTR collection,
       size_root = i;
     }
   }
-
   /* Merge subsets that are mergeable using heuristic described*/
   /* above.  The vector IS_A_BASE is used to mark subsets      */
   /* chosen as bases.                                          */
-  for (int i = 0; i <= collection_size; i++)
+  for (int i = 0; i <= collection_size; i++) {
     is_a_base[i] = false;
+  }
   for (size = size_root; size != NIL; size = size_list[size]) {
     /* For biggest partition there is */
     for (base_set = partition[size];
@@ -171,13 +161,10 @@ void partset(const SET_PTR collection,
       /* be circular...                                    */
       is_a_base[base_set] = true;
       stack[base_set] = base_set;
-
       /* For remaining elements in partitions in decreasing order...*/
-
       for (int next_size = size_list[size];
            next_size != NIL; next_size = size_list[next_size]) {
         int previous = NIL; /* mark head of list */
-
         /* Iterate over subsets in the partition until we */
         /* find one that is a subset of the subset on top */
         /* of the stack.  If none is found, we go on to   */
@@ -192,13 +179,13 @@ void partset(const SET_PTR collection,
           index = stack[base_set];
           B_ASSIGN_SET(temp_set, 0, collection, index, bctype);
           B_SET_UNION(temp_set, 0, collection, subset, bctype);
-
           /* SUBSET is a subset of INDEX?*/
           if (equal_sets(temp_set, 0, collection, index, bctype)) {
-            if (previous == NIL)
+            if (previous == NIL) {
               partition[next_size] = next[subset];
-            else
+            } else {
               next[previous] = next[subset];
+            }
             stack[subset] = stack[base_set];
             stack[base_set] = subset;
             break; /* for (subset = partition[next_size]... */
@@ -207,7 +194,6 @@ void partset(const SET_PTR collection,
       }
     }
   }
-
   /* Iterate over the states in the order in which they are to */
   /* be output, and assign an offset location to each state.   */
   /* Notice that an extra element is added to the size of each */
@@ -221,13 +207,12 @@ void partset(const SET_PTR collection,
       /* identical to the BASE_SET subset in question. Also,     */
       /* mark the fact that this is a copy by using the negative */
       /* value of the OFFSET.                                    */
-      for (index = head[base_set]; index != NIL; index = next[index])
+      for (index = head[base_set]; index != NIL; index = next[index]) {
         start[index] = -start[base_set];
-
+      }
       size = element_size[base_set] + 1;
       offset += size;
       SHORT_CHECK(offset);
-
       /* Now, assign offset values to each subset of the       */
       /* BASE_SET. Once again, we mark them as sharing elements*/
       /* by using the negative value of the OFFSET.            */
@@ -239,7 +224,6 @@ void partset(const SET_PTR collection,
            index != base_set; index = stack[index]) {
         size = element_size[index] + 1;
         start[index] = -(offset - size);
-
         /* INDEX identifies a subset of BASE_SET. Assign the */
         /* same offset as INDEX to each subset j that is     */
         /* identical to the subset INDEX.                    */
@@ -249,7 +233,6 @@ void partset(const SET_PTR collection,
     }
   }
   start[collection_size + 1] = offset;
-
   ffree(size_list);
   ffree(partition);
   ffree(domain_link);

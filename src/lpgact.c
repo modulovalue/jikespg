@@ -19,7 +19,6 @@ static void add_macro_definition(const char *name, const struct terminal_type *t
         if (defelmt == (struct defelmt_type *) NULL)
             nospace(__FILE__, __LINE__);
     }
-
     defelmt[num_defs].length       = term->length;
     defelmt[num_defs].start_line   = term->start_line;
     defelmt[num_defs].start_column = term->start_column;
@@ -41,7 +40,6 @@ static void add_block_definition(const struct terminal_type *term)
         if (actelmt == (struct actelmt_type *) NULL)
             nospace(__FILE__, __LINE__);
     }
-
     actelmt[num_acts].rule_number  = num_rules;
     actelmt[num_acts].start_line   = term->start_line;
     actelmt[num_acts].start_column = term->start_column;
@@ -71,16 +69,18 @@ static void act10(void)
 #line 167 "jikespg.g"
 static void act13(void)
 {
-    if (action_bit)
+    if (action_bit) {
         add_macro_definition(SYM1.name, &(SYM2));
+    }
 }
 
 /* macro_list ::= macro_list macro_name_symbol macro_block */
 #line 176 "jikespg.g"
 static void act14(void)
 {
-    if (action_bit)
+    if (action_bit) {
         add_macro_definition(SYM2.name, &(SYM3));
+    }
 }
 
 /* macro_name_symbol ::= SYMBOL */
@@ -151,18 +151,15 @@ static void act39(void)
 {
     register int image;
     char tok_string[SYMBOL_SIZE + 1];
-
     switch(SYM3.kind)
     {
         case EMPTY_SYMBOL_TK:
             image = empty;
             break;
-
         case SYMBOL_TK:
             assign_symbol_no(SYM3.name, OMEGA);
             image = symbol_image(SYM3.name);
             break;
-
         case ERROR_SYMBOL_TK:
             if (error_image > num_terminals)
             {
@@ -172,7 +169,6 @@ static void act39(void)
             }
             image = error_image;
             break;
-
         case EOF_SYMBOL_TK:
             if (eoft_image > num_terminals)
             {
@@ -182,7 +178,6 @@ static void act39(void)
             }
             image = eoft_image;
             break;
-
         case EOL_SYMBOL_TK:
             if (eolt_image == OMEGA)
             {
@@ -191,12 +186,10 @@ static void act39(void)
             }
             image = eolt_image;
             break;
-
         default: /* if SYM3.kind == symbol */
             image = symbol_image(SYM3.name);
             break;
     }
-
     switch(SYM1.kind)
     {
         case SYMBOL_TK:
@@ -208,7 +201,6 @@ static void act39(void)
             }
             assign_symbol_no(SYM1.name, image);
             break;
-
         case ERROR_SYMBOL_TK:
             if (error_image > num_terminals || ! error_maps_bit)
             {
@@ -229,7 +221,6 @@ static void act39(void)
                 exit(12);
             }
             break;
-
         case EOF_SYMBOL_TK:
             if (eoft_image > num_terminals)
             {
@@ -250,7 +241,6 @@ static void act39(void)
                 exit(12);
             }
             break;
-
         default: /* if SYM1.kind == EOL_SYMBOL */
             if (eolt_image == OMEGA)
             {
@@ -312,9 +302,9 @@ static void act63(void)
     assign_symbol_no(SYM1.name, OMEGA);
     register struct node *q = Allocate_node();
     q -> value = symbol_image(SYM1.name);
-    if (start_symbol_root == NULL)
+    if (start_symbol_root == NULL) {
         q -> next = q;
-    else
+    } else
     {
         q -> next = start_symbol_root -> next;
         start_symbol_root -> next = q;
@@ -353,7 +343,6 @@ static void misplaced_keyword_found_in_START_section(void)
 #line 566 "jikespg.g"
 static void act73(void)
 {
-
     if (start_symbol_root == NULL)
     {
         register struct node *q = Allocate_node();
@@ -383,13 +372,10 @@ static void act77(void)
         register struct node *q = Allocate_node();
         q -> value = symbol_image(SYM2.name);
         q -> next = q;
-
         start_symbol_root = q;
-
         num_rules = 1;
         num_items = 1;
     }
-
 /* Since we don't know for sure how many start symbols we have, a    */
 /* "while" loop is used to increment the size of rulehdr. However,   */
 /* it is highly unlikely that this loop would ever execute more than */
@@ -404,7 +390,6 @@ static void act77(void)
         if (rulehdr == (struct rulehdr_type *) NULL)
             nospace(__FILE__, __LINE__);
     }
-
     rulehdr[num_rules].sp = ((SYM3.kind == ARROW_TK) ? true : false);
     rulehdr[num_rules].lhs = symbol_image(SYM2.name);
     rulehdr[num_rules].rhs_root = NULL;
@@ -466,9 +451,9 @@ static void act82(void)
     q -> value = error_image;
     num_items++;
     SHORT_CHECK(num_items);
-    if (rulehdr[num_rules].rhs_root == NULL)
+    if (rulehdr[num_rules].rhs_root == NULL) {
         q -> next = q;
-    else
+    } else
     {
         q -> next = rulehdr[num_rules].rhs_root -> next;
          rulehdr[num_rules].rhs_root -> next = q;
@@ -493,9 +478,9 @@ static void act83(void)
         q -> value = sym;
         num_items++;
         SHORT_CHECK(num_items);
-        if (rulehdr[num_rules].rhs_root == NULL)
+        if (rulehdr[num_rules].rhs_root == NULL) {
             q -> next = q;
-        else
+        } else
         {
             q -> next = rulehdr[num_rules].rhs_root -> next;
             rulehdr[num_rules].rhs_root -> next = q;
@@ -532,16 +517,18 @@ static void act91(void)
 #line 778 "jikespg.g"
 static void act92(void)
 {
-    if (action_bit)
+    if (action_bit) {
         add_block_definition(&(SYM1));
+    }
 }
 
 /* action_block ::= HBLOCK */
 #line 787 "jikespg.g"
 static void act93(void)
 {
-    if (action_bit)
+    if (action_bit) {
         add_block_definition(&(SYM1));
+    }
 }
 
 /* keyword ::= DEFINE_KEY */
@@ -559,36 +546,29 @@ static void act100(void)
     if (error_maps_bit)
     {
         int symbol;
-
         switch(SYM1.kind)
         {
             case EMPTY_SYMBOL_TK:
                 symbol = empty;
                 break;
-
             case ERROR_SYMBOL_TK:
                 symbol = error_image;
                 break;
-
             case EOL_SYMBOL_TK:
                 symbol = eolt_image;
                 break;
-
             case EOF_SYMBOL_TK:
                 symbol = eoft_image;
                 break;
-
             default:
                 symbol = symbol_image(SYM1.name);
                 break;
         }
-
         if (symbol == OMEGA)
         {
             PRNTERR2(msg_line, "Symbol %s is undefined. Line %ld, column %d", SYM1.name, SYM1.start_line, SYM1.start_column);
             exit(12);
         }
-
         if (symno[symbol].name_index != OMEGA)
         {
             PRNTERR2(msg_line, "Symbol %s has been named more than once. Line %ld, column %d.", SYM1.name, SYM1.start_line, SYM1.start_column);
@@ -629,14 +609,12 @@ static void process_TERMINALS_section(void)
     num_terminals = num_symbols;
     assign_symbol_no(keoft, OMEGA);
     eoft_image = symbol_image(keoft);
-
     if (error_maps_bit)
     {
         assign_symbol_no(kerror, OMEGA);
         error_image = symbol_image(kerror);
     }
     else error_image = DEFAULT_SYMBOL;   /* should be 0 */
-
     assign_symbol_no(kaccept, OMEGA);
     accept_image = symbol_image(kaccept);
 }
@@ -645,13 +623,12 @@ static void process_TERMINALS_section(void)
 #line 953 "jikespg.g"
 static void process_ALIAS_section(void)
 {
-
     register int k = 0;
-    if (eoft_image <= num_terminals)
+    if (eoft_image <= num_terminals) {
         k++;
-    else
+    } else {
         num_terminals++;
-
+    }
     if (error_maps_bit)
     {
         if (error_image <= num_terminals)
@@ -663,7 +640,6 @@ static void process_ALIAS_section(void)
                 error_image--;
         }
     }
-
     if (k > 0)
     {
         for (register int i = 0; i < HT_SIZE; i++)

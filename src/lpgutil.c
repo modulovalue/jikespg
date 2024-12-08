@@ -45,7 +45,6 @@ static bool allocate_more_space(cell ***base, long *size, long *base_size) {
       (*base)[i] = NULL;
     }
   }
-
   /* If the Ast slot "k" does not already contain a segment, We try to  */
   /* allocate one and place its address in (*base)[k].                  */
   /* If the allocation was not successful, we terminate;                */
@@ -56,14 +55,13 @@ static bool allocate_more_space(cell ***base, long *size, long *base_size) {
   /* Finally, we set the block to zeros.                                */
   if ((*base)[k] == NULL) {
     (*base)[k] = (cell *) malloc(sizeof(cell) << LOG_BLKSIZE);
-    if ((*base)[k] == (cell *) NULL)
+    if ((*base)[k] == (cell *) NULL) {
       return false;
+    }
     (*base)[k] -= *size;
   }
-
   memset((void *)((*base)[k] + (*size)), 0, sizeof(cell) << LOG_BLKSIZE);
   *size += BLKSIZE;
-
   return true;
 }
 
@@ -80,12 +78,10 @@ void free_temporary_space(void) {
     temp_base[k] += k * BLKSIZE;
     ffree(temp_base[k]);
   }
-
   if (temp_base != NULL) {
     ffree(temp_base);
     temp_base = NULL;
   }
-
   temp_base_size = 0;
   temp_top = 0;
   temp_size = 0;
@@ -130,9 +126,9 @@ long temporary_space_used(void) {
 /* These functions allocate space from the global pool in the same    */
 /* using the function "galloc" below.                                 */
 static cell **global_base = NULL;
-static long global_top = 0,
-    global_size = 0,
-    global_base_size = 0;
+static long global_top = 0;
+static long global_size = 0;
+static long global_base_size = 0;
 
 static struct node *node_pool = NULL;
 
@@ -144,8 +140,9 @@ static void process_global_waste(long top) {
   while (true) {
     const long i = top;
     top += (sizeof(struct node) + sizeof(cell) - 1) / sizeof(cell);
-    if (top > global_size)
+    if (top > global_size) {
       break;
+    }
     struct node *p = (struct node *) &global_base[i >> LOG_BLKSIZE][i];
     p->next = node_pool;
     node_pool = p;
@@ -164,8 +161,7 @@ static void *galloc(const long size) {
     i = global_size;
     global_top = global_size +
                  (size + sizeof(cell) - 1) / sizeof(cell);
-    if (!allocate_more_space(&global_base,
-                             &global_size, &global_base_size)) {
+    if (!allocate_more_space(&global_base, &global_size, &global_base_size)) {
       global_top = global_size;
       return NULL;
     }
@@ -203,14 +199,12 @@ void free_nodes(struct node *head, struct node *tail) {
 /* 0..(size-1).                                                             */
 struct goto_header_type allocate_goto_map(const int size, char *file, const long line) {
   struct goto_header_type go_to;
-
   go_to.size = size;
   go_to.map = (struct goto_type *)
       galloc(size * sizeof(struct goto_type));
   if (go_to.map == NULL)
     nospace(file, line);
   go_to.map--; /* map will be indexed in range 1..size */
-
   return go_to;
 }
 
@@ -222,7 +216,6 @@ struct goto_header_type allocate_goto_map(const int size, char *file, const long
 struct shift_header_type allocate_shift_map(const int size,
                                             char *file, const long line) {
   struct shift_header_type sh;
-
   sh.size = size;
   sh.map = (struct shift_type *)
       galloc(size * sizeof(struct shift_type));
@@ -259,44 +252,36 @@ long global_space_used(void) {
 /*   This function allocates an array of size "size" of int integers.       */
 int *allocate_int_array(const long size, char *file, const long line) {
   int *p;
-
   p = (int *) calloc(size, sizeof(int));
   if (p == (int *) NULL)
     nospace(file, line);
-
   return &p[0];
 }
 
 /*   This function allocates an array of size "size" of int integers.       */
 long *allocate_long_array(const long size, char *file, const long line) {
   long *p;
-
   p = (long *) calloc(size, sizeof(long));
   if (p == (long *) NULL)
     nospace(file, line);
-
   return &p[0];
 }
 
 /*   This function allocates an array of size "size" of short integers.     */
 short *allocate_short_array(const long size, char *file, const long line) {
   short *p;
-
   p = (short *) calloc(size, sizeof(short));
   if (p == (short *) NULL)
     nospace(file, line);
-
   return &p[0];
 }
 
 /*   This function allocates an array of size "size" of type boolean.       */
 bool *allocate_boolean_array(const long size, char *file, const long line) {
   bool *p;
-
   p = (bool *) calloc(size, sizeof(bool));
   if (p == (bool *) 0)
     nospace(file, line);
-
   return &p[0];
 }
 
@@ -314,17 +299,15 @@ void fill_in(char string[], const int amount, const char character) {
 /* integers, two numbers L and H that indicate the lower and upper bound     */
 /* positions in ARRAY to be sorted.                                          */
 static void qcksrt(short array[], const int l, const int h) {
-  int
-      lostack[14], /* A stack of size 14 can sort an array of up to */
-      histack[14]; /* 2 ** 15 - 1 elements                          */
-
+  int lostack[14];
+  int histack[14];
+  /* 2 ** 15 - 1 elements                          */
   int top = 1;
   lostack[top] = l;
   histack[top] = h;
   while (top != 0) {
     int lower = lostack[top];
     int upper = histack[top--];
-
     while (upper > lower) {
       int i = lower;
       const int pivot = array[lower];
@@ -336,7 +319,6 @@ static void qcksrt(short array[], const int l, const int h) {
         }
       }
       array[i] = pivot;
-
       top++;
       if (i - lower < upper - i) {
         lostack[top] = i + 1;
@@ -355,12 +337,10 @@ static void qcksrt(short array[], const int l, const int h) {
 /* number.                                                                   */
 int number_len(int state_no) {
   int num = 0;
-
   do {
     state_no /= 10;
     num++;
   } while (state_no != 0);
-
   return num;
 }
 
@@ -380,19 +360,17 @@ void restore_symbol(char *out, const char *in) {
          (in[0] != '<' || in[len - 1] != '>'))) {
       *out++ = '\'';
       while (*in != '\0') {
-        if (*in == '\'')
+        if (*in == '\'') {
           *out++ = *in;
+        }
         *out++ = *in++;
       }
       *out++ = '\'';
       *out = '\0';
-
       return;
     }
   }
-
   strcpy(out, in);
-
   if (out[0] == '\n') /* one of the special grammar symbols? */
     out[0] = escape;
 }
@@ -432,16 +410,13 @@ void print_item(const int item_no) {
   char tempstr[PRINT_LINE_SIZE + 1];
   char line[PRINT_LINE_SIZE + 1];
   char tok[SYMBOL_SIZE + 1];
-
   /* We first print the left hand side of the rule, leaving at least   */
   /* 5 spaces in the output line to accommodate the equivalence symbol  */
   /* "::=" surrounded by blanks on both sides.  Then, we print all the */
   /* terminal symbols on the right hand side up to but not including   */
   /* the dot symbol.                                                   */
-
   const int rule_no = item_table[item_no].rule_number;
   int symbol = rules[rule_no].lhs;
-
   restore_symbol(tok, RETRIEVE_STRING(symbol));
   int len = PRINT_LINE_SIZE - 5;
   print_large_token(line, tok, "", len);
@@ -461,14 +436,14 @@ void print_item(const int item_no) {
     }
     strcat(line, BLANK);
   }
-
   /* We now add a DOT "." to the output line and print the remaining   */
   /* symbols on the right hand side.  If ITEM_NO is a complete item,   */
   /* we also print the rule number.                                    */
-  if (item_table[item_no].dot == 0 || item_table[item_no].symbol == empty)
+  if (item_table[item_no].dot == 0 || item_table[item_no].symbol == empty) {
     strcpy(tok, ".");
-  else
+  } else {
     strcpy(tok, " .");
+  }
   strcat(line, tok);
   len = PRINT_LINE_SIZE - (offset + 1);
   for (int i = rules[rule_no].rhs +
@@ -505,47 +480,33 @@ void print_item(const int item_no) {
 /* be retrieved, since transitions in a given state are reconstructed from   */
 /* the KERNEL and ADEQUATE items of the actions in the GOTO and SHIFT maps.  */
 void print_state(const int state_no) {
-  int
-      item_no;
-
+  int item_no;
   struct node *q;
-
-  char buffer[PRINT_LINE_SIZE + 1],
-      line[PRINT_LINE_SIZE + 1];
-
+  char buffer[PRINT_LINE_SIZE + 1];
+  char line[PRINT_LINE_SIZE + 1];
   /* ITEM_SEEN is used to construct sets of items, to help avoid       */
   /* adding duplicates in a list.  Duplicates can occur because an     */
   /* item from the kernel set will either be shifted on if it is not a */
   /* complete item, or it will be a member of the Complete_items set.  */
   /* Duplicates can also occur because of the elimination of single    */
   /* productions.                                                      */
-
   bool *state_seen = Allocate_boolean_array(max_la_state + 1);
   bool *item_seen = Allocate_boolean_array(num_items + 1);
   short *item_list = Allocate_short_array(num_items + 1);
-
   /* INITIALIZATION -----------------------------------------------------------*/
-
   for ALL_STATES3(state_no) {
     state_seen[state_no] = false;
   }
-
   for ALL_ITEMS3(item_no) {
     item_seen[item_no] = false;
   }
-
   int kernel_size = 0;
-
   /* END OF INITIALIZATION ----------------------------------------------------*/
-
   fill_in(buffer, PRINT_LINE_SIZE - (number_len(state_no) + 8 /* 8 = length("STATE") + 2 spaces + newline*/), '-');
-
   fprintf(syslis, "\n\n\nSTATE %d %s", state_no, buffer);
-
   /* Print the set of states that have transitions to STATE_NO.        */
   int n = 0;
   strcpy(line, "( ");
-
   for (bool end_node = (q = in_stat[state_no]) == NULL;
        !end_node;
        end_node = q == in_stat[state_no]) {
@@ -573,7 +534,6 @@ void print_state(const int state_no) {
     item_list[kernel_size] = item_no; /* add to array */
     item_seen[item_no] = true; /* Mark as "seen" */
   }
-
   /* Add the Complete Items to the array ITEM_LIST, and mark used.     */
   n = kernel_size;
   for (q = statset[state_no].complete_items; q != NULL; q = q->next) {
@@ -583,7 +543,6 @@ void print_state(const int state_no) {
       item_list[++n] = item_no;
     }
   }
-
   /* Iterate over the shift map.  Shift-Reduce actions are identified  */
   /* by a negative integer that indicates the rule in question , and   */
   /* the associated item can be retrieved by indexing the array        */
@@ -598,17 +557,17 @@ void print_state(const int state_no) {
     int next_state = sh.map[i].action;
     while (next_state > num_states) {
       const struct shift_header_type next_sh = shift[lastats[next_state].shift_number];
-      if (next_sh.size > 0)
+      if (next_sh.size > 0) {
         next_state = next_sh.map[1].action;
-      else
+      } else {
         next_state = 0;
+      }
     }
-
-    if (next_state == 0)
+    if (next_state == 0) {
       q = NULL;
-    else if (next_state < 0)
+    } else if (next_state < 0) {
       q = adequate_item[-next_state];
-    else {
+    } else {
       q = statset[next_state].kernel_items;
       if (q == NULL) /* single production state? */
         q = statset[next_state].complete_items;
@@ -621,7 +580,6 @@ void print_state(const int state_no) {
       }
     }
   }
-
   /* GOTOS and GOTO-REDUCES are analogous to SHIFTS and SHIFT-REDUCES. */
   const struct goto_header_type go_to = statset[state_no].go_to;
   for (int i = 1; i <= go_to.size; i++) {
@@ -640,12 +598,12 @@ void print_state(const int state_no) {
       }
     }
   }
-
   /* Print the Kernel items.  If there are any closure items, skip a   */
   /* line, sort then, then print them.  The kernel items are in sorted */
   /* order.                                                            */
-  for (item_no = 1; item_no <= kernel_size; item_no++)
+  for (item_no = 1; item_no <= kernel_size; item_no++) {
     print_item(item_list[item_no]);
+  }
   if (kernel_size < n) {
     fprintf(syslis, "\n");
     qcksrt(item_list, kernel_size + 1, n);
@@ -653,7 +611,6 @@ void print_state(const int state_no) {
       print_item(item_list[item_no]);
     }
   }
-
   ffree(item_list);
   ffree(item_seen);
   ffree(state_seen);
@@ -661,9 +618,7 @@ void print_state(const int state_no) {
 
 /* This procedure is invoked when a call to MALLOC, CALLOC or REALLOC fails. */
 void nospace(char *file_name, const long line_number) {
-  fprintf(stderr,
-          "*** Cannot allocate space ... LPG terminated in "
-          "file %s at line %ld\n", file_name, line_number);
+  fprintf(stderr, "*** Cannot allocate space ... LPG terminated in file %s at line %ld\n", file_name, line_number);
   exit(12);
 }
 
@@ -673,9 +628,9 @@ void nospace(char *file_name, const long line_number) {
 /*  are defined here for the 370 compiler.                              */
 char *strupr(char *string) {
   /* While not at end of string, change all lower case to upper case.  */
-  for (char *s = string; *s != '\0'; s++)
+  for (char *s = string; *s != '\0'; s++) {
     *s = islower(*s) ? toupper(*s) : *s;
-
+  }
   return string;
 }
 

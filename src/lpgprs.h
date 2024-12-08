@@ -23,5 +23,4 @@ extern const unsigned short term_action[];
   term_action[term_check[base_action[state]+sym] == sym ? \
           base_action[state] + sym : base_action[state]]
 
-
 #endif /* lpgprs_INCLUDED */
