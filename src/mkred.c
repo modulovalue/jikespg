@@ -680,7 +680,7 @@ void mkrdcts(void) {
           compute_la(state_no, item_no, look_ahead);
 
         for ALL_TERMINALS3(symbol) {
-        /* for all symbols in la set */
+          /* for all symbols in la set */
           if (IS_ELEMENT(look_ahead, symbol)) {
             struct node *p = Allocate_node();
             p->value = item_no;

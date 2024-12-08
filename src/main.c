@@ -186,7 +186,6 @@ int main(const int argc, char *argv[]) {
     if (goto_default_bit && nt_check_bit) {
       PRNTERR("The options GOTO_DEFAULT and NT_CHECK are incompatible. Tables not generated");
     } else {
-
       num_entries = max_la_state + num_shifts + num_shift_reduces
                     + num_gotos + num_goto_reduces
                     + num_reductions;

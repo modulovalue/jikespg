@@ -48,7 +48,8 @@ void process_input(void) {
                                grm_file[i] != '.' &&
                                grm_file[i] != '/' && /* Unix */
                                grm_file[i] != '\\'; /* Dos  */
-         i--) {}
+         i--) {
+    }
 
     if (grm_file[i] != '.') {
       strcat(grm_file, ".g");
@@ -601,21 +602,21 @@ static void options(void) {
         }
       } else if (len >= 2 && memcmp(token, oormark, len) == 0) {
         ormark = temp[0];
-      // } else if (len >= 2 &&
-      //            (strcmp(token, "OS") == 0 ||
-      //             memcmp(token, ooutputsize, len) == 0 ||
-      //             memcmp(token, ooutputsize2, len) == 0 ||
-      //             memcmp(token, ooutputsize3, len) == 0)) {
-      //   if (verify(temp)) {
-      //     const int tmpval = atoi(temp);
-      //     if (tmpval > MAX_LINE_SIZE) {
-      //       PRNTERR2(msg_line, "OUTPUT_SIZE cannot exceed %d", MAX_LINE_SIZE);
-      //     } else {
-      //       output_size = tmpval;
-      //     }
-      //   } else {
-      //     PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
-      //   }
+        // } else if (len >= 2 &&
+        //            (strcmp(token, "OS") == 0 ||
+        //             memcmp(token, ooutputsize, len) == 0 ||
+        //             memcmp(token, ooutputsize2, len) == 0 ||
+        //             memcmp(token, ooutputsize3, len) == 0)) {
+        //   if (verify(temp)) {
+        //     const int tmpval = atoi(temp);
+        //     if (tmpval > MAX_LINE_SIZE) {
+        //       PRNTERR2(msg_line, "OUTPUT_SIZE cannot exceed %d", MAX_LINE_SIZE);
+        //     } else {
+        //       output_size = tmpval;
+        //     }
+        //   } else {
+        //     PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
+        //   }
       } else if (memcmp(token, oprefix, len) == 0)
         strcpy(prefix, temp);
       else if (strcmp(token, "SS") == 0 ||
@@ -1013,7 +1014,7 @@ static void process_options_lines(void) {
   }
 
   if (strlen(hblockb) <= strlen(blockb) && memcmp(hblockb, blockb, strlen(hblockb)) == 0) {
-    PRNTERR2(msg_line,"Hblockb value, %s, cannot be a suffix of blockb: %s", hblockb, blockb);
+    PRNTERR2(msg_line, "Hblockb value, %s, cannot be a suffix of blockb: %s", hblockb, blockb);
     PRNT2(msg_line, "Input process aborted at line %d ...", line_no);
     exit(12);
   }
@@ -2034,7 +2035,8 @@ next_line: {
           if (k + 10 != text_len) {
             strcpy(temp1, text + k + 10);
             /* Remove trailing blanks */
-            for (j = strlen(temp1) - 1; j >= 0 && temp1[j] == ' '; j--) {}
+            for (j = strlen(temp1) - 1; j >= 0 && temp1[j] == ' '; j--) {
+            }
             /* if not a string of blanks */
             if (j != 0) {
               temp1[++j] = '\0';
@@ -2145,7 +2147,8 @@ next_line: {
       /* Macro in question is not one of the predefined macros. Try user-defined   */
       /* macro list.                                                               */
       /* find next delimeter */
-      for (j = k + 1; j < text_len && !IsSpace(text[j]); ++j) {}
+      for (j = k + 1; j < text_len && !IsSpace(text[j]); ++j) {
+      }
       memcpy(symbol, text + k, j - k); /* copy macro name into symbol */
       symbol[j - k] = '\0';
       /* Is there any text after macro ? */

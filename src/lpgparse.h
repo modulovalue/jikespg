@@ -175,12 +175,12 @@ static const char *EXTRACT_STRING(const int indx) {
   return &string_table[indx];
 }
 
-static char* RETRIEVE_STRING(const int indx) {
-    return &string_table[symno[indx].ptr];
+static char *RETRIEVE_STRING(const int indx) {
+  return &string_table[symno[indx].ptr];
 }
 
-static const char* RETRIEVE_NAME(const int indx) {
-    return &string_table[name[indx]];
+static const char *RETRIEVE_NAME(const int indx) {
+  return &string_table[name[indx]];
 }
 
 static bool EQUAL_STRING(const char *symb, const struct hash_type *p) {

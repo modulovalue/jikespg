@@ -34,7 +34,7 @@ static void remap_non_terminals(void) {
   /* in the grammar, and  FREQUENCY_COUNT is used correspondingly to    */
   /* hold the number of actions defined on each non-terminal.           */
   /* ORDERED_STATE and ROW_SIZE are used in a similar fashion for states*/
-  long  *frequency_symbol = Allocate_long_array(num_non_terminals);
+  long *frequency_symbol = Allocate_long_array(num_non_terminals);
   frequency_symbol -= num_terminals + 1;
   long *frequency_count = Allocate_long_array(num_non_terminals);
   frequency_count -= num_terminals + 1;
@@ -228,7 +228,7 @@ static void overlap_nt_rows(void) {
   PRNT2(msg_line, "Number of entries in base Action Table: %ld", num_table_entries);
 
   const int percentage = (action_size - num_table_entries) * 1000
-                   / num_table_entries;
+                         / num_table_entries;
   PRNT2(msg_line, "Percentage of increase: %d.%d%%", percentage / 10, percentage % 10);
 
   if (byte_bit) {
@@ -391,7 +391,8 @@ static void merge_similar_t_rows(void) {
       state_list[state_no] = new_state_element[i].image;
       new_state_element[i].image = state_no;
 
-      for (r = reduce_root; r != NULL; tail = r, r = r->next) {}
+      for (r = reduce_root; r != NULL; tail = r, r = r->next) {
+      }
       if (reduce_root != NULL)
         free_nodes(reduce_root, tail);
     }
@@ -1182,7 +1183,7 @@ static void overlap_t_rows(void) {
   PRNT2(msg_line, "Number of entries in Terminal Action Table: %ld", num_table_entries);
 
   const int percentage = ((long) term_action_size - num_table_entries) * 1000
-                   / num_table_entries;
+                         / num_table_entries;
 
   PRNT2(msg_line, "Percentage of increase: %d.%d%%", percentage / 10, percentage % 10);
 

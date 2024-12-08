@@ -612,7 +612,7 @@ static void PRNT(char *msg) {
 
 #define PRNT2(msg, ...) \
   sprintf(msg, __VA_ARGS__); \
-  PRNT(msg); \
+  PRNT(msg);
 
 static void PRNTWNG(char *msg) {
   printf("***WARNING: %s\n", msg);
@@ -622,7 +622,7 @@ static void PRNTWNG(char *msg) {
 
 #define PRNTWNG2(msg, ...) \
   sprintf(msg, __VA_ARGS__); \
-  PRNTWNG(msg); \
+  PRNTWNG(msg);
 
 static void PRNTERR(char *msg) {
   printf("***ERROR: %s\n", msg);
@@ -632,8 +632,7 @@ static void PRNTERR(char *msg) {
 
 #define PRNTERR2(msg, ...) \
   sprintf(msg, __VA_ARGS__); \
-  PRNTERR(msg); \
-
+  PRNTERR(msg);
 /* The following two macros check whether the value of an             */
 /* integer variable exceeds the maximum limit for a short or a long   */
 /* integer, respectively. Note that the user should declare the       */
