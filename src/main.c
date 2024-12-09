@@ -4,14 +4,12 @@ static char hostfile[] = __FILE__;
 #include <string.h>
 #include "common.h"
 
-/// Jikes PG is a parser generator capable of generating LALR(k) and
-/// SLR(1) tables.  It is organized as a main routine: MAIN, which
+/// This is a parser generator that generates LALR(k) and
+/// SLR(1) tables. It is organized as a main routine: MAIN, which
 /// invokes five other major subroutines which are:
 ///
 ///    1) PROCESS_INPUT     - inputs and structures the grammar.
-///    2) MKFIRST           - builds basic maps such as FIRST,
-///                           FOLLOW, CLOSURE, CLITEMS, ITEM_TABLE,
-///                           ADEQUATE_ITEMS.
+///    2) MKFIRST           - builds basic maps such as FIRST, FOLLOW, CLOSURE, CLITEMS, ITEM_TABLE, ADEQUATE_ITEMS.
 ///    3) MKSTATS           - constructs the LR(0) automaton.
 ///    4) MKRDCTS           - constructs reduction map.
 ///    5) One of the following three procedures:
@@ -22,8 +20,7 @@ static char hostfile[] = __FILE__;
 ///   The following files are used:
 ///
 ///    1) SYSGRM           - Input file containing grammar
-///    2) SYSLIS           - Output file used for listings, statistics
-///                          and diagnostics.
+///    2) SYSLIS           - Output file used for listings, statistics and diagnostics.
 ///    3) SYSACT           - Output file used for semantic actions.
 ///    4) SYSTAB           - Output file used for Parsing tables.
 int main(const int argc, char *argv[]) {
@@ -33,9 +30,8 @@ int main(const int argc, char *argv[]) {
     .def_file = "",
     .dcl_file = "",
   };
-  // If only "jikespg" or "jikespg ?*" is typed, we display the help screen.
   if (argc == 1 || argv[1][0] == '?') {
-    // Output help.
+    // If only "jikespg" or "jikespg ?*" is typed, we display the help screen.
     {
       printf(
         "(C) Copyright IBM Corp. 1983, 1999.\n"
@@ -264,5 +260,4 @@ int main(const int argc, char *argv[]) {
 
     return 0;
   }
-
 }

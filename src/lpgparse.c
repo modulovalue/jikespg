@@ -11,6 +11,9 @@ static char hostfile[] = __FILE__;
 #include "lpgdef.h"
 #include "lpgdcl.h"
 #include "lpgparse.h"
+#include "lpgact.c"
+#include "lpgact.h"
+#include "lpgprs.h"
 
 static const int SPACE_CODE = 1;
 static const int DIGIT_CODE = 2;
@@ -33,69 +36,6 @@ static bool IsAlpha(const int c) {
 static int output_size = 5000;
 static int line_no = 0;
 
-/* This procedure opens all relevant files and processes the input grammar.*/
-void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_files) {
-  /* Open input grammar file. If the file cannot be opened and that file name */
-  /* did not have an extension, then the extension ".g" is added to the file  */
-  /* name and we try again. If no file can be found an error message is       */
-  /* issued and the program halts.                                            */
-  if ((sysgrm = fopen(grm_file, "r")) == (FILE *) NULL) {
-    register int ii;
-    for (ii = strlen(grm_file); ii > 0 &&
-                                grm_file[ii] != '.' &&
-                                grm_file[ii] != '/' && /* Unix */
-                                grm_file[ii] != '\\'; /* Dos  */
-         ii--) {
-    }
-    if (grm_file[ii] != '.') {
-      strcat(grm_file, ".g");
-      if ((sysgrm = fopen(grm_file, "r")) == (FILE *) NULL) {
-        fprintf(stderr, "***ERROR: Input file %s containing grammar is empty, undefined, or invalid\n", grm_file);
-        exit(12);
-      }
-    } else {
-      fprintf(stderr, "***ERROR: Input file %s containing grammar is empty, undefined, or invalid\n", grm_file);
-      exit(12);
-    }
-  } else {
-    if (strrchr(grm_file, '.') == NULL) {
-      PRNTWNG2(msg_line, "A file named \"%s\" with no extension is being opened", grm_file);
-    }
-  }
-  /*                Open listing file for output.                             */
-  syslis = fopen(lis_file, "w");
-  if (syslis == (FILE *) NULL) {
-    fprintf(stderr, "***ERROR: Listing file \"%s\" cannot be openned.\n", lis_file);
-    exit(12);
-  }
-  /* Complete the initialization of the code array used to replace the        */
-  /* builtin functions isalpha, isdigit and isspace.                          */
-  for (unsigned c = 'a'; c <= 'z'; c++) {
-    if (isalpha(c)) {
-      code[c] = ALPHA_CODE;
-    }
-  }
-  for (unsigned c = 'A'; c <= 'Z'; c++) {
-    if (isalpha(c)) {
-      code[c] = ALPHA_CODE;
-    }
-  }
-  for (unsigned c = '0'; c <= '9'; c++) {
-    if (isdigit(c)) {
-      code[c] = DIGIT_CODE;
-    }
-  }
-  code[' '] = SPACE_CODE;
-  code['\n'] = SPACE_CODE;
-  code['\t'] = SPACE_CODE;
-  code['\r'] = SPACE_CODE;
-  code['\v'] = SPACE_CODE;
-  code['\f'] = SPACE_CODE;
-  init_process(grm_file, output_files);
-  process_grammar(grm_file);
-  exit_process();
-}
-
 /*         READ_INPUT fills the buffer from p1 to the end.          */
 static void read_input(char *grm_file) {
   long num_read = input_buffer + IOBUFFER_SIZE - bufend;
@@ -107,80 +47,6 @@ static void read_input(char *grm_file) {
   }
   bufend += num_read;
   *bufend = '\0';
-}
-
-/* This routine is invoked to allocate space for the global structures       */
-/* needed to process the input grammar.                                      */
-static void init_process(char *grm_file, struct OutputFiles *output_files) {
-  /* Set up a pool of temporary space.                            */
-  reset_temporary_space();
-  terminal = (struct terminal_type *) calloc(STACK_SIZE, sizeof(struct terminal_type));
-  if (terminal == (struct terminal_type *) NULL)
-    nospace(__FILE__, __LINE__);
-  hash_table = (struct hash_type **) calloc(HT_SIZE, sizeof(struct hash_type *));
-  if (hash_table == (struct hash_type **) NULL)
-    nospace(__FILE__, __LINE__);
-  /* Allocate space for input buffer and read in initial data in input   */
-  /* file. Next, invoke PROCESS_OPTION_LINES to process all lines in     */
-  /* input file that are options line.                                   */
-  input_buffer = (char *) calloc(IOBUFFER_SIZE + 1 + MAX_LINE_SIZE, sizeof(char));
-  if (input_buffer == (char *) NULL) {
-    nospace(__FILE__, __LINE__);
-  }
-  bufend = &input_buffer[0];
-  read_input(grm_file);
-  p2 = &input_buffer[0];
-  linestart = p2 - 1;
-  p1 = p2;
-  line_no++;
-  if (*p2 == '\0') {
-    fprintf(stderr, "Input file \"%s\" containing grammar is empty, undefined, or invalid\n", grm_file);
-    exit(12);
-  }
-  process_options_lines(grm_file, output_files);
-  eolt_image = OMEGA;
-  blockb_len = strlen(blockb);
-  blocke_len = strlen(blocke);
-  hblockb_len = strlen(hblockb);
-  hblocke_len = strlen(hblocke);
-  /* Keywords, Reserved symbols, and predefined macros */
-  kdefine[0] = escape; /*Set empty first space to the default */
-  kterminals[0] = escape; /* escape symbol.                      */
-  kalias[0] = escape;
-  kstart[0] = escape;
-  krules[0] = escape;
-  knames[0] = escape;
-  kend[0] = escape;
-  krule_number[0] = escape;
-  krule_text[0] = escape;
-  krule_size[0] = escape;
-  knum_rules[0] = escape;
-  knum_terminals[0] = escape;
-  knum_non_terminals[0] = escape;
-  knum_symbols[0] = escape;
-  kinput_file[0] = escape;
-  kcurrent_line[0] = escape;
-  knext_line[0] = escape;
-  kstart_nt[0] = escape;
-  keolt[0] = escape;
-}
-
-/* This routine is invoked to free all space used to process the input that  */
-/* is no longer needed. Note that for the string_table, only the unused      */
-/* space is released.                                                        */
-static void exit_process(void) {
-  if (string_offset > 0) {
-    string_table = (char *)
-    (string_table == (char *) NULL
-       ? malloc(string_offset * sizeof(char))
-       : realloc(string_table, string_offset * sizeof(char)));
-    if (string_table == (char *) NULL)
-      nospace(__FILE__, __LINE__);
-  }
-  ffree(terminal);
-  ffree(hash_table);
-  ffree(input_buffer);
-  ffree(rulehdr); /* allocated in action LPGACT when grammar is not empty */
 }
 
 /* VERIFY takes as argument a character string and checks whether each       */
@@ -793,7 +659,9 @@ static void process_options_lines(char *grm_file, struct OutputFiles *output_fil
   }
   sprintf(opt_string[++top], "HBLOCKB=%s", hblockb);
   sprintf(opt_string[++top], "HBLOCKE=%s", hblocke);
-  if (!slr_bit) {
+  if (slr_bit) {
+    // Do nothing.
+  } else {
     sprintf(opt_string[++top], "LALR=%d", lalr_level);
   }
   if (list_bit) {
@@ -945,7 +813,7 @@ static void process_options_lines(char *grm_file, struct OutputFiles *output_fil
   }
 }
 
-/*    HASH takes as argument a symbol and hashes it into a location in       */
+/* HASH takes as argument a symbol and hashes it into a location in          */
 /* HASH_TABLE.                                                               */
 static int hash(const char *symbl) {
   register unsigned long hash_value = 0;
@@ -1069,50 +937,6 @@ static int name_map(const char *symb) {
   num_names++;
   p->name_index = num_names;
   return num_names;
-}
-
-/*    PROCESS_GRAMMAR is invoked to process the source input. It uses an     */
-/* LALR(1) parser table generated by LPG to recognize the grammar which it   */
-/* places in the rulehdr structure.                                          */
-#include "lpgact.c"
-#include "lpgact.h"
-#include "lpgprs.h"
-
-static void process_grammar(char *grm_file) {
-  short state_stack[STACK_SIZE];
-  scanner(grm_file); /* Get first token */
-  register int act = START_STATE;
-process_terminal:
-  /* Note that this driver assumes that the tables are LPG SPACE    */
-  /* tables with no GOTO-DEFAULTS.                                  */
-  state_stack[++stack_top] = act;
-  act = t_action(act, ct, ?);
-  /* Reduce */
-  if (act <= NUM_RULES) {
-    stack_top--;
-  } else if (act > ERROR_ACTION || /* Shift_reduce */
-             act < ACCEPT_ACTION) /* Shift */
-  {
-    token_action();
-    scanner(grm_file);
-    if (act < ACCEPT_ACTION) {
-      goto process_terminal;
-    }
-    act -= ERROR_ACTION;
-  } else if (act == ACCEPT_ACTION) {
-    accept_action(grm_file);
-    return;
-  } else {
-    error_action();
-  }
-process_non_terminal:
-  do {
-    const register int lhs_sym = lhs[act]; /* to bypass IBMC12 bug */
-    stack_top -= rhs[act] - 1;
-    rule_action[act]();
-    act = nt_action(state_stack[stack_top], lhs_sym);
-  } while (act <= NUM_RULES);
-  goto process_terminal;
 }
 
 /* SCANNER scans the input stream and returns the next input token.          */
@@ -1442,43 +1266,6 @@ check_symbol_length:
   }
 }
 
-/*    This function, TOKEN_ACTION, pushes the current token onto the        */
-/* parse stack called TERMINAL. Note that in case of a BLOCK_, the name of  */
-/* the token is not copied since blocks are processed separately on a       */
-/* second pass.                                                             */
-static void token_action(void) {
-  const register int top = stack_top + 1;
-  terminal[top].kind = ct;
-  terminal[top].start_line = ct_start_line;
-  terminal[top].start_column = ct_start_col;
-  terminal[top].end_line = ct_end_line;
-  terminal[top].end_column = ct_end_col;
-  terminal[top].length = ct_length;
-  if (ct != BLOCK_TK) {
-    memcpy(terminal[top].name, ct_ptr, ct_length);
-    terminal[top].name[ct_length] = '\0';
-  } else {
-    terminal[top].name[0] = '\0';
-  }
-}
-
-/*  Error messages to be printed if an error is encountered during parsing. */
-static void error_action(void) {
-  ct_ptr[ct_length] = '\0';
-  if (ct == EOF_TK) {
-    PRNTERR2(msg_line, "End-of file reached prematurely");
-  } else if (ct == MACRO_NAME_TK) {
-    PRNTERR2(msg_line, "Misplaced macro name \"%s\" found in line %d, column %d", ct_ptr, line_no, ct_start_col);
-  } else if (ct == SYMBOL_TK) {
-    char tok_string[SYMBOL_SIZE + 1];
-    restore_symbol(tok_string, ct_ptr);
-    PRNTERR2(msg_line, "Misplaced symbol \"%s\" found in line %d, column %d", tok_string, line_no, ct_start_col);
-  } else {
-    PRNTERR2(msg_line, "Misplaced keyword \"%s\" found in line %d, column %d", ct_ptr, line_no, ct_start_col);
-  }
-  exit(12);
-}
-
 /*          Actions to be taken if grammar is successfully parsed.          */
 static void accept_action(char *grm_file) {
   if (rulehdr == NULL) {
@@ -1490,12 +1277,122 @@ static void accept_action(char *grm_file) {
   }
   num_non_terminals = num_symbols - num_terminals;
   if (error_maps_bit) {
-    make_names_map();
+    // make_names_map
+    {
+      /* Construct the NAME map, and update the elements of SYMNO with their names. */
+      symno[accept_image].name_index = name_map("");
+      if (error_image == DEFAULT_SYMBOL) {
+        symno[DEFAULT_SYMBOL].name_index = symno[accept_image].name_index;
+      }
+      for ALL_TERMINALS3(symbol) {
+        if (symno[symbol].name_index == OMEGA) {
+          symno[symbol].name_index = name_map(RETRIEVE_STRING(symbol));
+        }
+      }
+      for ALL_NON_TERMINALS3(symbol) {
+        if (symno[symbol].name_index == OMEGA) {
+          if (names_opt == MAXIMUM_NAMES) {
+            symno[symbol].name_index = name_map(RETRIEVE_STRING(symbol));
+          } else if (names_opt == OPTIMIZE_PHRASES) {
+            symno[symbol].name_index = -name_map(RETRIEVE_STRING(symbol));
+          } else {
+            symno[symbol].name_index = symno[error_image].name_index;
+          }
+        }
+      }
+      /* Allocate NAME table. */
+      name = (int *) calloc(num_names + 1, sizeof(int));
+      if (name == (int *) NULL)
+        nospace(__FILE__, __LINE__);
+      for (register int i = 0; i < HT_SIZE; i++) {
+        for (const register struct hash_type *p = hash_table[i]; p != NULL; p = p->link) {
+          if (p->name_index != OMEGA) {
+            name[p->name_index] = p->st_ptr;
+          }
+        }
+      }
+    }
   }
   if (list_bit) {
-    process_aliases();
+    /* Aliases are placed in a separate linked list.  NOTE!! After execution */
+    /* of this loop the hash_table is destroyed because the LINK field of    */
+    /* alias symbols is used to construct a list of the alias symbols.       */
+    for (register int i = 0; i < HT_SIZE; i++) {
+      register struct hash_type *tail = hash_table[i];
+      for (register struct hash_type *p = tail; p != NULL; p = tail) {
+        tail = p->link;
+        if (p->number < 0) {
+          p->link = alias_root;
+          alias_root = p;
+        }
+      }
+    }
   }
-  make_rules_map(); /* Construct rule table      */
+  /* Construct the rule table.  At this stage, NUM_ITEMS is equal to the sum */
+  /* of the right-hand side lists of symbols.  It is used in the declaration of*/
+  /* RULE_TAB.  After RULE_TAB is allocated, we increase NUM_ITEMS to its      */
+  /* correct value.  Recall that the first rule is numbered 0; therefore we    */
+  /* increase the number of items by 1 to reflect this numbering.              */
+  {
+    register struct node *ptr;
+    register int rhs_ct = 0;
+    rules = (struct ruletab_type *) calloc(num_rules + 2, sizeof(struct ruletab_type));
+    if (rules == (struct ruletab_type *) NULL)
+      nospace(__FILE__, __LINE__);
+    rhs_sym = Allocate_short_array(num_items + 1);
+    num_items += num_rules + 1;
+    SHORT_CHECK(num_items);
+    register int ii = 0;
+    /* Put starting rules from start symbol linked list in rule and rhs table    */
+    if (start_symbol_root != NULL) {
+      /* Turn circular list into linear */
+      register struct node *q = start_symbol_root;
+      start_symbol_root = q->next;
+      q->next = NULL;
+      for (ptr = start_symbol_root; ptr != NULL; ptr = ptr->next) {
+        rules[ii].lhs = accept_image;
+        rules[ii].sp = 0;
+        rules[ii++].rhs = rhs_ct;
+        if (ptr->value != empty) {
+          rhs_sym[rhs_ct++] = ptr->value;
+        }
+      }
+      free_nodes(start_symbol_root, q);
+    }
+    /*   In this loop, the grammar is placed in the rule table structure and the */
+    /* right-hand sides are placed in the RHS table.  A check is made to prevent */
+    /* terminals from being used as left hand sides.                             */
+    for (ii = ii; ii <= num_rules; ii++) {
+      rules[ii].rhs = rhs_ct;
+      ptr = rulehdr[ii].rhs_root;
+      if (ptr != NULL) /* not am empty right-hand side? */
+      {
+        do {
+          ptr = ptr->next;
+          rhs_sym[rhs_ct++] = ptr->value;
+        } while (ptr != rulehdr[ii].rhs_root);
+        ptr = ptr->next; /* point to 1st element */
+        rules[ii].sp = rulehdr[ii].sp && ptr == rulehdr[ii].rhs_root;
+        if (rules[ii].sp)
+          num_single_productions++;
+        free_nodes(ptr, rulehdr[ii].rhs_root);
+      } else
+        rules[ii].sp = false;
+
+      if (rulehdr[ii].lhs == OMEGA) {
+        if (list_bit) /* Proper LHS will be updated after printing */
+          rules[ii].lhs = OMEGA;
+        else rules[ii].lhs = rules[ii - 1].lhs;
+      } else if (IS_A_TERMINAL(rulehdr[ii].lhs)) {
+        char temp[SYMBOL_SIZE + 1];
+        restore_symbol(temp, RETRIEVE_STRING(rulehdr[ii].lhs));
+        PRNTERR2(msg_line, "In rule %d: terminal \"%s\" used as left hand side", ii, temp);
+        PRNTERR("Processing terminated due to input errors.");
+        exit(12);
+      } else rules[ii].lhs = rulehdr[ii].lhs;
+    }
+    rules[num_rules + 1].rhs = rhs_ct; /* Fence !! */
+  }
   fclose(sysgrm); /* Close grammar input file. */
   if (action_bit) {
     process_actions(grm_file);
@@ -1692,108 +1589,6 @@ static void process_actions(char *grm_file) {
   fclose(syshact);
 }
 
-/*  Construct the NAME map, and update the elements of SYMNO with their */
-/* names.                                                               */
-static void make_names_map(void) {
-  symno[accept_image].name_index = name_map("");
-  if (error_image == DEFAULT_SYMBOL) {
-    symno[DEFAULT_SYMBOL].name_index = symno[accept_image].name_index;
-  }
-  for ALL_TERMINALS3(symbol) {
-    if (symno[symbol].name_index == OMEGA) {
-      symno[symbol].name_index = name_map(RETRIEVE_STRING(symbol));
-    }
-  }
-  for ALL_NON_TERMINALS3(symbol) {
-    if (symno[symbol].name_index == OMEGA) {
-      if (names_opt == MAXIMUM_NAMES) {
-        symno[symbol].name_index = name_map(RETRIEVE_STRING(symbol));
-      } else if (names_opt == OPTIMIZE_PHRASES) {
-        symno[symbol].name_index = -name_map(RETRIEVE_STRING(symbol));
-      } else {
-        symno[symbol].name_index = symno[error_image].name_index;
-      }
-    }
-  }
-  /* Allocate NAME table. */
-  name = (int *) calloc(num_names + 1, sizeof(int));
-  if (name == (int *) NULL)
-    nospace(__FILE__, __LINE__);
-  for (register int i = 0; i < HT_SIZE; i++) {
-    for (const register struct hash_type *p = hash_table[i]; p != NULL; p = p->link) {
-      if (p->name_index != OMEGA) {
-        name[p->name_index] = p->st_ptr;
-      }
-    }
-  }
-}
-
-/*   Construct the rule table.  At this stage, NUM_ITEMS is equal to the sum */
-/* of the right-hand side lists of symbols.  It is used in the declaration of*/
-/* RULE_TAB.  After RULE_TAB is allocated, we increase NUM_ITEMS to its      */
-/* correct value.  Recall that the first rule is numbered 0; therefore we    */
-/* increase the number of items by 1 to reflect this numbering.              */
-static void make_rules_map(void) {
-  register struct node *ptr;
-  register int rhs_ct = 0;
-  rules = (struct ruletab_type *) calloc(num_rules + 2, sizeof(struct ruletab_type));
-  if (rules == (struct ruletab_type *) NULL)
-    nospace(__FILE__, __LINE__);
-  rhs_sym = Allocate_short_array(num_items + 1);
-  num_items += num_rules + 1;
-  SHORT_CHECK(num_items);
-  register int ii = 0;
-  /* Put starting rules from start symbol linked list in rule and rhs table    */
-  if (start_symbol_root != NULL) {
-    /* Turn circular list into linear */
-    register struct node *q = start_symbol_root;
-    start_symbol_root = q->next;
-    q->next = NULL;
-    for (ptr = start_symbol_root; ptr != NULL; ptr = ptr->next) {
-      rules[ii].lhs = accept_image;
-      rules[ii].sp = 0;
-      rules[ii++].rhs = rhs_ct;
-      if (ptr->value != empty) {
-        rhs_sym[rhs_ct++] = ptr->value;
-      }
-    }
-    free_nodes(start_symbol_root, q);
-  }
-  /*   In this loop, the grammar is placed in the rule table structure and the */
-  /* right-hand sides are placed in the RHS table.  A check is made to prevent */
-  /* terminals from being used as left hand sides.                             */
-  for (ii = ii; ii <= num_rules; ii++) {
-    rules[ii].rhs = rhs_ct;
-    ptr = rulehdr[ii].rhs_root;
-    if (ptr != NULL) /* not am empty right-hand side? */
-    {
-      do {
-        ptr = ptr->next;
-        rhs_sym[rhs_ct++] = ptr->value;
-      } while (ptr != rulehdr[ii].rhs_root);
-      ptr = ptr->next; /* point to 1st element */
-      rules[ii].sp = rulehdr[ii].sp && ptr == rulehdr[ii].rhs_root;
-      if (rules[ii].sp)
-        num_single_productions++;
-      free_nodes(ptr, rulehdr[ii].rhs_root);
-    } else
-      rules[ii].sp = false;
-
-    if (rulehdr[ii].lhs == OMEGA) {
-      if (list_bit) /* Proper LHS will be updated after printing */
-        rules[ii].lhs = OMEGA;
-      else rules[ii].lhs = rules[ii - 1].lhs;
-    } else if (IS_A_TERMINAL(rulehdr[ii].lhs)) {
-      char temp[SYMBOL_SIZE + 1];
-      restore_symbol(temp, RETRIEVE_STRING(rulehdr[ii].lhs));
-      PRNTERR2(msg_line, "In rule %d: terminal \"%s\" used as left hand side", ii, temp);
-      PRNTERR("Processing terminated due to input errors.");
-      exit(12);
-    } else rules[ii].lhs = rulehdr[ii].lhs;
-  }
-  rules[num_rules + 1].rhs = rhs_ct; /* Fence !! */
-}
-
 /*  This function allocates a line_elemt structure and returns a pointer    */
 /* to it.                                                                   */
 static struct line_elemt *alloc_line(void) {
@@ -1822,8 +1617,7 @@ static void free_line(struct line_elemt *p) {
 /* user defined macro names. If one is found, the macro definition is sub-   */
 /* stituted for the name. The modified action text is then printed out in    */
 /* the action file.                                                          */
-static void process_action_line(FILE *sysout, char *text,
-                                const int line_no, const int rule_no, char *grm_file) {
+static void process_action_line(FILE *sysout, char *text, const int line_no, const int rule_no, char *grm_file) {
   char temp1[MAX_LINE_SIZE + 1];
   char suffix[MAX_LINE_SIZE + 1];
   char symbol[SYMBOL_SIZE + 1];
@@ -2165,22 +1959,6 @@ static struct line_elemt *find_macro(char *name) {
   return NULL;
 }
 
-/* Aliases are placed in a separate linked list.  NOTE!! After execution */
-/* of this loop the hash_table is destroyed because the LINK field of    */
-/* alias symbols is used to construct a list of the alias symbols.       */
-static void process_aliases(void) {
-  for (register int i = 0; i < HT_SIZE; i++) {
-    register struct hash_type *tail = hash_table[i];
-    for (register struct hash_type *p = tail; p != NULL; p = tail) {
-      tail = p->link;
-      if (p->number < 0) {
-        p->link = alias_root;
-        alias_root = p;
-      }
-    }
-  }
-}
-
 /*   If a listing is requested, this prints all the macros(if any), followed */
 /* by the aliases(if any), followed by the terminal symbols, followed by the */
 /* rules.                                                                    */
@@ -2316,5 +2094,220 @@ static void display_input(void) {
       strcat(line, BLANK);
     }
     fprintf(syslis, "\n%s", line);
+  }
+}
+
+/* This procedure opens all relevant files and processes the input grammar.*/
+void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_files) {
+  /* Open input grammar file. If the file cannot be opened and that file name */
+  /* did not have an extension, then the extension ".g" is added to the file  */
+  /* name and we try again. If no file can be found an error message is       */
+  /* issued and the program halts.                                            */
+  if ((sysgrm = fopen(grm_file, "r")) == (FILE *) NULL) {
+    register int ii;
+    for (ii = strlen(grm_file); ii > 0 &&
+                                grm_file[ii] != '.' &&
+                                grm_file[ii] != '/' && /* Unix */
+                                grm_file[ii] != '\\'; /* Dos  */
+         ii--) {
+    }
+    if (grm_file[ii] != '.') {
+      strcat(grm_file, ".g");
+      if ((sysgrm = fopen(grm_file, "r")) == (FILE *) NULL) {
+        fprintf(stderr, "***ERROR: Input file %s containing grammar is empty, undefined, or invalid\n", grm_file);
+        exit(12);
+      }
+    } else {
+      fprintf(stderr, "***ERROR: Input file %s containing grammar is empty, undefined, or invalid\n", grm_file);
+      exit(12);
+    }
+  } else {
+    if (strrchr(grm_file, '.') == NULL) {
+      PRNTWNG2(msg_line, "A file named \"%s\" with no extension is being opened", grm_file);
+    }
+  }
+  /*                Open listing file for output.                             */
+  syslis = fopen(lis_file, "w");
+  if (syslis == (FILE *) NULL) {
+    fprintf(stderr, "***ERROR: Listing file \"%s\" cannot be openned.\n", lis_file);
+    exit(12);
+  }
+  /* Complete the initialization of the code array used to replace the        */
+  /* builtin functions isalpha, isdigit and isspace.                          */
+  for (unsigned c = 'a'; c <= 'z'; c++) {
+    if (isalpha(c)) {
+      code[c] = ALPHA_CODE;
+    }
+  }
+  for (unsigned c = 'A'; c <= 'Z'; c++) {
+    if (isalpha(c)) {
+      code[c] = ALPHA_CODE;
+    }
+  }
+  for (unsigned c = '0'; c <= '9'; c++) {
+    if (isdigit(c)) {
+      code[c] = DIGIT_CODE;
+    }
+  }
+  code[' '] = SPACE_CODE;
+  code['\n'] = SPACE_CODE;
+  code['\t'] = SPACE_CODE;
+  code['\r'] = SPACE_CODE;
+  code['\v'] = SPACE_CODE;
+  code['\f'] = SPACE_CODE;
+
+  // Init grammar.
+  {
+    /* This routine is invoked to allocate space for the global structures       */
+    /* needed to process the input grammar.                                      */
+    /**/
+    /* Set up a pool of temporary space.                            */
+    reset_temporary_space();
+    terminal = (struct terminal_type *) calloc(STACK_SIZE, sizeof(struct terminal_type));
+    if (terminal == (struct terminal_type *) NULL)
+      nospace(__FILE__, __LINE__);
+    hash_table = (struct hash_type **) calloc(HT_SIZE, sizeof(struct hash_type *));
+    if (hash_table == (struct hash_type **) NULL)
+      nospace(__FILE__, __LINE__);
+    /* Allocate space for input buffer and read in initial data in input   */
+    /* file. Next, invoke PROCESS_OPTION_LINES to process all lines in     */
+    /* input file that are options line.                                   */
+    input_buffer = (char *) calloc(IOBUFFER_SIZE + 1 + MAX_LINE_SIZE, sizeof(char));
+    if (input_buffer == (char *) NULL) {
+      nospace(__FILE__, __LINE__);
+    }
+    bufend = &input_buffer[0];
+    read_input(grm_file);
+    p2 = &input_buffer[0];
+    linestart = p2 - 1;
+    p1 = p2;
+    line_no++;
+    if (*p2 == '\0') {
+      fprintf(stderr, "Input file \"%s\" containing grammar is empty, undefined, or invalid\n", grm_file);
+      exit(12);
+    }
+    process_options_lines(grm_file, output_files);
+    eolt_image = OMEGA;
+    blockb_len = strlen(blockb);
+    blocke_len = strlen(blocke);
+    hblockb_len = strlen(hblockb);
+    hblocke_len = strlen(hblocke);
+    /* Keywords, Reserved symbols, and predefined macros */
+    kdefine[0] = escape; /*Set empty first space to the default */
+    kterminals[0] = escape; /* escape symbol.                      */
+    kalias[0] = escape;
+    kstart[0] = escape;
+    krules[0] = escape;
+    knames[0] = escape;
+    kend[0] = escape;
+    krule_number[0] = escape;
+    krule_text[0] = escape;
+    krule_size[0] = escape;
+    knum_rules[0] = escape;
+    knum_terminals[0] = escape;
+    knum_non_terminals[0] = escape;
+    knum_symbols[0] = escape;
+    kinput_file[0] = escape;
+    kcurrent_line[0] = escape;
+    knext_line[0] = escape;
+    kstart_nt[0] = escape;
+    keolt[0] = escape;
+  }
+
+  // Process grammar.
+  {
+    /*    PROCESS_GRAMMAR is invoked to process the source input. It uses an     */
+    /* LALR(1) parser table generated by LPG to recognize the grammar which it   */
+    /* places in the rulehdr structure.                                          */
+    short state_stack[STACK_SIZE];
+    scanner(grm_file); /* Get first token */
+    register int act = START_STATE;
+    process_terminal:
+      /* Note that this driver assumes that the tables are LPG SPACE    */
+      /* tables with no GOTO-DEFAULTS.                                  */
+      state_stack[++stack_top] = act;
+    act = t_action(act, ct, ?);
+    /* Reduce */
+    if (act <= NUM_RULES) {
+      stack_top--;
+    } else if (act > ERROR_ACTION || /* Shift_reduce */
+               act < ACCEPT_ACTION) /* Shift */
+    {
+      // token_action
+      {
+        {
+          /*    This function, TOKEN_ACTION, pushes the current token onto the        */
+          /* parse stack called TERMINAL. Note that in case of a BLOCK_, the name of  */
+          /* the token is not copied since blocks are processed separately on a       */
+          /* second pass.                                                             */
+          const register int top = stack_top + 1;
+          terminal[top].kind = ct;
+          terminal[top].start_line = ct_start_line;
+          terminal[top].start_column = ct_start_col;
+          terminal[top].end_line = ct_end_line;
+          terminal[top].end_column = ct_end_col;
+          terminal[top].length = ct_length;
+          if (ct != BLOCK_TK) {
+            memcpy(terminal[top].name, ct_ptr, ct_length);
+            terminal[top].name[ct_length] = '\0';
+          } else {
+            terminal[top].name[0] = '\0';
+          }
+        }
+      }
+      scanner(grm_file);
+      if (act < ACCEPT_ACTION) {
+        goto process_terminal;
+      }
+      act -= ERROR_ACTION;
+    } else if (act == ACCEPT_ACTION) {
+      accept_action(grm_file);
+      return;
+    } else {
+      // error_action
+      {
+        /* Error messages to be printed if an error is encountered during parsing. */
+        ct_ptr[ct_length] = '\0';
+        if (ct == EOF_TK) {
+          PRNTERR2(msg_line, "End-of file reached prematurely");
+        } else if (ct == MACRO_NAME_TK) {
+          PRNTERR2(msg_line, "Misplaced macro name \"%s\" found in line %d, column %d", ct_ptr, line_no, ct_start_col);
+        } else if (ct == SYMBOL_TK) {
+          char tok_string[SYMBOL_SIZE + 1];
+          restore_symbol(tok_string, ct_ptr);
+          PRNTERR2(msg_line, "Misplaced symbol \"%s\" found in line %d, column %d", tok_string, line_no, ct_start_col);
+        } else {
+          PRNTERR2(msg_line, "Misplaced keyword \"%s\" found in line %d, column %d", ct_ptr, line_no, ct_start_col);
+        }
+        exit(12);
+      }
+    }
+    process_non_terminal:
+      do {
+        const register int lhs_sym = lhs[act]; /* to bypass IBMC12 bug */
+        stack_top -= rhs[act] - 1;
+        rule_action[act]();
+        act = nt_action(state_stack[stack_top], lhs_sym);
+      } while (act <= NUM_RULES);
+    goto process_terminal;
+  }
+
+  // Exit grammar.
+  {
+    /* This routine is invoked to free all space used to process the input that  */
+    /* is no longer needed. Note that for the string_table, only the unused      */
+    /* space is released.                                                        */
+    if (string_offset > 0) {
+      string_table = (char *)
+      (string_table == (char *) NULL
+         ? malloc(string_offset * sizeof(char))
+         : realloc(string_table, string_offset * sizeof(char)));
+      if (string_table == (char *) NULL)
+        nospace(__FILE__, __LINE__);
+    }
+    ffree(terminal);
+    ffree(hash_table);
+    ffree(input_buffer);
+    ffree(rulehdr); /* allocated in action LPGACT when grammar is not empty */
   }
 }

@@ -656,10 +656,10 @@ static void process_conflicts(const int state_no) {
       printf("*** Shift/reduce conflict on \"%s\" with rule %d\n", temp, rule_no);
       fprintf(syslis, "\n*** Shift/reduce conflict on \"%s\" with rule %d\n", temp, rule_no);
       if (trace_opt != NOTRACE) {
-        if (!slr_bit) {
-          print_relevant_lalr_items(state_no, p->item, symbol);
-        } else {
+        if (slr_bit) {
           print_relevant_slr_items(p->item, symbol);
+        } else {
+          print_relevant_lalr_items(state_no, p->item, symbol);
         }
         print_item(p->item);
       }
@@ -677,18 +677,18 @@ static void process_conflicts(const int state_no) {
       printf("*** Reduce/reduce conflict on \"%s\" between rule %d and %d\n", temp, n, rule_no);
       fprintf(syslis, "\n*** Reduce/reduce conflict on \"%s\" between rule %d and %d\n", temp, n, rule_no);
       if (trace_opt != NOTRACE) {
-        if (!slr_bit) {
-          print_relevant_lalr_items(state_no, p->item1, symbol);
-        } else {
+        if (slr_bit) {
           print_relevant_slr_items(p->item1, symbol);
+        } else {
+          print_relevant_lalr_items(state_no, p->item1, symbol);
         }
         print_item(p->item1);
         fill_in(msg_line, PRINT_LINE_SIZE - 3, '-');
         fprintf(syslis, "\n%s", msg_line);
-        if (!slr_bit) {
-          print_relevant_lalr_items(state_no, p->item2, symbol);
-        } else {
+        if (slr_bit) {
           print_relevant_slr_items(p->item2, symbol);
+        } else {
+          print_relevant_lalr_items(state_no, p->item2, symbol);
         }
         print_item(p->item2);
       }

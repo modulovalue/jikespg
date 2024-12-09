@@ -553,7 +553,9 @@ void mkrdcts(void) {
   /* We call COMPUTE_READ to perform the following tasks:         */
   /* 1) Count how many elements are needed in LA_ELEMENT: LA_TOP  */
   /* 2) Allocate space for and initialize LA_SET and LA_INDEX     */
-  if (!slr_bit) {
+  if (slr_bit) {
+    // Do nothing.
+  } else {
     compute_read();
   }
   /* Allocate space for REDUCE which will be used to map each     */
@@ -617,8 +619,8 @@ void mkrdcts(void) {
         /* for all complete items */
         item_no = item_ptr->value;
         rule_no = item_table[item_no].rule_number;
-        if (slr_bit) /* SLR table? use Follow */
-        {
+        if (slr_bit) {
+          /* SLR table? use Follow */
           ASSIGN_SET(look_ahead, 0, follow, rules[rule_no].lhs);
         } else {
           compute_la(state_no, item_no, look_ahead);
@@ -791,7 +793,10 @@ void mkrdcts(void) {
     printf("This grammar is not LR(K).\n");
     fprintf(syslis, "This grammar is not LR(K).\n");
   } else if (num_rr_conflicts > 0 || num_sr_conflicts > 0) {
-    if (!slr_bit) {
+    if (slr_bit) {
+      printf("This grammar is not SLR(1).\n");
+      fprintf(syslis, "This grammar is not SLR(1).\n");
+    } else {
       if (highest_level != INFINITY) {
         printf("This grammar is not LALR(%d).\n", highest_level);
         fprintf(syslis, "This grammar is not LALR(%d).\n", highest_level);
@@ -799,9 +804,6 @@ void mkrdcts(void) {
         printf("This grammar is not LALR(K).\n");
         fprintf(syslis, "This grammar is not LALR(K).\n");
       }
-    } else {
-      printf("This grammar is not SLR(1).\n");
-      fprintf(syslis, "This grammar is not SLR(1).\n");
     }
   } else {
     if (highest_level == 0) {

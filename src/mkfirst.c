@@ -379,11 +379,8 @@ void mkfirst(void) {
   /*   2) if we have to print the FOLLOW map                     */
   /*   3) Error-maps are requested                               */
   /*   4) There are more than one starting symbol.               */
-  if (slr_bit || follow_bit || error_maps_bit ||
-      next_rule[lhs_rule[accept_image]] != lhs_rule[accept_image]) {
-    follow = (SET_PTR)
-        calloc(num_non_terminals,
-               term_set_size * sizeof(BOOLEAN_CELL));
+  if (slr_bit || follow_bit || error_maps_bit || next_rule[lhs_rule[accept_image]] != lhs_rule[accept_image]) {
+    follow = (SET_PTR) calloc(num_non_terminals, term_set_size * sizeof(BOOLEAN_CELL));
     if (follow == NULL)
       nospace(__FILE__, __LINE__);
     follow -= (num_terminals + 1) * term_set_size;
@@ -394,8 +391,8 @@ void mkfirst(void) {
     index_of[accept_image] = INFINITY; /* mark computed */
     top = 0;
     for ALL_NON_TERMINALS3(nt) {
-      if (index_of[nt] == OMEGA) /* not yet computed ? */
-      {
+      if (index_of[nt] == OMEGA) {
+        /* not yet computed ? */
         compute_follow(nt);
       }
     }

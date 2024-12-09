@@ -10,97 +10,93 @@ static const int OUTPUT_PARM_SIZE = MAX_PARM_SIZE + 7;
 static const int MAXIMUM_LA_LEVEL = 15;
 static const int STRING_BUFFER_SIZE = 8192;
 
-static const char *oaction = "ACTION",
-    *oactfile_name = "ACTFILENAME",
-    *oactfile_name2 = "ACTFILE-NAME",
-    *oactfile_name3 = "ACTFILE_NAME",
-    *oblockb = "BLOCKB",
-    *oblocke = "BLOCKE",
-    *obyte = "BYTE",
-    *oconflicts = "CONFLICTS",
-    *odebug = "DEBUG",
-    *odefault = "DEFAULT",
-    *odeferred = "DEFERRED",
-    *oedit = "EDIT",
-    *oerrormaps2 = "ERROR_MAPS",
-    *oerrormaps3 = "ERROR-MAPS",
-    *oerrormaps = "ERRORMAPS",
-    *oescape = "ESCAPE",
-    *ofile_prefix2 = "FILE_PREFIX",
-    *ofile_prefix3 = "FILE-PREFIX",
-    *ofile_prefix = "FILEPREFIX",
-    *ofirst = "FIRST",
-    *ofixed = "FIXED",
-    *ofollow = "FOLLOW",
-    *ofull = "FULL",
-    *ogenprsr3 = "GENERATE-PARSER",
-    *ogenprsr2 = "GENERATE_PARSER",
-    *ogenprsr = "GENERATEPARSER",
-    *ogotodefault2 = "GOTO_DEFAULT",
-    *ogotodefault3 = "GOTO-DEFAULT",
-    *ogotodefault = "GOTODEFAULT",
-    *ohactfile_name = "HACTFILENAME",
-    *ohactfile_name2 = "HACTFILE-NAME",
-    *ohactfile_name3 = "HACTFILE_NAME",
-    *ohalfword2 = "HALF_WORD",
-    *ohalfword3 = "HALF-WORD",
-    *ohalfword = "HALFWORD",
-    *ohblockb = "HBLOCKB",
-    *ohblocke = "HBLOCKE",
-    *olalr = "LALR",
-    *olist = "LIST",
-    *omax = "MAXIMUM",
-    *omaximum_distance2 = "MAX_DISTANCE",
-    *omaximum_distance3 = "MAX-DISTANCE",
-    *omaximum_distance = "MAXDISTANCE",
-    *omin = "MINIMUM",
-    *ominimum_distance2 = "MIN_DISTANCE",
-    *ominimum_distance3 = "MIN-DISTANCE",
-    *ominimum_distance = "MINDISTANCE",
-    *onames = "NAMES",
-    *ontcheck2 = "NT_CHECK",
-    *ontcheck3 = "NT-CHECK",
-    *ontcheck = "NTCHECK",
-    *ooptimized = "OPTIMIZED",
-    *oormark = "ORMARK",
-    *oprefix = "PREFIX",
-    *oreadreduce2 = "READ_REDUCE",
-    *oreadreduce3 = "READ-REDUCE",
-    *oreadreduce = "READREDUCE",
-    *oscopes = "SCOPES",
-    *oshiftdefault2 = "SHIFT-DEFAULT",
-    *oshiftdefault3 = "SHIFT_DEFAULT",
-    *oshiftdefault = "SHIFTDEFAULT",
-    *osingleproductions2 = "SINGLE-PRODUCTIONS",
-    *osingleproductions3 = "SINGLE_PRODUCTIONS",
-    *osingleproductions = "SINGLEPRODUCTIONS",
-    *oslr = "SLR",
-    *ospace = "SPACE",
-    *ostack_size2 = "STACK_SIZE",
-    *ostack_size3 = "STACK-SIZE",
-    *ostack_size = "STACKSIZE",
-    *ostates = "STATES",
-    *osuffix = "SUFFIX",
-    *otable = "TABLE",
-    *otime = "TIME",
-    *otrace = "TRACE",
-    *ovariable = "VARIABLE",
-    *overbose = "VERBOSE",
-    *owarnings = "WARNINGS",
-    *oxref = "XREF";
+static const char *oaction = "ACTION";
+static const char *oactfile_name = "ACTFILENAME";
+static const char *oactfile_name2 = "ACTFILE-NAME";
+static const char *oactfile_name3 = "ACTFILE_NAME";
+static const char *oblockb = "BLOCKB";
+static const char *oblocke = "BLOCKE";
+static const char *obyte = "BYTE";
+static const char *oconflicts = "CONFLICTS";
+static const char *odebug = "DEBUG";
+static const char *odefault = "DEFAULT";
+static const char *odeferred = "DEFERRED";
+static const char *oedit = "EDIT";
+static const char *oerrormaps2 = "ERROR_MAPS";
+static const char *oerrormaps3 = "ERROR-MAPS";
+static const char *oerrormaps = "ERRORMAPS";
+static const char *oescape = "ESCAPE";
+static const char *ofile_prefix2 = "FILE_PREFIX";
+static const char *ofile_prefix3 = "FILE-PREFIX";
+static const char *ofile_prefix = "FILEPREFIX";
+static const char *ofirst = "FIRST";
+static const char *ofixed = "FIXED";
+static const char *ofollow = "FOLLOW";
+static const char *ofull = "FULL";
+static const char *ogenprsr3 = "GENERATE-PARSER";
+static const char *ogenprsr2 = "GENERATE_PARSER";
+static const char *ogenprsr = "GENERATEPARSER";
+static const char *ogotodefault2 = "GOTO_DEFAULT";
+static const char *ogotodefault3 = "GOTO-DEFAULT";
+static const char *ogotodefault = "GOTODEFAULT";
+static const char *ohactfile_name = "HACTFILENAME";
+static const char *ohactfile_name2 = "HACTFILE-NAME";
+static const char *ohactfile_name3 = "HACTFILE_NAME";
+static const char *ohalfword2 = "HALF_WORD";
+static const char *ohalfword3 = "HALF-WORD";
+static const char *ohalfword = "HALFWORD";
+static const char *ohblockb = "HBLOCKB";
+static const char *ohblocke = "HBLOCKE";
+static const char *olalr = "LALR";
+static const char *olist = "LIST";
+static const char *omax = "MAXIMUM";
+static const char *omaximum_distance2 = "MAX_DISTANCE";
+static const char *omaximum_distance3 = "MAX-DISTANCE";
+static const char *omaximum_distance = "MAXDISTANCE";
+static const char *omin = "MINIMUM";
+static const char *ominimum_distance2 = "MIN_DISTANCE";
+static const char *ominimum_distance3 = "MIN-DISTANCE";
+static const char *ominimum_distance = "MINDISTANCE";
+static const char *onames = "NAMES";
+static const char *ontcheck2 = "NT_CHECK";
+static const char *ontcheck3 = "NT-CHECK";
+static const char *ontcheck = "NTCHECK";
+static const char *ooptimized = "OPTIMIZED";
+static const char *oormark = "ORMARK";
+static const char *oprefix = "PREFIX";
+static const char *oreadreduce2 = "READ_REDUCE";
+static const char *oreadreduce3 = "READ-REDUCE";
+static const char *oreadreduce = "READREDUCE";
+static const char *oscopes = "SCOPES";
+static const char *oshiftdefault2 = "SHIFT-DEFAULT";
+static const char *oshiftdefault3 = "SHIFT_DEFAULT";
+static const char *oshiftdefault = "SHIFTDEFAULT";
+static const char *osingleproductions2 = "SINGLE-PRODUCTIONS";
+static const char *osingleproductions3 = "SINGLE_PRODUCTIONS";
+static const char *osingleproductions = "SINGLEPRODUCTIONS";
+static const char *oslr = "SLR";
+static const char *ospace = "SPACE";
+static const char *ostack_size2 = "STACK_SIZE";
+static const char *ostack_size3 = "STACK-SIZE";
+static const char *ostack_size = "STACKSIZE";
+static const char *ostates = "STATES";
+static const char *osuffix = "SUFFIX";
+static const char *otable = "TABLE";
+static const char *otime = "TIME";
+static const char *otrace = "TRACE";
+static const char *ovariable = "VARIABLE";
+static const char *overbose = "VERBOSE";
+static const char *owarnings = "WARNINGS";
+static const char *oxref = "XREF";
 
-/**                                                               **/
 /**                        PARSING DECLARATIONS                   **/
-/**                                                               **/
 /* The following static variables are used only in processing the  */
 /* the input source.                                               */
 static const char CTL_Z = '\x1a';
 #undef  min
 #define min(x, y) ((x) < (y) ? (x) : (y))
 
-/*                                                                 */
 /*                             IO variables                        */
-/*                                                                 */
 /* The two character pointer variables, P1 and P2, are used in     */
 /* processing the io buffer, INPUT_BUFFER.                         */
 static char *p1;
@@ -204,38 +200,38 @@ static struct hash_type **hash_table;
 static struct terminal_type *terminal;
 
 /* The following variables hold the names */
-/*  of keywords and predefined macros.    */
-static char kdefine[8] = " define",
-    kterminals[11] = " terminals",
-    kalias[7] = " alias",
-    kstart[7] = " start",
-    krules[7] = " rules",
-    knames[7] = " names",
-    kend[5] = " end",
-    krule_text[11] = " rule_text",
-    krule_number[13] = " rule_number",
-    knum_rules[11] = " num_rules",
-    krule_size[11] = " rule_size",
-    knum_terminals[15] = " num_terminals",
-    knum_non_terminals[19] = " num_non_terminals",
-    knum_symbols[13] = " num_symbols",
-    kinput_file[12] = " input_file",
-    kcurrent_line[14] = " current_line",
-    knext_line[11] = " next_line",
-    /* Note that the next four keywords start with \n instead of     */
-    /* the escape character.  This is to prevent the user from       */
-    /* declaring a grammar symbol with the same name.  The           */
-    /* end-of-line character was chosen since that character can     */
-    /* never appear in the input without being interpreted as        */
-    /* marking the end of an input line.  When printing such a       */
-    /* keyword, the \n is properly replaced by the escape character. */
-    /* See RESTORE_SYMBOL in the file LPGUTIL.C.                     */
-    kempty[7] = "\nempty",
-    kerror[7] = "\nerror",
-    keoft[5] = "\neof",
-    kaccept[5] = "\nacc",
-    kstart_nt[7] = " start",
-    keolt[5] = " eol";
+/* of keywords and predefined macros.     */
+static char kdefine[8] = " define";
+static char kterminals[11] = " terminals";
+static char kalias[7] = " alias";
+static char kstart[7] = " start";
+static char krules[7] = " rules";
+static char knames[7] = " names";
+static char kend[5] = " end";
+static char krule_text[11] = " rule_text";
+static char krule_number[13] = " rule_number";
+static char knum_rules[11] = " num_rules";
+static char krule_size[11] = " rule_size";
+static char knum_terminals[15] = " num_terminals";
+static char knum_non_terminals[19] = " num_non_terminals";
+static char knum_symbols[13] = " num_symbols";
+static char kinput_file[12] = " input_file";
+static char kcurrent_line[14] = " current_line";
+static char knext_line[11] = " next_line";
+/* Note that the next four keywords start with \n instead of     */
+/* the escape character.  This is to prevent the user from       */
+/* declaring a grammar symbol with the same name.  The           */
+/* end-of-line character was chosen since that character can     */
+/* never appear in the input without being interpreted as        */
+/* marking the end of an input line.  When printing such a       */
+/* keyword, the \n is properly replaced by the escape character. */
+/* See RESTORE_SYMBOL in the file LPGUTIL.C.                     */
+static char kempty[7] = "\nempty";
+static char kerror[7] = "\nerror";
+static char keoft[5] = "\neof";
+static char kaccept[5] = "\nacc";
+static char kstart_nt[7] = " start";
+static char keolt[5] = " eol";
 
 static struct line_elemt {
   struct line_elemt *link;
@@ -248,8 +244,6 @@ static int hblockb_len;
 static int hblocke_len;
 
 static int stack_top = -1;
-
-static void init_process(char* grm_file, struct OutputFiles* output_files);
 
 static void exit_process(void);
 
@@ -273,29 +267,19 @@ static int symbol_image(const char *item);
 
 static int name_map(const char *symb);
 
-static void process_grammar(char* grm_file);
-
 static void scanner(char* grm_file);
-
-static void token_action(void);
-
-static void error_action(void);
 
 static void accept_action(char* grm_file);
 
 static void build_symno(void);
 
 static struct hash_type *alias_root = NULL;
+
 static short *macro_table;
-
-static void make_rules_map(void);
-
-static void make_names_map(void);
 
 static void process_actions(char* grm_file);
 
-static void process_action_line(FILE *sysout, char *text,
-                                int line_no, int rule_no, char* grm_file);
+static void process_action_line(FILE *sysout, char *text, int line_no, int rule_no, char* grm_file);
 
 static struct line_elemt *alloc_line(void);
 
@@ -304,7 +288,5 @@ static void free_line(struct line_elemt *p);
 static void mapmacro(int def_index);
 
 static struct line_elemt *find_macro(char *name);
-
-static void process_aliases(void);
 
 static void display_input(void);
