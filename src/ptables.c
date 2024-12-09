@@ -176,7 +176,7 @@ static void compute_goto_default(void) {
 
 /* Remap symbols, apply transition default actions  and call           */
 /* appropriate table compression routine.                              */
-void process_tables(char *tab_file, const struct OutputFiles output_files) {
+void process_tables(char *tab_file, const struct OutputFiles output_files, struct CLIOptions* cli_options) {
   struct reduce_header_type red;
   /*        First, we decrease by 1 the constants NUM_SYMBOLS        */
   /* and NUM_TERMINALS, remove the EMPTY symbol(1) and remap the     */
@@ -275,9 +275,9 @@ void process_tables(char *tab_file, const struct OutputFiles output_files) {
     }
   }
   if (table_opt == OPTIMIZE_SPACE) {
-    cmprspa(output_files);
+    cmprspa(output_files, cli_options);
   } else if (table_opt == OPTIMIZE_TIME) {
-    cmprtim(output_files);
+    cmprtim(output_files, cli_options);
   }
   if (!c_bit && !cpp_bit && !java_bit) {
     fclose(systab);

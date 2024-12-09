@@ -37,11 +37,7 @@ long scope_rhs_size = 0;
 long scope_state_size = 0;
 long num_error_rules = 0;
 
-bool verbose_bit = false;
-bool first_bit = false;
-bool follow_bit = false;
 bool action_bit = false;
-bool edit_bit = false;
 bool states_bit = false;
 bool xref_bit = false;
 bool nt_check_bit = false;

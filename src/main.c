@@ -148,9 +148,8 @@ int main(const int argc, char *argv[]) {
     // Process rest.
     {
       mkbasic(&cli_options);
-
       // If the user only wanted to edit his grammar, we quit the program.
-      if (edit_bit) {
+      if (cli_options.edit_bit) {
         // Edit.
         {
           PRNT2(msg_line, "\nNumber of Terminals: %ld", num_terminals - 1); /*-1 for %empty */
@@ -238,7 +237,7 @@ int main(const int argc, char *argv[]) {
                 ffree(follow);
               }
             }
-            process_tables(tab_file, output_files);
+            process_tables(tab_file, output_files, &cli_options);
           }
         }
 

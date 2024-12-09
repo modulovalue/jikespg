@@ -104,7 +104,7 @@ static void remap_non_terminals(void) {
 /* starting position in a vector where each of its rows may be placed       */
 /* without clobbering elements in another row.  The starting positions are  */
 /* stored in the vector STATE_INDEX.                                        */
-static void overlap_nt_rows(void) {
+static void overlap_nt_rows(struct CLIOptions* cli_options) {
   int indx;
   long num_bytes;
   num_table_entries = num_gotos + num_goto_reduces + num_states;
@@ -145,7 +145,7 @@ static void overlap_nt_rows(void) {
       indx = table_size + 1;
     }
     if (indx + last_symbol > table_size) {
-      reallocate();
+      reallocate(cli_options);
     }
     for (int i = 1; i <= go_to.size; i++) {
       if (next[indx + go_to.map[i].symbol] == OMEGA) {
@@ -370,12 +370,12 @@ static void merge_similar_t_rows(void) {
 /*    If shift-default actions are requested, the shift actions      */
 /* associated with each state are factored out of the Action matrix  */
 /* and all identical rows are merged.  This merged matrix is used to */
-/* create a boolean vector that may be used to confirm whether or not*/
+/* create a boolean vector that may be used to confirm whether       */
 /* there is a shift action in a given state S on a given symbol t.   */
 /* If we can determine that there is a shift action on a pair (S, t) */
 /* we can apply shift default to the Shift actions just like we did  */
 /* for the Goto actions.                                             */
-static void merge_shift_domains(void) {
+static void merge_shift_domains(struct CLIOptions* cli_options) {
   short *shift_domain_link;
   long *ordered_shift;
   short *terminal_list;
@@ -584,7 +584,7 @@ static void merge_shift_domains(void) {
       indx = table_size + 1;
     }
     if (indx + num_terminals > (int) table_size) {
-      reallocate();
+      reallocate(cli_options);
     }
     for (int i = 1; i <= sh.size; i++) {
       int symbol = sh.map[i].symbol;
@@ -680,30 +680,20 @@ static void merge_shift_domains(void) {
 /* We iterate over each of these lists and construct new states out  */
 /* of these groups of similar states when they are compatible. Then, */
 /* we remap the terminal symbols.                                    */
-static void overlay_sim_t_rows(void) {
-  int k,
-      rule_no,
-      default_rule,
-      state_subset_root,
-      state_set_root,
-      state_root,
-      reduce_size,
-      num_shifts_saved = 0,
-      num_reductions_saved = 0,
-      default_saves = 0;
-
-  short *rule_count,
-      *reduce_action;
+static void overlay_sim_t_rows(struct CLIOptions* cli_options) {
+  int num_shifts_saved = 0;
+  int num_reductions_saved = 0;
+  int default_saves = 0;
 
   struct shift_header_type sh;
   struct reduce_header_type red;
   struct reduce_header_type new_red;
 
-  struct node *q,
-      *tail;
+  struct node *q;
+  struct node *tail;
 
-  rule_count = Allocate_short_array(num_rules + 1);
-  reduce_action = Allocate_short_array(num_terminals + 1);
+  short *rule_count = Allocate_short_array(num_rules + 1);
+  short *reduce_action = Allocate_short_array(num_terminals + 1);
 
   /*     We first iterate over the groups of similar states in the     */
   /* MULTI_ROOT list.  These states have been grouped together,        */
@@ -734,7 +724,7 @@ static void overlay_sim_t_rows(void) {
       reduce_action[j] = OMEGA;
     }
     for (int j = 1; j <= red.size; j++) {
-      rule_no = red.map[j].rule_number;
+      int rule_no = red.map[j].rule_number;
       reduce_action[red.map[j].symbol] = rule_no;
       rule_count[rule_no]++;
     }
@@ -744,15 +734,12 @@ static void overlay_sim_t_rows(void) {
     /* group that are compatible starting with the initial state.        */
     /* STATE_ROOT is used to construct a list of all states in the group */
     /* that are not compatible with the initial state.                   */
-    state_set_root = state_list[state_no];
-    state_subset_root = state_no;
+    int state_set_root = state_list[state_no];
+    int state_subset_root = state_no;
     state_list[state_subset_root] = NIL;
-    state_root = NIL;
-
-    for (int state_no = state_set_root;
-         state_no != NIL; state_no = state_set_root) {
+    int state_root = NIL;
+    for (int state_no = state_set_root; state_no != NIL; state_no = state_set_root) {
       state_set_root = state_list[state_set_root];
-
       /* We traverse the reduce map of the state taken out from the group  */
       /* and check to see if it is compatible with the subset being        */
       /* constructed so far.                                               */
@@ -781,13 +768,15 @@ static void overlay_sim_t_rows(void) {
         for (jj = 1; jj <= red.size; jj++) {
           int symbol = red.map[jj].symbol;
           if (reduce_action[symbol] == OMEGA) {
-            rule_no = red.map[jj].rule_number;
-            if (rules[rule_no].lhs == accept_image)
+            int rule_no = red.map[jj].rule_number;
+            if (rules[rule_no].lhs == accept_image) {
               rule_no = 0;
+            }
             reduce_action[symbol] = rule_no;
             rule_count[rule_no]++;
-          } else
+          } else {
             num_reductions_saved++;
+          }
         }
       } else {
         state_list[state_no] = state_root;
@@ -799,12 +788,11 @@ static void overlay_sim_t_rows(void) {
     /* DEFAULT_SAVES.                                                    */
     /* Recall that all accept actions were changed into reduce actions   */
     /* by rule 0.                                                        */
-    k = 0;
-    reduce_size = 0;
-    default_rule = error_act;
-    for (q = new_state_element_reduce_nodes[i];
-         q != NULL; tail = q, q = q->next) {
-      rule_no = q->value;
+    int k = 0;
+    int reduce_size = 0;
+    int default_rule = error_act;
+    for (q = new_state_element_reduce_nodes[i]; q != NULL; tail = q, q = q->next) {
+      int rule_no = q->value;
       reduce_size += rule_count[rule_no];
       if (rule_count[rule_no] > k && rule_no != 0
           && !shift_on_error_symbol[state_subset_root]) {
@@ -822,14 +810,12 @@ static void overlay_sim_t_rows(void) {
       top++;
       new_state_element[top].thread = new_state_element[i].thread;
       new_state_element[i].thread = top;
-      if (state_root > num_states)
-        new_state_element[top].shift_number =
-            lastats[state_root].shift_number;
-      else
-        new_state_element[top].shift_number =
-            statset[state_root].shift_number;
-      new_state_element_reduce_nodes[top] =
-          new_state_element_reduce_nodes[i];
+      if (state_root > num_states) {
+        new_state_element[top].shift_number = lastats[state_root].shift_number;
+      } else {
+        new_state_element[top].shift_number = statset[state_root].shift_number;
+      }
+      new_state_element_reduce_nodes[top] = new_state_element_reduce_nodes[i];
       new_state_element[top].image = state_root;
     } else
       free_nodes(new_state_element_reduce_nodes[i], tail);
@@ -867,11 +853,11 @@ static void overlay_sim_t_rows(void) {
   for (int i = single_root; i != NIL; i = new_state_element[i].thread) {
     int state_no = new_state_element[i].image;
     q = new_state_element_reduce_nodes[i];
-    rule_no = q->value;
+    int rule_no = q->value;
     free_nodes(q, q);
     if (rules[rule_no].lhs == accept_image) {
       red = reduce[state_no];
-      reduce_size = red.size;
+      int reduce_size = red.size;
       new_red = Allocate_reduce_map(reduce_size);
       new_red.map[0].symbol = DEFAULT_SYMBOL;
       new_red.map[0].rule_number = error_act;
@@ -925,8 +911,9 @@ static void overlay_sim_t_rows(void) {
   frequency_count = Allocate_long_array(num_terminals + 1);
   row_size = Allocate_long_array(max_la_state + 1);
 
-  if (shift_default_bit)
-    merge_shift_domains();
+  if (shift_default_bit) {
+    merge_shift_domains(cli_options);
+  }
 
   /* We now reorder the terminal states based on the number of actions */
   /* in them, and remap the terminal symbols if they were not already  */
@@ -1022,7 +1009,7 @@ static void overlay_sim_t_rows(void) {
 /* We now compute the starting position for each terminal state just */
 /* as we did for the non-terminal states.                            */
 /* The starting positions are stored in the vector TERM_STATE_INDEX. */
-static void overlap_t_rows(void) {
+static void overlap_t_rows(struct CLIOptions* cli_options) {
   int symbol;
   int indx;
   long num_bytes;
@@ -1078,7 +1065,7 @@ static void overlap_t_rows(void) {
       indx = table_size + 1;
     }
     if (indx + num_terminals > (int) table_size) {
-      reallocate();
+      reallocate(cli_options);
     }
     for (symbol = root_symbol; symbol != NIL; symbol = terminal_list[symbol]) {
       if (next[indx + symbol] == OMEGA) {
@@ -1643,7 +1630,7 @@ static void print_tables(void) {
   fwrite(output_buffer, sizeof(char), output_ptr - &output_buffer[0], systab);
 }
 
-void cmprspa(const struct OutputFiles output_files) {
+void cmprspa(const struct OutputFiles output_files, struct CLIOptions* cli_options) {
   state_index = Allocate_long_array(max_la_state + 1);
   ordered_state = Allocate_long_array(max_la_state + 1);
   symbol_map = Allocate_int_array(num_symbols + 1);
@@ -1658,10 +1645,10 @@ void cmprspa(const struct OutputFiles output_files) {
     nospace(__FILE__, __LINE__);
   }
   remap_non_terminals();
-  overlap_nt_rows();
+  overlap_nt_rows(cli_options);
   merge_similar_t_rows();
-  overlay_sim_t_rows();
-  overlap_t_rows();
+  overlay_sim_t_rows(cli_options);
+  overlap_t_rows(cli_options);
   if (c_bit || cpp_bit || java_bit) {
     init_parser_files(output_files);
     print_space_parser();

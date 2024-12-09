@@ -217,13 +217,13 @@ void options(char *file_prefix, struct CLIOptions* cli_options) {
       } else if (memcmp("DEFERRED", token, token_len) == 0) {
         deferred_bit = flag;
       } else if (memcmp("EDIT", token, token_len) == 0) {
-        edit_bit = flag;
+        cli_options->edit_bit = flag;
       } else if (memcmp("ERRORMAPS", token, token_len) == 0) {
         error_maps_bit = flag;
       } else if (memcmp("FIRST", token, token_len) == 0) {
-        first_bit = flag;
+        cli_options->first_bit = flag;
       } else if (memcmp("FOLLOW", token, token_len) == 0) {
-        follow_bit = flag;
+        cli_options->follow_bit = flag;
       } else if (memcmp("GOTODEFAULT", token, token_len) == 0) {
         goto_default_bit = flag;
       } else if (memcmp("HALFWORD", token, token_len) == 0) {
@@ -246,7 +246,7 @@ void options(char *file_prefix, struct CLIOptions* cli_options) {
       } else if (memcmp("STATES", token, token_len) == 0) {
         states_bit = flag;
       } else if (memcmp("VERBOSE", token, token_len) == 0) {
-        verbose_bit = flag;
+        cli_options->verbose_bit = flag;
       } else if (memcmp("WARNINGS", token, token_len) == 0) {
         warnings_bit = flag;
       } else if (memcmp("XREF", token, token_len) == 0) {
@@ -475,9 +475,9 @@ struct CLIOptions process_options_lines(char *grm_file, struct OutputFiles *outp
   sprintf(output_files->prs_file, "%sprs.%s", file_prefix, java_bit ? "java" : "h");
   sprintf(output_files->dcl_file, "%sdcl.%s", file_prefix, java_bit ? "java" : "h");
   /* turn everything on */
-  if (verbose_bit) {
-    first_bit = true;
-    follow_bit = true;
+  if (cli_options.verbose_bit) {
+    cli_options.first_bit = true;
+    cli_options.follow_bit = true;
     cli_options.list_bit = true;
     states_bit = true;
     xref_bit = true;
@@ -520,7 +520,7 @@ struct CLIOptions process_options_lines(char *grm_file, struct OutputFiles *outp
   } else {
     strcpy(opt_string[++top], "NODEFERRED");
   }
-  if (edit_bit) {
+  if (cli_options.edit_bit) {
     strcpy(opt_string[++top], "EDIT");
   } else {
     strcpy(opt_string[++top], "NOEDIT");
@@ -532,12 +532,12 @@ struct CLIOptions process_options_lines(char *grm_file, struct OutputFiles *outp
   }
   sprintf(opt_string[++top], "ESCAPE=%c", escape);
   sprintf(opt_string[++top], "FILE-PREFIX=%s", file_prefix);
-  if (first_bit) {
+  if (cli_options.first_bit) {
     strcpy(opt_string[++top], "FIRST");
   } else {
     strcpy(opt_string[++top], "NOFIRST");
   }
-  if (follow_bit) {
+  if (cli_options.follow_bit) {
     strcpy(opt_string[++top], "FOLLOW");
   } else {
     strcpy(opt_string[++top], "NOFOLLOW");
@@ -632,7 +632,7 @@ struct CLIOptions process_options_lines(char *grm_file, struct OutputFiles *outp
   } else {
     strcpy(opt_string[++top], "TRACE=FULL");
   }
-  if (verbose_bit) {
+  if (cli_options.verbose_bit) {
     strcpy(opt_string[++top], "VERBOSE");
   } else {
     strcpy(opt_string[++top], "NOVERBOSE");

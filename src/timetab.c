@@ -169,7 +169,7 @@ static void remap_symbols(void) {
 /* compute the starting position in a vector where each of its rows  */
 /* may be placed without clobbering elements in another row.         */
 /* The starting positions are stored in the vector STATE_INDEX.      */
-static void overlap_tables(void) {
+static void overlap_tables(struct CLIOptions* cli_options) {
   struct shift_header_type sh;
   struct reduce_header_type red;
   int symbol;
@@ -245,7 +245,7 @@ static void overlap_tables(void) {
       indx = table_size + 1;
     }
     if (indx + num_symbols > (int) table_size) {
-      reallocate();
+      reallocate(cli_options);
     }
     for (symbol = root_symbol; symbol != NIL; symbol = symbol_list[symbol]) {
       if (next[indx + symbol] == OMEGA) {
@@ -700,9 +700,9 @@ static void print_tables(void) {
 /* together, to achieve maximum speed efficiency.                    */
 /* Otherwise, the compression technique used in this table is        */
 /* analogous to the technique used in the routine CMPRSPA.          */
-void cmprtim(const struct OutputFiles output_files) {
+void cmprtim(const struct OutputFiles output_files, struct CLIOptions* cli_options) {
   remap_symbols();
-  overlap_tables();
+  overlap_tables(cli_options);
   if (c_bit || cpp_bit || java_bit) {
     init_parser_files(output_files);
     print_time_parser();

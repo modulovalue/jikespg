@@ -1149,7 +1149,7 @@ void mkbasic(struct CLIOptions* cli_options) {
   /*   2) if we have to print the FOLLOW map                     */
   /*   3) Error-maps are requested                               */
   /*   4) There are more than one starting symbol.               */
-  if (cli_options->slr_bit || follow_bit || error_maps_bit || next_rule[lhs_rule[accept_image]] != lhs_rule[accept_image]) {
+  if (cli_options->slr_bit || cli_options->follow_bit || error_maps_bit || next_rule[lhs_rule[accept_image]] != lhs_rule[accept_image]) {
     follow = (SET_PTR) calloc(num_non_terminals, term_set_size * sizeof(BOOLEAN_CELL));
     if (follow == NULL)
       nospace(__FILE__, __LINE__);
@@ -1195,12 +1195,12 @@ void mkbasic(struct CLIOptions* cli_options) {
   }
   /* If a listing of the FIRST map is requested, it is generated */
   /* here.                                                       */
-  if (first_bit) {
+  if (cli_options->first_bit) {
     print_nt_first();
   }
   /* If a listing of the FOLLOW map is requested, it is generated */
   /* here.                                                        */
-  if (follow_bit) {
+  if (cli_options->follow_bit) {
     print_follow_map();
   }
   /* Free allocated arrays.                                      */

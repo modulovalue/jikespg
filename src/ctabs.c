@@ -220,14 +220,14 @@ void sortdes(long array[], long count[], const long low, const long high, const 
 /*   This procedure is invoked when the TABLE being used is not large      */
 /* enough.  A new table is allocated, the information from the old table   */
 /* is copied, and the old space is released.                               */
-void reallocate(void) {
+void reallocate(struct CLIOptions* cli_options) {
   if (table_size == MAX_TABLE_SIZE) {
     PRNTERR2(msg_line, "Table has exceeded maximum limit of %ld", MAX_TABLE_SIZE);
     exit(12);
   }
   const register int old_size = table_size;
   table_size = MIN(table_size + increment_size, MAX_TABLE_SIZE);
-  if (verbose_bit) {
+  if (cli_options->verbose_bit) {
     if (table_opt == OPTIMIZE_TIME) {
       PRNT2(msg_line, "Reallocating storage for TIME table, adding %ld entries", table_size - old_size);
     } else {

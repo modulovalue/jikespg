@@ -194,20 +194,24 @@ struct CLIOptions {
   bool list_bit;
   // TODO • remove support for SLR(1)?
   bool slr_bit;
+  bool edit_bit;
+  bool verbose_bit;
+  bool first_bit;
+  bool follow_bit;
 };
 
 static struct CLIOptions init_cli_options() {
   return (struct CLIOptions) {
     .list_bit = false,
     .slr_bit = false,
+    .edit_bit = false,
+    .verbose_bit = false,
+    .first_bit = false,
+    .follow_bit = false,
   };
 }
 
-extern bool verbose_bit;
-extern bool first_bit;
-extern bool follow_bit;
 extern bool action_bit;
-extern bool edit_bit;
 extern bool states_bit;
 extern bool xref_bit;
 extern bool nt_check_bit;
@@ -391,9 +395,9 @@ struct shift_header_type allocate_shift_map(int n, char *file, long line);
 
 struct reduce_header_type allocate_reduce_map(int n, char *file, long line);
 
-void cmprtim(struct OutputFiles output_files);
+void cmprtim(struct OutputFiles output_files, struct CLIOptions* cli_options);
 
-void cmprspa(struct OutputFiles output_files);
+void cmprspa(struct OutputFiles output_files, struct CLIOptions* cli_options);
 
 void compute_la(int state_no, int item_no, SET_PTR look_ahead);
 
@@ -449,7 +453,7 @@ void print_time_parser();
 
 void init_parser_files(struct OutputFiles output_files);
 
-void process_tables(char *tab_file, struct OutputFiles output_files);
+void process_tables(char *tab_file, struct OutputFiles output_files, struct CLIOptions* cli_options);
 
 void ptstats(void);
 
@@ -457,7 +461,7 @@ void remvsp(void);
 
 void sortdes(long array[], long count[], long low, long high, long max);
 
-void reallocate(void);
+void reallocate(struct CLIOptions* cli_options);
 
 void resolve_conflicts(int state_no, struct node **action, const short *symbol_list, int reduce_root, bool slr_bit);
 
