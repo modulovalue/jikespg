@@ -20,52 +20,20 @@ int LAST_RHS_INDEX(const int rule_no) {
   return rules[rule_no + 1].rhs - 1;
 }
 
-static void INIT_FIRST(const int nt) {
+void INIT_FIRST(const int nt) {
   for (register int k = 0; k < term_set_size; k++) {
     first[nt * term_set_size + k] = 0;
   }
 }
 
-static bool is_terminal_rhs(short *rhs_start, const bool *produces_terminals, int rule_no);
-
-static bool is_nullable_rhs(short *rhs_start, int rule_no);
-
-static void compute_first(int nt);
-
-static void print_unreachables(void);
-
-static void print_xref(void);
-
-static void print_nt_first(void);
-
-static void print_follow_map(void);
-
-static short first_map(int root, int tail);
-
-static void s_first(int root, int tail, int index);
-
-static void compute_follow(int nt);
-
-static void quick_sym(short array[], int h);
-
-static void check_non_terminals(void);
-
-static void no_rules_produced(void);
-
-static void nullables_computation(void);
-
-static void compute_closure(int lhs_symbol);
-
-static void compute_produces(int symbol);
-
-static struct f_element_type {
+struct f_element_type {
   short suffix_root;
   short suffix_tail;
   short link;
 } *first_element;
 
-static struct node **direct_produces;
-static SET_PTR produces;
+struct node **direct_produces;
+SET_PTR produces;
 
 /* TOP, STACK, and INDEX_OF are used for the linear graph algorithm in      */
 /* constructing the FIRST, FOLLOW and CLOSURE maps.                         */
@@ -89,21 +57,820 @@ static SET_PTR produces;
 /* Since these sets are simply partitions of the set of items, they are kept*/
 /* all in a sequential list in the array NEXT_ITEM.  The roots of the lists */
 /* are placed in the arrays T_ITEMS and NT_ITEMS.                           */
-static short *stack;
-static short *index_of;
-static short *lhs_rule;
-static short *next_rule;
-static short *first_table;
-static short *first_item_of;
-static short *next_item;
-static short *nt_items;
-static short *nt_list;
+short *stack;
+short *index_of;
+short *lhs_rule;
+short *next_rule;
+short *first_table;
+short *first_item_of;
+short *next_item;
+short *nt_items;
+short *nt_list;
 
-static int top;
+int top;
+
+/*   This procedure tries to advance the RHS_START pointer.  If the current  */
+/* symbol identified by the RHS_START element is a bad non-terminal it       */
+/* returns FALSE.  Otherwise, the whole right-hand side is traversed, and it */
+/* returns the value TRUE.                                                   */
+bool is_terminal_rhs(short *rhs_start, const bool *produces_terminals, const int rule_no) {
+  for (rhs_start[rule_no] = rhs_start[rule_no];
+       rhs_start[rule_no] <= rules[rule_no + 1].rhs - 1;
+       rhs_start[rule_no]++) {
+    const int symbol = rhs_sym[rhs_start[rule_no]];
+    if (IS_A_NON_TERMINAL(symbol)) {
+      if (!produces_terminals[symbol])
+        return false;
+    }
+  }
+  return true;
+}
+
+/* This procedure checks whether any non-terminal symbols can fail to */
+/* generate a string of terminals.                                           */
+/*                                                                           */
+/* A non-terminal "A" can generate a terminal string if the grammar in       */
+/* question contains a rule of the form:                                     */
+/*                                                                           */
+/*         A ::= X1 X2 ... Xn           n >= 0,  1 <= i <= n                 */
+/*                                                                           */
+/* and Xi, for all i, is a terminal or a non-terminal that can generate a    */
+/* string of terminals.                                                      */
+/* This routine is structurally identical to COMPUTE_NULLABLES.              */
+void check_non_terminals(void) {
+  int nt_last;
+  bool changed = true;
+  short *rhs_start = Allocate_short_array(NEXT_RULE_SIZE());
+  bool *produces_terminals = Allocate_boolean_array(num_non_terminals);
+  produces_terminals -= num_terminals + 1;
+  /* First, mark all non-terminals as not producing terminals. Then */
+  /* initialize RHS_START. RHS_START is a mapping from each rule in */
+  /* the grammar into the next symbol in its right-hand side that   */
+  /* has not yet proven to be a symbol that generates terminals.    */
+  for ALL_NON_TERMINALS3(nt)
+    produces_terminals[nt] = false;
+  produces_terminals[accept_image] = true;
+  for ALL_RULES3(rule_no) {
+    rhs_start[rule_no] = rules[rule_no].rhs;
+  }
+  /* We now iterate over the rules and try to advance the RHS_START */
+  /* pointer to each right-hand side as far as we can.  If one or   */
+  /* more non-terminals are found to be "all right", they are       */
+  /* marked as such and the process is repeated.                    */
+  /*                                                                */
+  /* If we go through all the rules and no new non-terminal is      */
+  /* found to be "all right" then we stop and return.               */
+  /*                                                                */
+  /* Note that on each iteration, only rules associated with        */
+  /* non-terminals that are not "all right" are considered. Further,*/
+  /* as soon as a non-terminal is found to be "all right", the      */
+  /* remaining rules associated with it are not considered. I.e.,   */
+  /* we quit the inner loop.                                        */
+  while (changed) {
+    changed = false;
+    for ALL_NON_TERMINALS3(nt) {
+      int rule_no;
+      for (bool end_node = (rule_no = lhs_rule[nt]) == NIL;
+           !produces_terminals[nt] && !end_node;
+           end_node = rule_no == lhs_rule[nt]) {
+        rule_no = next_rule[rule_no];
+        if (is_terminal_rhs(rhs_start, produces_terminals, rule_no)) {
+          changed = true;
+          produces_terminals[nt] = true;
+        }
+      }
+    }
+  }
+  /* Construct a list of all non-terminals that do not generate*/
+  /* terminal strings.                                         */
+  int nt_root = NIL;
+  for ALL_NON_TERMINALS3(nt) {
+    if (!produces_terminals[nt]) {
+      if (nt_root == NIL)
+        nt_root = nt;
+      else
+        nt_list[nt_last] = nt;
+      nt_last = nt;
+    }
+  }
+  /* If there are non-terminal symbols that do not generate    */
+  /* terminal strings, print them out and stop the program.    */
+  if (nt_root != NIL) {
+    char line[PRINT_LINE_SIZE + 1];
+    nt_list[nt_last] = NIL; /* mark end of list */
+    strcpy(line, "*** ERROR: The following Non-terminal");
+    if (nt_list[nt_root] == NIL) {
+      strcat(line, " does not generate any terminal strings: ");
+    } else {
+      strcat(line, "s do not generate any terminal strings: ");
+      PRNT(line);
+      strcpy(line, "        "); /* 8 spaces */
+    }
+    for (int symbol = nt_root; symbol != NIL; symbol = nt_list[symbol]) {
+      char tok[SYMBOL_SIZE + 1];
+      restore_symbol(tok, RETRIEVE_STRING(symbol));
+      if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 1) {
+        PRNT(line);
+        print_large_token(line, tok, "    ", LEN);
+      } else
+        strcat(line, tok);
+      strcat(line, " ");
+    }
+    PRNT(line);
+    exit(12);
+  }
+  produces_terminals += num_terminals + 1;
+  ffree(produces_terminals);
+  ffree(rhs_start);
+}
+
+void no_rules_produced(void) {
+  int nt_last;
+  /* Build a list of all non-terminals that do not produce any */
+  /* rules.                                                    */
+  int nt_root = NIL;
+  for ALL_NON_TERMINALS3(symbol) {
+    if (lhs_rule[symbol] == NIL) {
+      if (nt_root == NIL) {
+        nt_root = symbol;
+      } else {
+        nt_list[nt_last] = symbol;
+      }
+      nt_last = symbol;
+    }
+  }
+  /* If the list of non-terminals that do not produce any rules*/
+  /* is not empty, signal error and stop.                      */
+  if (nt_root != NIL) {
+    char line[PRINT_LINE_SIZE + 1];
+    nt_list[nt_last] = NIL;
+    if (nt_list[nt_root] == NIL) {
+      PRNTERR("The following Non-terminal does not produce any rules: ");
+    } else {
+      PRNTERR("The following Non-terminals do not produce any rules: ");
+    }
+    strcpy(line, "        ");
+    for (int symbol = nt_root; symbol != NIL; symbol = nt_list[symbol]) {
+      char tok[SYMBOL_SIZE + 1];
+      restore_symbol(tok, RETRIEVE_STRING(symbol));
+      if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE) {
+        PRNT(line);
+        print_large_token(line, tok, "    ", LEN);
+      } else {
+        strcat(line, tok);
+      }
+      strcat(line, " ");
+    }
+    PRNT(line);
+    exit(12);
+  }
+}
+
+/*  This function computes the closure of a non-terminal LHS_SYMBOL passed   */
+/* to it as an argument using the digraph algorithm.                         */
+/*  The closure of a non-terminal A is the set of all non-terminals Bi that  */
+/* can directly or indirectly start a string generated by A.                 */
+/* I.e., A *::= Bi X where X is an arbitrary string.                         */
+void compute_closure(const int lhs_symbol) {
+  int symbol;
+  int rule_no;
+  struct node *p;
+  struct node *q;
+  bool end_node;
+  short *nont_list = Allocate_short_array(num_non_terminals);
+  nont_list -= num_terminals + 1; /* Temporary direct        */
+  /* access set for closure. */
+  stack[++top] = lhs_symbol;
+  const int indx = top;
+  index_of[lhs_symbol] = indx;
+  for ALL_NON_TERMINALS3(i) {
+    nont_list[i] = OMEGA;
+  }
+  nont_list[lhs_symbol] = NIL;
+  int nt_root = lhs_symbol;
+  closure[lhs_symbol] = NULL; /* Permanent closure set. Linked list */
+  for (end_node = (rule_no = lhs_rule[lhs_symbol]) == NIL;
+       !end_node; /* Iterate over all rules of LHS_SYMBOL */
+       end_node = rule_no == lhs_rule[lhs_symbol]) {
+    rule_no = next_rule[rule_no];
+    symbol = RHS_SIZE(rule_no) == 0
+               ? empty
+               : rhs_sym[rules[rule_no].rhs];
+    if (IS_A_NON_TERMINAL(symbol)) {
+      if (nont_list[symbol] == OMEGA) {
+        if (index_of[symbol] == OMEGA) /* if first time seen */
+        {
+          compute_closure(symbol);
+        }
+        index_of[lhs_symbol] = MIN(index_of[lhs_symbol], index_of[symbol]);
+        nont_list[symbol] = nt_root;
+        nt_root = symbol;
+        /* add closure[symbol] to closure of LHS_SYMBOL.  */
+        for (end_node = (q = closure[symbol]) == NULL;
+             !end_node;
+             end_node = q == closure[symbol]) {
+          q = q->next;
+          if (nont_list[q->value] == OMEGA) {
+            nont_list[q->value] = nt_root;
+            nt_root = q->value;
+          }
+        }
+      }
+    }
+  }
+  for (; nt_root != lhs_symbol; nt_root = nont_list[nt_root]) {
+    p = Allocate_node();
+    p->value = nt_root;
+    if (closure[lhs_symbol] == NULL)
+      p->next = p;
+    else {
+      p->next = closure[lhs_symbol]->next;
+      closure[lhs_symbol]->next = p;
+    }
+    closure[lhs_symbol] = p;
+  }
+  if (index_of[lhs_symbol] == indx) {
+    for (symbol = stack[top]; symbol != lhs_symbol; symbol = stack[--top]) {
+      q = closure[symbol];
+      if (q != NULL) {
+        p = q->next;
+        free_nodes(p, q); /* free nodes used by CLOSURE[SYMBOL] */
+        closure[symbol] = NULL;
+      }
+      p = Allocate_node();
+      p->value = lhs_symbol;
+      p->next = p;
+      closure[symbol] = p;
+      for (end_node = (q = closure[lhs_symbol]) == NULL;
+           !end_node;
+           end_node = q == closure[lhs_symbol]) {
+        q = q->next;
+        if (q->value != symbol) {
+          p = Allocate_node();
+          p->value = q->value;
+          p->next = closure[symbol]->next;
+          closure[symbol]->next = p;
+          closure[symbol] = p;
+        }
+      }
+      index_of[symbol] = INFINITY;
+    }
+    index_of[lhs_symbol] = INFINITY;
+    top--;
+  }
+  nont_list += num_terminals + 1;
+  ffree(nont_list);
+}
+
+/*   This procedure tries to advance the RHS_START pointer.  If the current  */
+/* symbol identified by the RHS_START element is a terminal it returns FALSE */
+/* to indicate that it cannot go any further.  If it encounters a  non-null- */
+/* lable non-terminal, it also returns FALSE. Otherwise, the whole right-hand*/
+/* side is consumed, and it returns the value TRUE.                          */
+bool is_nullable_rhs(short *rhs_start, const int rule_no) {
+  for (rhs_start[rule_no] = rhs_start[rule_no];
+       rhs_start[rule_no] <= rules[rule_no + 1].rhs - 1;
+       rhs_start[rule_no]++) {
+    const int symbol = rhs_sym[rhs_start[rule_no]];
+    if (IS_A_TERMINAL(symbol)) {
+      return false;
+    } else if (!null_nt[symbol]) /* symbol is a non-terminal */
+    {
+      return false;
+    }
+       }
+  return true;
+}
+
+/*   This procedure computes the set of non-terminal symbols that can        */
+/* generate the empty string.  Such non-terminals are said to be nullable.   */
+/*                                                                           */
+/* A non-terminal "A" can generate empty if the grammar in question contains */
+/* a rule:                                                                   */
+/*          A ::= B1 B2 ... Bn     n >= 0,  1 <= i <= n                      */
+/* and Bi, for all i, is a nullable non-terminal.                            */
+void nullables_computation(void) {
+  int rule_no;
+  bool changed = true;
+  short *rhs_start = Allocate_short_array(NEXT_RULE_SIZE());
+  /* First, mark all non-terminals as non-nullable.  Then initialize*/
+  /* RHS_START. RHS_START is a mapping from each rule in the grammar*/
+  /* into the next symbol in its right-hand side that has not yet   */
+  /* proven to be nullable.                                         */
+  for ALL_NON_TERMINALS3(nt) {
+    null_nt[nt] = false;
+  }
+  for ALL_RULES3(rule_no) {
+    rhs_start[rule_no] = rules[rule_no].rhs;
+  }
+  /* We now iterate over the rules and try to advance the RHS_START */
+  /* pointer thru each right-hand side as far as we can.  If one or */
+  /* more non-terminals are found to be nullable, they are marked   */
+  /* as such and the process is repeated.                           */
+  /*                                                                */
+  /* If we go through all the rules and no new non-terminal is found*/
+  /* to be nullable then we stop and return.                        */
+  /*                                                                */
+  /* Note that for each iteration, only rules associated with       */
+  /* non-terminals that are non-nullable are considered.  Further,  */
+  /* as soon as a non-terminal is found to be nullable, the         */
+  /* remaining rules associated with it are not considered.  I.e.,  */
+  /* we quit the inner loop.                                        */
+  while (changed) {
+    changed = false;
+    for ALL_NON_TERMINALS3(nt) {
+      for (bool end_node = (rule_no = lhs_rule[nt]) == NIL;
+           !null_nt[nt] && !end_node;
+           end_node = rule_no == lhs_rule[nt]) {
+        rule_no = next_rule[rule_no];
+        if (is_nullable_rhs(rhs_start, rule_no)) {
+          changed = true;
+          null_nt[nt] = true;
+        }
+      }
+    }
+  }
+  ffree(rhs_start);
+}
+
+/* This subroutine computes FIRST(NT) for some non-terminal NT using the     */
+/* digraph algorithm.                                                        */
+/* FIRST(NT) is the set of all terminals Ti that may start a string generated*/
+/* by NT. That is, NT *::= Ti X where X is an arbitrary string.              */
+void compute_first(const int nt) {
+  int symbol;
+  int rule_no;
+  const SET_PTR temp_set = calloc(1, term_set_size * sizeof(BOOLEAN_CELL));
+  if (temp_set == NULL)
+    nospace(__FILE__, __LINE__);
+  stack[++top] = nt;
+  const int indx = top;
+  index_of[nt] = indx;
+  /* Iterate over all rules generated by non-terminal NT...     */
+  /* In this application of the transitive closure algorithm,   */
+  /*                                                            */
+  /*  G(A) := { t | A ::= t X for a terminal t and a string X } */
+  /*                                                            */
+  /* The relation R is defined as follows:                      */
+  /*                                                            */
+  /*    R(A, B) iff A ::= B1 B2 ... Bk B X                      */
+  /*                                                            */
+  /* where Bi is nullable for 1 <= i <= k                       */
+  for (bool end_node = (rule_no = lhs_rule[nt]) == NIL;
+       !end_node; /* Iterate over all rules produced by NT */
+       end_node = rule_no == lhs_rule[nt]) {
+    rule_no = next_rule[rule_no];
+    bool blocked = false;
+    for ENTIRE_RHS3(i, rule_no) {
+      symbol = rhs_sym[i];
+      if (IS_A_NON_TERMINAL(symbol)) {
+        if (index_of[symbol] == OMEGA) {
+          compute_first(symbol);
+        }
+        index_of[nt] = MIN(index_of[nt], index_of[symbol]);
+        ASSIGN_SET(temp_set, 0, nt_first, symbol);
+        RESET_BIT(temp_set, empty);
+        SET_UNION(nt_first, nt, temp_set, 0);
+        blocked = !null_nt[symbol];
+      } else {
+        SET_BIT_IN(nt_first, nt, symbol);
+        blocked = true;
+      }
+      if (blocked)
+        break;
+    }
+    if (!blocked) {
+      SET_BIT_IN(nt_first, nt, empty);
+    }
+  }
+  if (index_of[nt] == indx) {
+    for (symbol = stack[top]; symbol != nt; symbol = stack[--top]) {
+      ASSIGN_SET(nt_first, symbol, nt_first, nt);
+      index_of[symbol] = INFINITY;
+    }
+    index_of[nt] = INFINITY;
+    top--;
+  }
+  ffree(temp_set);
+}
+
+/*  FIRST_MAP takes as arguments two pointers, ROOT and TAIL, to a sequence  */
+/* of symbols in RHS which it inserts in FIRST_TABLE.  The vector FIRST_TABLE*/
+/* is used as the base for a hashed table where collisions are resolved by   */
+/* links.  Elements added to this hash table are allocated from the vector   */
+/* FIRST_ELEMENT, with the variable TOP always indicating the position of the*/
+/* last element in FIRST_ELEMENT that was allocated.                         */
+/* NOTE: The suffix indentified by ROOT and TAIL is presumed not to be empty.*/
+/*       That is, ROOT <= TAIL !!!                                           */
+short first_map(const int root, const int tail) {
+  for (int i = first_table[rhs_sym[root]]; i != NIL; i = first_element[i].link) {
+    int k;
+    int jj;
+    for (jj = root + 1, k = first_element[i].suffix_root + 1;
+         jj <= tail && k <= first_element[i].suffix_tail;
+         jj++, k++) {
+      if (rhs_sym[jj] != rhs_sym[k])
+        break;
+    }
+    if (jj > tail && k > first_element[i].suffix_tail) {
+      return i;
+    }
+  }
+  top++;
+  first_element[top].suffix_root = root;
+  first_element[top].suffix_tail = tail;
+  first_element[top].link = first_table[rhs_sym[root]];
+  first_table[rhs_sym[root]] = top;
+  return top;
+}
+
+/* S_FIRST takes as argument, two pointers: ROOT and TAIL to a sequence of   */
+/* symbols in the vector RHS, and INDEX which is the index of a first set.   */
+/* It computes the set of all terminals that can appear as the first symbol  */
+/* in the sequence and places the result in the FIRST set indexable by INDEX.*/
+void s_first(const int root, const int tail, const int index) {
+  int symbol = root > tail ? empty : rhs_sym[root];
+  if (IS_A_TERMINAL(symbol)) {
+    INIT_FIRST(index);
+    SET_BIT_IN(first, index, symbol); /* add it to set */
+  } else {
+    ASSIGN_SET(first, index, nt_first, symbol);
+  }
+  for (int i = root + 1; i <= tail && IS_IN_SET(first, index, empty); i++) {
+    symbol = rhs_sym[i];
+    RESET_BIT_IN(first, index, empty); /* remove EMPTY */
+    if (IS_A_TERMINAL(symbol)) {
+      SET_BIT_IN(first, index, symbol); /* add it to set */
+    } else {
+      SET_UNION(first, index, nt_first, symbol);
+    }
+  }
+}
+
+/* For a given symbol, complete the computation of                */
+/* PRODUCES[symbol].                                              */
+void compute_produces(const int symbol) {
+  int new_symbol;
+  struct node *q;
+  stack[++top] = symbol;
+  const int indx = top;
+  index_of[symbol] = indx;
+  for (struct node *p = direct_produces[symbol]; p != NULL; q = p, p = p->next) {
+    new_symbol = p->value;
+    if (index_of[new_symbol] == OMEGA) /* first time seen? */
+    {
+      compute_produces(new_symbol);
+    }
+    index_of[symbol] = MIN(index_of[symbol], index_of[new_symbol]);
+    NTSET_UNION(produces, symbol, produces, new_symbol);
+  }
+  if (direct_produces[symbol] != NULL) {
+    free_nodes(direct_produces[symbol], q);
+  }
+  if (index_of[symbol] == indx) /*symbol is SCC root */
+  {
+    for (new_symbol = stack[top];
+         new_symbol != symbol; new_symbol = stack[--top]) {
+      ASSIGN_NTSET(produces, new_symbol, produces, symbol);
+      index_of[new_symbol] = INFINITY;
+    }
+    index_of[symbol] = INFINITY;
+    top--;
+  }
+}
+
+/* COMPUTE_FOLLOW computes FOLLOW[nt] for some non-terminal NT using the     */
+/* digraph algorithm.  FOLLOW[NT] is the set of all terminals Ti that        */
+/* may immediately follow a string X generated by NT. I.e., if NT *::= X     */
+/* then X Ti is a valid substring of a class of strings that may be          */
+/* recognized by the language.                                               */
+void compute_follow(const int nt) {
+  int lhs_symbol;
+  const SET_PTR temp_set = calloc(1, term_set_size * sizeof(BOOLEAN_CELL));
+  if (temp_set == NULL)
+    nospace(__FILE__, __LINE__);
+  /* FOLLOW[NT] was initialized to 0 for all non-terminals.     */
+  stack[++top] = nt;
+  const int indx = top;
+  index_of[nt] = indx;
+  for (int item_no = nt_items[nt]; item_no != NIL; item_no = next_item[item_no]) {
+    /* iterate over all items of NT */
+    ASSIGN_SET(temp_set, 0, first, item_table[item_no].suffix_index);
+    if (IS_ELEMENT(temp_set, empty)) {
+      RESET_BIT(temp_set, empty);
+      const int rule_no = item_table[item_no].rule_number;
+      lhs_symbol = rules[rule_no].lhs;
+      if (index_of[lhs_symbol] == OMEGA)
+        compute_follow(lhs_symbol);
+      SET_UNION(follow, nt, follow, lhs_symbol);
+      index_of[nt] = MIN(index_of[nt], index_of[lhs_symbol]);
+    }
+    SET_UNION(follow, nt, temp_set, 0);
+  }
+  if (index_of[nt] == indx) {
+    for (lhs_symbol = stack[top];
+         lhs_symbol != nt; lhs_symbol = stack[--top]) {
+      ASSIGN_SET(follow, lhs_symbol, follow, nt);
+      index_of[lhs_symbol] = INFINITY;
+    }
+    index_of[nt] = INFINITY;
+    top--;
+  }
+  ffree(temp_set);
+}
+
+void print_unreachables(void) {
+  char line[PRINT_LINE_SIZE + 1];
+  char tok[SYMBOL_SIZE + 1];
+  /* SYMBOL_LIST is used for two purposes:                       */
+  /*  1) to mark symbols that are reachable from the Accepting   */
+  /*        non-terminal.                                        */
+  /*  2) to construct lists of symbols that are not reachable.   */
+  int *symbol_list = Allocate_int_array(num_symbols + 1);
+  for ALL_SYMBOLS3(symbol) {
+    symbol_list[symbol] = OMEGA;
+  }
+  symbol_list[eoft_image] = NIL;
+  symbol_list[empty] = NIL;
+  if (error_maps_bit) {
+    symbol_list[error_image] = NIL;
+  }
+  /* Initialize a list consisting only of the Accept non-terminal.     */
+  /* This list is a work pile of non-terminals to process as follows:  */
+  /* Each non-terminal in the front of the list is removed in turn and */
+  /* 1) All terminal symbols in one of its right-hand sides are        */
+  /*     marked reachable.                                             */
+  /* 2) All non-terminals in one of its right-hand sides are placed    */
+  /*     in the work pile of it had not been processed previously  */
+  int nt_root = accept_image;
+  symbol_list[nt_root] = NIL;
+  for (int nt = nt_root; nt != NIL; nt = nt_root) {
+    nt_root = symbol_list[nt];
+    int rule_no;
+    for (bool end_node = (rule_no = lhs_rule[nt]) == NIL;
+         !end_node;
+         end_node = rule_no == lhs_rule[nt]) {
+      rule_no = next_rule[rule_no];
+      for ENTIRE_RHS3(i, rule_no) {
+        const int symbol = rhs_sym[i];
+        if (IS_A_TERMINAL(symbol)) {
+          symbol_list[symbol] = NIL;
+        } else if (symbol_list[symbol] == OMEGA) {
+          symbol_list[symbol] = nt_root;
+          nt_root = symbol;
+        }
+      }
+    }
+  }
+  /* We now iterate (backwards to keep things in order) over the */
+  /* terminal symbols, and place each unreachable terminal in a  */
+  /* list. If the list is not empty, we signal that these symbols*/
+  /* are unused.                                                 */
+  int t_root = NIL;
+  for ALL_TERMINALS_BACKWARDS3(symbol) {
+    if (symbol_list[symbol] == OMEGA) {
+      symbol_list[symbol] = t_root;
+      t_root = symbol;
+    }
+  }
+  if (t_root != NIL) {
+    if (symbol_list[t_root] != NIL) {
+      PRNT("*** The following Terminals are useless: ");
+      fprintf(syslis, "\n\n");
+      strcpy(line, "        "); /* 8 spaces */
+    } else {
+      strcpy(line, "*** The following Terminal is useless: ");
+    }
+    for (int symbol = t_root; symbol != NIL; symbol = symbol_list[symbol]) {
+      restore_symbol(tok, RETRIEVE_STRING(symbol));
+      if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE) {
+        PRNT(line);
+        print_large_token(line, tok, "    ", LEN);
+      } else {
+        strcat(line, tok);
+        strcat(line, " ");
+      }
+      strcat(line, " ");
+    }
+    PRNT(line);
+  }
+  /* We now iterate (backward to keep things in order) over the  */
+  /* non-terminals, and place each unreachable non-terminal in a */
+  /* list.  If the list is not empty, we signal that these       */
+  /* symbols are unused.                                         */
+  nt_root = NIL;
+  for ALL_NON_TERMINALS_BACKWARDS3(symbol) {
+    if (symbol_list[symbol] == OMEGA) {
+      symbol_list[symbol] = nt_root;
+      nt_root = symbol;
+    }
+  }
+  if (nt_root != NIL) {
+    if (symbol_list[nt_root] != NIL) {
+      PRNT("*** The following Non-Terminals are useless: ");
+      fprintf(syslis, "\n\n");
+      strcpy(line, "        "); /* 8 spaces */
+    } else {
+      strcpy(line, "*** The following Non-Terminal is useless: ");
+    }
+    for (int symbol = nt_root; symbol != NIL; symbol = symbol_list[symbol]) {
+      restore_symbol(tok, RETRIEVE_STRING(symbol));
+      if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE) {
+        PRNT(line);
+        print_large_token(line, tok, "    ", LEN);
+      } else {
+        strcat(line, tok);
+      }
+      strcat(line, " ");
+    }
+    PRNT(line);
+  }
+  ffree(symbol_list);
+}
+
+/* QUICK_SYM takes as arguments an array of pointers whose elements point to */
+/* nodes and two integer arguments: L, H. L and H indicate respectively the  */
+/* lower and upper bound of a section in the array.                          */
+void quick_sym(short array[], const int h) {
+  const int l = 1;
+  /* Since no more than 2**15-1 symbols are allowed, the stack  */
+  /* not grow past 14.                                          */
+  int lostack[14];
+  int histack[14];
+  int top = 1;
+  lostack[top] = l;
+  histack[top] = h;
+  while (top != 0) {
+    int lower = lostack[top];
+    int upper = histack[top--];
+    while (upper > lower) {
+      /* Split the array section indicated by LOWER and UPPER */
+      /* using ARRAY[LOWER] as the pivot.                     */
+      int i = lower;
+      const short pivot = array[lower];
+      for (int j = lower + 1; j <= upper; j++) {
+        if (strcmp(RETRIEVE_STRING(array[j]), RETRIEVE_STRING(pivot)) < 0) {
+          const short temp = array[++i];
+          array[i] = array[j];
+          array[j] = temp;
+        }
+      }
+      array[lower] = array[i];
+      array[i] = pivot;
+      top++;
+      if (i - lower < upper - i) {
+        lostack[top] = i + 1;
+        histack[top] = upper;
+        upper = i - 1;
+      } else {
+        histack[top] = i - 1;
+        lostack[top] = lower;
+        lower = i + 1;
+      }
+    }
+  }
+}
+
+/* PRINT_XREF prints out the Cross-reference map. We build a map from each   */
+/* terminal into the set of items whose Dot-symbol (symbol immediately       */
+/* following the dot) is the terminal in question.  Note that we iterate     */
+/* backwards over the rules to keep the rules associated with the items      */
+/* sorted, since they are inserted in STACK fashion in the lists:  Last-in,  */
+/* First out.                                                                */
+void print_xref(void) {
+  int item_no;
+  /* SORT_SYM is used to sort the symbols for cross_reference listing. */
+  short *sort_sym = Allocate_short_array(num_symbols + 1);
+  short *t_items = Allocate_short_array(num_terminals + 1);
+  for ALL_TERMINALS3(symbol) {
+    t_items[symbol] = NIL;
+  }
+  for ALL_RULES_BACKWARDS3(rule_no) {
+    item_no = first_item_of[rule_no];
+    for ENTIRE_RHS3(symbol, rule_no) {
+      symbol = rhs_sym[symbol];
+      if (IS_A_TERMINAL(symbol)) {
+        next_item[item_no] = t_items[symbol];
+        t_items[symbol] = item_no;
+      }
+      item_no++;
+    }
+  }
+  for ALL_SYMBOLS3(symbol) {
+    sort_sym[symbol] = symbol;
+  }
+  quick_sym(sort_sym, num_symbols);
+  fprintf(syslis, "\n\nCross-reference table:\n");
+  for ALL_SYMBOLS3(symbol) {
+    symbol = sort_sym[symbol];
+    if (symbol != accept_image && symbol != eoft_image
+        && symbol != empty) {
+      char line[PRINT_LINE_SIZE + 1];
+      char tok[SYMBOL_SIZE + 1];
+      fprintf(syslis, "\n");
+      restore_symbol(tok, RETRIEVE_STRING(symbol));
+      print_large_token(line, tok, "", PRINT_LINE_SIZE - 7);
+      strcat(line, "  ==>> ");
+      const int offset = strlen(line) - 1;
+      if (IS_A_NON_TERMINAL(symbol)) {
+        int rule_no;
+        for (bool end_node = (rule_no = lhs_rule[symbol]) == NIL;
+             !end_node;
+             end_node = rule_no == lhs_rule[symbol]) {
+          rule_no = next_rule[rule_no];
+          sprintf(tok, "%d", rule_no);
+          if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE) {
+            fprintf(syslis, "\n%s", line);
+            strcpy(line, " ");
+            for (int j = 1; j <= offset; j++) {
+              strcat(line, " ");
+            }
+          }
+          strcat(line, tok);
+          if (strlen(line) < PRINT_LINE_SIZE)
+            strcat(line, " ");
+        }
+        fprintf(syslis, "\n%s", line);
+        item_no = nt_items[symbol];
+      } else {
+        for (item_no = t_items[symbol];
+             item_no != NIL; item_no = next_item[item_no]) {
+          const int rule_no = item_table[item_no].rule_number;
+          sprintf(tok, "%d", rule_no);
+          if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE) {
+            fprintf(syslis, "\n%s", line);
+            strcpy(line, " ");
+            for (int j = 1; j <= offset; j++) {
+              strcat(line, " ");
+            }
+          }
+          strcat(line, tok);
+          if (strlen(line) < PRINT_LINE_SIZE) {
+            strcat(line, " ");
+          }
+        }
+        fprintf(syslis, "\n%s", line);
+      }
+    }
+  }
+  fprintf(syslis, "\n\n");
+  ffree(t_items);
+  ffree(sort_sym);
+}
+
+/* PRINT_NT_FIRST prints the first set for each non-terminal.                */
+void print_nt_first(void) {
+  fprintf(syslis, "\nFirst map for non-terminals:\n\n");
+  for ALL_NON_TERMINALS3(nt) {
+    char tok[SYMBOL_SIZE + 1];
+    char line[PRINT_LINE_SIZE + 1];
+    restore_symbol(tok, RETRIEVE_STRING(nt));
+    print_large_token(line, tok, "", PRINT_LINE_SIZE - 7);
+    strcat(line, "  ==>> ");
+    for ALL_TERMINALS3(t) {
+      if (IS_IN_SET(nt_first, nt, t)) {
+        restore_symbol(tok, RETRIEVE_STRING(t));
+        if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 1) {
+          fprintf(syslis, "\n%s", line);
+          print_large_token(line, tok, "    ", LEN);
+        } else {
+          strcat(line, tok);
+        }
+        strcat(line, " ");
+      }
+    }
+    fprintf(syslis, "\n%s\n", line);
+  }
+}
+
+/* PRINT_FOLLOW_MAP prints the follow map.                                   */
+void print_follow_map(void) {
+  fprintf(syslis, "\nFollow Map:\n\n");
+  for ALL_NON_TERMINALS3(nt) {
+    char tok[SYMBOL_SIZE + 1];
+    char line[PRINT_LINE_SIZE + 1];
+    restore_symbol(tok, RETRIEVE_STRING(nt));
+    print_large_token(line, tok, "", PRINT_LINE_SIZE - 7);
+    strcat(line, "  ==>> ");
+    for ALL_TERMINALS3(t) {
+      if (IS_IN_SET(follow, nt, t)) {
+        restore_symbol(tok, RETRIEVE_STRING(t));
+        if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 2) {
+          fprintf(syslis, "\n%s", line);
+          print_large_token(line, tok, "    ", LEN);
+        } else {
+          strcat(line, tok);
+        }
+        strcat(line, " ");
+      }
+    }
+    fprintf(syslis, "\n%s\n", line);
+  }
+}
 
 /* MKFIRST constructs the FIRST and FOLLOW maps, the CLOSURE map,            */
 /* ADEQUATE_ITEM and ITEM_TABLE maps and all other basic maps.               */
-void mkfirst(void) {
+void mkbasic(void) {
   int symbol;
   int rule_no;
   bool end_node;
@@ -453,803 +1220,4 @@ void mkfirst(void) {
   ffree(lhs_rule);
   ffree(next_rule);
   ffree(first_item_of);
-}
-
-static void no_rules_produced(void) {
-  int nt_last;
-  /* Build a list of all non-terminals that do not produce any */
-  /* rules.                                                    */
-  int nt_root = NIL;
-  for ALL_NON_TERMINALS3(symbol) {
-    if (lhs_rule[symbol] == NIL) {
-      if (nt_root == NIL) {
-        nt_root = symbol;
-      } else {
-        nt_list[nt_last] = symbol;
-      }
-      nt_last = symbol;
-    }
-  }
-  /* If the list of non-terminals that do not produce any rules*/
-  /* is not empty, signal error and stop.                      */
-  if (nt_root != NIL) {
-    char line[PRINT_LINE_SIZE + 1];
-    nt_list[nt_last] = NIL;
-    if (nt_list[nt_root] == NIL) {
-      PRNTERR("The following Non-terminal does not produce any rules: ");
-    } else {
-      PRNTERR("The following Non-terminals do not produce any rules: ");
-    }
-    strcpy(line, "        ");
-    for (int symbol = nt_root; symbol != NIL; symbol = nt_list[symbol]) {
-      char tok[SYMBOL_SIZE + 1];
-      restore_symbol(tok, RETRIEVE_STRING(symbol));
-      if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE) {
-        PRNT(line);
-        print_large_token(line, tok, "    ", LEN);
-      } else {
-        strcat(line, tok);
-      }
-      strcat(line, " ");
-    }
-    PRNT(line);
-    exit(12);
-  }
-}
-
-/*  This function computes the closure of a non-terminal LHS_SYMBOL passed   */
-/* to it as an argument using the digraph algorithm.                         */
-/*  The closure of a non-terminal A is the set of all non-terminals Bi that  */
-/* can directly or indirectly start a string generated by A.                 */
-/* I.e., A *::= Bi X where X is an arbitrary string.                         */
-static void compute_closure(const int lhs_symbol) {
-  int symbol;
-  int rule_no;
-  struct node *p;
-  struct node *q;
-  bool end_node;
-  short *nont_list = Allocate_short_array(num_non_terminals);
-  nont_list -= num_terminals + 1; /* Temporary direct        */
-  /* access set for closure. */
-  stack[++top] = lhs_symbol;
-  const int indx = top;
-  index_of[lhs_symbol] = indx;
-  for ALL_NON_TERMINALS3(i) {
-    nont_list[i] = OMEGA;
-  }
-  nont_list[lhs_symbol] = NIL;
-  int nt_root = lhs_symbol;
-  closure[lhs_symbol] = NULL; /* Permanent closure set. Linked list */
-  for (end_node = (rule_no = lhs_rule[lhs_symbol]) == NIL;
-       !end_node; /* Iterate over all rules of LHS_SYMBOL */
-       end_node = rule_no == lhs_rule[lhs_symbol]) {
-    rule_no = next_rule[rule_no];
-    symbol = RHS_SIZE(rule_no) == 0
-               ? empty
-               : rhs_sym[rules[rule_no].rhs];
-    if (IS_A_NON_TERMINAL(symbol)) {
-      if (nont_list[symbol] == OMEGA) {
-        if (index_of[symbol] == OMEGA) /* if first time seen */
-        {
-          compute_closure(symbol);
-        }
-        index_of[lhs_symbol] = MIN(index_of[lhs_symbol], index_of[symbol]);
-        nont_list[symbol] = nt_root;
-        nt_root = symbol;
-        /* add closure[symbol] to closure of LHS_SYMBOL.  */
-        for (end_node = (q = closure[symbol]) == NULL;
-             !end_node;
-             end_node = q == closure[symbol]) {
-          q = q->next;
-          if (nont_list[q->value] == OMEGA) {
-            nont_list[q->value] = nt_root;
-            nt_root = q->value;
-          }
-        }
-      }
-    }
-  }
-  for (; nt_root != lhs_symbol; nt_root = nont_list[nt_root]) {
-    p = Allocate_node();
-    p->value = nt_root;
-    if (closure[lhs_symbol] == NULL)
-      p->next = p;
-    else {
-      p->next = closure[lhs_symbol]->next;
-      closure[lhs_symbol]->next = p;
-    }
-    closure[lhs_symbol] = p;
-  }
-  if (index_of[lhs_symbol] == indx) {
-    for (symbol = stack[top]; symbol != lhs_symbol; symbol = stack[--top]) {
-      q = closure[symbol];
-      if (q != NULL) {
-        p = q->next;
-        free_nodes(p, q); /* free nodes used by CLOSURE[SYMBOL] */
-        closure[symbol] = NULL;
-      }
-      p = Allocate_node();
-      p->value = lhs_symbol;
-      p->next = p;
-      closure[symbol] = p;
-      for (end_node = (q = closure[lhs_symbol]) == NULL;
-           !end_node;
-           end_node = q == closure[lhs_symbol]) {
-        q = q->next;
-        if (q->value != symbol) {
-          p = Allocate_node();
-          p->value = q->value;
-          p->next = closure[symbol]->next;
-          closure[symbol]->next = p;
-          closure[symbol] = p;
-        }
-      }
-      index_of[symbol] = INFINITY;
-    }
-    index_of[lhs_symbol] = INFINITY;
-    top--;
-  }
-  nont_list += num_terminals + 1;
-  ffree(nont_list);
-}
-
-/*   This procedure computes the set of non-terminal symbols that can        */
-/* generate the empty string.  Such non-terminals are said to be nullable.   */
-/*                                                                           */
-/* A non-terminal "A" can generate empty if the grammar in question contains */
-/* a rule:                                                                   */
-/*          A ::= B1 B2 ... Bn     n >= 0,  1 <= i <= n                      */
-/* and Bi, for all i, is a nullable non-terminal.                            */
-static void nullables_computation(void) {
-  int rule_no;
-  bool changed = true;
-  short *rhs_start = Allocate_short_array(NEXT_RULE_SIZE());
-  /* First, mark all non-terminals as non-nullable.  Then initialize*/
-  /* RHS_START. RHS_START is a mapping from each rule in the grammar*/
-  /* into the next symbol in its right-hand side that has not yet   */
-  /* proven to be nullable.                                         */
-  for ALL_NON_TERMINALS3(nt) {
-    null_nt[nt] = false;
-  }
-  for ALL_RULES3(rule_no) {
-    rhs_start[rule_no] = rules[rule_no].rhs;
-  }
-  /* We now iterate over the rules and try to advance the RHS_START */
-  /* pointer thru each right-hand side as far as we can.  If one or */
-  /* more non-terminals are found to be nullable, they are marked   */
-  /* as such and the process is repeated.                           */
-  /*                                                                */
-  /* If we go through all the rules and no new non-terminal is found*/
-  /* to be nullable then we stop and return.                        */
-  /*                                                                */
-  /* Note that for each iteration, only rules associated with       */
-  /* non-terminals that are non-nullable are considered.  Further,  */
-  /* as soon as a non-terminal is found to be nullable, the         */
-  /* remaining rules associated with it are not considered.  I.e.,  */
-  /* we quit the inner loop.                                        */
-  while (changed) {
-    changed = false;
-    for ALL_NON_TERMINALS3(nt) {
-      for (bool end_node = (rule_no = lhs_rule[nt]) == NIL;
-           !null_nt[nt] && !end_node;
-           end_node = rule_no == lhs_rule[nt]) {
-        rule_no = next_rule[rule_no];
-        if (is_nullable_rhs(rhs_start, rule_no)) {
-          changed = true;
-          null_nt[nt] = true;
-        }
-      }
-    }
-  }
-  ffree(rhs_start);
-}
-
-/*   This procedure tries to advance the RHS_START pointer.  If the current  */
-/* symbol identified by the RHS_START element is a terminal it returns FALSE */
-/* to indicate that it cannot go any further.  If it encounters a  non-null- */
-/* lable non-terminal, it also returns FALSE. Otherwise, the whole right-hand*/
-/* side is consumed, and it returns the value TRUE.                          */
-static bool is_nullable_rhs(short *rhs_start, const int rule_no) {
-  for (rhs_start[rule_no] = rhs_start[rule_no];
-       rhs_start[rule_no] <= rules[rule_no + 1].rhs - 1;
-       rhs_start[rule_no]++) {
-    const int symbol = rhs_sym[rhs_start[rule_no]];
-    if (IS_A_TERMINAL(symbol)) {
-      return false;
-    } else if (!null_nt[symbol]) /* symbol is a non-terminal */
-    {
-      return false;
-    }
-  }
-  return true;
-}
-
-/* This subroutine computes FIRST(NT) for some non-terminal NT using the     */
-/* digraph algorithm.                                                        */
-/* FIRST(NT) is the set of all terminals Ti that may start a string generated*/
-/* by NT. That is, NT *::= Ti X where X is an arbitrary string.              */
-static void compute_first(const int nt) {
-  int symbol;
-  int rule_no;
-  const SET_PTR temp_set = calloc(1, term_set_size * sizeof(BOOLEAN_CELL));
-  if (temp_set == NULL)
-    nospace(__FILE__, __LINE__);
-  stack[++top] = nt;
-  const int indx = top;
-  index_of[nt] = indx;
-  /* Iterate over all rules generated by non-terminal NT...     */
-  /* In this application of the transitive closure algorithm,   */
-  /*                                                            */
-  /*  G(A) := { t | A ::= t X for a terminal t and a string X } */
-  /*                                                            */
-  /* The relation R is defined as follows:                      */
-  /*                                                            */
-  /*    R(A, B) iff A ::= B1 B2 ... Bk B X                      */
-  /*                                                            */
-  /* where Bi is nullable for 1 <= i <= k                       */
-  for (bool end_node = (rule_no = lhs_rule[nt]) == NIL;
-       !end_node; /* Iterate over all rules produced by NT */
-       end_node = rule_no == lhs_rule[nt]) {
-    rule_no = next_rule[rule_no];
-    bool blocked = false;
-    for ENTIRE_RHS3(i, rule_no) {
-      symbol = rhs_sym[i];
-      if (IS_A_NON_TERMINAL(symbol)) {
-        if (index_of[symbol] == OMEGA) {
-          compute_first(symbol);
-        }
-        index_of[nt] = MIN(index_of[nt], index_of[symbol]);
-        ASSIGN_SET(temp_set, 0, nt_first, symbol);
-        RESET_BIT(temp_set, empty);
-        SET_UNION(nt_first, nt, temp_set, 0);
-        blocked = !null_nt[symbol];
-      } else {
-        SET_BIT_IN(nt_first, nt, symbol);
-        blocked = true;
-      }
-      if (blocked)
-        break;
-    }
-    if (!blocked) {
-      SET_BIT_IN(nt_first, nt, empty);
-    }
-  }
-  if (index_of[nt] == indx) {
-    for (symbol = stack[top]; symbol != nt; symbol = stack[--top]) {
-      ASSIGN_SET(nt_first, symbol, nt_first, nt);
-      index_of[symbol] = INFINITY;
-    }
-    index_of[nt] = INFINITY;
-    top--;
-  }
-  ffree(temp_set);
-}
-
-/* This procedure checks whether any non-terminal symbols can fail to */
-/* generate a string of terminals.                                           */
-/*                                                                           */
-/* A non-terminal "A" can generate a terminal string if the grammar in       */
-/* question contains a rule of the form:                                     */
-/*                                                                           */
-/*         A ::= X1 X2 ... Xn           n >= 0,  1 <= i <= n                 */
-/*                                                                           */
-/* and Xi, for all i, is a terminal or a non-terminal that can generate a    */
-/* string of terminals.                                                      */
-/* This routine is structurally identical to COMPUTE_NULLABLES.              */
-static void check_non_terminals(void) {
-  int nt_last;
-  bool changed = true;
-  short *rhs_start = Allocate_short_array(NEXT_RULE_SIZE());
-  bool *produces_terminals = Allocate_boolean_array(num_non_terminals);
-  produces_terminals -= num_terminals + 1;
-  /* First, mark all non-terminals as not producing terminals. Then */
-  /* initialize RHS_START. RHS_START is a mapping from each rule in */
-  /* the grammar into the next symbol in its right-hand side that   */
-  /* has not yet proven to be a symbol that generates terminals.    */
-  for ALL_NON_TERMINALS3(nt)
-    produces_terminals[nt] = false;
-  produces_terminals[accept_image] = true;
-  for ALL_RULES3(rule_no) {
-    rhs_start[rule_no] = rules[rule_no].rhs;
-  }
-  /* We now iterate over the rules and try to advance the RHS_START */
-  /* pointer to each right-hand side as far as we can.  If one or   */
-  /* more non-terminals are found to be "all right", they are       */
-  /* marked as such and the process is repeated.                    */
-  /*                                                                */
-  /* If we go through all the rules and no new non-terminal is      */
-  /* found to be "all right" then we stop and return.               */
-  /*                                                                */
-  /* Note that on each iteration, only rules associated with        */
-  /* non-terminals that are not "all right" are considered. Further,*/
-  /* as soon as a non-terminal is found to be "all right", the      */
-  /* remaining rules associated with it are not considered. I.e.,   */
-  /* we quit the inner loop.                                        */
-  while (changed) {
-    changed = false;
-    for ALL_NON_TERMINALS3(nt) {
-      int rule_no;
-      for (bool end_node = (rule_no = lhs_rule[nt]) == NIL;
-           !produces_terminals[nt] && !end_node;
-           end_node = rule_no == lhs_rule[nt]) {
-        rule_no = next_rule[rule_no];
-        if (is_terminal_rhs(rhs_start, produces_terminals, rule_no)) {
-          changed = true;
-          produces_terminals[nt] = true;
-        }
-      }
-    }
-  }
-  /* Construct a list of all non-terminals that do not generate*/
-  /* terminal strings.                                         */
-  int nt_root = NIL;
-  for ALL_NON_TERMINALS3(nt) {
-    if (!produces_terminals[nt]) {
-      if (nt_root == NIL)
-        nt_root = nt;
-      else
-        nt_list[nt_last] = nt;
-      nt_last = nt;
-    }
-  }
-  /* If there are non-terminal symbols that do not generate    */
-  /* terminal strings, print them out and stop the program.    */
-  if (nt_root != NIL) {
-    char line[PRINT_LINE_SIZE + 1];
-    nt_list[nt_last] = NIL; /* mark end of list */
-    strcpy(line, "*** ERROR: The following Non-terminal");
-    if (nt_list[nt_root] == NIL) {
-      strcat(line, " does not generate any terminal strings: ");
-    } else {
-      strcat(line, "s do not generate any terminal strings: ");
-      PRNT(line);
-      strcpy(line, "        "); /* 8 spaces */
-    }
-    for (int symbol = nt_root; symbol != NIL; symbol = nt_list[symbol]) {
-      char tok[SYMBOL_SIZE + 1];
-      restore_symbol(tok, RETRIEVE_STRING(symbol));
-      if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 1) {
-        PRNT(line);
-        print_large_token(line, tok, "    ", LEN);
-      } else
-        strcat(line, tok);
-      strcat(line, " ");
-    }
-    PRNT(line);
-    exit(12);
-  }
-  produces_terminals += num_terminals + 1;
-  ffree(produces_terminals);
-  ffree(rhs_start);
-}
-
-/*   This procedure tries to advance the RHS_START pointer.  If the current  */
-/* symbol identified by the RHS_START element is a bad non-terminal it       */
-/* returns FALSE.  Otherwise, the whole right-hand side is traversed, and it */
-/* returns the value TRUE.                                                   */
-static bool is_terminal_rhs(short *rhs_start, const bool *produces_terminals, const int rule_no) {
-  for (rhs_start[rule_no] = rhs_start[rule_no];
-       rhs_start[rule_no] <= rules[rule_no + 1].rhs - 1;
-       rhs_start[rule_no]++) {
-    const int symbol = rhs_sym[rhs_start[rule_no]];
-    if (IS_A_NON_TERMINAL(symbol)) {
-      if (!produces_terminals[symbol])
-        return false;
-    }
-  }
-  return true;
-}
-
-/*  FIRST_MAP takes as arguments two pointers, ROOT and TAIL, to a sequence  */
-/* of symbols in RHS which it inserts in FIRST_TABLE.  The vector FIRST_TABLE*/
-/* is used as the base for a hashed table where collisions are resolved by   */
-/* links.  Elements added to this hash table are allocated from the vector   */
-/* FIRST_ELEMENT, with the variable TOP always indicating the position of the*/
-/* last element in FIRST_ELEMENT that was allocated.                         */
-/* NOTE: The suffix indentified by ROOT and TAIL is presumed not to be empty.*/
-/*       That is, ROOT <= TAIL !!!                                           */
-static short first_map(const int root, const int tail) {
-  for (int i = first_table[rhs_sym[root]]; i != NIL; i = first_element[i].link) {
-    int k;
-    int jj;
-    for (jj = root + 1, k = first_element[i].suffix_root + 1;
-         jj <= tail && k <= first_element[i].suffix_tail;
-         jj++, k++) {
-      if (rhs_sym[jj] != rhs_sym[k])
-        break;
-    }
-    if (jj > tail && k > first_element[i].suffix_tail) {
-      return i;
-    }
-  }
-  top++;
-  first_element[top].suffix_root = root;
-  first_element[top].suffix_tail = tail;
-  first_element[top].link = first_table[rhs_sym[root]];
-  first_table[rhs_sym[root]] = top;
-  return top;
-}
-
-/* S_FIRST takes as argument, two pointers: ROOT and TAIL to a sequence of   */
-/* symbols in the vector RHS, and INDEX which is the index of a first set.   */
-/* It computes the set of all terminals that can appear as the first symbol  */
-/* in the sequence and places the result in the FIRST set indexable by INDEX.*/
-static void s_first(const int root, const int tail, const int index) {
-  int symbol = root > tail ? empty : rhs_sym[root];
-  if (IS_A_TERMINAL(symbol)) {
-    INIT_FIRST(index);
-    SET_BIT_IN(first, index, symbol); /* add it to set */
-  } else {
-    ASSIGN_SET(first, index, nt_first, symbol);
-  }
-  for (int i = root + 1; i <= tail && IS_IN_SET(first, index, empty); i++) {
-    symbol = rhs_sym[i];
-    RESET_BIT_IN(first, index, empty); /* remove EMPTY */
-    if (IS_A_TERMINAL(symbol)) {
-      SET_BIT_IN(first, index, symbol); /* add it to set */
-    } else {
-      SET_UNION(first, index, nt_first, symbol);
-    }
-  }
-}
-
-/* For a given symbol, complete the computation of                */
-/* PRODUCES[symbol].                                              */
-static void compute_produces(const int symbol) {
-  int new_symbol;
-  struct node *q;
-  stack[++top] = symbol;
-  const int indx = top;
-  index_of[symbol] = indx;
-  for (struct node *p = direct_produces[symbol]; p != NULL; q = p, p = p->next) {
-    new_symbol = p->value;
-    if (index_of[new_symbol] == OMEGA) /* first time seen? */
-    {
-      compute_produces(new_symbol);
-    }
-    index_of[symbol] = MIN(index_of[symbol], index_of[new_symbol]);
-    NTSET_UNION(produces, symbol, produces, new_symbol);
-  }
-  if (direct_produces[symbol] != NULL) {
-    free_nodes(direct_produces[symbol], q);
-  }
-  if (index_of[symbol] == indx) /*symbol is SCC root */
-  {
-    for (new_symbol = stack[top];
-         new_symbol != symbol; new_symbol = stack[--top]) {
-      ASSIGN_NTSET(produces, new_symbol, produces, symbol);
-      index_of[new_symbol] = INFINITY;
-    }
-    index_of[symbol] = INFINITY;
-    top--;
-  }
-}
-
-/* COMPUTE_FOLLOW computes FOLLOW[nt] for some non-terminal NT using the     */
-/* digraph algorithm.  FOLLOW[NT] is the set of all terminals Ti that        */
-/* may immediately follow a string X generated by NT. I.e., if NT *::= X     */
-/* then X Ti is a valid substring of a class of strings that may be          */
-/* recognized by the language.                                               */
-static void compute_follow(const int nt) {
-  int lhs_symbol;
-  const SET_PTR temp_set = calloc(1, term_set_size * sizeof(BOOLEAN_CELL));
-  if (temp_set == NULL)
-    nospace(__FILE__, __LINE__);
-  /* FOLLOW[NT] was initialized to 0 for all non-terminals.     */
-  stack[++top] = nt;
-  const int indx = top;
-  index_of[nt] = indx;
-  for (int item_no = nt_items[nt]; item_no != NIL; item_no = next_item[item_no]) {
-    /* iterate over all items of NT */
-    ASSIGN_SET(temp_set, 0, first, item_table[item_no].suffix_index);
-    if (IS_ELEMENT(temp_set, empty)) {
-      RESET_BIT(temp_set, empty);
-      const int rule_no = item_table[item_no].rule_number;
-      lhs_symbol = rules[rule_no].lhs;
-      if (index_of[lhs_symbol] == OMEGA)
-        compute_follow(lhs_symbol);
-      SET_UNION(follow, nt, follow, lhs_symbol);
-      index_of[nt] = MIN(index_of[nt], index_of[lhs_symbol]);
-    }
-    SET_UNION(follow, nt, temp_set, 0);
-  }
-  if (index_of[nt] == indx) {
-    for (lhs_symbol = stack[top];
-         lhs_symbol != nt; lhs_symbol = stack[--top]) {
-      ASSIGN_SET(follow, lhs_symbol, follow, nt);
-      index_of[lhs_symbol] = INFINITY;
-    }
-    index_of[nt] = INFINITY;
-    top--;
-  }
-  ffree(temp_set);
-}
-
-static void print_unreachables(void) {
-  char line[PRINT_LINE_SIZE + 1];
-  char tok[SYMBOL_SIZE + 1];
-  /* SYMBOL_LIST is used for two purposes:                       */
-  /*  1) to mark symbols that are reachable from the Accepting   */
-  /*        non-terminal.                                        */
-  /*  2) to construct lists of symbols that are not reachable.   */
-  int *symbol_list = Allocate_int_array(num_symbols + 1);
-  for ALL_SYMBOLS3(symbol) {
-    symbol_list[symbol] = OMEGA;
-  }
-  symbol_list[eoft_image] = NIL;
-  symbol_list[empty] = NIL;
-  if (error_maps_bit) {
-    symbol_list[error_image] = NIL;
-  }
-  /* Initialize a list consisting only of the Accept non-terminal.     */
-  /* This list is a work pile of non-terminals to process as follows:  */
-  /* Each non-terminal in the front of the list is removed in turn and */
-  /* 1) All terminal symbols in one of its right-hand sides are        */
-  /*     marked reachable.                                             */
-  /* 2) All non-terminals in one of its right-hand sides are placed    */
-  /*     in the work pile of it had not been processed previously  */
-  int nt_root = accept_image;
-  symbol_list[nt_root] = NIL;
-  for (int nt = nt_root; nt != NIL; nt = nt_root) {
-    nt_root = symbol_list[nt];
-    int rule_no;
-    for (bool end_node = (rule_no = lhs_rule[nt]) == NIL;
-         !end_node;
-         end_node = rule_no == lhs_rule[nt]) {
-      rule_no = next_rule[rule_no];
-      for ENTIRE_RHS3(i, rule_no) {
-        const int symbol = rhs_sym[i];
-        if (IS_A_TERMINAL(symbol)) {
-          symbol_list[symbol] = NIL;
-        } else if (symbol_list[symbol] == OMEGA) {
-          symbol_list[symbol] = nt_root;
-          nt_root = symbol;
-        }
-      }
-    }
-  }
-  /* We now iterate (backwards to keep things in order) over the */
-  /* terminal symbols, and place each unreachable terminal in a  */
-  /* list. If the list is not empty, we signal that these symbols*/
-  /* are unused.                                                 */
-  int t_root = NIL;
-  for ALL_TERMINALS_BACKWARDS3(symbol) {
-    if (symbol_list[symbol] == OMEGA) {
-      symbol_list[symbol] = t_root;
-      t_root = symbol;
-    }
-  }
-  if (t_root != NIL) {
-    if (symbol_list[t_root] != NIL) {
-      PRNT("*** The following Terminals are useless: ");
-      fprintf(syslis, "\n\n");
-      strcpy(line, "        "); /* 8 spaces */
-    } else {
-      strcpy(line, "*** The following Terminal is useless: ");
-    }
-    for (int symbol = t_root; symbol != NIL; symbol = symbol_list[symbol]) {
-      restore_symbol(tok, RETRIEVE_STRING(symbol));
-      if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE) {
-        PRNT(line);
-        print_large_token(line, tok, "    ", LEN);
-      } else {
-        strcat(line, tok);
-        strcat(line, " ");
-      }
-      strcat(line, " ");
-    }
-    PRNT(line);
-  }
-  /* We now iterate (backward to keep things in order) over the  */
-  /* non-terminals, and place each unreachable non-terminal in a */
-  /* list.  If the list is not empty, we signal that these       */
-  /* symbols are unused.                                         */
-  nt_root = NIL;
-  for ALL_NON_TERMINALS_BACKWARDS3(symbol) {
-    if (symbol_list[symbol] == OMEGA) {
-      symbol_list[symbol] = nt_root;
-      nt_root = symbol;
-    }
-  }
-  if (nt_root != NIL) {
-    if (symbol_list[nt_root] != NIL) {
-      PRNT("*** The following Non-Terminals are useless: ");
-      fprintf(syslis, "\n\n");
-      strcpy(line, "        "); /* 8 spaces */
-    } else {
-      strcpy(line, "*** The following Non-Terminal is useless: ");
-    }
-    for (int symbol = nt_root; symbol != NIL; symbol = symbol_list[symbol]) {
-      restore_symbol(tok, RETRIEVE_STRING(symbol));
-      if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE) {
-        PRNT(line);
-        print_large_token(line, tok, "    ", LEN);
-      } else {
-        strcat(line, tok);
-      }
-      strcat(line, " ");
-    }
-    PRNT(line);
-  }
-  ffree(symbol_list);
-}
-
-/* PRINT_XREF prints out the Cross-reference map. We build a map from each   */
-/* terminal into the set of items whose Dot-symbol (symbol immediately       */
-/* following the dot) is the terminal in question.  Note that we iterate     */
-/* backwards over the rules to keep the rules associated with the items      */
-/* sorted, since they are inserted in STACK fashion in the lists:  Last-in,  */
-/* First out.                                                                */
-static void print_xref(void) {
-  int item_no;
-  /* SORT_SYM is used to sort the symbols for cross_reference listing. */
-  short *sort_sym = Allocate_short_array(num_symbols + 1);
-  short *t_items = Allocate_short_array(num_terminals + 1);
-  for ALL_TERMINALS3(symbol) {
-    t_items[symbol] = NIL;
-  }
-  for ALL_RULES_BACKWARDS3(rule_no) {
-    item_no = first_item_of[rule_no];
-    for ENTIRE_RHS3(symbol, rule_no) {
-      symbol = rhs_sym[symbol];
-      if (IS_A_TERMINAL(symbol)) {
-        next_item[item_no] = t_items[symbol];
-        t_items[symbol] = item_no;
-      }
-      item_no++;
-    }
-  }
-  for ALL_SYMBOLS3(symbol) {
-    sort_sym[symbol] = symbol;
-  }
-  quick_sym(sort_sym, num_symbols);
-  fprintf(syslis, "\n\nCross-reference table:\n");
-  for ALL_SYMBOLS3(symbol) {
-    symbol = sort_sym[symbol];
-    if (symbol != accept_image && symbol != eoft_image
-        && symbol != empty) {
-      char line[PRINT_LINE_SIZE + 1];
-      char tok[SYMBOL_SIZE + 1];
-      fprintf(syslis, "\n");
-      restore_symbol(tok, RETRIEVE_STRING(symbol));
-      print_large_token(line, tok, "", PRINT_LINE_SIZE - 7);
-      strcat(line, "  ==>> ");
-      const int offset = strlen(line) - 1;
-      if (IS_A_NON_TERMINAL(symbol)) {
-        int rule_no;
-        for (bool end_node = (rule_no = lhs_rule[symbol]) == NIL;
-             !end_node;
-             end_node = rule_no == lhs_rule[symbol]) {
-          rule_no = next_rule[rule_no];
-          sprintf(tok, "%d", rule_no);
-          if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE) {
-            fprintf(syslis, "\n%s", line);
-            strcpy(line, " ");
-            for (int j = 1; j <= offset; j++) {
-              strcat(line, " ");
-            }
-          }
-          strcat(line, tok);
-          if (strlen(line) < PRINT_LINE_SIZE)
-            strcat(line, " ");
-        }
-        fprintf(syslis, "\n%s", line);
-        item_no = nt_items[symbol];
-      } else {
-        for (item_no = t_items[symbol];
-             item_no != NIL; item_no = next_item[item_no]) {
-          const int rule_no = item_table[item_no].rule_number;
-          sprintf(tok, "%d", rule_no);
-          if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE) {
-            fprintf(syslis, "\n%s", line);
-            strcpy(line, " ");
-            for (int j = 1; j <= offset; j++) {
-              strcat(line, " ");
-            }
-          }
-          strcat(line, tok);
-          if (strlen(line) < PRINT_LINE_SIZE) {
-            strcat(line, " ");
-          }
-        }
-        fprintf(syslis, "\n%s", line);
-      }
-    }
-  }
-  fprintf(syslis, "\n\n");
-  ffree(t_items);
-  ffree(sort_sym);
-}
-
-/* QUICK_SYM takes as arguments an array of pointers whose elements point to */
-/* nodes and two integer arguments: L, H. L and H indicate respectively the  */
-/* lower and upper bound of a section in the array.                          */
-static void quick_sym(short array[], const int h) {
-  const int l = 1;
-  /* Since no more than 2**15-1 symbols are allowed, the stack  */
-  /* not grow past 14.                                          */
-  int lostack[14];
-  int histack[14];
-  int top = 1;
-  lostack[top] = l;
-  histack[top] = h;
-  while (top != 0) {
-    int lower = lostack[top];
-    int upper = histack[top--];
-    while (upper > lower) {
-      /* Split the array section indicated by LOWER and UPPER */
-      /* using ARRAY[LOWER] as the pivot.                     */
-      int i = lower;
-      const short pivot = array[lower];
-      for (int j = lower + 1; j <= upper; j++) {
-        if (strcmp(RETRIEVE_STRING(array[j]), RETRIEVE_STRING(pivot)) < 0) {
-          const short temp = array[++i];
-          array[i] = array[j];
-          array[j] = temp;
-        }
-      }
-      array[lower] = array[i];
-      array[i] = pivot;
-      top++;
-      if (i - lower < upper - i) {
-        lostack[top] = i + 1;
-        histack[top] = upper;
-        upper = i - 1;
-      } else {
-        histack[top] = i - 1;
-        lostack[top] = lower;
-        lower = i + 1;
-      }
-    }
-  }
-}
-
-/* PRINT_NT_FIRST prints the first set for each non-terminal.                */
-static void print_nt_first(void) {
-  fprintf(syslis, "\nFirst map for non-terminals:\n\n");
-  for ALL_NON_TERMINALS3(nt) {
-    char tok[SYMBOL_SIZE + 1];
-    char line[PRINT_LINE_SIZE + 1];
-    restore_symbol(tok, RETRIEVE_STRING(nt));
-    print_large_token(line, tok, "", PRINT_LINE_SIZE - 7);
-    strcat(line, "  ==>> ");
-    for ALL_TERMINALS3(t) {
-      if (IS_IN_SET(nt_first, nt, t)) {
-        restore_symbol(tok, RETRIEVE_STRING(t));
-        if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 1) {
-          fprintf(syslis, "\n%s", line);
-          print_large_token(line, tok, "    ", LEN);
-        } else {
-          strcat(line, tok);
-        }
-        strcat(line, " ");
-      }
-    }
-    fprintf(syslis, "\n%s\n", line);
-  }
-}
-
-/* PRINT_FOLLOW_MAP prints the follow map.                                   */
-static void print_follow_map(void) {
-  fprintf(syslis, "\nFollow Map:\n\n");
-  for ALL_NON_TERMINALS3(nt) {
-    char tok[SYMBOL_SIZE + 1];
-    char line[PRINT_LINE_SIZE + 1];
-    restore_symbol(tok, RETRIEVE_STRING(nt));
-    print_large_token(line, tok, "", PRINT_LINE_SIZE - 7);
-    strcat(line, "  ==>> ");
-    for ALL_TERMINALS3(t) {
-      if (IS_IN_SET(follow, nt, t)) {
-        restore_symbol(tok, RETRIEVE_STRING(t));
-        if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 2) {
-          fprintf(syslis, "\n%s", line);
-          print_large_token(line, tok, "    ", LEN);
-        } else {
-          strcat(line, tok);
-        }
-        strcat(line, " ");
-      }
-    }
-    fprintf(syslis, "\n%s\n", line);
-  }
 }

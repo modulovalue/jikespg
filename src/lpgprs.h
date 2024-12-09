@@ -1,11 +1,6 @@
 #ifndef lpgprs_INCLUDED
 #define lpgprs_INCLUDED
-
-#undef  SCOPE_REPAIR
-#undef  DEFERRED_RECOVERY
-#undef  FULL_DIAGNOSIS
 #define SPACE_TABLES
-
 #define original_state(state) (-base_check[state])
 #define asi(state)            asb[original_state(state)]
 #define nasi(state)           nasb[original_state(state)]

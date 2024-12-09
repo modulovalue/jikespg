@@ -432,9 +432,10 @@ static void build_in_stat(void) {
   }
 }
 
+/* Build Reduce map, and detect conflicts if any                             */
 /* MKRDCTS constructs the REDUCE map and detects conflicts in the grammar.   */
 /* When constructing an LALR parser, the subroutine COMPUTE_LA is invoked to */
-/* compute the lalr look-ahead sets.  For an SLR parser, the FOLLOW map      */
+/* compute the lalr look-ahead sets. For an SLR parser, the FOLLOW map       */
 /* computed earlier in the procedure MKFIRST is used.                        */
 /*                                                                           */
 /* For a complete description of the lookahead algorithm used in this        */

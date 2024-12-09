@@ -6,6 +6,15 @@ static char hostfile[] = __FILE__;
 #include "common.h"
 #include <stdlib.h>
 
+char prefix[MAX_PARM_SIZE] = "";
+char suffix[MAX_PARM_SIZE] = "";
+char msg_line[MAX_MSG_SIZE];
+
+FILE *syslis;
+FILE *systab;
+FILE *syssym;
+FILE *sysdcl;
+
 const long MAX_TABLE_SIZE = (USHRT_MAX < INT_MAX ? USHRT_MAX : INT_MAX) - 1;
 
 struct scope_type *scope = NULL;

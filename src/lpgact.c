@@ -1,3 +1,5 @@
+#include "lpgparse.h"
+
 #line 65 "jikespg.g"
 #define SYM1 terminal[stack_top + 1]
 #define SYM2 terminal[stack_top + 2]

@@ -1,7 +1,7 @@
 CC = gcc $(CPPFLAGS) $(CFLAGS)
 
-jikespg: ctabs.o globals.o lpgparse.o lpgutil.o main.o mkfirst.o mkred.o mkstates.o partset.o produce.o ptables.o remsp.o resolve.o spacetab.o timetab.o
-	$(CC) $(LDFLAGS) -o jikespg ctabs.o globals.o lpgparse.o lpgutil.o main.o  mkfirst.o mkred.o mkstates.o partset.o produce.o ptables.o remsp.o resolve.o spacetab.o timetab.o
+jikespg:                        ctabs.o globals.o lpgparse.o lpgutil.o main.o mkfirst.o mkred.o mkstates.o partset.o produce.o ptables.o remsp.o resolve.o spacetab.o timetab.o
+	$(CC) $(LDFLAGS) -o jikespg ctabs.o globals.o lpgparse.o lpgutil.o main.o mkfirst.o mkred.o mkstates.o partset.o produce.o ptables.o remsp.o resolve.o spacetab.o timetab.o
 
 main.o:	main.c common.h
 	$(CC) -c main.c
@@ -14,6 +14,9 @@ lpgparse.o: lpgprs.h lpgdcl.h lpgdef.h lpgact.h lpgact.c lpgsym.h common.h lpgpa
 
 lpgutil.o: lpgutil.c common.h
 	$(CC) -c lpgutil.c
+
+lpgact.o: lpgact.c lpgparse.h
+	$(CC) -c lpgact.c
 
 mkfirst.o: mkfirst.c common.h
 	$(CC) -c mkfirst.c

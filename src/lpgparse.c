@@ -4,9 +4,6 @@ static char hostfile[] = __FILE__;
 #include <string.h>
 #include <ctype.h>
 #include "common.h"
-#undef scope_state
-#undef SCOPE_UBOUND
-#undef SCOPE_SIZE
 #include "lpgsym.h"
 #include "lpgdef.h"
 #include "lpgdcl.h"
@@ -15,26 +12,38 @@ static char hostfile[] = __FILE__;
 #include "lpgact.h"
 #include "lpgprs.h"
 
+char *string_table = NULL;
+
+/* SYMNO is an array that maps symbol numbers to actual symbols.       */
+struct symno_type *symno = NULL;
+
+/* NAME is an array containing names to be associated with symbols.    */
+int *name;
+
+char *RETRIEVE_STRING(const int indx) {
+  return &string_table[symno[indx].ptr];
+}
+
+const char *RETRIEVE_NAME(const int indx) {
+  return &string_table[name[indx]];
+}
+
+// TODO • make this a local?
 char parm[256] = "";
 
-long symno_size; /* NUM_SYMBOLS + 1 */
-
 long string_offset = 0;
-long string_size = 0;
 
 char blockb[MAX_PARM_SIZE] = {'/', '.'};
 char blocke[MAX_PARM_SIZE] = {'.', '/'};
 char hblockb[MAX_PARM_SIZE] = {'/', ':'};
 char hblocke[MAX_PARM_SIZE] = {':', '/'};
 
+// TODO • make this a local?
 FILE *sysgrm;
-FILE *sysact;
-FILE *syshact;
 
 const int SPACE_CODE = 1;
 const int DIGIT_CODE = 2;
 const int ALPHA_CODE = 3;
-
 char code[256] = {0};
 
 bool IsSpace(const int c) {
@@ -52,6 +61,26 @@ bool IsAlpha(const int c) {
 int output_size = 5000;
 int line_no = 0;
 
+/*                             IO variables                        */
+/* The two character pointer variables, P1 and P2, are used in     */
+/* processing the io buffer, INPUT_BUFFER.                         */
+char *p1;
+char *p2;
+char *input_buffer;
+
+char *linestart;
+char *bufend;
+char *ct_ptr;
+
+/* current token & related variables */
+short ct = 0;
+short ct_start_col = 0;
+short ct_end_col = 0;
+short ct_length = 0;
+
+long ct_start_line = 0;
+long ct_end_line = 0;
+
 /*         READ_INPUT fills the buffer from p1 to the end.          */
 void read_input(char *grm_file) {
   long num_read = input_buffer + IOBUFFER_SIZE - bufend;
@@ -68,7 +97,7 @@ void read_input(char *grm_file) {
 /* VERIFY takes as argument a character string and checks whether each       */
 /* character is a digit. If all are digits, then 1 is returned; if not, then */
 /* 0 is returned.                                                            */
-static bool verify(const char *item) {
+bool verify(const char *item) {
   while (IsDigit(*item)) {
     item++;
   }
@@ -77,7 +106,7 @@ static bool verify(const char *item) {
 
 /* TRANSLATE takes as arguments a character array, which it folds to upper   */
 /* to uppercase and returns.                                                 */
-static char *translate(char *str, const int len) {
+char *translate(char *str, const int len) {
   for (register int i = 0; i < len; i++) {
     str[i] = TOUPPER(str[i]);
   }
@@ -93,7 +122,7 @@ static char *translate(char *str, const int len) {
 /*                  if (tolower(s1[i]) != s2[i])  ?                   */
 /* because tolower(ch) is sometimes implemented as (ch-'A'+'a') which */
 /* does not work when "ch" is already a lower case character.         */
-static bool strxeq(char *s1, char *s2) {
+bool strxeq(char *s1, char *s2) {
   for (; *s2 != '\0'; s1++, s2++) {
     if (*s1 != *s2 && *s1 != toupper(*s2))
       return false;
@@ -104,7 +133,90 @@ static bool strxeq(char *s1, char *s2) {
 char act_file[80];
 char hact_file[80];
 
-// TODO • parse options into a struct?
+const char *oaction = "ACTION";
+const char *oactfile_name = "ACTFILENAME";
+const char *oactfile_name2 = "ACTFILE-NAME";
+const char *oactfile_name3 = "ACTFILE_NAME";
+const char *oblockb = "BLOCKB";
+const char *oblocke = "BLOCKE";
+const char *obyte = "BYTE";
+const char *oconflicts = "CONFLICTS";
+const char *odebug = "DEBUG";
+const char *odefault = "DEFAULT";
+const char *odeferred = "DEFERRED";
+const char *oedit = "EDIT";
+const char *oerrormaps2 = "ERROR_MAPS";
+const char *oerrormaps3 = "ERROR-MAPS";
+const char *oerrormaps = "ERRORMAPS";
+const char *oescape = "ESCAPE";
+const char *ofile_prefix2 = "FILE_PREFIX";
+const char *ofile_prefix3 = "FILE-PREFIX";
+const char *ofile_prefix = "FILEPREFIX";
+const char *ofirst = "FIRST";
+const char *ofixed = "FIXED";
+const char *ofollow = "FOLLOW";
+const char *ofull = "FULL";
+const char *ogenprsr3 = "GENERATE-PARSER";
+const char *ogenprsr2 = "GENERATE_PARSER";
+const char *ogenprsr = "GENERATEPARSER";
+const char *ogotodefault2 = "GOTO_DEFAULT";
+const char *ogotodefault3 = "GOTO-DEFAULT";
+const char *ogotodefault = "GOTODEFAULT";
+const char *ohactfile_name = "HACTFILENAME";
+const char *ohactfile_name2 = "HACTFILE-NAME";
+const char *ohactfile_name3 = "HACTFILE_NAME";
+const char *ohalfword2 = "HALF_WORD";
+const char *ohalfword3 = "HALF-WORD";
+const char *ohalfword = "HALFWORD";
+const char *ohblockb = "HBLOCKB";
+const char *ohblocke = "HBLOCKE";
+const char *olalr = "LALR";
+const char *olist = "LIST";
+const char *omax = "MAXIMUM";
+const char *omaximum_distance2 = "MAX_DISTANCE";
+const char *omaximum_distance3 = "MAX-DISTANCE";
+const char *omaximum_distance = "MAXDISTANCE";
+const char *omin = "MINIMUM";
+const char *ominimum_distance2 = "MIN_DISTANCE";
+const char *ominimum_distance3 = "MIN-DISTANCE";
+const char *ominimum_distance = "MINDISTANCE";
+const char *onames = "NAMES";
+const char *ontcheck2 = "NT_CHECK";
+const char *ontcheck3 = "NT-CHECK";
+const char *ontcheck = "NTCHECK";
+const char *ooptimized = "OPTIMIZED";
+const char *oormark = "ORMARK";
+const char *oprefix = "PREFIX";
+const char *oreadreduce2 = "READ_REDUCE";
+const char *oreadreduce3 = "READ-REDUCE";
+const char *oreadreduce = "READREDUCE";
+const char *oscopes = "SCOPES";
+const char *oshiftdefault2 = "SHIFT-DEFAULT";
+const char *oshiftdefault3 = "SHIFT_DEFAULT";
+const char *oshiftdefault = "SHIFTDEFAULT";
+const char *osingleproductions2 = "SINGLE-PRODUCTIONS";
+const char *osingleproductions3 = "SINGLE_PRODUCTIONS";
+const char *osingleproductions = "SINGLEPRODUCTIONS";
+const char *oslr = "SLR";
+const char *ospace = "SPACE";
+const char *ostack_size2 = "STACK_SIZE";
+const char *ostack_size3 = "STACK-SIZE";
+const char *ostack_size = "STACKSIZE";
+const char *ostates = "STATES";
+const char *osuffix = "SUFFIX";
+const char *otable = "TABLE";
+const char *otime = "TIME";
+const char *otrace = "TRACE";
+const char *ovariable = "VARIABLE";
+const char *overbose = "VERBOSE";
+const char *owarnings = "WARNINGS";
+const char *oxref = "XREF";
+
+const int OUTPUT_PARM_SIZE = MAX_PARM_SIZE + 7;
+const int MAXIMUM_LA_LEVEL = 15;
+const int STRING_BUFFER_SIZE = 8192;
+
+// TODO • parse all options into a struct and pass that around?
 /* OPTION handles the decoding of options passed by the user and resets      */
 /* them appropriately. "options" may be called twice: when a parameter line  */
 /* is passed to the main program and when the user codes an %OPTIONS line in */
@@ -112,7 +224,7 @@ char hact_file[80];
 /* Basically, there are two kinds of options: switches which indicate a      */
 /* certain setting just by their appearance, and valued options which are    */
 /* followed by an equal sign and the value to be assigned to them.           */
-static void options(void) {
+static void options(char* file_prefix) {
   char token[MAX_PARM_SIZE + 1];
   char temp[MAX_PARM_SIZE + 1];
   char delim;
@@ -517,7 +629,7 @@ static void options(void) {
 /* if they are (it is an) "options" line(s).  If so, the options are        */
 /* processed.  Then, we process user-supplied options if there are any.  In */
 /* any case, the options in effect are printed.                             */
-static void process_options_lines(char *grm_file, struct OutputFiles *output_files) {
+static void process_options_lines(char *grm_file, struct OutputFiles *output_files, char* file_prefix) {
   char old_parm[MAX_LINE_SIZE + 1];
   char output_line[PRINT_LINE_SIZE + 1];
   char opt_string[60][OUTPUT_PARM_SIZE + 1];
@@ -552,7 +664,7 @@ static void process_options_lines(char *grm_file, struct OutputFiles *output_fil
       *line_end = '\0';
       PRNT(p2); /* Print options line */
       strcpy(parm, p2 + strlen(ooptions));
-      options(); /* Process hard-coded options */
+      options(file_prefix); /* Process hard-coded options */
     } else {
       p2 = p1; /* make p2 point to first character */
       break;
@@ -575,7 +687,7 @@ static void process_options_lines(char *grm_file, struct OutputFiles *output_fil
   }
   fprintf(syslis, "\n");
   strcpy(parm, old_parm);
-  options(); /* Process new options passed directly to program */
+  options(file_prefix); /* Process new options passed directly to program */
   /* Deferred parsing without error maps is useless*/
   if (!error_maps_bit) {
     deferred_bit = false;
@@ -834,7 +946,7 @@ static void process_options_lines(char *grm_file, struct OutputFiles *output_fil
 
 /* HASH takes as argument a symbol and hashes it into a location in          */
 /* HASH_TABLE.                                                               */
-static int hash(const char *symbl) {
+int hash(const char *symbl) {
   register unsigned long hash_value = 0;
   for (; *symbl != '\0'; symbl++) {
     const register unsigned short k = *symbl;
@@ -847,10 +959,11 @@ static int hash(const char *symbl) {
   return hash_value % HT_SIZE;
 }
 
-/*   INSERT_STRING takes as an argument a pointer to a ht_elemt structure and*/
+/* INSERT_STRING takes as an argument a pointer to a ht_elemt structure and  */
 /* a character string.  It inserts the string into the string table and sets */
 /* the value of node to the index into the string table.                     */
-static void insert_string(struct hash_type *q, const char *string) {
+void insert_string(struct hash_type *q, const char *string) {
+  long string_size = 0;
   if (string_offset + strlen(string) >= string_size) {
     string_size += STRING_BUFFER_SIZE;
     INT_CHECK(string_size);
@@ -867,6 +980,10 @@ static void insert_string(struct hash_type *q, const char *string) {
   /* is copied.      */
 }
 
+bool EQUAL_STRING(const char *symb, const struct hash_type *p) {
+  return strcmp(symb, string_table + p->st_ptr) == 0;
+}
+
 /* PROCESS_SYMBOL takes as an argument a pointer to the most recent token    */
 /* which would be either a symbol or a macro name and then processes it. If  */
 /* the token is a macro name then a check is made to see if it is a pre-     */
@@ -880,7 +997,7 @@ static void insert_string(struct hash_type *q, const char *string) {
 /* The NAME_INDEX field is set to OMEGA and will be assigned a value later.  */
 /*   ASSIGN_SYMBOL_NO takes as arguments a pointer to a node and an image    */
 /* number and assigns a symbol number to the symbol pointed to by the node.  */
-static void assign_symbol_no(const char *string_ptr, const int image) {
+void assign_symbol_no(const char *string_ptr, const int image) {
   register struct hash_type *p;
   const register int i = hash(string_ptr);
   for (p = hash_table[i]; p != NULL; p = p->link) {
@@ -917,7 +1034,7 @@ static void alias_map(const char *stringptr, const int image) {
   assign_symbol_no(stringptr, image);
 }
 
-/*    SYMBOL_IMAGE takes as argument a symbol.  It searches for that symbol  */
+/* SYMBOL_IMAGE takes as argument a symbol.  It searches for that symbol  */
 /* in the HASH_TABLE, and if found, it returns its image; otherwise, it      */
 /* returns OMEGA.                                                            */
 static int symbol_image(const char *item) {
@@ -958,8 +1075,15 @@ static int name_map(const char *symb) {
   return num_names;
 }
 
+int blockb_len;
+int blocke_len;
+int hblockb_len;
+int hblocke_len;
+
+#define min(x, y) ((x) < (y) ? (x) : (y))
+
 /* SCANNER scans the input stream and returns the next input token.          */
-static void scanner(char *grm_file) {
+void scanner(char *grm_file) {
   register int i;
   char tok_string[SYMBOL_SIZE + 1];
 scan_token:
@@ -1146,7 +1270,7 @@ scan_token:
       break;
 
     case '\0':
-    case CTL_Z: /* END-OF-FILE? */
+    case '\x1a': /* CTRL-Z • END-OF-FILE? */
       ct = EOF_TK;
       ct_length = 0;
       p2 = p1;
@@ -1285,332 +1409,9 @@ check_symbol_length:
   }
 }
 
-/*          Actions to be taken if grammar is successfully parsed.          */
-static void accept_action(char *grm_file) {
-  if (rulehdr == NULL) {
-    printf("Informative: Empty grammar read in. Processing stopped.\n");
-    fprintf(syslis, "***Informative: Empty grammar read in. Processing stopped.\n");
-    fclose(sysgrm);
-    fclose(syslis);
-    exit(12);
-  }
-  num_non_terminals = num_symbols - num_terminals;
-  if (error_maps_bit) {
-    // make_names_map
-    {
-      /* Construct the NAME map, and update the elements of SYMNO with their names. */
-      symno[accept_image].name_index = name_map("");
-      if (error_image == DEFAULT_SYMBOL) {
-        symno[DEFAULT_SYMBOL].name_index = symno[accept_image].name_index;
-      }
-      for ALL_TERMINALS3(symbol) {
-        if (symno[symbol].name_index == OMEGA) {
-          symno[symbol].name_index = name_map(RETRIEVE_STRING(symbol));
-        }
-      }
-      for ALL_NON_TERMINALS3(symbol) {
-        if (symno[symbol].name_index == OMEGA) {
-          if (names_opt == MAXIMUM_NAMES) {
-            symno[symbol].name_index = name_map(RETRIEVE_STRING(symbol));
-          } else if (names_opt == OPTIMIZE_PHRASES) {
-            symno[symbol].name_index = -name_map(RETRIEVE_STRING(symbol));
-          } else {
-            symno[symbol].name_index = symno[error_image].name_index;
-          }
-        }
-      }
-      /* Allocate NAME table. */
-      name = (int *) calloc(num_names + 1, sizeof(int));
-      if (name == (int *) NULL)
-        nospace(__FILE__, __LINE__);
-      for (register int i = 0; i < HT_SIZE; i++) {
-        for (const register struct hash_type *p = hash_table[i]; p != NULL; p = p->link) {
-          if (p->name_index != OMEGA) {
-            name[p->name_index] = p->st_ptr;
-          }
-        }
-      }
-    }
-  }
-  if (list_bit) {
-    /* Aliases are placed in a separate linked list.  NOTE!! After execution */
-    /* of this loop the hash_table is destroyed because the LINK field of    */
-    /* alias symbols is used to construct a list of the alias symbols.       */
-    for (register int i = 0; i < HT_SIZE; i++) {
-      register struct hash_type *tail = hash_table[i];
-      for (register struct hash_type *p = tail; p != NULL; p = tail) {
-        tail = p->link;
-        if (p->number < 0) {
-          p->link = alias_root;
-          alias_root = p;
-        }
-      }
-    }
-  }
-  /* Construct the rule table.  At this stage, NUM_ITEMS is equal to the sum */
-  /* of the right-hand side lists of symbols.  It is used in the declaration of*/
-  /* RULE_TAB.  After RULE_TAB is allocated, we increase NUM_ITEMS to its      */
-  /* correct value.  Recall that the first rule is numbered 0; therefore we    */
-  /* increase the number of items by 1 to reflect this numbering.              */
-  {
-    register struct node *ptr;
-    register int rhs_ct = 0;
-    rules = (struct ruletab_type *) calloc(num_rules + 2, sizeof(struct ruletab_type));
-    if (rules == (struct ruletab_type *) NULL)
-      nospace(__FILE__, __LINE__);
-    rhs_sym = Allocate_short_array(num_items + 1);
-    num_items += num_rules + 1;
-    SHORT_CHECK(num_items);
-    register int ii = 0;
-    /* Put starting rules from start symbol linked list in rule and rhs table    */
-    if (start_symbol_root != NULL) {
-      /* Turn circular list into linear */
-      register struct node *q = start_symbol_root;
-      start_symbol_root = q->next;
-      q->next = NULL;
-      for (ptr = start_symbol_root; ptr != NULL; ptr = ptr->next) {
-        rules[ii].lhs = accept_image;
-        rules[ii].sp = 0;
-        rules[ii++].rhs = rhs_ct;
-        if (ptr->value != empty) {
-          rhs_sym[rhs_ct++] = ptr->value;
-        }
-      }
-      free_nodes(start_symbol_root, q);
-    }
-    /*   In this loop, the grammar is placed in the rule table structure and the */
-    /* right-hand sides are placed in the RHS table.  A check is made to prevent */
-    /* terminals from being used as left hand sides.                             */
-    for (ii = ii; ii <= num_rules; ii++) {
-      rules[ii].rhs = rhs_ct;
-      ptr = rulehdr[ii].rhs_root;
-      if (ptr != NULL) /* not am empty right-hand side? */
-      {
-        do {
-          ptr = ptr->next;
-          rhs_sym[rhs_ct++] = ptr->value;
-        } while (ptr != rulehdr[ii].rhs_root);
-        ptr = ptr->next; /* point to 1st element */
-        rules[ii].sp = rulehdr[ii].sp && ptr == rulehdr[ii].rhs_root;
-        if (rules[ii].sp)
-          num_single_productions++;
-        free_nodes(ptr, rulehdr[ii].rhs_root);
-      } else
-        rules[ii].sp = false;
-
-      if (rulehdr[ii].lhs == OMEGA) {
-        if (list_bit) /* Proper LHS will be updated after printing */
-          rules[ii].lhs = OMEGA;
-        else rules[ii].lhs = rules[ii - 1].lhs;
-      } else if (IS_A_TERMINAL(rulehdr[ii].lhs)) {
-        char temp[SYMBOL_SIZE + 1];
-        restore_symbol(temp, RETRIEVE_STRING(rulehdr[ii].lhs));
-        PRNTERR2(msg_line, "In rule %d: terminal \"%s\" used as left hand side", ii, temp);
-        PRNTERR("Processing terminated due to input errors.");
-        exit(12);
-      } else rules[ii].lhs = rulehdr[ii].lhs;
-    }
-    rules[num_rules + 1].rhs = rhs_ct; /* Fence !! */
-  }
-  fclose(sysgrm); /* Close grammar input file. */
-  if (action_bit) {
-    process_actions(grm_file);
-  } else if (list_bit) {
-    display_input();
-  }
-}
-
-/* BUILD_SYMNO constructs the SYMNO table which is a mapping from each       */
-/* symbol number into that symbol.                                           */
-static void build_symno(void) {
-  symno_size = num_symbols + 1;
-  symno = (struct symno_type *)
-      calloc(symno_size, sizeof(struct symno_type));
-  if (symno == (struct symno_type *) NULL)
-    nospace(__FILE__, __LINE__);
-  /* Go through entire hash table. For each non_empty bucket, go through    */
-  /* linked list in that bucket.                                         */
-  for (register int i = 0; i < HT_SIZE; ++i) {
-    for (const register struct hash_type *p = hash_table[i]; p != NULL; p = p->link) {
-      const register int symbol = p->number;
-      /* Not an alias */
-      if (symbol >= 0) {
-        symno[symbol].name_index = OMEGA;
-        symno[symbol].ptr = p->st_ptr;
-      }
-    }
-  }
-}
-
-/*     Process all semantic actions and generate action file.               */
-static void process_actions(char *grm_file) {
-  register int k;
-  register int len;
-  register char *p;
-  char line[MAX_LINE_SIZE + 1];
-  sysact = fopen(act_file, "w");
-  syshact = fopen(hact_file, "w");
-  if (sysact == (FILE *) NULL) {
-    fprintf(stderr, "***ERROR: Action file \"%s\" cannot be opened.\n", act_file);
-    exit(12);
-  }
-  if (syshact == (FILE *) NULL) {
-    fprintf(stderr, "***ERROR: Header Action file \"%s\" cannot be opened.\n", hact_file);
-    exit(12);
-  }
-  if ((sysgrm = fopen(grm_file, "r")) == (FILE *) NULL) {
-    fprintf(stderr, "***ERROR: Input file %s containing grammar is empty, undefined, or invalid\n", grm_file);
-    exit(12);
-  }
-  macro_table = Allocate_short_array(HT_SIZE);
-  for (int i = 0; i < HT_SIZE; i++) {
-    macro_table[i] = NIL;
-  }
-  bufend = &input_buffer[0];
-  read_input(grm_file);
-  p2 = &input_buffer[0];
-  linestart = p2 - 1;
-  p1 = p2;
-  line_no = 1;
-  /* Read in all the macro definitions and insert them into macro_table. */
-  for (int i = 0; i < num_defs; i++) {
-    defelmt[i].macro = (char *) calloc(defelmt[i].length + 2, sizeof(char));
-    if (defelmt[i].macro == (char *) NULL)
-      nospace(__FILE__, __LINE__);
-    for (; line_no < defelmt[i].start_line; line_no++) {
-      while (*p1 != '\n') {
-        p1++;
-      }
-      p1++;
-      if (bufend == input_buffer + IOBUFFER_SIZE) {
-        k = bufend - p1;
-        if (k < MAX_LINE_SIZE) {
-          strcpy(input_buffer, p1);
-          bufend = &input_buffer[k];
-          read_input(grm_file);
-          p1 = &input_buffer[0];
-        }
-      }
-      linestart = p1 - 1;
-    }
-    p1 = linestart + defelmt[i].start_column;
-    for (register int j = 0; j < defelmt[i].length; j++) {
-      defelmt[i].macro[j] = *p1;
-      if (*p1++ == '\n') {
-        if (bufend == input_buffer + IOBUFFER_SIZE) {
-          k = bufend - p1;
-          if (k < MAX_LINE_SIZE) {
-            strcpy(input_buffer, p1);
-            bufend = &input_buffer[k];
-            read_input(grm_file);
-            p1 = &input_buffer[0];
-          }
-        }
-        line_no++;
-        linestart = p1 - 1;
-      }
-    }
-    defelmt[i].macro[defelmt[i].length] = '\n';
-    defelmt[i].macro[defelmt[i].length + 1] = '\0';
-    for (p = defelmt[i].name; *p != '\0'; p++) {
-      *p = isupper(*p) ? tolower(*p) : *p;
-    }
-    mapmacro(i);
-  }
-  /* If LISTING was requested, invoke listing procedure.                      */
-  if (list_bit) {
-    display_input();
-  }
-  /* Read in all the action blocks and process them.                          */
-  for (int i = 0; i < num_acts; i++) {
-    for (; line_no < actelmt[i].start_line; line_no++) {
-      while (*p1 != '\n') {
-        p1++;
-      }
-      p1++;
-      if (bufend == input_buffer + IOBUFFER_SIZE) {
-        k = bufend - p1;
-        if (k < MAX_LINE_SIZE) {
-          strcpy(input_buffer, p1);
-          bufend = &input_buffer[k];
-          read_input(grm_file);
-          p1 = &input_buffer[0];
-        }
-      }
-      linestart = p1 - 1;
-    }
-    if (actelmt[i].start_line == actelmt[i].end_line) {
-      len = actelmt[i].end_column - actelmt[i].start_column + 1;
-      memcpy(line, linestart + actelmt[i].start_column, len);
-      line[len] = '\0';
-      while (*p1 != '\n') {
-        p1++;
-      }
-    } else {
-      p = line;
-      p1 = linestart + actelmt[i].start_column;
-      while (*p1 != '\n') {
-        *p++ = *p1++;
-      }
-      *p = '\0';
-    }
-    if (actelmt[i].header_block) {
-      process_action_line(syshact, line, line_no, actelmt[i].rule_number, grm_file);
-    } else {
-      process_action_line(sysact, line, line_no, actelmt[i].rule_number, grm_file);
-    }
-    if (line_no != actelmt[i].end_line) {
-      while (line_no < actelmt[i].end_line) {
-        p1++;
-        if (bufend == input_buffer + IOBUFFER_SIZE) {
-          k = bufend - p1;
-          if (k < MAX_LINE_SIZE) {
-            strcpy(input_buffer, p1);
-            bufend = &input_buffer[k];
-            read_input(grm_file);
-            p1 = &input_buffer[0];
-          }
-        }
-        line_no++;
-        linestart = p1 - 1;
-        if (line_no < actelmt[i].end_line) {
-          p = line;
-          while (*p1 != '\n') {
-            *p++ = *p1++;
-          }
-          *p = '\0';
-          if (actelmt[i].header_block) {
-            process_action_line(syshact, line, line_no, actelmt[i].rule_number, grm_file);
-          } else {
-            process_action_line(sysact, line, line_no, actelmt[i].rule_number, grm_file);
-          }
-        }
-      }
-      if (actelmt[i].end_column != 0) {
-        len = actelmt[i].end_column;
-        memcpy(line, p1, len);
-        line[len] = '\0';
-        if (actelmt[i].header_block) {
-          process_action_line(syshact, line, line_no, actelmt[i].rule_number, grm_file);
-        } else {
-          process_action_line(sysact, line, line_no, actelmt[i].rule_number, grm_file);
-        }
-      }
-    }
-  }
-  for (int i = 0; i < num_defs; i++) {
-    ffree(defelmt[i].macro);
-  }
-  ffree(defelmt);
-  ffree(actelmt);
-  fclose(sysgrm); /* Close grammar file and reopen it. */
-  fclose(sysact);
-  fclose(syshact);
-}
-
 /*  This function allocates a line_elemt structure and returns a pointer    */
 /* to it.                                                                   */
-static struct line_elemt *alloc_line(void) {
+struct line_elemt *alloc_line(void) {
   register struct line_elemt *p = line_pool_root;
   if (p != NULL) {
     line_pool_root = p->link;
@@ -1625,9 +1426,70 @@ static struct line_elemt *alloc_line(void) {
 
 /*  This function frees a line_elemt structure which is returned to a free  */
 /* pool.                                                                    */
-static void free_line(struct line_elemt *p) {
+void free_line(struct line_elemt *p) {
   p->link = line_pool_root;
   line_pool_root = p;
+}
+
+short *macro_table;
+
+/* FIND_MACRO takes as argument a pointer to a macro name. It searches for   */
+/* the macro name in the hash table based on MACRO_TABLE. If the macro name  */
+/* is found then the macro definition associated with it is returned.        */
+/* If the name is not found, then a message is printed, a new definition is  */
+/* entered to avoid more messages and NULL is returned.                      */
+struct line_elemt *find_macro(char *name) {
+  register char *ptr;
+  register struct line_elemt *root = NULL;
+  char macro_name[MAX_LINE_SIZE + 1];
+  register char *s = macro_name;
+  for (ptr = name; *ptr != '\0'; ptr++) {
+    *s++ = isupper(*ptr) ? tolower(*ptr) : *ptr;
+  }
+  *s = '\0';
+  const register int i = hash(macro_name);
+  for (register int j = macro_table[i]; j != NIL; j = defelmt[j].next) {
+    if (strcmp(macro_name, defelmt[j].name) == 0) {
+      ptr = defelmt[j].macro;
+      if (ptr) /* undefined macro? */
+      {
+        while (*ptr != '\0') {
+          register struct line_elemt *q = alloc_line();
+          s = q->line;
+          while (*ptr != '\n')
+            *s++ = *ptr++;
+          *s = '\0';
+          ptr++; /* skip newline marker */
+          if (root == NULL) {
+            q->link = q; /* make circular */
+          } else {
+            q->link = root->link;
+            root->link = q;
+          }
+          root = q;
+        }
+      }
+      return root;
+    }
+  }
+  /* Make phony definition for macro so as to avoid future  */
+  /* errors.                                                */
+  if (num_defs >= (int) defelmt_size) {
+    defelmt_size += DEFELMT_INCREMENT;
+    defelmt = (struct defelmt_type *)
+    (defelmt == (struct defelmt_type *) NULL
+       ? malloc(defelmt_size * sizeof(struct defelmt_type))
+       : realloc(defelmt, defelmt_size * sizeof(struct defelmt_type)));
+    if (defelmt == (struct defelmt_type *) NULL)
+      nospace(__FILE__, __LINE__);
+  }
+  strcpy(defelmt[num_defs].name, macro_name);
+  defelmt[num_defs].length = 0;
+  defelmt[num_defs].macro = NULL;
+  defelmt[num_defs].next = macro_table[i];
+  macro_table[i] = num_defs;
+  num_defs++;
+  return NULL;
 }
 
 /* PROCESS_ACTION_LINE takes as arguments a line of text from an action      */
@@ -1636,7 +1498,7 @@ static void free_line(struct line_elemt *p) {
 /* user defined macro names. If one is found, the macro definition is sub-   */
 /* stituted for the name. The modified action text is then printed out in    */
 /* the action file.                                                          */
-static void process_action_line(FILE *sysout, char *text, const int line_no, const int rule_no, char *grm_file) {
+void process_action_line(FILE *sysout, char *text, const int line_no, const int rule_no, char *grm_file) {
   char temp1[MAX_LINE_SIZE + 1];
   char suffix[MAX_LINE_SIZE + 1];
   char symbol[SYMBOL_SIZE + 1];
@@ -1892,7 +1754,7 @@ next_line: {
 /* This procedure takes as argument a macro definition.  If the name of the */
 /* macro is one of the predefined names, it issues an error.  Otherwise, it */
 /* inserts the macro definition into the table headed by MACRO_TABLE.       */
-static void mapmacro(const int def_index) {
+void mapmacro(const int def_index) {
   if (strcmp(defelmt[def_index].name, krule_text) == 0 ||
       strcmp(defelmt[def_index].name, krule_number) == 0 ||
       strcmp(defelmt[def_index].name, knum_rules) == 0 ||
@@ -1904,78 +1766,25 @@ static void mapmacro(const int def_index) {
       strcmp(defelmt[def_index].name, kcurrent_line) == 0 ||
       strcmp(defelmt[def_index].name, knext_line) == 0) {
     PRNTWNG2(msg_line, "predefined macro \"%s\" cannot be redefined. Line %ld", defelmt[def_index].name, defelmt[def_index].start_line);
-  } else {
-    const register int i = hash(defelmt[def_index].name);
-    for (register int j = macro_table[i]; j != NIL; j = defelmt[j].next) {
-      if (strcmp(defelmt[j].name, defelmt[def_index].name) == 0) {
-        if (warnings_bit) {
-          PRNTWNG2(msg_line, "Redefinition of macro \"%s\" in line %ld", defelmt[def_index].name, defelmt[def_index].start_line);
-          break;
+      } else {
+        const register int i = hash(defelmt[def_index].name);
+        for (register int j = macro_table[i]; j != NIL; j = defelmt[j].next) {
+          if (strcmp(defelmt[j].name, defelmt[def_index].name) == 0) {
+            if (warnings_bit) {
+              PRNTWNG2(msg_line, "Redefinition of macro \"%s\" in line %ld", defelmt[def_index].name, defelmt[def_index].start_line);
+              break;
+            }
+          }
         }
+        defelmt[def_index].next = macro_table[i];
+        macro_table[i] = def_index;
       }
-    }
-    defelmt[def_index].next = macro_table[i];
-    macro_table[i] = def_index;
-  }
 }
 
-/* FIND_MACRO takes as argument a pointer to a macro name. It searches for   */
-/* the macro name in the hash table based on MACRO_TABLE. If the macro name  */
-/* is found then the macro definition associated with it is returned.        */
-/* If the name is not found, then a message is printed, a new definition is  */
-/* entered to avoid more messages and NULL is returned.                      */
-static struct line_elemt *find_macro(char *name) {
-  register char *ptr;
-  register struct line_elemt *root = NULL;
-  char macro_name[MAX_LINE_SIZE + 1];
-  register char *s = macro_name;
-  for (ptr = name; *ptr != '\0'; ptr++) {
-    *s++ = isupper(*ptr) ? tolower(*ptr) : *ptr;
-  }
-  *s = '\0';
-  const register int i = hash(macro_name);
-  for (register int j = macro_table[i]; j != NIL; j = defelmt[j].next) {
-    if (strcmp(macro_name, defelmt[j].name) == 0) {
-      ptr = defelmt[j].macro;
-      if (ptr) /* undefined macro? */
-      {
-        while (*ptr != '\0') {
-          register struct line_elemt *q = alloc_line();
-          s = q->line;
-          while (*ptr != '\n')
-            *s++ = *ptr++;
-          *s = '\0';
-          ptr++; /* skip newline marker */
-          if (root == NULL) {
-            q->link = q; /* make circular */
-          } else {
-            q->link = root->link;
-            root->link = q;
-          }
-          root = q;
-        }
-      }
-      return root;
-    }
-  }
-  /* Make phony definition for macro so as to avoid future  */
-  /* errors.                                                */
-  if (num_defs >= (int) defelmt_size) {
-    defelmt_size += DEFELMT_INCREMENT;
-    defelmt = (struct defelmt_type *)
-    (defelmt == (struct defelmt_type *) NULL
-       ? malloc(defelmt_size * sizeof(struct defelmt_type))
-       : realloc(defelmt, defelmt_size * sizeof(struct defelmt_type)));
-    if (defelmt == (struct defelmt_type *) NULL)
-      nospace(__FILE__, __LINE__);
-  }
-  strcpy(defelmt[num_defs].name, macro_name);
-  defelmt[num_defs].length = 0;
-  defelmt[num_defs].macro = NULL;
-  defelmt[num_defs].next = macro_table[i];
-  macro_table[i] = num_defs;
-  num_defs++;
-  return NULL;
+struct hash_type *alias_root = NULL;
+
+const char *EXTRACT_STRING(const int indx) {
+  return &string_table[indx];
 }
 
 /*   If a listing is requested, this prints all the macros(if any), followed */
@@ -2116,8 +1925,331 @@ static void display_input(void) {
   }
 }
 
+/*     Process all semantic actions and generate action file.               */
+static void process_actions(char *grm_file) {
+  register int k;
+  register int len;
+  register char *p;
+  char line[MAX_LINE_SIZE + 1];
+  FILE *sysact = fopen(act_file, "w");
+  FILE *syshact = fopen(hact_file, "w");
+  if (sysact == (FILE *) NULL) {
+    fprintf(stderr, "***ERROR: Action file \"%s\" cannot be opened.\n", act_file);
+    exit(12);
+  }
+  if (syshact == (FILE *) NULL) {
+    fprintf(stderr, "***ERROR: Header Action file \"%s\" cannot be opened.\n", hact_file);
+    exit(12);
+  }
+  if ((sysgrm = fopen(grm_file, "r")) == (FILE *) NULL) {
+    fprintf(stderr, "***ERROR: Input file %s containing grammar is empty, undefined, or invalid\n", grm_file);
+    exit(12);
+  }
+  macro_table = Allocate_short_array(HT_SIZE);
+  for (int i = 0; i < HT_SIZE; i++) {
+    macro_table[i] = NIL;
+  }
+  bufend = &input_buffer[0];
+  read_input(grm_file);
+  p2 = &input_buffer[0];
+  linestart = p2 - 1;
+  p1 = p2;
+  line_no = 1;
+  /* Read in all the macro definitions and insert them into macro_table. */
+  for (int i = 0; i < num_defs; i++) {
+    defelmt[i].macro = (char *) calloc(defelmt[i].length + 2, sizeof(char));
+    if (defelmt[i].macro == (char *) NULL)
+      nospace(__FILE__, __LINE__);
+    for (; line_no < defelmt[i].start_line; line_no++) {
+      while (*p1 != '\n') {
+        p1++;
+      }
+      p1++;
+      if (bufend == input_buffer + IOBUFFER_SIZE) {
+        k = bufend - p1;
+        if (k < MAX_LINE_SIZE) {
+          strcpy(input_buffer, p1);
+          bufend = &input_buffer[k];
+          read_input(grm_file);
+          p1 = &input_buffer[0];
+        }
+      }
+      linestart = p1 - 1;
+    }
+    p1 = linestart + defelmt[i].start_column;
+    for (register int j = 0; j < defelmt[i].length; j++) {
+      defelmt[i].macro[j] = *p1;
+      if (*p1++ == '\n') {
+        if (bufend == input_buffer + IOBUFFER_SIZE) {
+          k = bufend - p1;
+          if (k < MAX_LINE_SIZE) {
+            strcpy(input_buffer, p1);
+            bufend = &input_buffer[k];
+            read_input(grm_file);
+            p1 = &input_buffer[0];
+          }
+        }
+        line_no++;
+        linestart = p1 - 1;
+      }
+    }
+    defelmt[i].macro[defelmt[i].length] = '\n';
+    defelmt[i].macro[defelmt[i].length + 1] = '\0';
+    for (p = defelmt[i].name; *p != '\0'; p++) {
+      *p = isupper(*p) ? tolower(*p) : *p;
+    }
+    mapmacro(i);
+  }
+  /* If LISTING was requested, invoke listing procedure.                      */
+  if (list_bit) {
+    display_input();
+  }
+  /* Read in all the action blocks and process them.                          */
+  for (int i = 0; i < num_acts; i++) {
+    for (; line_no < actelmt[i].start_line; line_no++) {
+      while (*p1 != '\n') {
+        p1++;
+      }
+      p1++;
+      if (bufend == input_buffer + IOBUFFER_SIZE) {
+        k = bufend - p1;
+        if (k < MAX_LINE_SIZE) {
+          strcpy(input_buffer, p1);
+          bufend = &input_buffer[k];
+          read_input(grm_file);
+          p1 = &input_buffer[0];
+        }
+      }
+      linestart = p1 - 1;
+    }
+    if (actelmt[i].start_line == actelmt[i].end_line) {
+      len = actelmt[i].end_column - actelmt[i].start_column + 1;
+      memcpy(line, linestart + actelmt[i].start_column, len);
+      line[len] = '\0';
+      while (*p1 != '\n') {
+        p1++;
+      }
+    } else {
+      p = line;
+      p1 = linestart + actelmt[i].start_column;
+      while (*p1 != '\n') {
+        *p++ = *p1++;
+      }
+      *p = '\0';
+    }
+    if (actelmt[i].header_block) {
+      process_action_line(syshact, line, line_no, actelmt[i].rule_number, grm_file);
+    } else {
+      process_action_line(sysact, line, line_no, actelmt[i].rule_number, grm_file);
+    }
+    if (line_no != actelmt[i].end_line) {
+      while (line_no < actelmt[i].end_line) {
+        p1++;
+        if (bufend == input_buffer + IOBUFFER_SIZE) {
+          k = bufend - p1;
+          if (k < MAX_LINE_SIZE) {
+            strcpy(input_buffer, p1);
+            bufend = &input_buffer[k];
+            read_input(grm_file);
+            p1 = &input_buffer[0];
+          }
+        }
+        line_no++;
+        linestart = p1 - 1;
+        if (line_no < actelmt[i].end_line) {
+          p = line;
+          while (*p1 != '\n') {
+            *p++ = *p1++;
+          }
+          *p = '\0';
+          if (actelmt[i].header_block) {
+            process_action_line(syshact, line, line_no, actelmt[i].rule_number, grm_file);
+          } else {
+            process_action_line(sysact, line, line_no, actelmt[i].rule_number, grm_file);
+          }
+        }
+      }
+      if (actelmt[i].end_column != 0) {
+        len = actelmt[i].end_column;
+        memcpy(line, p1, len);
+        line[len] = '\0';
+        if (actelmt[i].header_block) {
+          process_action_line(syshact, line, line_no, actelmt[i].rule_number, grm_file);
+        } else {
+          process_action_line(sysact, line, line_no, actelmt[i].rule_number, grm_file);
+        }
+      }
+    }
+  }
+  for (int i = 0; i < num_defs; i++) {
+    ffree(defelmt[i].macro);
+  }
+  ffree(defelmt);
+  ffree(actelmt);
+  fclose(sysgrm); /* Close grammar file and reopen it. */
+  fclose(sysact);
+  fclose(syshact);
+}
+
+/*          Actions to be taken if grammar is successfully parsed.          */
+static void accept_action(char *grm_file) {
+  if (rulehdr == NULL) {
+    printf("Informative: Empty grammar read in. Processing stopped.\n");
+    fprintf(syslis, "***Informative: Empty grammar read in. Processing stopped.\n");
+    fclose(sysgrm);
+    fclose(syslis);
+    exit(12);
+  }
+  num_non_terminals = num_symbols - num_terminals;
+  if (error_maps_bit) {
+    // make_names_map
+    {
+      /* Construct the NAME map, and update the elements of SYMNO with their names. */
+      symno[accept_image].name_index = name_map("");
+      if (error_image == DEFAULT_SYMBOL) {
+        symno[DEFAULT_SYMBOL].name_index = symno[accept_image].name_index;
+      }
+      for ALL_TERMINALS3(symbol) {
+        if (symno[symbol].name_index == OMEGA) {
+          symno[symbol].name_index = name_map(RETRIEVE_STRING(symbol));
+        }
+      }
+      for ALL_NON_TERMINALS3(symbol) {
+        if (symno[symbol].name_index == OMEGA) {
+          if (names_opt == MAXIMUM_NAMES) {
+            symno[symbol].name_index = name_map(RETRIEVE_STRING(symbol));
+          } else if (names_opt == OPTIMIZE_PHRASES) {
+            symno[symbol].name_index = -name_map(RETRIEVE_STRING(symbol));
+          } else {
+            symno[symbol].name_index = symno[error_image].name_index;
+          }
+        }
+      }
+      /* Allocate NAME table. */
+      name = (int *) calloc(num_names + 1, sizeof(int));
+      if (name == (int *) NULL)
+        nospace(__FILE__, __LINE__);
+      for (register int i = 0; i < HT_SIZE; i++) {
+        for (const register struct hash_type *p = hash_table[i]; p != NULL; p = p->link) {
+          if (p->name_index != OMEGA) {
+            name[p->name_index] = p->st_ptr;
+          }
+        }
+      }
+    }
+  }
+  if (list_bit) {
+    /* Aliases are placed in a separate linked list.  NOTE!! After execution */
+    /* of this loop the hash_table is destroyed because the LINK field of    */
+    /* alias symbols is used to construct a list of the alias symbols.       */
+    for (register int i = 0; i < HT_SIZE; i++) {
+      register struct hash_type *tail = hash_table[i];
+      for (register struct hash_type *p = tail; p != NULL; p = tail) {
+        tail = p->link;
+        if (p->number < 0) {
+          p->link = alias_root;
+          alias_root = p;
+        }
+      }
+    }
+  }
+  /* Construct the rule table.  At this stage, NUM_ITEMS is equal to the sum */
+  /* of the right-hand side lists of symbols.  It is used in the declaration of*/
+  /* RULE_TAB.  After RULE_TAB is allocated, we increase NUM_ITEMS to its      */
+  /* correct value.  Recall that the first rule is numbered 0; therefore we    */
+  /* increase the number of items by 1 to reflect this numbering.              */
+  {
+    register struct node *ptr;
+    register int rhs_ct = 0;
+    rules = (struct ruletab_type *) calloc(num_rules + 2, sizeof(struct ruletab_type));
+    if (rules == (struct ruletab_type *) NULL)
+      nospace(__FILE__, __LINE__);
+    rhs_sym = Allocate_short_array(num_items + 1);
+    num_items += num_rules + 1;
+    SHORT_CHECK(num_items);
+    register int ii = 0;
+    /* Put starting rules from start symbol linked list in rule and rhs table    */
+    if (start_symbol_root != NULL) {
+      /* Turn circular list into linear */
+      register struct node *q = start_symbol_root;
+      start_symbol_root = q->next;
+      q->next = NULL;
+      for (ptr = start_symbol_root; ptr != NULL; ptr = ptr->next) {
+        rules[ii].lhs = accept_image;
+        rules[ii].sp = 0;
+        rules[ii++].rhs = rhs_ct;
+        if (ptr->value != empty) {
+          rhs_sym[rhs_ct++] = ptr->value;
+        }
+      }
+      free_nodes(start_symbol_root, q);
+    }
+    /*   In this loop, the grammar is placed in the rule table structure and the */
+    /* right-hand sides are placed in the RHS table.  A check is made to prevent */
+    /* terminals from being used as left hand sides.                             */
+    for (ii = ii; ii <= num_rules; ii++) {
+      rules[ii].rhs = rhs_ct;
+      ptr = rulehdr[ii].rhs_root;
+      if (ptr != NULL) /* not am empty right-hand side? */
+      {
+        do {
+          ptr = ptr->next;
+          rhs_sym[rhs_ct++] = ptr->value;
+        } while (ptr != rulehdr[ii].rhs_root);
+        ptr = ptr->next; /* point to 1st element */
+        rules[ii].sp = rulehdr[ii].sp && ptr == rulehdr[ii].rhs_root;
+        if (rules[ii].sp)
+          num_single_productions++;
+        free_nodes(ptr, rulehdr[ii].rhs_root);
+      } else
+        rules[ii].sp = false;
+
+      if (rulehdr[ii].lhs == OMEGA) {
+        if (list_bit) /* Proper LHS will be updated after printing */
+          rules[ii].lhs = OMEGA;
+        else rules[ii].lhs = rules[ii - 1].lhs;
+      } else if (IS_A_TERMINAL(rulehdr[ii].lhs)) {
+        char temp[SYMBOL_SIZE + 1];
+        restore_symbol(temp, RETRIEVE_STRING(rulehdr[ii].lhs));
+        PRNTERR2(msg_line, "In rule %d: terminal \"%s\" used as left hand side", ii, temp);
+        PRNTERR("Processing terminated due to input errors.");
+        exit(12);
+      } else rules[ii].lhs = rulehdr[ii].lhs;
+    }
+    rules[num_rules + 1].rhs = rhs_ct; /* Fence !! */
+  }
+  fclose(sysgrm); /* Close grammar input file. */
+  if (action_bit) {
+    process_actions(grm_file);
+  } else if (list_bit) {
+    display_input();
+  }
+}
+
+// TODO • move into jikespg.g?
+/* BUILD_SYMNO constructs the SYMNO table which is a mapping from each       */
+/* symbol number into that symbol.                                           */
+static void build_symno(void) {
+  const long symno_size = num_symbols + 1;
+  symno = (struct symno_type *) calloc(symno_size, sizeof(struct symno_type));
+  if (symno == (struct symno_type *) NULL)
+    nospace(__FILE__, __LINE__);
+  /* Go through entire hash table. For each non_empty bucket, go through    */
+  /* linked list in that bucket.                                         */
+  for (register int i = 0; i < HT_SIZE; ++i) {
+    for (const register struct hash_type *p = hash_table[i]; p != NULL; p = p->link) {
+      const register int symbol = p->number;
+      /* Not an alias */
+      if (symbol >= 0) {
+        symno[symbol].name_index = OMEGA;
+        symno[symbol].ptr = p->st_ptr;
+      }
+    }
+  }
+}
+
 /* This procedure opens all relevant files and processes the input grammar.*/
-void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_files, const int argc, char *argv[]) {
+void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_files, const int argc, char *argv[], char* file_prefix) {
   // Parse args.
   {
     /* If options are passed to the program, copy them into "parm". */
@@ -2136,62 +2268,65 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
     }
   }
 
-  /* Open input grammar file. If the file cannot be opened and that file name */
-  /* did not have an extension, then the extension ".g" is added to the file  */
-  /* name and we try again. If no file can be found an error message is       */
-  /* issued and the program halts.                                            */
-  if ((sysgrm = fopen(grm_file, "r")) == (FILE *) NULL) {
-    register int ii;
-    for (ii = strlen(grm_file); ii > 0 &&
-                                grm_file[ii] != '.' &&
-                                grm_file[ii] != '/' && /* Unix */
-                                grm_file[ii] != '\\'; /* Dos  */
-         ii--) {
-    }
-    if (grm_file[ii] != '.') {
-      strcat(grm_file, ".g");
-      if ((sysgrm = fopen(grm_file, "r")) == (FILE *) NULL) {
+  // Prepare.
+  {
+    /* Open input grammar file. If the file cannot be opened and that file name */
+    /* did not have an extension, then the extension ".g" is added to the file  */
+    /* name and we try again. If no file can be found an error message is       */
+    /* issued and the program halts.                                            */
+    if ((sysgrm = fopen(grm_file, "r")) == (FILE *) NULL) {
+      register int ii;
+      for (ii = strlen(grm_file); ii > 0 &&
+                                  grm_file[ii] != '.' &&
+                                  grm_file[ii] != '/' && /* Unix */
+                                  grm_file[ii] != '\\'; /* Dos  */
+           ii--) {
+           }
+      if (grm_file[ii] != '.') {
+        strcat(grm_file, ".g");
+        if ((sysgrm = fopen(grm_file, "r")) == (FILE *) NULL) {
+          fprintf(stderr, "***ERROR: Input file %s containing grammar is empty, undefined, or invalid\n", grm_file);
+          exit(12);
+        }
+      } else {
         fprintf(stderr, "***ERROR: Input file %s containing grammar is empty, undefined, or invalid\n", grm_file);
         exit(12);
       }
     } else {
-      fprintf(stderr, "***ERROR: Input file %s containing grammar is empty, undefined, or invalid\n", grm_file);
+      if (strrchr(grm_file, '.') == NULL) {
+        PRNTWNG2(msg_line, "A file named \"%s\" with no extension is being opened", grm_file);
+      }
+    }
+    /*                Open listing file for output.                             */
+    syslis = fopen(lis_file, "w");
+    if (syslis == (FILE *) NULL) {
+      fprintf(stderr, "***ERROR: Listing file \"%s\" cannot be openned.\n", lis_file);
       exit(12);
     }
-  } else {
-    if (strrchr(grm_file, '.') == NULL) {
-      PRNTWNG2(msg_line, "A file named \"%s\" with no extension is being opened", grm_file);
+    /* Complete the initialization of the code array used to replace the        */
+    /* builtin functions isalpha, isdigit and isspace.                          */
+    for (unsigned c = 'a'; c <= 'z'; c++) {
+      if (isalpha(c)) {
+        code[c] = ALPHA_CODE;
+      }
     }
-  }
-  /*                Open listing file for output.                             */
-  syslis = fopen(lis_file, "w");
-  if (syslis == (FILE *) NULL) {
-    fprintf(stderr, "***ERROR: Listing file \"%s\" cannot be openned.\n", lis_file);
-    exit(12);
-  }
-  /* Complete the initialization of the code array used to replace the        */
-  /* builtin functions isalpha, isdigit and isspace.                          */
-  for (unsigned c = 'a'; c <= 'z'; c++) {
-    if (isalpha(c)) {
-      code[c] = ALPHA_CODE;
+    for (unsigned c = 'A'; c <= 'Z'; c++) {
+      if (isalpha(c)) {
+        code[c] = ALPHA_CODE;
+      }
     }
-  }
-  for (unsigned c = 'A'; c <= 'Z'; c++) {
-    if (isalpha(c)) {
-      code[c] = ALPHA_CODE;
+    for (unsigned c = '0'; c <= '9'; c++) {
+      if (isdigit(c)) {
+        code[c] = DIGIT_CODE;
+      }
     }
+    code[' '] = SPACE_CODE;
+    code['\n'] = SPACE_CODE;
+    code['\t'] = SPACE_CODE;
+    code['\r'] = SPACE_CODE;
+    code['\v'] = SPACE_CODE;
+    code['\f'] = SPACE_CODE;
   }
-  for (unsigned c = '0'; c <= '9'; c++) {
-    if (isdigit(c)) {
-      code[c] = DIGIT_CODE;
-    }
-  }
-  code[' '] = SPACE_CODE;
-  code['\n'] = SPACE_CODE;
-  code['\t'] = SPACE_CODE;
-  code['\r'] = SPACE_CODE;
-  code['\v'] = SPACE_CODE;
-  code['\f'] = SPACE_CODE;
 
   // Init grammar.
   {
@@ -2223,7 +2358,7 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
       fprintf(stderr, "Input file \"%s\" containing grammar is empty, undefined, or invalid\n", grm_file);
       exit(12);
     }
-    process_options_lines(grm_file, output_files);
+    process_options_lines(grm_file, output_files, file_prefix);
     eolt_image = OMEGA;
     blockb_len = strlen(blockb);
     blocke_len = strlen(blocke);

@@ -3,7 +3,6 @@ static char hostfile[] = __FILE__;
 
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 #include "common.h"
 
 /* The following are global variables and constants used to manage a  */
@@ -15,13 +14,13 @@ const int BASE_INCREMENT = 64;
 
 typedef long cell;
 
-static cell **temp_base = NULL;
-static long temp_top = 0;
-static long temp_size = 0;
-static long temp_base_size = 0;
+cell **temp_base = NULL;
+long temp_top = 0;
+long temp_size = 0;
+long temp_base_size = 0;
 
 /* This procedure obtains more TEMPORARY space.                       */
-static bool allocate_more_space(cell ***base, long *size, long *base_size) {
+bool allocate_more_space(cell ***base, long *size, long *base_size) {
   /* The variable size always indicates the maximum number of cells     */
   /* that has been allocated and reserved for the storage pool.         */
   /* Initially, size should be set to 0 to indicate that no space has   */
@@ -114,18 +113,18 @@ void *talloc(const long size) {
 /*                                                                    */
 /* These functions allocate space from the global pool in the same    */
 /* using the function "galloc" below.                                 */
-static cell **global_base = NULL;
-static long global_top = 0;
-static long global_size = 0;
-static long global_base_size = 0;
+cell **global_base = NULL;
+long global_top = 0;
+long global_size = 0;
+long global_base_size = 0;
 
-static struct node *node_pool = NULL;
+struct node *node_pool = NULL;
 
 /* galloc allocates an object of size "size" in global space and      */
-/* returns a pointer to it. It is analoguous to "talloc", but it      */
+/* returns a pointer to it. It is analogous to "talloc", but it      */
 /* is a local (static) routine that is only invoked in this file by   */
 /* other more specialized routines.                                   */
-static void *galloc(const long size) {
+void *galloc(const long size) {
   long i = global_top;
   global_top += (size + sizeof(cell) - 1) / sizeof(cell);
   if (global_top > global_size) {
@@ -147,14 +146,12 @@ static void *galloc(const long size) {
       }
     }
     i = global_size;
-    global_top = global_size +
-                 (size + sizeof(cell) - 1) / sizeof(cell);
+    global_top = global_size + (size + sizeof(cell) - 1) / sizeof(cell);
     if (!allocate_more_space(&global_base, &global_size, &global_base_size)) {
       global_top = global_size;
       return NULL;
     }
   }
-
   return &global_base[i >> LOG_BLKSIZE][i];
 }
 
@@ -163,109 +160,6 @@ static void *galloc(const long size) {
 void free_nodes(struct node *head, struct node *tail) {
   tail->next = node_pool;
   node_pool = head;
-}
-
-// TODO • inline?
-/* This function allocates a node structure and returns a pointer to it.    */
-/* If there are nodes in the free pool, one of them is returned. Otherwise, */
-/* a new node is allocated from the global storage pool.                    */
-struct node *allocate_node(char *file, const long line) {
-  struct node *p = node_pool;
-  if (p != NULL) {
-    /* is free list not empty? */
-    node_pool = p->next;
-  } else {
-    p = (struct node *) galloc(sizeof(struct node));
-    if (p == NULL) {
-      nospace(file, line);
-    }
-  }
-  return p;
-}
-
-// TODO • inline?
-/* This function allocates space for a goto map with "size" elements,       */
-/* initializes and returns a goto header for that map. NOTE that after the  */
-/* map is successfully allocated, it is offset by one element. This is      */
-/* to allow the array in question to be indexed from 1..size instead of     */
-/* 0..(size-1).                                                             */
-struct goto_header_type allocate_goto_map(const int size, char *file, const long line) {
-  struct goto_header_type go_to;
-  go_to.size = size;
-  go_to.map = (struct goto_type *) galloc(size * sizeof(struct goto_type));
-  if (go_to.map == NULL)
-    nospace(file, line);
-  go_to.map--; /* map will be indexed in range 1..size */
-  return go_to;
-}
-
-// TODO • inline?
-/* This function allocates space for a shift map with "size" elements,      */
-/* initializes and returns a shift header for that map. NOTE that after the */
-/* map is successfully allocated, it is offset by one element. This is      */
-/* to allow the array in question to be indexed from 1..size instead of     */
-/* 0..(size-1).                                                             */
-struct shift_header_type allocate_shift_map(const int size, char *file, const long line) {
-  struct shift_header_type sh;
-  sh.size = size;
-  sh.map = (struct shift_type *) galloc(size * sizeof(struct shift_type));
-  if (sh.map == NULL)
-    nospace(file, line);
-  sh.map--; /* map will be indexed in range 1..size */
-  return sh;
-}
-
-// TODO • inline?
-/* This function allocates space for a REDUCE map with "size"+1 elements,   */
-/* initializes and returns a REDUCE header for that map. The 0th element of */
-/* a reduce map is used for the default reduction.                          */
-struct reduce_header_type allocate_reduce_map(const int size, char *file, const long line) {
-  struct reduce_header_type red;
-  red.map = (struct reduce_type *) galloc((size + 1) * sizeof(struct reduce_type));
-  if (red.map == NULL)
-    nospace(file, line);
-  red.size = size;
-  return red;
-}
-
-// TODO • inline?
-/* This function allocates an array of size "size" of int integers.         */
-int *allocate_int_array(const long size, char *file, const long line) {
-  int *p;
-  p = (int *) calloc(size, sizeof(int));
-  if (p == (int *) NULL)
-    nospace(file, line);
-  return &p[0];
-}
-
-// TODO • inline?
-/* This function allocates an array of size "size" of int integers.         */
-long *allocate_long_array(const long size, char *file, const long line) {
-  long *p;
-  p = (long *) calloc(size, sizeof(long));
-  if (p == (long *) NULL)
-    nospace(file, line);
-  return &p[0];
-}
-
-// TODO • inline?
-/* This function allocates an array of size "size" of short integers.       */
-short *allocate_short_array(const long size, char *file, const long line) {
-  short *p;
-  p = (short *) calloc(size, sizeof(short));
-  if (p == (short *) NULL)
-    nospace(file, line);
-  return &p[0];
-}
-
-// TODO • inline?
-/* This function allocates an array of size "size" of type boolean.         */
-bool *allocate_boolean_array(const long size, char *file, const long line) {
-  bool *p;
-  p = (bool *) calloc(size, sizeof(bool));
-  if (p == (bool *) 0)
-    nospace(file, line);
-  return &p[0];
 }
 
 /* FILL_IN is a subroutine that pads a buffer, STRING,  with CHARACTER a     */
@@ -281,7 +175,7 @@ void fill_in(char string[], const int amount, const char character) {
 /* QCKSRT is a quicksort algorithm that takes as arguments an array of       */
 /* integers, two numbers L and H that indicate the lower and upper bound     */
 /* positions in ARRAY to be sorted.                                          */
-static void qcksrt(short array[], const int l, const int h) {
+void qcksrt(short array[], const int l, const int h) {
   int lostack[14];
   int histack[14];
   /* 2 ** 15 - 1 elements                          */
@@ -354,8 +248,10 @@ void restore_symbol(char *out, const char *in) {
     }
   }
   strcpy(out, in);
-  if (out[0] == '\n') /* one of the special grammar symbols? */
+  if (out[0] == '\n') {
+    /* one of the special grammar symbols? */
     out[0] = escape;
+  }
 }
 
 /* PRINT_LARGE_TOKEN generates code to print a token that may exceed the     */

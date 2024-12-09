@@ -4,24 +4,10 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <limits.h>
-
-static char hostfile[];
-
-#ifndef COMMON_INCLUDED
-#define COMMON_INCLUDED
-
-/* One of the switches below may have to be set prior to building  */
-/* JIKES PG. OS2 is for all C compilers running under OS2. DOS is  */
-/* for all C compilers running under DOS. Note that to run under   */
-/* DOS, the compiler used must support the Huge model (32-bit ptr  */
-/* simulation). CW is for the Waterloo C compiler running under VM/CMS. */
-/*                                                                 */
-/* This system was built to run on a vanilla Unix or AIX system.   */
-/* No switch need to be set for such an environment.  Set other    */
-/* switch(es) as needed.                                           */
-
 #include <assert.h>
 #include <stdio.h>
+
+static char hostfile[];
 
 static const int MAX_PARM_SIZE = 22;
 static const int SYMBOL_SIZE = 256;
@@ -164,12 +150,10 @@ struct OutputFiles {
   char dcl_file[80];
 };
 
-void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_files, const int argc, char *argv[]);
+void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_files, int argc, char *argv[], char *file_prefix);
 
-extern char file_prefix[];
 extern char prefix[];
 extern char suffix[];
-extern char parm[];
 extern char msg_line[];
 
 extern FILE *syslis;
@@ -296,20 +280,13 @@ extern struct itemtab {
   short dot;
 } *item_table;
 
-/* SYMNO is an array that maps symbol numbers to actual symbols.       */
-extern struct symno_type {
-  int ptr;
-  int name_index;
-} *symno;
-
-/* NULL_NT is a boolean vector that indicates whether or not a given   */
+/* NULL_NT is a boolean vector that indicates whether a given   */
 /* non-terminal is nullable.                                           */
 extern bool *null_nt;
 
+extern SET_PTR first;
 /* FOLLOW is a mapping from non-terminals to a set of terminals that   */
 /* may appear immediately after the non-terminal.                      */
-extern SET_PTR nt_first;
-extern SET_PTR first;
 extern SET_PTR follow;
 
 /* SHIFT is an array used to hold the complete set of all shift maps   */
@@ -323,9 +300,6 @@ extern short *gotodef;
 extern short *shiftdf;
 extern short *gd_index;
 extern short *gd_range;
-
-/* NAME is an array containing names to be associated with symbols.    */
-extern int *name;
 
 /* STATSET is a mapping from state number to state information.        */
 extern struct statset_type *statset;
@@ -391,19 +365,19 @@ void *talloc(long size);
 
 struct node *allocate_node(char *file, long line);
 
-bool *allocate_boolean_array(long size, char *file, long line);
+bool *allocate_boolean_array(long n, char *file, long line);
 
-int *allocate_int_array(long size, char *file, long line);
+int *allocate_int_array(long n, char *file, long line);
 
-long *allocate_long_array(long size, char *file, long line);
+long *allocate_long_array(long n, char *file, long line);
 
-short *allocate_short_array(long size, char *file, long line);
+short *allocate_short_array(long n, char *file, long line);
 
-struct goto_header_type allocate_goto_map(int size, char *file, long line);
+struct goto_header_type allocate_goto_map(int n, char *file, long line);
 
-struct shift_header_type allocate_shift_map(int size, char *file, long line);
+struct shift_header_type allocate_shift_map(int n, char *file, long line);
 
-struct reduce_header_type allocate_reduce_map(int size, char *file, long line);
+struct reduce_header_type allocate_reduce_map(int n, char *file, long line);
 
 void cmprtim(struct OutputFiles output_files);
 
@@ -431,7 +405,7 @@ void free_nodes(struct node *head, struct node *tail);
 
 struct node *lpgaccess(int state_no, int item_no);
 
-void mkfirst(void);
+void mkbasic(void);
 
 void mkrdcts(void);
 
@@ -463,7 +437,7 @@ void print_time_parser();
 
 void init_parser_files(struct OutputFiles output_files);
 
-void process_tables(char* tab_file, struct OutputFiles output_files);
+void process_tables(char *tab_file, struct OutputFiles output_files);
 
 void ptstats(void);
 
@@ -477,43 +451,103 @@ void resolve_conflicts(int state_no, struct node **action, const short *symbol_l
 
 void restore_symbol(char *out, const char *in);
 
-/**                       ALLOCATE/FREE MACROS                    **/
-/* The following macro definitions are used to preprocess calls to */
-/* allocate routines that require locations. The FFREE macro is    */
-/* normally an invocation to the FREE routine. It is encoded as    */
-/* a macro here in case we need to do some debugging on dynamic    */
-/* storage.                                                        */
-static struct node *Allocate_node() {
-  return allocate_node(hostfile, __LINE__);
-}
-
-// TODO • only use long arrays never int?
+/// This function allocates an array of size "size" of int integers.
 static int *Allocate_int_array(const long n) {
-  return allocate_int_array(n, hostfile, __LINE__);
+  int *p;
+  p = (int *) calloc(n, sizeof(int));
+  if (p == (int *) NULL)
+    nospace(hostfile, __LINE__);
+  return &p[0];
 }
 
+/// This function allocates an array of size "size" of int integers.
 static long *Allocate_long_array(const long n) {
-  return allocate_long_array(n, hostfile, __LINE__);
+  long *p;
+  p = (long *) calloc(n, sizeof(long));
+  if (p == (long *) NULL)
+    nospace(hostfile, __LINE__);
+  return &p[0];
 }
 
+/// This function allocates an array of size "size" of short integers.
 static short *Allocate_short_array(const long n) {
-  return allocate_short_array(n, hostfile, __LINE__);
+  short *p;
+  p = (short *) calloc(n, sizeof(short));
+  if (p == (short *) NULL)
+    nospace(hostfile, __LINE__);
+  return &p[0];
 }
 
+/// This function allocates an array of size "size" of type boolean.
 static bool *Allocate_boolean_array(const long n) {
-  return allocate_boolean_array(n, hostfile, __LINE__);
+  bool *p;
+  p = (bool *) calloc(n, sizeof(bool));
+  if (p == (bool *) 0)
+    nospace(hostfile, __LINE__);
+  return &p[0];
 }
 
+void *galloc(long size);
+
+extern struct node *node_pool;
+
+/// This function allocates a node structure and returns a pointer to it.
+/// If there are nodes in the free pool, one of them is returned. Otherwise,
+/// a new node is allocated from the global storage pool.
+static struct node *Allocate_node() {
+  struct node *p = node_pool;
+  if (p != NULL) {
+    /* Is free list not empty? */
+    node_pool = p->next;
+  } else {
+    p = (struct node *) galloc(sizeof(struct node));
+    if (p == NULL) {
+      nospace(hostfile, __LINE__);
+    }
+  }
+  return p;
+}
+
+/// This function allocates space for a goto map with "size" elements,
+/// initializes and returns a goto header for that map. NOTE that after the
+/// map is successfully allocated, it is offset by one element. This is
+/// to allow the array in question to be indexed from 1..size instead of
+/// 0..(size-1).
 static struct goto_header_type Allocate_goto_map(const long n) {
-  return allocate_goto_map(n, hostfile, __LINE__);
+  struct goto_header_type go_to;
+  go_to.size = n;
+  go_to.map = (struct goto_type *) galloc(n * sizeof(struct goto_type));
+  if (go_to.map == NULL)
+    nospace(hostfile, __LINE__);
+  go_to.map--; /* map will be indexed in range 1..size */
+  return go_to;
 }
 
+/// This function allocates space for a shift map with "size" elements,
+/// initializes and returns a shift header for that map. NOTE that after the
+/// map is successfully allocated, it is offset by one element. This is
+/// to allow the array in question to be indexed from 1..size instead of
+/// 0..(size-1).
 static struct shift_header_type Allocate_shift_map(const long n) {
-  return allocate_shift_map(n, hostfile, __LINE__);
+  struct shift_header_type sh;
+  sh.size = n;
+  sh.map = (struct shift_type *) galloc(n * sizeof(struct shift_type));
+  if (sh.map == NULL)
+    nospace(hostfile, __LINE__);
+  sh.map--; /* map will be indexed in range 1..size */
+  return sh;
 }
 
+/// This function allocates space for a REDUCE map with "size"+1 elements,
+/// initializes and returns a REDUCE header for that map. The 0th element of
+/// a reduce map is used for the default reduction.
 static struct reduce_header_type Allocate_reduce_map(const long n) {
-  return allocate_reduce_map(n, hostfile, __LINE__);
+  struct reduce_header_type red;
+  red.map = (struct reduce_type *) galloc((n + 1) * sizeof(struct reduce_type));
+  if (red.map == NULL)
+    nospace(hostfile, __LINE__);
+  red.size = n;
+  return red;
 }
 
 static void ffree(void *y) {
@@ -591,18 +625,13 @@ static void BUFFER_CHECK(FILE *file) {
     output_ptr = &output_buffer[0];
   }
 }
-#endif /* COMMON_INCLUDED */
-
-
-#ifndef SPACE_INCLUDED
-#define SPACE_INCLUDED
 
 struct new_state_type {
   struct reduce_header_type reduce;
-  short shift_number,
-      link,
-      thread,
-      image;
+  short shift_number;
+  short link;
+  short thread;
+  short image;
 };
 
 extern struct new_state_type *new_state_element;
@@ -619,20 +648,6 @@ extern int check_size;
 extern int term_check_size;
 extern int term_action_size;
 extern int shift_check_size;
-
-#endif /* SPACE_INCLUDED */
-
-
-
-
-
-
-
-
-
-
-#ifndef REDUCE_INCLUDED
-#define REDUCE_INCLUDED
 
 /* CONFLICT_SYMBOLS is a mapping from each state into a set of terminal    */
 /* symbols on which an LALR(1) conflict was detected in the state in       */
@@ -663,5 +678,3 @@ extern int highest_level;
 extern long la_top;
 extern short *la_index;
 extern bool not_lrk;
-
-#endif /* REDUCE_INCLUDED */

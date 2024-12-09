@@ -2,17 +2,6 @@ static char hostfile[] = __FILE__;
 
 #include "common.h"
 
-// TODO • build in main and pass to options builder.
-char file_prefix[80] = "";
-char prefix[MAX_PARM_SIZE] = "";
-char suffix[MAX_PARM_SIZE] = "";
-char msg_line[MAX_MSG_SIZE];
-
-FILE *syslis;
-FILE *systab;
-FILE *syssym;
-FILE *sysdcl;
-
 /*  The variables below are global counters.          */
 long num_items = 0;
 long num_states = 0;
@@ -90,8 +79,6 @@ int stack_size = 128;
 char escape = '%';
 char ormark = '|';
 
-char *string_table = NULL;
-
 short *rhs_sym = NULL;
 
 struct ruletab_type *rules = NULL;
@@ -101,8 +88,6 @@ struct node **clitems = NULL;
 struct node **adequate_item = NULL;
 
 struct itemtab *item_table = NULL;
-
-struct symno_type *symno = NULL;
 
 bool *null_nt = NULL;
 
@@ -118,8 +103,6 @@ short *shiftdf = NULL;
 short *gotodef = NULL;
 short *gd_index = NULL;
 short *gd_range = NULL;
-
-int *name;
 
 struct statset_type *statset = NULL;
 

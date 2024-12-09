@@ -2,6 +2,7 @@
 static char hostfile[] = __FILE__;
 
 #include "common.h"
+#include "lpgparse.h"
 
 struct action_element {
   struct action_element *next;
