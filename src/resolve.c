@@ -626,68 +626,6 @@ static void conflicts_initialization(void) {
   }
 }
 
-/*   If conflicts are detected, tehy are placed in two lists headed by */
-/* SR_CONFLICT_ROOT and RR_CONFLICT_ROOT.  We scan these lists, and    */
-/* report the conflicts.                                               */
-static void process_conflicts(const int state_no) {
-  int symbol;
-  int rule_no;
-  char temp[SYMBOL_SIZE + 1];
-  if (nt_items == NULL) {
-    conflicts_initialization();
-  }
-  print_state(state_no); /* Print state containing conflicts */
-  /* Process shift-reduce conflicts.                                 */
-  if (sr_conflict_root != NULL) {
-    struct sr_conflict_element *tail;
-    for (struct sr_conflict_element *p = sr_conflict_root; p != NULL; tail = p, p = p->next) {
-      symbol = p->symbol;
-      rule_no = item_table[p->item].rule_number;
-      restore_symbol(temp, RETRIEVE_STRING(symbol));
-      printf("*** Shift/reduce conflict on \"%s\" with rule %d\n", temp, rule_no);
-      fprintf(syslis, "\n*** Shift/reduce conflict on \"%s\" with rule %d\n", temp, rule_no);
-      if (trace_opt != NOTRACE) {
-        if (slr_bit) {
-          print_relevant_slr_items(p->item, symbol);
-        } else {
-          print_relevant_lalr_items(state_no, p->item, symbol);
-        }
-        print_item(p->item);
-      }
-    }
-    free_conflict_elements(sr_conflict_root, tail);
-  }
-  /* Process reduce-reduce conflicts.                                */
-  if (rr_conflict_root != NULL) {
-    struct rr_conflict_element *tail;
-    for (struct rr_conflict_element *p = rr_conflict_root; p != NULL; tail = p, p = p->next) {
-      symbol = p->symbol;
-      const int n = item_table[p->item1].rule_number;
-      rule_no = item_table[p->item2].rule_number;
-      restore_symbol(temp, RETRIEVE_STRING(symbol));
-      printf("*** Reduce/reduce conflict on \"%s\" between rule %d and %d\n", temp, n, rule_no);
-      fprintf(syslis, "\n*** Reduce/reduce conflict on \"%s\" between rule %d and %d\n", temp, n, rule_no);
-      if (trace_opt != NOTRACE) {
-        if (slr_bit) {
-          print_relevant_slr_items(p->item1, symbol);
-        } else {
-          print_relevant_lalr_items(state_no, p->item1, symbol);
-        }
-        print_item(p->item1);
-        fill_in(msg_line, PRINT_LINE_SIZE - 3, '-');
-        fprintf(syslis, "\n%s", msg_line);
-        if (slr_bit) {
-          print_relevant_slr_items(p->item2, symbol);
-        } else {
-          print_relevant_lalr_items(state_no, p->item2, symbol);
-        }
-        print_item(p->item2);
-      }
-    }
-    free_conflict_elements(rr_conflict_root, tail);
-  }
-}
-
 /* Add SYMBOL to the set of symbols CONFLICT_SYMBOLS[STATE_NO].        */
 static void add_conflict_symbol(const int state_no, const int symbol) {
   struct node *p = Allocate_node();
@@ -1411,7 +1349,7 @@ void free_conflict_space(void) {
 /* where k > 1, then we attempt to resolve the conflicts by computing  */
 /* more lookaheads. Shift-Reduce conflicts are processed first,        */
 /* followed by Reduce-Reduce conflicts.                                */
-void resolve_conflicts(const int state_no, struct node **action, const short *symbol_list, const int reduce_root) {
+void resolve_conflicts(const int state_no, struct node **action, const short *symbol_list, const int reduce_root, bool slr_bit) {
   struct node *p;
   struct node *tail;
   struct stack_element *q;
@@ -1576,7 +1514,65 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
   }
   /* If any unresolved conflicts were detected, process them.        */
   if (sr_conflict_root != NULL || rr_conflict_root != NULL) {
-    process_conflicts(state_no);
+    /* If conflicts are detected, they are placed in two lists headed by   */
+    /* SR_CONFLICT_ROOT and RR_CONFLICT_ROOT.  We scan these lists, and    */
+    /* report the conflicts.                                               */
+    int symbol;
+    int rule_no;
+    char temp[SYMBOL_SIZE + 1];
+    if (nt_items == NULL) {
+      conflicts_initialization();
+    }
+    print_state(state_no); /* Print state containing conflicts */
+    /* Process shift-reduce conflicts.                                 */
+    if (sr_conflict_root != NULL) {
+      struct sr_conflict_element *tail;
+      for (struct sr_conflict_element *p = sr_conflict_root; p != NULL; tail = p, p = p->next) {
+        symbol = p->symbol;
+        rule_no = item_table[p->item].rule_number;
+        restore_symbol(temp, RETRIEVE_STRING(symbol));
+        printf("*** Shift/reduce conflict on \"%s\" with rule %d\n", temp, rule_no);
+        fprintf(syslis, "\n*** Shift/reduce conflict on \"%s\" with rule %d\n", temp, rule_no);
+        if (trace_opt != NOTRACE) {
+          if (slr_bit) {
+            print_relevant_slr_items(p->item, symbol);
+          } else {
+            print_relevant_lalr_items(state_no, p->item, symbol);
+          }
+          print_item(p->item);
+        }
+      }
+      free_conflict_elements(sr_conflict_root, tail);
+    }
+    /* Process reduce-reduce conflicts.                                */
+    if (rr_conflict_root != NULL) {
+      struct rr_conflict_element *tail;
+      for (struct rr_conflict_element *p = rr_conflict_root; p != NULL; tail = p, p = p->next) {
+        symbol = p->symbol;
+        const int n = item_table[p->item1].rule_number;
+        rule_no = item_table[p->item2].rule_number;
+        restore_symbol(temp, RETRIEVE_STRING(symbol));
+        printf("*** Reduce/reduce conflict on \"%s\" between rule %d and %d\n", temp, n, rule_no);
+        fprintf(syslis, "\n*** Reduce/reduce conflict on \"%s\" between rule %d and %d\n", temp, n, rule_no);
+        if (trace_opt != NOTRACE) {
+          if (slr_bit) {
+            print_relevant_slr_items(p->item1, symbol);
+          } else {
+            print_relevant_lalr_items(state_no, p->item1, symbol);
+          }
+          print_item(p->item1);
+          fill_in(msg_line, PRINT_LINE_SIZE - 3, '-');
+          fprintf(syslis, "\n%s", msg_line);
+          if (slr_bit) {
+            print_relevant_slr_items(p->item2, symbol);
+          } else {
+            print_relevant_lalr_items(state_no, p->item2, symbol);
+          }
+          print_item(p->item2);
+        }
+      }
+      free_conflict_elements(rr_conflict_root, tail);
+    }
   }
   free_dangling_stack_elements();
 }

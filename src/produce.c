@@ -388,458 +388,11 @@ static void compute_produces(const int symbol) {
   }
 }
 
-/* Compute set of "scopes" and use it to construct SCOPE map.     */
-void process_scopes(void) {
-  short *prefix_index;
-  short *suffix_index;
-  short *state_index;
-  struct node **states_of;
-  int num_state_sets = 0;
-  int n;
-  int max_prefix_length = 0;
-  int dot_symbol;
-  int item_root;
-  int rule_no;
-  int nt_root;
-  bool end_node;
-  struct node *p;
-  struct node *q;
-  prefix_index = Allocate_short_array(num_items + 1);
-  suffix_index = Allocate_short_array(num_items + 1);
-  item_of = Allocate_short_array(num_non_terminals);
-  item_of -= num_terminals + 1;
-  next_item = Allocate_short_array(num_items + 1);
-  symbol_seen = Allocate_boolean_array(num_non_terminals);
-  symbol_seen -= num_terminals + 1;
-  states_of = (struct node **) calloc(num_non_terminals, sizeof(struct node *));
-  states_of -= num_terminals + 1;
-  state_index = Allocate_short_array(num_non_terminals);
-  state_index -= num_terminals + 1;
-  scope_element = (struct scope_elmt *)
-      calloc(num_items + 1, sizeof(struct scope_elmt));
-  /* Initially, PRODUCES was used to compute the right-most-produces  */
-  /* map.  We save that map map and make it reflexive.  Recall that   */
-  /* RIGHT_PRODUCES is a mapping from each nonterminal B into the set */
-  /* of nonterminals A such that:                                     */
-  /*                                                                  */
-  /*    A =>rm* B                                                     */
-  /*                                                                  */
-  /* Next, reallocate PRODUCES and initialize it in order to          */
-  /* construct the LEFT_PRODUCES map. Initially, CALLOC sets PRODUCES */
-  /* to the empty map.                                                */
-  /* LEFT_PRODUCES is a mapping  from each nonterminal A into the set */
-  /* of nonterminals B such that:                                     */
-  /*                                                                  */
-  /*    A =>lm* B x                                                   */
-  /*                                                                  */
-  /* for some arbitrary string x.                                     */
-  /*                                                                  */
-  /* Since A ->* A for all A,  we insert A in PRODUCES(A)  (but not   */
-  /* in the linked list).                                             */
-  right_produces = produces;
-  produces = (SET_PTR)
-      calloc(num_non_terminals,
-             non_term_set_size * sizeof(BOOLEAN_CELL));
-  if (produces == NULL)
-    nospace(__FILE__, __LINE__);
-  produces -= (num_terminals + 1) * non_term_set_size;
-  for ALL_NON_TERMINALS3(nt) {
-    NTSET_BIT_IN(right_produces, nt, nt - num_terminals);
-    NTSET_BIT_IN(produces, nt, nt - num_terminals);
-    direct_produces[nt] = NULL;
-    for (end_node = (p = clitems[nt]) == NULL;
-         !end_node; end_node = p == clitems[nt]) {
-      p = p->next;
-      for (int item_no = p->value;
-           IS_A_NON_TERMINAL(item_table[item_no].symbol);
-           item_no++) {
-        int symbol = item_table[item_no].symbol;
-        if (!IS_IN_NTSET(produces, nt, symbol - num_terminals)) {
-          NTSET_BIT_IN(produces, nt, symbol - num_terminals);
-          q = Allocate_node();
-          q->value = symbol;
-          q->next = direct_produces[nt];
-          direct_produces[nt] = q;
-        }
-        if (!null_nt[symbol]) {
-          break;
-        }
-      }
-    }
-  }
-  /* Complete the construction of the LEFT_produces map for       */
-  /* non_terminals using the digraph algorithm.                   */
-  for ALL_NON_TERMINALS3(nt) {
-    index_of[nt] = OMEGA;
-  }
-  top = 0;
-  for ALL_NON_TERMINALS3(nt) {
-    if (index_of[nt] == OMEGA) {
-      compute_produces(nt);
-    }
-  }
-  left_produces = produces;
-  /* Allocate and initialize the PRODUCES array to construct the      */
-  /* PRODUCES map.  After allocation, CALLOC sets all sets to empty.  */
-  /* Since A ->* A for all A,  we insert A in PRODUCES(A)  (but not   */
-  /* in the linked list).                                             */
-  produces = (SET_PTR)
-      calloc(num_non_terminals,
-             non_term_set_size * sizeof(BOOLEAN_CELL));
-  if (produces == NULL) {
-    nospace(__FILE__, __LINE__);
-  }
-  produces -= (num_terminals + 1) * non_term_set_size;
-  for ALL_NON_TERMINALS3(nt) {
-    NTSET_BIT_IN(produces, nt, nt - num_terminals);
-    direct_produces[nt] = NULL;
-    for (end_node = (p = clitems[nt]) == NULL;
-         !end_node; end_node = p == clitems[nt]) {
-      p = p->next;
-      for (int item_no = p->value;
-           item_table[item_no].symbol != empty; item_no++) {
-        int symbol = item_table[item_no].symbol;
-        if (IS_A_NON_TERMINAL(symbol)) {
-          if (!IS_IN_NTSET(produces, nt, symbol - num_terminals)) {
-            NTSET_BIT_IN(produces, nt, symbol - num_terminals);
-            q = Allocate_node();
-            q->value = symbol;
-            q->next = direct_produces[nt];
-            direct_produces[nt] = q;
-          }
-        }
-      }
-    }
-  }
-  /* Complete the construction of the PRODUCES map for            */
-  /* non_terminals using the digraph algorithm.                   */
-  /*                                                              */
-  /* Since $ACC =>* x A y for all nonterminal A in the grammar, a */
-  /* single call to COMPUTE_PRODUCES does the trick.              */
-  for ALL_NON_TERMINALS3(nt) {
-    index_of[nt] = OMEGA;
-  }
-  top = 0;
-  compute_produces(accept_image);
-  /* Construct a mapping from each non_terminal A into the set of     */
-  /* items of the form [B  ->  x . A y].                              */
-  for ALL_NON_TERMINALS3(nt) {
-    item_of[nt] = NIL;
-  }
-  for ALL_ITEMS3(item_no) {
-    dot_symbol = item_table[item_no].symbol;
-    if (IS_A_NON_TERMINAL(dot_symbol)) {
-      next_item[item_no] = item_of[dot_symbol];
-      item_of[dot_symbol] = item_no;
-    }
-  }
-  /* Construct a list of scoped items in ITEM_LIST.                   */
-  /* Scoped items are derived from rules of the form  A -> x B y such */
-  /* that B =>* w A z, %empty not in FIRST(y), and it is not the case */
-  /* that x = %empty and B ->* A v.                                   */
-  /* Scoped items may also be identified by the user, using %error    */
-  /* productions.                                                     */
-  /* As scoped items are added to the list, we keep track of the      */
-  /* longest prefix encountered.  This is subsequently used to        */
-  /* bucket sort the scoped items in descending order of the length    */
-  /* of their prefixes.                                               */
-  for ALL_ITEMS3(item_no) {
-    item_list[item_no] = OMEGA;
-  }
-  item_root = NIL;
-  for ALL_ITEMS3(item_no) {
-    dot_symbol = item_table[item_no].symbol;
-    if (dot_symbol == error_image) {
-      if (item_table[item_no].dot != 0 &&
-          !IS_IN_SET(first, item_table[item_no].suffix_index, empty)) {
-        if (item_list[item_no] == OMEGA) {
-          item_list[item_no] = item_root;
-          item_root = item_no;
-          max_prefix_length = MAX(max_prefix_length, item_table[item_no].dot);
-        }
-      }
-    } else if (IS_A_NON_TERMINAL(dot_symbol)) {
-      int symbol = rules[item_table[item_no].rule_number].lhs;
-      if (!IS_IN_SET(first, item_table[item_no].suffix_index, empty) &&
-          IS_IN_NTSET(produces, dot_symbol, symbol - num_terminals)) {
-        if (is_scope(item_no)) {
-          int ii;
-          for (ii = item_no + 1; ; ii++) {
-            symbol = item_table[ii].symbol;
-            if (IS_A_TERMINAL(symbol)) {
-              break;
-            }
-            if (!null_nt[symbol]) {
-              break;
-            }
-          }
-          if (IS_A_NON_TERMINAL(symbol)) {
-            for ALL_NON_TERMINALS3(nt) {
-              symbol_seen[nt] = false;
-            }
-            symbol = get_shift_symbol(symbol);
-          }
-          if (symbol != empty && item_list[ii] == OMEGA) {
-            item_list[ii] = item_root;
-            item_root = ii;
-            max_prefix_length = MAX(max_prefix_length, item_table[ii].dot);
-          }
-        }
-      }
-    }
-  }
-  /* In this loop, the prefix and suffix string for each scope in      */
-  /* entered into a table.  We also use the SYMBOL_SEEN array to       */
-  /* identify the set of left-hand side symbols associated with the    */
-  /* scopes.                                                           */
-  scope_table = Allocate_short_array(SCOPE_SIZE);
-  for (int i = 0; i < SCOPE_SIZE; i++) {
-    scope_table[i] = NIL;
-  }
-  for ALL_NON_TERMINALS3(nt) {
-    symbol_seen[nt] = false;
-  }
-  for (int item_no = item_root; item_no != NIL; item_no = item_list[item_no]) {
-    rule_no = item_table[item_no].rule_number;
-    int symbol = rules[rule_no].lhs;
-    num_scopes = num_scopes + 1;
-    symbol_seen[symbol] = true;
-    prefix_index[item_no] = insert_prefix(item_no);
-    suffix_index[item_no] = insert_suffix(item_no);
-  }
-  ffree(scope_table);
-  /* We now construct a mapping from each nonterminal symbol that is   */
-  /* the left-hand side of a rule containing scopes into the set of    */
-  /* states that has a transition on the nonterminal in question.      */
-  nt_root = NIL;
-  for ALL_NON_TERMINALS3(nt) {
-    states_of[nt] = NULL;
-  }
-  for ALL_STATES3(state_no) {
-    struct goto_header_type go_to;
-    go_to = statset[state_no].go_to;
-    for (int i = 1; i <= go_to.size; i++) {
-      int symbol = go_to.map[i].symbol;
-      if (symbol_seen[symbol]) {
-        if (states_of[symbol] == NULL) {
-          nt_list[symbol] = nt_root;
-          nt_root = symbol;
-          num_state_sets = num_state_sets + 1;
-        }
-        q = Allocate_node();
-        q->value = state_no;
-        q->next = states_of[symbol];
-        states_of[symbol] = q;
-      }
-    }
-  }
-  right_produces += (num_terminals + 1) * non_term_set_size;
-  ffree(right_produces);
-  left_produces += (num_terminals + 1) * non_term_set_size;
-  ffree(left_produces);
-  /* Next, we used the optimal partition procedure to compress the     */
-  /* space used by the sets of states, allocate the SCOPE structure    */
-  /* and store the compressed sets of states in it.                    */
-  /* We also sort the list of items by the length of their prefixes in */
-  /* descending order.  This is done primarily as an optimization.     */
-  /* If a longer prefix matches prior to a shorter one, the parsing    */
-  /* will terminate quicker.                                           */
-process_scope_states: {
-    SET_PTR collection;
-    long *element_size;
-    long *list;
-    long *start;
-    long *stack;
-    short *ordered_symbol;
-    short *state_list;
-    short *bucket;
-    int state_root;
-    int state_no_inner;
-    state_set_size = num_states / SIZEOF_BC + (num_states % SIZEOF_BC ? 1 : 0);
-    collection = (SET_PTR) calloc(num_state_sets + 1, state_set_size * sizeof(BOOLEAN_CELL));
-    if (collection == NULL)
-      nospace(__FILE__, __LINE__);
-    element_size = Allocate_long_array(num_state_sets + 1);
-    start = Allocate_long_array(num_state_sets + 2);
-    stack = Allocate_long_array(num_state_sets + 1);
-    ordered_symbol = Allocate_short_array(num_state_sets + 1);
-    list = Allocate_long_array(num_state_sets + 1);
-    state_list = Allocate_short_array(num_states + 1);
-    bucket = Allocate_short_array(max_prefix_length + 1);
-    for (int symbol = nt_root, i = 1; symbol != NIL; symbol = nt_list[symbol], i++) {
-      list[i] = i;
-      ordered_symbol[i] = symbol;
-      EMPTY_COLLECTION_SET(collection, i);
-      element_size[i] = 0;
-      for (p = states_of[symbol]; p != NULL; p = p->next) {
-        element_size[i]++;
-        SET_COLLECTION_BIT(collection, i, p->value);
-      }
-    }
-    partset(collection, element_size, list, start, stack, num_state_sets, 1);
-    for (int i = 1; i <= num_state_sets; i++) {
-      int symbol = ordered_symbol[i];
-      state_index[symbol] = ABS(start[i]);
-    }
-    scope_state_size = start[num_state_sets + 1] - 1;
-    scope = (struct scope_type *) calloc(num_scopes + 1, sizeof(struct scope_type));
-    if (scope == NULL)
-      nospace(__FILE__, __LINE__);
-    scope_right_side = Allocate_long_array(scope_rhs_size + 1);
-    scope_state = Allocate_short_array(scope_state_size + 1);
-    int k = 0;
-    for (int i = 0; i <= num_states; i++) {
-      state_list[i] = OMEGA;
-    }
-    for (int i = 1; i <= num_state_sets; i++) {
-      if (start[i] > 0) {
-        state_root = 0;
-        state_list[state_root] = NIL;
-        int j;
-        for (end_node = (j = i) == NIL; !end_node; end_node = j == i) {
-          j = stack[j];
-          int symbol = ordered_symbol[j];
-          for (p = states_of[symbol]; p != NULL; p = p->next) {
-            state_no_inner = p->value;
-            if (state_list[state_no_inner] == OMEGA) {
-              state_list[state_no_inner] = state_root;
-              state_root = state_no_inner;
-            }
-          }
-        }
-        for (state_no_inner = state_root; state_no_inner != NIL; state_no_inner = state_root) {
-          state_root = state_list[state_no_inner];
-          state_list[state_no_inner] = OMEGA;
-          k++;
-          scope_state[k] = state_no_inner;
-        }
-      }
-    }
-    for (int symbol = nt_root; symbol != NIL; symbol = nt_list[symbol]) {
-      for (p = states_of[symbol]; p != NULL; q = p, p = p->next) {
-      }
-      free_nodes(states_of[symbol], q);
-    }
-    /* Use the BUCKET array as a base to partition the scoped items        */
-    /* based on the length of their prefixes.  The list of items in each   */
-    /* bucket is kept in the NEXT_ITEM array sorted in descending order    */
-    /* of the length of the right-hand side of the item.                   */
-    /* Items are kept sorted in that fashion because when two items have   */
-    /* the same prefix, we want the one with the shortest suffix to be     */
-    /* chosen. In other words, if we have two scoped items, say:           */
-    /*                                                                     */
-    /*    A ::= x . y       and      B ::= x . z     where |y| < |z|       */
-    /*                                                                     */
-    /* and both of them are applicable in a given context with similar     */
-    /* result, then we always want A ::= x . y to be used.                 */
-    for (int i = 1; i <= max_prefix_length; i++) {
-      bucket[i] = NIL;
-    }
-    for (int item_no = item_root; item_no != NIL; item_no = item_list[item_no]) {
-      int tail;
-      k = item_table[item_no].dot;
-      int ii;
-      for (ii = bucket[k]; ii != NIL; tail = ii, ii = next_item[ii]) {
-        if (RHS_SIZE(item_table[item_no].rule_number) >=
-            RHS_SIZE(item_table[ii].rule_number)) {
-          break;
-        }
-      }
-      next_item[item_no] = ii;
-      if (ii == bucket[k]) {
-        bucket[k] = item_no; /* insert at the beginning */
-      } else {
-        next_item[tail] = item_no; /* insert in middle or end */
-      }
-    }
-    /* Reconstruct list of scoped items in sorted order. Since we want   */
-    /* the items in descending order, we start with the smallest bucket  */
-    /* proceeding to the largest one and insert the items from each      */
-    /* bucket in LIFO order in ITEM_LIST.                                */
-    item_root = NIL;
-    for (int k = 1; k <= max_prefix_length; k++) {
-      for (int item_no = bucket[k]; item_no != NIL; item_no = next_item[item_no]) {
-        item_list[item_no] = item_root;
-        item_root = item_no;
-      }
-    }
-    ffree(collection);
-    ffree(element_size);
-    ffree(start);
-    ffree(stack);
-    ffree(ordered_symbol);
-    ffree(state_list);
-    ffree(list);
-    ffree(bucket);
-  } /* End PROCESS_SCOPE_STATES */
-  /* Next, we initialize the remaining fields of the SCOPE structure.  */
-  int item_no = item_root;
-  for (int i = 1; item_no != NIL; i++) {
-    scope[i].prefix = prefix_index[item_no];
-    scope[i].suffix = suffix_index[item_no];
-    rule_no = item_table[item_no].rule_number;
-    scope[i].lhs_symbol = rules[rule_no].lhs;
-    int symbol = rhs_sym[rules[rule_no].rhs + item_table[item_no].dot];
-    if (IS_A_TERMINAL(symbol)) {
-      scope[i].look_ahead = symbol;
-    } else {
-      for ALL_NON_TERMINALS3(j)
-        symbol_seen[j] = false;
-      scope[i].look_ahead = get_shift_symbol(symbol);
-    }
-    scope[i].state_set = state_index[scope[i].lhs_symbol];
-    item_no = item_list[item_no];
-  }
-  for (int j = 1; j <= scope_top; j++) {
-    if (scope_element[j].item < 0) {
-      item_no = -scope_element[j].item;
-      rule_no = item_table[item_no].rule_number;
-      n = scope_element[j].index;
-      for (int k = rules[rule_no].rhs + item_table[item_no].dot - 1;
-           k >= rules[rule_no].rhs; /* symbols before dot*/
-           k--)
-        scope_right_side[n++] = rhs_sym[k];
-    } else {
-      item_no = scope_element[j].item;
-      rule_no = item_table[item_no].rule_number;
-      n = scope_element[j].index;
-      for (int k = rules[rule_no].rhs + item_table[item_no].dot;
-           k < rules[rule_no + 1].rhs; /* symbols after dot */
-           k++) {
-        int symbol = rhs_sym[k];
-        if (IS_A_NON_TERMINAL(symbol)) {
-          if (!null_nt[symbol]) {
-            scope_right_side[n++] = rhs_sym[k];
-          }
-        } else if (symbol != error_image) {
-          scope_right_side[n++] = rhs_sym[k];
-        }
-      }
-    }
-    scope_right_side[n] = 0;
-  }
-  if (list_bit) {
-    print_scopes();
-  }
-  ffree(prefix_index);
-  ffree(suffix_index);
-  item_of += num_terminals + 1;
-  ffree(item_of);
-  ffree(next_item);
-  symbol_seen += num_terminals + 1;
-  ffree(symbol_seen);
-  states_of += num_terminals + 1;
-  ffree(states_of);
-  state_index += num_terminals + 1;
-  ffree(state_index);
-  ffree(scope_element);
-}
-
 /* This procedure computes for each state the set of non-terminal symbols   */
 /* that are required as candidates for secondary error recovery.  If the    */
 /* option NAMES=OPTIMIZED is requested, the NAME map is optimized and SYMNO */
 /* is updated accordingly.                                                  */
-void produce(void) {
+void produce(struct CLIOptions* cli_options) {
   /* TOP, STACK, and INDEX are used for the digraph algorithm      */
   /* in the routines COMPUTE_PRODUCES.                             */
   /*                                                               */
@@ -1074,7 +627,7 @@ void produce(void) {
     }
   }
   /* If the option LIST_BIT is ON, print the name map.                */
-  if (list_bit) {
+  if (cli_options->list_bit) {
     fprintf(syslis, "\nName map:\n");
     for ALL_SYMBOLS3(symbol) {
       if (symno[symbol].name_index != symno[accept_image].name_index) {
@@ -1088,7 +641,452 @@ void produce(void) {
     }
   }
   if (scopes_bit) {
-    process_scopes();
+    // Process scopes.
+    {
+      /* Compute set of "scopes" and use it to construct SCOPE map.     */
+      short *prefix_index;
+      short *suffix_index;
+      short *state_index;
+      struct node **states_of;
+      int num_state_sets = 0;
+      int n;
+      int max_prefix_length = 0;
+      int dot_symbol;
+      int item_root;
+      int rule_no;
+      int nt_root;
+      bool end_node;
+      struct node *p;
+      struct node *q;
+      prefix_index = Allocate_short_array(num_items + 1);
+      suffix_index = Allocate_short_array(num_items + 1);
+      item_of = Allocate_short_array(num_non_terminals);
+      item_of -= num_terminals + 1;
+      next_item = Allocate_short_array(num_items + 1);
+      symbol_seen = Allocate_boolean_array(num_non_terminals);
+      symbol_seen -= num_terminals + 1;
+      states_of = (struct node **) calloc(num_non_terminals, sizeof(struct node *));
+      states_of -= num_terminals + 1;
+      state_index = Allocate_short_array(num_non_terminals);
+      state_index -= num_terminals + 1;
+      scope_element = (struct scope_elmt *) calloc(num_items + 1, sizeof(struct scope_elmt));
+      /* Initially, PRODUCES was used to compute the right-most-produces  */
+      /* map.  We save that map map and make it reflexive.  Recall that   */
+      /* RIGHT_PRODUCES is a mapping from each nonterminal B into the set */
+      /* of nonterminals A such that:                                     */
+      /*                                                                  */
+      /*    A =>rm* B                                                     */
+      /*                                                                  */
+      /* Next, reallocate PRODUCES and initialize it in order to          */
+      /* construct the LEFT_PRODUCES map. Initially, CALLOC sets PRODUCES */
+      /* to the empty map.                                                */
+      /* LEFT_PRODUCES is a mapping  from each nonterminal A into the set */
+      /* of nonterminals B such that:                                     */
+      /*                                                                  */
+      /*    A =>lm* B x                                                   */
+      /*                                                                  */
+      /* for some arbitrary string x.                                     */
+      /*                                                                  */
+      /* Since A ->* A for all A,  we insert A in PRODUCES(A)  (but not   */
+      /* in the linked list).                                             */
+      right_produces = produces;
+      produces = (SET_PTR)
+          calloc(num_non_terminals,
+                 non_term_set_size * sizeof(BOOLEAN_CELL));
+      if (produces == NULL)
+        nospace(__FILE__, __LINE__);
+      produces -= (num_terminals + 1) * non_term_set_size;
+      for ALL_NON_TERMINALS3(nt) {
+        NTSET_BIT_IN(right_produces, nt, nt - num_terminals);
+        NTSET_BIT_IN(produces, nt, nt - num_terminals);
+        direct_produces[nt] = NULL;
+        for (end_node = (p = clitems[nt]) == NULL;
+             !end_node; end_node = p == clitems[nt]) {
+          p = p->next;
+          for (int item_no = p->value;
+               IS_A_NON_TERMINAL(item_table[item_no].symbol);
+               item_no++) {
+            int symbol = item_table[item_no].symbol;
+            if (!IS_IN_NTSET(produces, nt, symbol - num_terminals)) {
+              NTSET_BIT_IN(produces, nt, symbol - num_terminals);
+              q = Allocate_node();
+              q->value = symbol;
+              q->next = direct_produces[nt];
+              direct_produces[nt] = q;
+            }
+            if (!null_nt[symbol]) {
+              break;
+            }
+          }
+        }
+      }
+      /* Complete the construction of the LEFT_produces map for       */
+      /* non_terminals using the digraph algorithm.                   */
+      for ALL_NON_TERMINALS3(nt) {
+        index_of[nt] = OMEGA;
+      }
+      top = 0;
+      for ALL_NON_TERMINALS3(nt) {
+        if (index_of[nt] == OMEGA) {
+          compute_produces(nt);
+        }
+      }
+      left_produces = produces;
+      /* Allocate and initialize the PRODUCES array to construct the      */
+      /* PRODUCES map.  After allocation, CALLOC sets all sets to empty.  */
+      /* Since A ->* A for all A,  we insert A in PRODUCES(A)  (but not   */
+      /* in the linked list).                                             */
+      produces = (SET_PTR)
+          calloc(num_non_terminals,
+                 non_term_set_size * sizeof(BOOLEAN_CELL));
+      if (produces == NULL) {
+        nospace(__FILE__, __LINE__);
+      }
+      produces -= (num_terminals + 1) * non_term_set_size;
+      for ALL_NON_TERMINALS3(nt) {
+        NTSET_BIT_IN(produces, nt, nt - num_terminals);
+        direct_produces[nt] = NULL;
+        for (end_node = (p = clitems[nt]) == NULL;
+             !end_node; end_node = p == clitems[nt]) {
+          p = p->next;
+          for (int item_no = p->value;
+               item_table[item_no].symbol != empty; item_no++) {
+            int symbol = item_table[item_no].symbol;
+            if (IS_A_NON_TERMINAL(symbol)) {
+              if (!IS_IN_NTSET(produces, nt, symbol - num_terminals)) {
+                NTSET_BIT_IN(produces, nt, symbol - num_terminals);
+                q = Allocate_node();
+                q->value = symbol;
+                q->next = direct_produces[nt];
+                direct_produces[nt] = q;
+              }
+            }
+          }
+        }
+      }
+      /* Complete the construction of the PRODUCES map for            */
+      /* non_terminals using the digraph algorithm.                   */
+      /*                                                              */
+      /* Since $ACC =>* x A y for all nonterminal A in the grammar, a */
+      /* single call to COMPUTE_PRODUCES does the trick.              */
+      for ALL_NON_TERMINALS3(nt) {
+        index_of[nt] = OMEGA;
+      }
+      top = 0;
+      compute_produces(accept_image);
+      /* Construct a mapping from each non_terminal A into the set of     */
+      /* items of the form [B  ->  x . A y].                              */
+      for ALL_NON_TERMINALS3(nt) {
+        item_of[nt] = NIL;
+      }
+      for ALL_ITEMS3(item_no) {
+        dot_symbol = item_table[item_no].symbol;
+        if (IS_A_NON_TERMINAL(dot_symbol)) {
+          next_item[item_no] = item_of[dot_symbol];
+          item_of[dot_symbol] = item_no;
+        }
+      }
+      /* Construct a list of scoped items in ITEM_LIST.                   */
+      /* Scoped items are derived from rules of the form  A -> x B y such */
+      /* that B =>* w A z, %empty not in FIRST(y), and it is not the case */
+      /* that x = %empty and B ->* A v.                                   */
+      /* Scoped items may also be identified by the user, using %error    */
+      /* productions.                                                     */
+      /* As scoped items are added to the list, we keep track of the      */
+      /* longest prefix encountered.  This is subsequently used to        */
+      /* bucket sort the scoped items in descending order of the length    */
+      /* of their prefixes.                                               */
+      for ALL_ITEMS3(item_no) {
+        item_list[item_no] = OMEGA;
+      }
+      item_root = NIL;
+      for ALL_ITEMS3(item_no) {
+        dot_symbol = item_table[item_no].symbol;
+        if (dot_symbol == error_image) {
+          if (item_table[item_no].dot != 0 &&
+              !IS_IN_SET(first, item_table[item_no].suffix_index, empty)) {
+            if (item_list[item_no] == OMEGA) {
+              item_list[item_no] = item_root;
+              item_root = item_no;
+              max_prefix_length = MAX(max_prefix_length, item_table[item_no].dot);
+            }
+          }
+        } else if (IS_A_NON_TERMINAL(dot_symbol)) {
+          int symbol = rules[item_table[item_no].rule_number].lhs;
+          if (!IS_IN_SET(first, item_table[item_no].suffix_index, empty) &&
+              IS_IN_NTSET(produces, dot_symbol, symbol - num_terminals)) {
+            if (is_scope(item_no)) {
+              int ii;
+              for (ii = item_no + 1; ; ii++) {
+                symbol = item_table[ii].symbol;
+                if (IS_A_TERMINAL(symbol)) {
+                  break;
+                }
+                if (!null_nt[symbol]) {
+                  break;
+                }
+              }
+              if (IS_A_NON_TERMINAL(symbol)) {
+                for ALL_NON_TERMINALS3(nt) {
+                  symbol_seen[nt] = false;
+                }
+                symbol = get_shift_symbol(symbol);
+              }
+              if (symbol != empty && item_list[ii] == OMEGA) {
+                item_list[ii] = item_root;
+                item_root = ii;
+                max_prefix_length = MAX(max_prefix_length, item_table[ii].dot);
+              }
+            }
+          }
+        }
+      }
+      /* In this loop, the prefix and suffix string for each scope in      */
+      /* entered into a table.  We also use the SYMBOL_SEEN array to       */
+      /* identify the set of left-hand side symbols associated with the    */
+      /* scopes.                                                           */
+      scope_table = Allocate_short_array(SCOPE_SIZE);
+      for (int i = 0; i < SCOPE_SIZE; i++) {
+        scope_table[i] = NIL;
+      }
+      for ALL_NON_TERMINALS3(nt) {
+        symbol_seen[nt] = false;
+      }
+      for (int item_no = item_root; item_no != NIL; item_no = item_list[item_no]) {
+        rule_no = item_table[item_no].rule_number;
+        int symbol = rules[rule_no].lhs;
+        num_scopes = num_scopes + 1;
+        symbol_seen[symbol] = true;
+        prefix_index[item_no] = insert_prefix(item_no);
+        suffix_index[item_no] = insert_suffix(item_no);
+      }
+      ffree(scope_table);
+      /* We now construct a mapping from each nonterminal symbol that is   */
+      /* the left-hand side of a rule containing scopes into the set of    */
+      /* states that has a transition on the nonterminal in question.      */
+      nt_root = NIL;
+      for ALL_NON_TERMINALS3(nt) {
+        states_of[nt] = NULL;
+      }
+      for ALL_STATES3(state_no) {
+        struct goto_header_type go_to;
+        go_to = statset[state_no].go_to;
+        for (int i = 1; i <= go_to.size; i++) {
+          int symbol = go_to.map[i].symbol;
+          if (symbol_seen[symbol]) {
+            if (states_of[symbol] == NULL) {
+              nt_list[symbol] = nt_root;
+              nt_root = symbol;
+              num_state_sets = num_state_sets + 1;
+            }
+            q = Allocate_node();
+            q->value = state_no;
+            q->next = states_of[symbol];
+            states_of[symbol] = q;
+          }
+        }
+      }
+      right_produces += (num_terminals + 1) * non_term_set_size;
+      ffree(right_produces);
+      left_produces += (num_terminals + 1) * non_term_set_size;
+      ffree(left_produces);
+      /* Next, we used the optimal partition procedure to compress the     */
+      /* space used by the sets of states, allocate the SCOPE structure    */
+      /* and store the compressed sets of states in it.                    */
+      /* We also sort the list of items by the length of their prefixes in */
+      /* descending order.  This is done primarily as an optimization.     */
+      /* If a longer prefix matches prior to a shorter one, the parsing    */
+      /* will terminate quicker.                                           */
+    process_scope_states: {
+        SET_PTR collection;
+        long *element_size;
+        long *list;
+        long *start;
+        long *stack;
+        short *ordered_symbol;
+        short *state_list;
+        short *bucket;
+        int state_root;
+        int state_no_inner;
+        state_set_size = num_states / SIZEOF_BC + (num_states % SIZEOF_BC ? 1 : 0);
+        collection = (SET_PTR) calloc(num_state_sets + 1, state_set_size * sizeof(BOOLEAN_CELL));
+        if (collection == NULL)
+          nospace(__FILE__, __LINE__);
+        element_size = Allocate_long_array(num_state_sets + 1);
+        start = Allocate_long_array(num_state_sets + 2);
+        stack = Allocate_long_array(num_state_sets + 1);
+        ordered_symbol = Allocate_short_array(num_state_sets + 1);
+        list = Allocate_long_array(num_state_sets + 1);
+        state_list = Allocate_short_array(num_states + 1);
+        bucket = Allocate_short_array(max_prefix_length + 1);
+        for (int symbol = nt_root, i = 1; symbol != NIL; symbol = nt_list[symbol], i++) {
+          list[i] = i;
+          ordered_symbol[i] = symbol;
+          EMPTY_COLLECTION_SET(collection, i);
+          element_size[i] = 0;
+          for (p = states_of[symbol]; p != NULL; p = p->next) {
+            element_size[i]++;
+            SET_COLLECTION_BIT(collection, i, p->value);
+          }
+        }
+        partset(collection, element_size, list, start, stack, num_state_sets, 1);
+        for (int i = 1; i <= num_state_sets; i++) {
+          int symbol = ordered_symbol[i];
+          state_index[symbol] = ABS(start[i]);
+        }
+        scope_state_size = start[num_state_sets + 1] - 1;
+        scope = (struct scope_type *) calloc(num_scopes + 1, sizeof(struct scope_type));
+        if (scope == NULL)
+          nospace(__FILE__, __LINE__);
+        scope_right_side = Allocate_long_array(scope_rhs_size + 1);
+        scope_state = Allocate_short_array(scope_state_size + 1);
+        int k = 0;
+        for (int i = 0; i <= num_states; i++) {
+          state_list[i] = OMEGA;
+        }
+        for (int i = 1; i <= num_state_sets; i++) {
+          if (start[i] > 0) {
+            state_root = 0;
+            state_list[state_root] = NIL;
+            int j;
+            for (end_node = (j = i) == NIL; !end_node; end_node = j == i) {
+              j = stack[j];
+              int symbol = ordered_symbol[j];
+              for (p = states_of[symbol]; p != NULL; p = p->next) {
+                state_no_inner = p->value;
+                if (state_list[state_no_inner] == OMEGA) {
+                  state_list[state_no_inner] = state_root;
+                  state_root = state_no_inner;
+                }
+              }
+            }
+            for (state_no_inner = state_root; state_no_inner != NIL; state_no_inner = state_root) {
+              state_root = state_list[state_no_inner];
+              state_list[state_no_inner] = OMEGA;
+              k++;
+              scope_state[k] = state_no_inner;
+            }
+          }
+        }
+        for (int symbol = nt_root; symbol != NIL; symbol = nt_list[symbol]) {
+          for (p = states_of[symbol]; p != NULL; q = p, p = p->next) {
+          }
+          free_nodes(states_of[symbol], q);
+        }
+        /* Use the BUCKET array as a base to partition the scoped items        */
+        /* based on the length of their prefixes.  The list of items in each   */
+        /* bucket is kept in the NEXT_ITEM array sorted in descending order    */
+        /* of the length of the right-hand side of the item.                   */
+        /* Items are kept sorted in that fashion because when two items have   */
+        /* the same prefix, we want the one with the shortest suffix to be     */
+        /* chosen. In other words, if we have two scoped items, say:           */
+        /*                                                                     */
+        /*    A ::= x . y       and      B ::= x . z     where |y| < |z|       */
+        /*                                                                     */
+        /* and both of them are applicable in a given context with similar     */
+        /* result, then we always want A ::= x . y to be used.                 */
+        for (int i = 1; i <= max_prefix_length; i++) {
+          bucket[i] = NIL;
+        }
+        for (int item_no = item_root; item_no != NIL; item_no = item_list[item_no]) {
+          int tail;
+          k = item_table[item_no].dot;
+          int ii;
+          for (ii = bucket[k]; ii != NIL; tail = ii, ii = next_item[ii]) {
+            if (RHS_SIZE(item_table[item_no].rule_number) >=
+                RHS_SIZE(item_table[ii].rule_number)) {
+              break;
+            }
+          }
+          next_item[item_no] = ii;
+          if (ii == bucket[k]) {
+            bucket[k] = item_no; /* insert at the beginning */
+          } else {
+            next_item[tail] = item_no; /* insert in middle or end */
+          }
+        }
+        /* Reconstruct list of scoped items in sorted order. Since we want   */
+        /* the items in descending order, we start with the smallest bucket  */
+        /* proceeding to the largest one and insert the items from each      */
+        /* bucket in LIFO order in ITEM_LIST.                                */
+        item_root = NIL;
+        for (int k = 1; k <= max_prefix_length; k++) {
+          for (int item_no = bucket[k]; item_no != NIL; item_no = next_item[item_no]) {
+            item_list[item_no] = item_root;
+            item_root = item_no;
+          }
+        }
+        ffree(collection);
+        ffree(element_size);
+        ffree(start);
+        ffree(stack);
+        ffree(ordered_symbol);
+        ffree(state_list);
+        ffree(list);
+        ffree(bucket);
+      } /* End PROCESS_SCOPE_STATES */
+      /* Next, we initialize the remaining fields of the SCOPE structure.  */
+      int item_no = item_root;
+      for (int i = 1; item_no != NIL; i++) {
+        scope[i].prefix = prefix_index[item_no];
+        scope[i].suffix = suffix_index[item_no];
+        rule_no = item_table[item_no].rule_number;
+        scope[i].lhs_symbol = rules[rule_no].lhs;
+        int symbol = rhs_sym[rules[rule_no].rhs + item_table[item_no].dot];
+        if (IS_A_TERMINAL(symbol)) {
+          scope[i].look_ahead = symbol;
+        } else {
+          for ALL_NON_TERMINALS3(j)
+            symbol_seen[j] = false;
+          scope[i].look_ahead = get_shift_symbol(symbol);
+        }
+        scope[i].state_set = state_index[scope[i].lhs_symbol];
+        item_no = item_list[item_no];
+      }
+      for (int j = 1; j <= scope_top; j++) {
+        if (scope_element[j].item < 0) {
+          item_no = -scope_element[j].item;
+          rule_no = item_table[item_no].rule_number;
+          n = scope_element[j].index;
+          for (int k = rules[rule_no].rhs + item_table[item_no].dot - 1;
+               k >= rules[rule_no].rhs; /* symbols before dot*/
+               k--)
+            scope_right_side[n++] = rhs_sym[k];
+        } else {
+          item_no = scope_element[j].item;
+          rule_no = item_table[item_no].rule_number;
+          n = scope_element[j].index;
+          for (int k = rules[rule_no].rhs + item_table[item_no].dot;
+               k < rules[rule_no + 1].rhs; /* symbols after dot */
+               k++) {
+            int symbol = rhs_sym[k];
+            if (IS_A_NON_TERMINAL(symbol)) {
+              if (!null_nt[symbol]) {
+                scope_right_side[n++] = rhs_sym[k];
+              }
+            } else if (symbol != error_image) {
+              scope_right_side[n++] = rhs_sym[k];
+            }
+          }
+        }
+        scope_right_side[n] = 0;
+      }
+      if (cli_options->list_bit) {
+        print_scopes();
+      }
+      ffree(prefix_index);
+      ffree(suffix_index);
+      item_of += num_terminals + 1;
+      ffree(item_of);
+      ffree(next_item);
+      symbol_seen += num_terminals + 1;
+      ffree(symbol_seen);
+      states_of += num_terminals + 1;
+      ffree(states_of);
+      state_index += num_terminals + 1;
+      ffree(state_index);
+      ffree(scope_element);
+    }
   }
   ffree(stack);
   ffree(index_of);

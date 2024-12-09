@@ -102,6 +102,8 @@ int main(const int argc, char *argv[]) {
   } else {
     char tab_file[80];
 
+    struct CLIOptions cli_options;
+
     // Process input.
     {
       char file_prefix[80] = "";
@@ -140,12 +142,12 @@ int main(const int argc, char *argv[]) {
       }
       strcat(lis_file, ".l"); /* add .l extension for listing file */
       strcat(tab_file, ".t"); /* add .t extension for table file */
-      process_input(grm_file, lis_file, &output_files, argc, argv, file_prefix);
+      cli_options = process_input(grm_file, lis_file, &output_files, argc, argv, file_prefix);
     }
 
     // Process rest.
     {
-      mkbasic();
+      mkbasic(&cli_options);
 
       // If the user only wanted to edit his grammar, we quit the program.
       if (edit_bit) {
@@ -162,9 +164,9 @@ int main(const int argc, char *argv[]) {
           return 0;
         }
       } else {
-        mkstats();
+        mkstats(&cli_options);
 
-        mkrdcts();
+        mkrdcts(&cli_options);
 
         // Basic statistics.
         {

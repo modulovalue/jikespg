@@ -37,9 +37,6 @@ long scope_rhs_size = 0;
 long scope_state_size = 0;
 long num_error_rules = 0;
 
-bool list_bit = false;
-// TODO • remove SLR(1)?
-bool slr_bit = false;
 bool verbose_bit = false;
 bool first_bit = false;
 bool follow_bit = false;

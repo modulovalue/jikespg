@@ -146,7 +146,7 @@ void compute_sp_map(const int symbol) {
 /* transition on SYMBOL is a lookahead-shift, indicating that the     */
 /* parser requires extra lookahead on a particular symbol, the set of */
 /* reduce actions for that symbol is calculated as the empty set.     */
-void compute_sp_action(const short state_no, const short symbol, const short action) {
+void compute_sp_action(const short state_no, const short symbol, const short action, const bool slr_bit) {
   int rule_no;
   int lhs_symbol;
   int k;
@@ -501,7 +501,7 @@ short sp_state_map(const int rule_head, const int item_no, const int sp_rule_cou
 
 /* This program is invoked to remove as many single production actions as    */
 /* possible for a conflict-free automaton.                                   */
-void remove_single_productions(void) {
+void remove_single_productions(bool slr_bit) {
   struct goto_header_type go_to;
   struct shift_header_type sh;
   struct reduce_header_type red;
@@ -689,7 +689,7 @@ void remove_single_productions(void) {
       for (int i = 1; i <= go_to.size; i++) {
         symbol = go_to.map[i].symbol;
         if (IS_SP_RHS(symbol)) {
-          compute_sp_action(state_no, symbol, go_to.map[i].action);
+          compute_sp_action(state_no, symbol, go_to.map[i].action, slr_bit);
           symbol_list[symbol] = symbol_root;
           symbol_root = symbol;
         }
@@ -698,7 +698,7 @@ void remove_single_productions(void) {
         symbol = sh.map[i].symbol;
         index_of[symbol] = i;
         if (IS_SP_RHS(symbol)) {
-          compute_sp_action(state_no, symbol, sh.map[i].action);
+          compute_sp_action(state_no, symbol, sh.map[i].action, slr_bit);
           symbol_list[symbol] = symbol_root;
           symbol_root = symbol;
         }
@@ -713,7 +713,7 @@ void remove_single_productions(void) {
           lhs_symbol = rules[rule_no].lhs;
           if (index_of[lhs_symbol] != OMEGA) {
             if (symbol_list[lhs_symbol] == OMEGA) {
-              compute_sp_action(state_no, lhs_symbol, go_to.map[index_of[lhs_symbol]].action);
+              compute_sp_action(state_no, lhs_symbol, go_to.map[index_of[lhs_symbol]].action, slr_bit);
               symbol_list[lhs_symbol] = symbol_root;
               symbol_root = lhs_symbol;
             }

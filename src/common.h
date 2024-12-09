@@ -151,7 +151,7 @@ struct OutputFiles {
   char dcl_file[80];
 };
 
-void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_files, int argc, char *argv[], char *file_prefix);
+struct CLIOptions process_input(char *grm_file, char *lis_file, struct OutputFiles *output_files, const int argc, char *argv[], char *file_prefix);
 
 extern char prefix[];
 extern char suffix[];
@@ -190,8 +190,19 @@ static bool IS_A_NON_TERMINAL(const int i) {
   return i > num_terminals;
 }
 
-extern bool list_bit;
-extern bool slr_bit;
+struct CLIOptions {
+  bool list_bit;
+  // TODO • remove support for SLR(1)?
+  bool slr_bit;
+};
+
+static struct CLIOptions init_cli_options() {
+  return (struct CLIOptions) {
+    .list_bit = false,
+    .slr_bit = false,
+  };
+}
+
 extern bool verbose_bit;
 extern bool first_bit;
 extern bool follow_bit;
@@ -406,15 +417,15 @@ void free_nodes(struct node *head, struct node *tail);
 
 struct node *lpgaccess(int state_no, int item_no);
 
-void mkbasic(void);
+void mkbasic(struct CLIOptions* cli_options);
 
-void mkrdcts(void);
+void mkrdcts(struct CLIOptions* cli_options);
 
 void la_traverse(int state_no, int goto_indx, int *stack_top);
 
-void remove_single_productions(void);
+void remove_single_productions(bool slr_bit);
 
-void mkstats(void);
+void mkstats(struct CLIOptions* cli_options);
 
 void nospace(char *, long);
 
@@ -428,7 +439,7 @@ void print_large_token(char *line, char *token, const char *indent, int len);
 
 void print_state(int state_no);
 
-void produce(void);
+void produce(struct CLIOptions* cli_options);
 
 void process_error_maps(void);
 
@@ -448,7 +459,7 @@ void sortdes(long array[], long count[], long low, long high, long max);
 
 void reallocate(void);
 
-void resolve_conflicts(int state_no, struct node **action, const short *symbol_list, int reduce_root);
+void resolve_conflicts(int state_no, struct node **action, const short *symbol_list, int reduce_root, bool slr_bit);
 
 void restore_symbol(char *out, const char *in);
 

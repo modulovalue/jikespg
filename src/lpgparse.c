@@ -80,7 +80,7 @@ short ct_length = 0;
 long ct_start_line = 0;
 long ct_end_line = 0;
 
-/*         READ_INPUT fills the buffer from p1 to the end.          */
+/// READ_INPUT fills the buffer from p1 to the end.
 void read_input(char *grm_file) {
   long num_read = input_buffer + IOBUFFER_SIZE - bufend;
   if ((num_read = fread(bufend, 1, num_read, sysgrm)) == 0) {
@@ -144,7 +144,7 @@ char hact_file[80];
 /* Basically, there are two kinds of options: switches which indicate a      */
 /* certain setting just by their appearance, and valued options which are    */
 /* followed by an equal sign and the value to be assigned to them.           */
-static void options(char* file_prefix) {
+void options(char *file_prefix, struct CLIOptions* cli_options) {
   char token[MAX_PARM_SIZE + 1];
   char temp[MAX_PARM_SIZE + 1];
   char delim;
@@ -229,7 +229,7 @@ static void options(char* file_prefix) {
       } else if (memcmp("HALFWORD", token, token_len) == 0) {
         byte_bit = !flag;
       } else if (memcmp("LIST", token, token_len) == 0) {
-        list_bit = flag;
+        cli_options->list_bit = flag;
       } else if (memcmp("NTCHECK", token, token_len) == 0) {
         nt_check_bit = flag;
       } else if (memcmp("READREDUCE", token, token_len) == 0) {
@@ -241,7 +241,7 @@ static void options(char* file_prefix) {
       } else if (memcmp("SINGLEPRODUCTIONS", token, token_len) == 0) {
         single_productions_bit = flag;
       } else if (memcmp("SLR", token, token_len) == 0) {
-        slr_bit = flag;
+        cli_options->slr_bit = flag;
         lalr_level = 1;
       } else if (memcmp("STATES", token, token_len) == 0) {
         states_bit = flag;
@@ -313,7 +313,7 @@ static void options(char* file_prefix) {
           temp[MAX_PARM_SIZE - 1] = '\0';
         }
         if (verify_is_digit(temp)) {
-          slr_bit = false;
+          cli_options->slr_bit = false;
           lalr_level = atoi(temp);
           if (lalr_level > MAXIMUM_LA_LEVEL) {
             PRNTWNG2(msg_line, "\"%s\" exceeds maximum value of %d allowed for %s", temp, MAXIMUM_LA_LEVEL, token);
@@ -322,7 +322,7 @@ static void options(char* file_prefix) {
         } else if (memcmp(translate(temp, token_len), "MAXIMUM", token_len) != 0) {
           PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
         } else if (memcmp("MAXIMUM", translate(temp, token_len), token_len) == 0) {
-          slr_bit = false;
+          cli_options->slr_bit = false;
           lalr_level = MAXIMUM_LA_LEVEL;
         }
       } else if (memcmp(token, "MAXDISTANCE", token_len) == 0) {
@@ -400,7 +400,8 @@ static void options(char* file_prefix) {
 /* if they are (it is an) "options" line(s).  If so, the options are        */
 /* processed.  Then, we process user-supplied options if there are any.  In */
 /* any case, the options in effect are printed.                             */
-static void process_options_lines(char *grm_file, struct OutputFiles *output_files, char* file_prefix) {
+struct CLIOptions process_options_lines(char *grm_file, struct OutputFiles *output_files, char *file_prefix) {
+  struct CLIOptions cli_options = init_cli_options();
   char old_parm[MAX_LINE_SIZE + 1];
   char output_line[PRINT_LINE_SIZE + 1];
   char opt_string[60][OUTPUT_PARM_SIZE + 1];
@@ -435,7 +436,7 @@ static void process_options_lines(char *grm_file, struct OutputFiles *output_fil
       *line_end = '\0';
       PRNT(p2); /* Print options line */
       strcpy(parm, p2 + strlen(ooptions));
-      options(file_prefix); /* Process hard-coded options */
+      options(file_prefix, &cli_options); /* Process hard-coded options */
     } else {
       p2 = p1; /* make p2 point to first character */
       break;
@@ -458,7 +459,7 @@ static void process_options_lines(char *grm_file, struct OutputFiles *output_fil
   }
   fprintf(syslis, "\n");
   strcpy(parm, old_parm);
-  options(file_prefix); /* Process new options passed directly to program */
+  options(file_prefix, &cli_options); /* Process new options passed directly to program */
   /* Deferred parsing without error maps is useless*/
   if (!error_maps_bit) {
     deferred_bit = false;
@@ -477,7 +478,7 @@ static void process_options_lines(char *grm_file, struct OutputFiles *output_fil
   if (verbose_bit) {
     first_bit = true;
     follow_bit = true;
-    list_bit = true;
+    cli_options.list_bit = true;
     states_bit = true;
     xref_bit = true;
     warnings_bit = true;
@@ -561,12 +562,12 @@ static void process_options_lines(char *grm_file, struct OutputFiles *output_fil
   }
   sprintf(opt_string[++top], "HBLOCKB=%s", hblockb);
   sprintf(opt_string[++top], "HBLOCKE=%s", hblocke);
-  if (slr_bit) {
+  if (cli_options.slr_bit) {
     // Do nothing.
   } else {
     sprintf(opt_string[++top], "LALR=%d", lalr_level);
   }
-  if (list_bit) {
+  if (cli_options.list_bit) {
     strcpy(opt_string[++top], "LIST");
   } else {
     strcpy(opt_string[++top], "NOLIST");
@@ -607,7 +608,7 @@ static void process_options_lines(char *grm_file, struct OutputFiles *output_fil
   } else {
     strcpy(opt_string[++top], "NOSINGLE-PRODUCTIONS");
   }
-  if (slr_bit) {
+  if (cli_options.slr_bit) {
     strcpy(opt_string[++top], "SLR");
   }
   sprintf(opt_string[++top], "STACK-SIZE=%d", stack_size);
@@ -712,6 +713,7 @@ static void process_options_lines(char *grm_file, struct OutputFiles *output_fil
     PRNT2(msg_line, "Input process aborted at line %d ...", line_no);
     exit(12);
   }
+  return cli_options;
 }
 
 /* HASH takes as argument a symbol and hashes it into a location in          */
@@ -1537,19 +1539,19 @@ void mapmacro(const int def_index) {
       strcmp(defelmt[def_index].name, kcurrent_line) == 0 ||
       strcmp(defelmt[def_index].name, knext_line) == 0) {
     PRNTWNG2(msg_line, "predefined macro \"%s\" cannot be redefined. Line %ld", defelmt[def_index].name, defelmt[def_index].start_line);
-      } else {
-        const register int i = hash(defelmt[def_index].name);
-        for (register int j = macro_table[i]; j != NIL; j = defelmt[j].next) {
-          if (strcmp(defelmt[j].name, defelmt[def_index].name) == 0) {
-            if (warnings_bit) {
-              PRNTWNG2(msg_line, "Redefinition of macro \"%s\" in line %ld", defelmt[def_index].name, defelmt[def_index].start_line);
-              break;
-            }
-          }
+  } else {
+    const register int i = hash(defelmt[def_index].name);
+    for (register int j = macro_table[i]; j != NIL; j = defelmt[j].next) {
+      if (strcmp(defelmt[j].name, defelmt[def_index].name) == 0) {
+        if (warnings_bit) {
+          PRNTWNG2(msg_line, "Redefinition of macro \"%s\" in line %ld", defelmt[def_index].name, defelmt[def_index].start_line);
+          break;
         }
-        defelmt[def_index].next = macro_table[i];
-        macro_table[i] = def_index;
       }
+    }
+    defelmt[def_index].next = macro_table[i];
+    macro_table[i] = def_index;
+  }
 }
 
 struct hash_type *alias_root = NULL;
@@ -1558,17 +1560,17 @@ const char *EXTRACT_STRING(const int indx) {
   return &string_table[indx];
 }
 
-/*   If a listing is requested, this prints all the macros(if any), followed */
+/* If a listing is requested, this prints all the macros(if any), followed   */
 /* by the aliases(if any), followed by the terminal symbols, followed by the */
 /* rules.                                                                    */
-/*   This grammar information is printed on lines no longer than             */
+/* This grammar information is printed on lines no longer than               */
 /* PRINT_LINE_SIZE characters long.  If all the symbols in a rule cannot fit */
 /* on one line, it is continued on a subsequent line beginning at the        */
 /* position after the equivalence symbol (::= or ->) or the middle of the    */
 /* print_line, whichever is smaller.  If a symbol cannot fit on a line       */
 /* beginning at the proper offset, it is laid out on successive lines,       */
 /* beginning at the proper offset.                                           */
-static void display_input(void) {
+void display_input(void) {
   register int len;
   register int offset;
   register int symb;
@@ -1697,7 +1699,7 @@ static void display_input(void) {
 }
 
 /*     Process all semantic actions and generate action file.               */
-static void process_actions(char *grm_file) {
+void process_actions(char *grm_file, const struct CLIOptions *cli_options) {
   register int k;
   register int len;
   register char *p;
@@ -1772,7 +1774,7 @@ static void process_actions(char *grm_file) {
     mapmacro(i);
   }
   /* If LISTING was requested, invoke listing procedure.                      */
-  if (list_bit) {
+  if (cli_options->list_bit) {
     display_input();
   }
   /* Read in all the action blocks and process them.                          */
@@ -1863,7 +1865,7 @@ static void process_actions(char *grm_file) {
 }
 
 /*          Actions to be taken if grammar is successfully parsed.          */
-static void accept_action(char *grm_file) {
+void accept_action(char *grm_file, const struct CLIOptions *cli_options) {
   if (rulehdr == NULL) {
     printf("Informative: Empty grammar read in. Processing stopped.\n");
     fprintf(syslis, "***Informative: Empty grammar read in. Processing stopped.\n");
@@ -1909,7 +1911,7 @@ static void accept_action(char *grm_file) {
       }
     }
   }
-  if (list_bit) {
+  if (cli_options->list_bit) {
     /* Aliases are placed in a separate linked list.  NOTE!! After execution */
     /* of this loop the hash_table is destroyed because the LINK field of    */
     /* alias symbols is used to construct a list of the alias symbols.       */
@@ -1961,8 +1963,8 @@ static void accept_action(char *grm_file) {
     for (ii = ii; ii <= num_rules; ii++) {
       rules[ii].rhs = rhs_ct;
       ptr = rulehdr[ii].rhs_root;
-      if (ptr != NULL) /* not am empty right-hand side? */
-      {
+      if (ptr != NULL) {
+        /* not am empty right-hand side? */
         do {
           ptr = ptr->next;
           rhs_sym[rhs_ct++] = ptr->value;
@@ -1972,13 +1974,16 @@ static void accept_action(char *grm_file) {
         if (rules[ii].sp)
           num_single_productions++;
         free_nodes(ptr, rulehdr[ii].rhs_root);
-      } else
+      } else {
         rules[ii].sp = false;
-
+      }
       if (rulehdr[ii].lhs == OMEGA) {
-        if (list_bit) /* Proper LHS will be updated after printing */
+        if (cli_options->list_bit) {
+          /* Proper LHS will be updated after printing */
           rules[ii].lhs = OMEGA;
-        else rules[ii].lhs = rules[ii - 1].lhs;
+        } else {
+          rules[ii].lhs = rules[ii - 1].lhs;
+        }
       } else if (IS_A_TERMINAL(rulehdr[ii].lhs)) {
         char temp[SYMBOL_SIZE + 1];
         restore_symbol(temp, RETRIEVE_STRING(rulehdr[ii].lhs));
@@ -1991,8 +1996,8 @@ static void accept_action(char *grm_file) {
   }
   fclose(sysgrm); /* Close grammar input file. */
   if (action_bit) {
-    process_actions(grm_file);
-  } else if (list_bit) {
+    process_actions(grm_file, cli_options);
+  } else if (cli_options->list_bit) {
     display_input();
   }
 }
@@ -2020,7 +2025,7 @@ static void build_symno(void) {
 }
 
 /* This procedure opens all relevant files and processes the input grammar.*/
-void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_files, const int argc, char *argv[], char* file_prefix) {
+struct CLIOptions process_input(char *grm_file, char *lis_file, struct OutputFiles *output_files, const int argc, char *argv[], char *file_prefix) {
   // Parse args.
   {
     /* If options are passed to the program, copy them into "parm". */
@@ -2047,12 +2052,8 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
     /* issued and the program halts.                                            */
     if ((sysgrm = fopen(grm_file, "r")) == (FILE *) NULL) {
       register int ii;
-      for (ii = strlen(grm_file); ii > 0 &&
-                                  grm_file[ii] != '.' &&
-                                  grm_file[ii] != '/' && /* Unix */
-                                  grm_file[ii] != '\\'; /* Dos  */
-           ii--) {
-           }
+      for (ii = strlen(grm_file); ii > 0 && grm_file[ii] != '.' && grm_file[ii] != '/' && /* Unix */ grm_file[ii] != '\\'; /* Dos  */ ii--) {
+      }
       if (grm_file[ii] != '.') {
         strcat(grm_file, ".g");
         if ((sysgrm = fopen(grm_file, "r")) == (FILE *) NULL) {
@@ -2099,6 +2100,8 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
     code['\f'] = SPACE_CODE;
   }
 
+  struct CLIOptions cli_options;
+
   // Init grammar.
   {
     /* This routine is invoked to allocate space for the global structures       */
@@ -2129,7 +2132,7 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
       fprintf(stderr, "Input file \"%s\" containing grammar is empty, undefined, or invalid\n", grm_file);
       exit(12);
     }
-    process_options_lines(grm_file, output_files, file_prefix);
+    cli_options = process_options_lines(grm_file, output_files, file_prefix);
     eolt_image = OMEGA;
     blockb_len = strlen(blockb);
     blocke_len = strlen(blocke);
@@ -2165,10 +2168,10 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
     short state_stack[STACK_SIZE];
     scanner(grm_file); /* Get first token */
     register int act = START_STATE;
-    process_terminal:
-      /* Note that this driver assumes that the tables are LPG SPACE    */
-      /* tables with no GOTO-DEFAULTS.                                  */
-      state_stack[++stack_top] = act;
+  process_terminal:
+    /* Note that this driver assumes that the tables are LPG SPACE    */
+    /* tables with no GOTO-DEFAULTS.                                  */
+    state_stack[++stack_top] = act;
     act = t_action(act, ct, ?);
     /* Reduce */
     if (act <= NUM_RULES) {
@@ -2204,8 +2207,8 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
       }
       act -= ERROR_ACTION;
     } else if (act == ACCEPT_ACTION) {
-      accept_action(grm_file);
-      return;
+      accept_action(grm_file, &cli_options);
+      goto end;
     } else {
       // error_action
       {
@@ -2225,13 +2228,13 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
         exit(12);
       }
     }
-    process_non_terminal:
-      do {
-        const register int lhs_sym = lhs[act]; /* to bypass IBMC12 bug */
-        stack_top -= rhs[act] - 1;
-        rule_action[act]();
-        act = nt_action(state_stack[stack_top], lhs_sym);
-      } while (act <= NUM_RULES);
+  process_non_terminal:
+    do {
+      const register int lhs_sym = lhs[act]; /* to bypass IBMC12 bug */
+      stack_top -= rhs[act] - 1;
+      rule_action[act]();
+      act = nt_action(state_stack[stack_top], lhs_sym);
+    } while (act <= NUM_RULES);
     goto process_terminal;
   }
 
@@ -2253,4 +2256,7 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
     ffree(input_buffer);
     ffree(rulehdr); /* allocated in action LPGACT when grammar is not empty */
   }
+
+  end:
+  return cli_options;
 }

@@ -488,14 +488,14 @@ void mklr0(void) {
 }
 
 /* In this procedure, we first construct the LR(0) automaton.                */
-void mkstats(void) {
+void mkstats(struct CLIOptions* cli_options) {
   no_gotos_ptr.size = 0; /* For states with no GOTOs */
   no_gotos_ptr.map = NULL;
   no_shifts_ptr.size = 0; /* For states with no SHIFTs */
   no_shifts_ptr.map = NULL;
   mklr0();
   if (error_maps_bit && (table_opt == OPTIMIZE_TIME || table_opt == OPTIMIZE_SPACE)) {
-    produce();
+    produce(cli_options);
   }
   /* Free space trapped by the CLOSURE and CLITEMS maps.                */
   for ALL_NON_TERMINALS3(j) {
