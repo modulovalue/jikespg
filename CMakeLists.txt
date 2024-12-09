@@ -26,12 +26,9 @@ add_executable(
         src/prntstat.c
         src/produce.c
         src/ptables.c
-        src/reduce.h
         src/remsp.c
         src/resolve.c
-        src/space.h
         src/spacetab.c
-        src/tabutil.c
         src/timetab.c
         src/main.c
         src/bitset.h)

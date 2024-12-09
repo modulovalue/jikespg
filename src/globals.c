@@ -1,14 +1,8 @@
 static char hostfile[] = __FILE__;
 
 #include "common.h"
-#include "space.h"
 
-const char BLANK[] = " ";
 const long MAX_TABLE_SIZE = (USHRT_MAX < INT_MAX ? USHRT_MAX : INT_MAX) - 1;
-
-char act_file[80];
-char hact_file[80];
-char tab_file[80];
 
 char file_prefix[80] = "";
 char prefix[MAX_PARM_SIZE] = "";
@@ -16,30 +10,25 @@ char suffix[MAX_PARM_SIZE] = "";
 char parm[256] = "";
 char msg_line[MAX_MSG_SIZE];
 
-FILE *sysgrm;
 FILE *syslis;
-FILE *sysact;
-FILE *syshact;
 FILE *systab;
 FILE *syssym;
-FILE *sysprs;
 FILE *sysdcl;
-FILE *sysdef;
 
 /*  The variables below are global counters.          */
 long num_items = 0;
-int num_states = 0;
-int max_la_state;
+long num_states = 0;
+long max_la_state;
 
-int num_symbols = 0;
-int symno_size;
-int num_names = 0;
-int num_terminals;
-int num_non_terminals;
-int num_rules = 0;
-int num_conflict_elements = 0;
-int num_single_productions = 0;
-int gotodom_size = 0;
+long num_symbols = 0;
+long symno_size;
+long num_names = 0;
+long num_terminals;
+long num_non_terminals;
+long num_rules = 0;
+long num_conflict_elements = 0;
+long num_single_productions = 0;
+long gotodom_size = 0;
 
 /*   The variables below are used to hold information about special  */
 /* grammar symbols.                                                  */
@@ -65,12 +54,13 @@ long num_sr_conflicts = 0;
 long num_rr_conflicts = 0;
 long num_entries;
 
-int num_scopes = 0;
-int scope_rhs_size = 0;
-int scope_state_size = 0;
-int num_error_rules = 0;
+long num_scopes = 0;
+long scope_rhs_size = 0;
+long scope_state_size = 0;
+long num_error_rules = 0;
 
 bool list_bit = false;
+// TODO • remove SLR(1).
 bool slr_bit = false;
 bool verbose_bit = false;
 bool first_bit = false;
@@ -179,15 +169,15 @@ long table_size;
 long action_size;
 long increment_size;
 
-int last_non_terminal = 0;
-int last_terminal = 0;
+long last_non_terminal = 0;
+long last_terminal = 0;
 
 long accept_act;
 long error_act;
 long first_index;
 long last_index;
-int last_symbol;
-int max_name_length = 0;
+long last_symbol;
+long max_name_length = 0;
 
 SET_PTR naction_symbols = NULL;
 SET_PTR action_symbols = NULL;

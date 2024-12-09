@@ -15,7 +15,6 @@ jikespg_SOURCES = ctabs.c \
                   remsp.c \
                   resolve.c \
                   spacetab.c \
-                  tabutil.c \
                   timetab.c
 
 noinst_HEADERS = common.h \
@@ -25,7 +24,5 @@ noinst_HEADERS = common.h \
                  lpgdef.h \
                  lpgparse.h \
                  lpgprs.h \
-                 lpgsym.h \
-                 reduce.h \
-                 space.h
+                 lpgsym.h
 

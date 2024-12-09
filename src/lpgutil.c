@@ -110,8 +110,7 @@ long temporary_space_allocated(void) {
 
 /* Return the total size of temporary space used.                     */
 long temporary_space_used(void) {
-  return (temp_size >> LOG_BLKSIZE) * sizeof(cell **) +
-         temp_top * sizeof(cell);
+  return (temp_size >> LOG_BLKSIZE) * sizeof(cell **) + temp_top * sizeof(cell);
 }
 
 /* The following are global variables and constants used to manage a  */
@@ -175,12 +174,14 @@ static void *galloc(const long size) {
 /* a new node is allocated from the global storage pool.                    */
 struct node *allocate_node(char *file, const long line) {
   struct node *p = node_pool;
-  if (p != NULL) /* is free list not empty? */
+  if (p != NULL) {
+    /* is free list not empty? */
     node_pool = p->next;
-  else {
+  } else {
     p = (struct node *) galloc(sizeof(struct node));
-    if (p == NULL)
+    if (p == NULL) {
       nospace(file, line);
+    }
   }
   return p;
 }
@@ -200,8 +201,7 @@ void free_nodes(struct node *head, struct node *tail) {
 struct goto_header_type allocate_goto_map(const int size, char *file, const long line) {
   struct goto_header_type go_to;
   go_to.size = size;
-  go_to.map = (struct goto_type *)
-      galloc(size * sizeof(struct goto_type));
+  go_to.map = (struct goto_type *) galloc(size * sizeof(struct goto_type));
   if (go_to.map == NULL)
     nospace(file, line);
   go_to.map--; /* map will be indexed in range 1..size */
@@ -213,12 +213,10 @@ struct goto_header_type allocate_goto_map(const int size, char *file, const long
 /* map is successfully allocated, it is offset by one element. This is      */
 /* to allow the array in question to be indexed from 1..size instead of     */
 /* 0..(size-1).                                                             */
-struct shift_header_type allocate_shift_map(const int size,
-                                            char *file, const long line) {
+struct shift_header_type allocate_shift_map(const int size, char *file, const long line) {
   struct shift_header_type sh;
   sh.size = size;
-  sh.map = (struct shift_type *)
-      galloc(size * sizeof(struct shift_type));
+  sh.map = (struct shift_type *) galloc(size * sizeof(struct shift_type));
   if (sh.map == NULL)
     nospace(file, line);
   sh.map--; /* map will be indexed in range 1..size */
@@ -239,14 +237,12 @@ struct reduce_header_type allocate_reduce_map(const int size, char *file, const 
 
 /* Return the total size of global space allocated.                   */
 long global_space_allocated(void) {
-  return global_base_size * sizeof(cell **) +
-         global_size * sizeof(cell);
+  return global_base_size * sizeof(cell **) + global_size * sizeof(cell);
 }
 
 /* Return the total size of global space used.                        */
 long global_space_used(void) {
-  return (global_size >> LOG_BLKSIZE) * sizeof(cell **) +
-         global_top * sizeof(cell);
+  return (global_size >> LOG_BLKSIZE) * sizeof(cell **) + global_top * sizeof(cell);
 }
 
 /*   This function allocates an array of size "size" of int integers.       */
@@ -434,7 +430,7 @@ void print_item(const int item_no) {
     } else {
       strcat(line, tok);
     }
-    strcat(line, BLANK);
+    strcat(line, " ");
   }
   /* We now add a DOT "." to the output line and print the remaining   */
   /* symbols on the right hand side.  If ITEM_NO is a complete item,   */
@@ -458,7 +454,7 @@ void print_item(const int item_no) {
     } else {
       strcat(line, tok);
     }
-    strcat(line, BLANK);
+    strcat(line, " ");
   }
   if (item_table[item_no].symbol == empty) /* complete item */
   {

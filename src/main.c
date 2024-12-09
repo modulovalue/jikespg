@@ -103,6 +103,7 @@ int main(const int argc, char *argv[]) {
 
     return 4;
   } else {
+    char tab_file[80];
     // Process input.
     {
       /* If options are passed to the program, copy them into "parm". */
@@ -116,7 +117,7 @@ int main(const int argc, char *argv[]) {
             strcat(parm, argv[j]);
             printf("***WARNING: Option \"%s\" is missing preceding '-'.\n", argv[j]);
           }
-          strcat(parm, BLANK);
+          strcat(parm, " ");
         }
       }
       char grm_file[80];
@@ -169,11 +170,11 @@ int main(const int argc, char *argv[]) {
         if (first_bit || follow_bit || xref_bit) {
           mkfirst();
         }
-        PRNT2(msg_line, "\nNumber of Terminals: %d", num_terminals - 1); /*-1 for %empty */
-        PRNT2(msg_line, "Number of Nonterminals: %d", num_non_terminals - 1); /* -1 for %ACC */
-        PRNT2(msg_line, "Number of Productions: %d", num_rules + 1);
+        PRNT2(msg_line, "\nNumber of Terminals: %ld", num_terminals - 1); /*-1 for %empty */
+        PRNT2(msg_line, "Number of Nonterminals: %ld", num_non_terminals - 1); /* -1 for %ACC */
+        PRNT2(msg_line, "Number of Productions: %ld", num_rules + 1);
         if (single_productions_bit) {
-          PRNT2(msg_line, "Number of Single Productions: %d", num_single_productions);
+          PRNT2(msg_line, "Number of Single Productions: %ld", num_single_productions);
         }
         PRNT2(msg_line, "Number of Items: %ld", num_items);
         fclose(syslis); /* close listing file */
@@ -183,19 +184,19 @@ int main(const int argc, char *argv[]) {
       mkstats(); /* Build State Automaton */
       mkrdcts(); /* Build Reduce map, and detect conflicts if any */
       /*                  Print more relevant statistics.                         */
-      PRNT2(msg_line, "\nNumber of Terminals: %d", num_terminals - 1);
-      PRNT2(msg_line, "Number of Nonterminals: %d", num_non_terminals - 1);
-      PRNT2(msg_line, "Number of Productions: %d", num_rules + 1);
+      PRNT2(msg_line, "\nNumber of Terminals: %ld", num_terminals - 1);
+      PRNT2(msg_line, "Number of Nonterminals: %ld", num_non_terminals - 1);
+      PRNT2(msg_line, "Number of Productions: %ld", num_rules + 1);
       if (single_productions_bit) {
-        PRNT2(msg_line, "Number of Single Productions: %d", num_single_productions);
+        PRNT2(msg_line, "Number of Single Productions: %ld", num_single_productions);
       }
       PRNT2(msg_line, "Number of Items: %ld", num_items);
       if (scopes_bit) {
-        PRNT2(msg_line, "Number of Scopes: %d", num_scopes);
+        PRNT2(msg_line, "Number of Scopes: %ld", num_scopes);
       }
-      PRNT2(msg_line, "Number of States: %d", num_states);
+      PRNT2(msg_line, "Number of States: %ld", num_states);
       if (max_la_state > num_states) {
-        PRNT2(msg_line, "Number of look-ahead states: %d", max_la_state - num_states);
+        PRNT2(msg_line, "Number of look-ahead states: %ld", max_la_state - num_states);
       }
       PRNT2(msg_line, "Number of Shift actions: %ld", num_shifts);
       PRNT2(msg_line, "Number of Goto actions: %ld", num_gotos);
@@ -252,7 +253,7 @@ int main(const int argc, char *argv[]) {
               ffree(follow);
             }
           }
-          process_tables(output_files);
+          process_tables(tab_file, output_files);
         }
       }
       fclose(syslis); /* close listing file */

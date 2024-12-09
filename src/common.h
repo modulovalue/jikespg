@@ -90,7 +90,6 @@ static const int IOBUFFER_SIZE = 655360;
 
 #define ENTIRE_RHS3(x, rule_no) (int x = rules[rule_no].rhs; x < rules[(rule_no) + 1].rhs; x++)
 
-extern const char BLANK[];
 extern const long MAX_TABLE_SIZE;
 
 struct node {
@@ -167,40 +166,38 @@ struct OutputFiles {
 
 void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_files);
 
-extern char act_file[],
-    hact_file[],
-    tab_file[],
-    file_prefix[],
-    prefix[],
-    suffix[],
-    parm[],
-    msg_line[];
+extern char file_prefix[];
+extern char prefix[];
+extern char suffix[];
+extern char parm[];
+extern char msg_line[];
 
-extern FILE *syslis,
-    *sysgrm,
-    *sysact,
-    *syshact,
-    *systab,
-    *syssym,
-    *sysprs,
-    *sysdcl,
-    *sysprs,
-    *sysdef;
+extern FILE *syslis;
+extern FILE *systab;
+extern FILE *syssym;
+extern FILE *sysdcl;
 
 /*  The variables below are global counters.          */
 extern long num_items;
-extern int num_states;
-extern int max_la_state;
 
-extern int num_symbols,
-    symno_size, /* NUM_SYMBOLS + 1 */
-    num_names,
-    num_terminals,
-    num_non_terminals,
-    num_rules,
-    num_conflict_elements,
-    num_single_productions,
-    gotodom_size;
+/* NUM_STATES, the actual number of elements used in it is indicated   */
+/* by the integer NUM_SHIFT_MAPS. NUM_STATES elements were allocated,  */
+/* because if the user requests that certain single productions be     */
+/* removed, a Shift map containing actions involving such productions  */
+/* cannot be shared.                                                   */
+extern long num_states;
+
+extern long max_la_state;
+
+extern long num_symbols;
+extern long symno_size; /* NUM_SYMBOLS + 1 */
+extern long num_names;
+extern long num_terminals;
+extern long num_non_terminals;
+extern long num_rules;
+extern long num_conflict_elements;
+extern long num_single_productions;
+extern long gotodom_size;
 
 static bool IS_A_TERMINAL(const int i) {
   return i <= num_terminals;
@@ -210,53 +207,53 @@ static bool IS_A_NON_TERMINAL(const int i) {
   return i > num_terminals;
 }
 
-extern bool list_bit,
-    slr_bit,
-    verbose_bit,
-    first_bit,
-    follow_bit,
-    action_bit,
-    edit_bit,
-    states_bit,
-    xref_bit,
-    nt_check_bit,
-    conflicts_bit,
-    read_reduce_bit,
-    goto_default_bit,
-    shift_default_bit,
-    byte_bit,
-    warnings_bit,
-    single_productions_bit,
-    error_maps_bit,
-    debug_bit,
-    deferred_bit,
-    c_bit,
-    cpp_bit,
-    java_bit,
-    scopes_bit;
+extern bool list_bit;
+extern bool slr_bit;
+extern bool verbose_bit;
+extern bool first_bit;
+extern bool follow_bit;
+extern bool action_bit;
+extern bool edit_bit;
+extern bool states_bit;
+extern bool xref_bit;
+extern bool nt_check_bit;
+extern bool conflicts_bit;
+extern bool read_reduce_bit;
+extern bool goto_default_bit;
+extern bool shift_default_bit;
+extern bool byte_bit;
+extern bool warnings_bit;
+extern bool single_productions_bit;
+extern bool error_maps_bit;
+extern bool debug_bit;
+extern bool deferred_bit;
+extern bool c_bit;
+extern bool cpp_bit;
+extern bool java_bit;
+extern bool scopes_bit;
 
-extern int lalr_level,
-    default_opt,
-    trace_opt,
-    table_opt,
-    names_opt,
-    increment,
-    maximum_distance,
-    minimum_distance,
-    stack_size;
+extern int lalr_level;
+extern int default_opt;
+extern int trace_opt;
+extern int table_opt;
+extern int names_opt;
+extern int increment;
+extern int maximum_distance;
+extern int minimum_distance;
+extern int stack_size;
 
-extern char escape,
-    ormark,
-    record_format;
+extern char escape;
+extern char ormark;
+extern char record_format;
 
-extern char blockb[],
-    blocke[],
-    hblockb[],
-    hblocke[],
-    errmsg[],
-    gettok[],
-    smactn[],
-    tkactn[];
+extern char blockb[];
+extern char blocke[];
+extern char hblockb[];
+extern char hblocke[];
+extern char errmsg[];
+extern char gettok[];
+extern char smactn[];
+extern char tkactn[];
 
 // The variables below are used to hold information about special grammar symbols.
 extern int accept_image;
@@ -265,19 +262,19 @@ extern int eolt_image;
 extern int empty;
 extern int error_image;
 
-extern int num_first_sets,
-    num_shift_maps;
+extern int num_first_sets;
+extern int num_shift_maps;
 
-extern long string_offset,
-    string_size,
-    num_shifts,
-    num_shift_reduces,
-    num_gotos,
-    num_goto_reduces,
-    num_reductions,
-    num_sr_conflicts,
-    num_rr_conflicts,
-    num_entries;
+extern long string_offset;
+extern long string_size;
+extern long num_shifts;
+extern long num_shift_reduces;
+extern long num_gotos;
+extern long num_goto_reduces;
+extern long num_reductions;
+extern long num_sr_conflicts;
+extern long num_rr_conflicts;
+extern long num_entries;
 
 extern short *rhs_sym;
 
@@ -329,17 +326,11 @@ extern SET_PTR nt_first;
 extern SET_PTR first;
 extern SET_PTR follow;
 
-/* NAME is an array containing names to be associated with symbols.    */
-/* REDUCE is a mapping from each state to reduce actions in that state.*/
 /* SHIFT is an array used to hold the complete set of all shift maps   */
 /* needed to construct the state automaton. Though its size is         */
-/* NUM_STATES, the actual number of elements used in it is indicated   */
-/* by the integer NUM_SHIFT_MAPS. NUM_STATES elements were allocated,  */
-/* because if the user requests that certain single productions be     */
-/* removed, a Shift map containing actions involving such productions  */
-/* cannot be shared.                                                   */
 extern struct shift_header_type *shift;
 
+/* REDUCE is a mapping from each state to reduce actions in that state.*/
 extern struct reduce_header_type *reduce;
 
 extern short *gotodef;
@@ -347,21 +338,23 @@ extern short *shiftdf;
 extern short *gd_index;
 extern short *gd_range;
 
+/* NAME is an array containing names to be associated with symbols.    */
 extern int *name;
 
 /* STATSET is a mapping from state number to state information.        */
-/* LASTATS is a similar mapping for look-ahead states.                 */
-/* IN_STAT is a mapping from each state to the set of states that have */
-/* a transition into the state in question.                            */
 extern struct statset_type *statset;
 
+/* LASTATS is a similar mapping for look-ahead states.                 */
 extern struct lastats_type *lastats;
+
+/* IN_STAT is a mapping from each state to the set of states that have */
+/* a transition into the state in question.                            */
 extern struct node **in_stat;
 
-extern int num_scopes;
-extern int scope_rhs_size;
-extern int scope_state_size;
-extern int num_error_rules;
+extern long num_scopes;
+extern long scope_rhs_size;
+extern long scope_state_size;
+extern long num_error_rules;
 
 extern struct scope_type {
   short prefix;
@@ -374,9 +367,6 @@ extern struct scope_type {
 extern long *scope_right_side;
 extern short *scope_state;
 
-/**                        OUTPUT DECLARATIONS                    **/
-/* The following external variables are used only in processing    */
-/* output.                                                         */
 extern char *output_ptr;
 extern char *output_buffer;
 
@@ -392,23 +382,21 @@ extern long table_size;
 extern long action_size;
 extern long increment_size;
 
-extern int last_non_terminal;
-extern int last_terminal;
+extern long last_non_terminal;
+extern long last_terminal;
 
 extern long accept_act;
 extern long error_act;
 extern long first_index;
 extern long last_index;
-extern int last_symbol;
-extern int max_name_length;
+extern long last_symbol;
+extern long max_name_length;
 
 extern SET_PTR naction_symbols;
 extern SET_PTR action_symbols;
 
 extern bool byte_terminal_range;
 
-/**   The following declarations are specifications for all global    **/
-/**   procedures and functions used in the program.                   **/
 long temporary_space_allocated(void);
 
 long temporary_space_used(void);
@@ -455,8 +443,6 @@ void init_lalrk_process(void);
 
 void init_rmpself(SET_PTR produces);
 
-void itoc(int num);
-
 void field(long num, int len);
 
 void fill_in(char string[], int amount, char character);
@@ -477,16 +463,11 @@ void remove_single_productions(void);
 
 void mkstats(void);
 
-void mystrcpy(const char *str);
-
-void padline(void);
-
 void nospace(char *, long);
 
 int number_len(int state_no);
 
-void partset(SET_PTR collection, const long *element_size, const long *list,
-             long *start, long *stack, long set_size, long from_process_scopes);
+void partset(SET_PTR collection, const long *element_size, const long *list, long *start, long *stack, long set_size, long from_process_scopes);
 
 void print_item(int item_no);
 
@@ -494,23 +475,9 @@ void print_large_token(char *line, char *token, const char *indent, int len);
 
 void print_state(int state_no);
 
-void compute_action_symbols_range(const long *state_start,
-                                  const long *state_stack,
-                                  const long *state_list,
-                                  long *action_symbols_range);
-
-void compute_naction_symbols_range(const long *state_start,
-                                   const long *state_stack,
-                                   const long *state_list,
-                                   long *naction_symbols_range);
-
 void produce(void);
 
 void process_error_maps(void);
-
-void prnt_shorts(const char *title, int init, int bound, int perline, const long *array);
-
-void prnt_ints(const char *title, int init, int bound, int perline, const int *array);
 
 void print_space_parser();
 
@@ -518,7 +485,7 @@ void print_time_parser();
 
 void init_parser_files(struct OutputFiles output_files);
 
-void process_tables(struct OutputFiles output_files);
+void process_tables(char* tab_file, struct OutputFiles output_files);
 
 void ptstats(void);
 
@@ -650,3 +617,76 @@ static void BUFFER_CHECK(FILE *file) {
   }
 }
 #endif /* COMMON_INCLUDED */
+
+
+#ifndef SPACE_INCLUDED
+#define SPACE_INCLUDED
+
+struct new_state_type {
+  struct reduce_header_type reduce;
+  short shift_number,
+      link,
+      thread,
+      image;
+};
+
+extern struct new_state_type *new_state_element;
+
+extern short *shift_image;
+extern short *real_shift_number;
+
+extern int *term_state_index;
+extern int *shift_check_index;
+
+extern int shift_domain_count;
+extern int num_terminal_states;
+extern int check_size;
+extern int term_check_size;
+extern int term_action_size;
+extern int shift_check_size;
+
+#endif /* SPACE_INCLUDED */
+
+
+
+
+
+
+
+
+
+
+#ifndef REDUCE_INCLUDED
+#define REDUCE_INCLUDED
+
+/* CONFLICT_SYMBOLS is a mapping from each state into a set of terminal    */
+/* symbols on which an LALR(1) conflict was detected in the state in       */
+/* question.                                                               */
+/*                                                                         */
+/* LA_INDEX and LA_SET are temporary look-ahead sets, each of which will   */
+/* be pointed to by a GOTO action, and the associated set will be          */
+/* initialized to READ_SET(S), where S is the state identified by the GOTO */
+/* action in question. READ_SET(S) is a set of terminals on which an action*/
+/* is defined in state S. See COMPUTE_READ for more details.               */
+/* LA_TOP is used to compute the number of such sets needed.               */
+/*                                                                         */
+/* The boolean variable NOT_LRK is used to mark whether a grammar   */
+/* is not LR(k) for any k. NOT_LRK is marked true when either:             */
+/*    1. The grammar contains a nonterminal A such that A =>+rm A          */
+/*    2. The automaton contains a cycle with each of its edges labeled     */
+/*       with a nullable nonterminal.                                      */
+/* (Note that these are not the only conditions under which a grammar is   */
+/*  not LR(k). In fact, it is an undecidable problem.)                     */
+/* The variable HIGHEST_LEVEL is used to indicate the highest number of    */
+/* lookahead that was necessary to resolve all conflicts for a given       */
+/* grammar. If we can detect that the grammar is not LALR(k), we set       */
+/* HIGHEST_LEVEL to INFINITY.                                              */
+extern struct node **conflict_symbols;
+extern BOOLEAN_CELL *read_set;
+extern BOOLEAN_CELL *la_set;
+extern int highest_level;
+extern long la_top;
+extern short *la_index;
+extern bool not_lrk;
+
+#endif /* REDUCE_INCLUDED */

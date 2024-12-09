@@ -3,10 +3,6 @@ static char hostfile[] = __FILE__;
 #include <stdlib.h>
 #include "common.h"
 
-static void mklr0(void);
-
-static struct state_element *lr0_state_map(struct node *kernel);
-
 /* STATE_ELEMENT is used to represent states. Each state is mapped into a   */
 /* unique number. The components QUEUE and LINK are auxiliary:              */
 /*   QUEUE is used to form a sequential linked-list of the states ordered   */
@@ -25,49 +21,69 @@ struct state_element {
   short state_number;
 };
 
-static struct state_element **state_table;
-static struct state_element **shift_table;
-static struct state_element *state_root;
-static struct state_element *state_tail;
+struct state_element **state_table;
+struct state_element **shift_table;
+struct state_element *state_root;
+struct state_element *state_tail;
 
-static short *shift_action;
+short *shift_action;
 
-static struct goto_header_type no_gotos_ptr;
-static struct shift_header_type no_shifts_ptr;
+struct goto_header_type no_gotos_ptr;
+struct shift_header_type no_shifts_ptr;
 
-/* In this procedure, we first construct the LR(0) automaton.                */
-void mkstats(void) {
-  no_gotos_ptr.size = 0; /* For states with no GOTOs */
-  no_gotos_ptr.map = NULL;
-  no_shifts_ptr.size = 0; /* For states with no SHIFTs */
-  no_shifts_ptr.map = NULL;
-  mklr0();
-  if (error_maps_bit &&
-      (table_opt == OPTIMIZE_TIME || table_opt == OPTIMIZE_SPACE)) {
-    produce();
+/* LR0_STATE_MAP takes as an argument a pointer to a kernel set of items. If */
+/* no state based on that kernel set already exists, then a new one is       */
+/* created and added to STATE_TABLE. In any case, a pointer to the STATE of  */
+/* the KERNEL is returned.                                                   */
+struct state_element *lr0_state_map(struct node *kernel) {
+  unsigned long hash_address = 0;
+  struct node *p;
+  /*       Compute the hash address.           */
+  for (p = kernel; p != NULL; p = p->next) {
+    hash_address += p->value;
   }
-  /* Free space trapped by the CLOSURE and CLITEMS maps.                */
-  for ALL_NON_TERMINALS3(j) {
-    struct node *p;
-    struct node *q = clitems[j];
-    if (q != NULL) {
-      p = q->next;
-      free_nodes(p, q);
+  hash_address %= STATE_TABLE_SIZE;
+  /* Check whether a state is already defined by the KERNEL set.           */
+  for (struct state_element *state_ptr = state_table[hash_address];
+       state_ptr != NULL; state_ptr = state_ptr->link) {
+    struct node *q;
+    struct node *r;
+    for (p = state_ptr->kernel_items, q = kernel;
+         p != NULL && q != NULL;
+         p = p->next, r = q, q = q->next) {
+      if (p->value != q->value)
+        break;
+         }
+    /* Both P and Q are NULL? */
+    if (p == q) {
+      free_nodes(kernel, r);
+      return state_ptr;
     }
-    q = closure[j];
-    if (q != NULL) {
-      p = q->next;
-      free_nodes(p, q);
-    }
+       }
+  /* Add a new state based on the KERNEL set.                        */
+  struct state_element *ptr = talloc(sizeof(struct state_element));
+  if (ptr == (struct state_element *) NULL) {
+    nospace(__FILE__, __LINE__);
   }
-  closure += num_terminals + 1;
-  ffree(closure);
-  clitems += num_terminals + 1;
-  ffree(clitems);
+  num_states++;
+  SHORT_CHECK(num_states);
+  ptr->queue = NULL;
+  ptr->kernel_items = kernel;
+  ptr->complete_items = NULL;
+  ptr->state_number = num_states;
+  ptr->link = state_table[hash_address];
+  state_table[hash_address] = ptr;
+  if (state_root == NULL) {
+    state_root = ptr;
+  } else {
+    state_tail->queue = ptr;
+  }
+  state_tail = ptr;
+  return ptr;
 }
 
 /* This procedure constructs an LR(0) automaton.                             */
-static void mklr0(void) {
+void mklr0(void) {
   /* STATE_TABLE is the array used to hash the states. States are  */
   /* identified by their Kernel set of items. Hash locations are   */
   /* computed for the states. As states are inserted in the table, */
@@ -471,53 +487,32 @@ static void mklr0(void) {
   ffree(shift_table);
 }
 
-/* LR0_STATE_MAP takes as an argument a pointer to a kernel set of items. If */
-/* no state based on that kernel set already exists, then a new one is       */
-/* created and added to STATE_TABLE. In any case, a pointer to the STATE of  */
-/* the KERNEL is returned.                                                   */
-static struct state_element *lr0_state_map(struct node *kernel) {
-  unsigned long hash_address = 0;
-  struct node *p;
-  /*       Compute the hash address.           */
-  for (p = kernel; p != NULL; p = p->next) {
-    hash_address += p->value;
+/* In this procedure, we first construct the LR(0) automaton.                */
+void mkstats(void) {
+  no_gotos_ptr.size = 0; /* For states with no GOTOs */
+  no_gotos_ptr.map = NULL;
+  no_shifts_ptr.size = 0; /* For states with no SHIFTs */
+  no_shifts_ptr.map = NULL;
+  mklr0();
+  if (error_maps_bit && (table_opt == OPTIMIZE_TIME || table_opt == OPTIMIZE_SPACE)) {
+    produce();
   }
-  hash_address %= STATE_TABLE_SIZE;
-  /* Check whether a state is already defined by the KERNEL set.           */
-  for (struct state_element *state_ptr = state_table[hash_address];
-       state_ptr != NULL; state_ptr = state_ptr->link) {
-    struct node *q;
-    struct node *r;
-    for (p = state_ptr->kernel_items, q = kernel;
-         p != NULL && q != NULL;
-         p = p->next, r = q, q = q->next) {
-      if (p->value != q->value)
-        break;
+  /* Free space trapped by the CLOSURE and CLITEMS maps.                */
+  for ALL_NON_TERMINALS3(j) {
+    struct node *p;
+    struct node *q = clitems[j];
+    if (q != NULL) {
+      p = q->next;
+      free_nodes(p, q);
     }
-    /* Both P and Q are NULL? */
-    if (p == q) {
-      free_nodes(kernel, r);
-      return state_ptr;
+    q = closure[j];
+    if (q != NULL) {
+      p = q->next;
+      free_nodes(p, q);
     }
   }
-  /* Add a new state based on the KERNEL set.                        */
-  struct state_element *ptr = talloc(sizeof(struct state_element));
-  if (ptr == (struct state_element *) NULL) {
-    nospace(__FILE__, __LINE__);
-  }
-  num_states++;
-  SHORT_CHECK(num_states);
-  ptr->queue = NULL;
-  ptr->kernel_items = kernel;
-  ptr->complete_items = NULL;
-  ptr->state_number = num_states;
-  ptr->link = state_table[hash_address];
-  state_table[hash_address] = ptr;
-  if (state_root == NULL) {
-    state_root = ptr;
-  } else {
-    state_tail->queue = ptr;
-  }
-  state_tail = ptr;
-  return ptr;
+  closure += num_terminals + 1;
+  ffree(closure);
+  clitems += num_terminals + 1;
+  ffree(clitems);
 }

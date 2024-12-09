@@ -1,9 +1,9 @@
 CC = gcc $(CPPFLAGS) $(CFLAGS)
 
-jikespg: ctabs.o globals.o lpgparse.o lpgutil.o main.o mkfirst.o mkred.o mkstates.o partset.o prntstat.o produce.o ptables.o remsp.o resolve.o spacetab.o tabutil.o timetab.o
+jikespg: ctabs.o globals.o lpgparse.o lpgutil.o main.o mkfirst.o mkred.o mkstates.o partset.o prntstat.o produce.o ptables.o remsp.o resolve.o spacetab.o timetab.o
 	$(CC) $(LDFLAGS) -o jikespg ctabs.o globals.o lpgparse.o lpgutil.o main.o \
 	    mkfirst.o mkred.o mkstates.o partset.o prntstat.o produce.o \
-	    ptables.o remsp.o resolve.o spacetab.o tabutil.o timetab.o
+	    ptables.o remsp.o resolve.o spacetab.o timetab.o
 
 main.o:	main.c common.h
 	$(CC) -c main.c
@@ -26,26 +26,23 @@ mkstates.o: mkstates.c common.h
 prntstat.o: prntstat.c common.h
 	$(CC) -c prntstat.c
 
-mkred.o: mkred.c common.h reduce.h
+mkred.o: mkred.c common.h
 	$(CC) -c mkred.c
 
-remsp.o: remsp.c common.h reduce.h
+remsp.o: remsp.c common.h
 	$(CC) -c remsp.c
 
-resolve.o: resolve.c common.h reduce.h
+resolve.o: resolve.c common.h
 	$(CC) -c resolve.c
 
 ptables.o: ptables.c common.h
 	$(CC) -c ptables.c
 
-spacetab.o: spacetab.c common.h space.h
+spacetab.o: spacetab.c common.h
 	$(CC) -c spacetab.c
 
 timetab.o: timetab.c common.h
 	$(CC) -c timetab.c
-
-tabutil.o: tabutil.c common.h
-	$(CC) -c tabutil.c
 
 produce.o: produce.c common.h
 	$(CC) -c produce.c
@@ -53,7 +50,7 @@ produce.o: produce.c common.h
 partset.o: partset.c common.h
 	$(CC) -c partset.c
 
-ctabs.o: ctabs.c common.h space.h
+ctabs.o: ctabs.c common.h
 	$(CC) -c ctabs.c
 
 clean:
@@ -73,7 +70,6 @@ clean:
 	rm -f remsp.o
 	rm -f resolve.o
 	rm -f spacetab.o 
-	rm -f tabutil.o
 	rm -f timetab.o
 
 veryclean: clean

@@ -301,7 +301,7 @@ static void overlap_tables(void) {
       for (; last_symbol >= 1 && !is_terminal[last_symbol]; last_symbol--) {
       }
     }
-    PRNT2(msg_line, "Highest symbol in Check Table: %d", last_symbol);
+    PRNT2(msg_line, "Highest symbol in Check Table: %ld", last_symbol);
     if (last_symbol > 255) {
       num_bytes += table_size;
     }
@@ -700,7 +700,7 @@ static void print_tables(void) {
 /* together, to achieve maximum speed efficiency.                    */
 /* Otherwise, the compression technique used in this table is        */
 /* analogous to the technique used in the routine CMPRSPA.          */
-void cmprtim(struct OutputFiles output_files) {
+void cmprtim(const struct OutputFiles output_files) {
   remap_symbols();
   overlap_tables();
   if (c_bit || cpp_bit || java_bit) {

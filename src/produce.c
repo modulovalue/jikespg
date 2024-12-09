@@ -1074,7 +1074,7 @@ static void print_scopes(void) {
       } else {
         strcat(line, tok);
       }
-      strcat(line, BLANK);
+      strcat(line, " ");
     }
     /* We now add a dot "." to the output line, and print the remaining  */
     /* symbols on the right hand side.                                   */
@@ -1090,7 +1090,7 @@ static void print_scopes(void) {
       } else {
         strcat(line, tok);
       }
-      strcat(line, BLANK);
+      strcat(line, " ");
     }
     fprintf(syslis, "\n%s", line);
   }

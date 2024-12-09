@@ -15,6 +15,10 @@ static char hostfile[] = __FILE__;
 #include "lpgact.h"
 #include "lpgprs.h"
 
+FILE *sysgrm;
+FILE *sysact;
+FILE *syshact;
+
 static const int SPACE_CODE = 1;
 static const int DIGIT_CODE = 2;
 static const int ALPHA_CODE = 3;
@@ -85,11 +89,15 @@ static bool strxeq(char *s1, char *s2) {
   return true;
 }
 
-/*   OPTION handles the decoding of options passed by the user and resets    */
+char act_file[80];
+char hact_file[80];
+
+// TODO • parse options into a struct.
+/* OPTION handles the decoding of options passed by the user and resets      */
 /* them appropriately. "options" may be called twice: when a parameter line  */
 /* is passed to the main program and when the user codes an %OPTIONS line in */
 /* his grammar.                                                              */
-/*    Basically, there are two kinds of options: switches which indicate a   */
+/* Basically, there are two kinds of options: switches which indicate a      */
 /* certain setting just by their appearance, and valued options which are    */
 /* followed by an equal sign and the value to be assigned to them.           */
 static void options(void) {
@@ -510,8 +518,8 @@ static void process_options_lines(char *grm_file, struct OutputFiles *output_fil
   /* Until end-of-file is reached, process */
   while (p1 != NULL) {
     /* all comment and %options lines.       */
-    while (IsSpace(*p2)) /* skip all space symbols */
-    {
+    while (IsSpace(*p2)) {
+      /* skip all space symbols */
       if (*p2 == '\n') {
         line_no++;
         linestart = p2;
@@ -527,8 +535,7 @@ static void process_options_lines(char *grm_file, struct OutputFiles *output_fil
     /* or "%options" since the buffer is always extended by              */
     /* MAX_LINE_SIZE elements past its required length. (see read_input) */
     if (*p2 == '-' && *(p2 + 1) == '-') {
-      /* skip comment line */
-      ;
+      // Skip comment line.
     } else if (memcmp(ooptions, translate(p2, 8), 8) == 0) {
       *line_end = '\0';
       PRNT(p2); /* Print options line */
@@ -556,7 +563,7 @@ static void process_options_lines(char *grm_file, struct OutputFiles *output_fil
   }
   fprintf(syslis, "\n");
   strcpy(parm, old_parm);
-  options(); /* Process new options passed directly to  program */
+  options(); /* Process new options passed directly to program */
   /* Deferred parsing without error maps is useless*/
   if (!error_maps_bit) {
     deferred_bit = false;
@@ -978,7 +985,7 @@ scan_token:
 
     while (strncmp(p1, hblocke, hblocke_len) != 0) {
       if (*p1 == '\0') {
-        PRNTERR2(msg_line, "End of file encountered while scanning header action block in rule %d", num_rules);
+        PRNTERR2(msg_line, "End of file encountered while scanning header action block in rule %ld", num_rules);
         exit(12);
       }
       if (*p1++ == '\n') {
@@ -1019,7 +1026,7 @@ scan_token:
 
     while (strncmp(p1, blocke, blocke_len) != 0) {
       if (*p1 == '\0') {
-        PRNTERR2(msg_line, "End of file encountered while scanning action block in rule %d", num_rules);
+        PRNTERR2(msg_line, "End of file encountered while scanning action block in rule %ld", num_rules);
         exit(12);
       }
       if (*p1++ == '\n') {
@@ -1646,9 +1653,9 @@ next_line: {
         if (strxeq(text + k, knum_symbols)) {
           strcpy(temp1, text + k + 12);
           if (k + 12 != text_len) {
-            sprintf(text + k, "%d%s", num_symbols, temp1);
+            sprintf(text + k, "%ld%s", num_symbols, temp1);
           } else {
-            sprintf(text + k, "%d", num_symbols);
+            sprintf(text + k, "%ld", num_symbols);
           }
           goto proceed;
         }
@@ -1701,7 +1708,7 @@ next_line: {
             for ENTIRE_RHS3(j, rule_no) {
               restore_symbol(symbol, RETRIEVE_STRING(rhs_sym[j]));
               if (strlen(temp2) + strlen(symbol) + 1 < max_len) {
-                strcat(temp2, BLANK);
+                strcat(temp2, " ");
                 strcat(temp2, symbol);
               } else {
                 if (strlen(temp2) + 3 < max_len) {
@@ -1738,9 +1745,9 @@ next_line: {
         if (strxeq(text + k, knum_rules)) {
           strcpy(temp1, text + k + 10);
           if (k + 10 != text_len) {
-            sprintf(text + k, "%d%s", num_rules, temp1);
+            sprintf(text + k, "%ld%s", num_rules, temp1);
           } else {
-            sprintf(text + k, "%d", num_rules);
+            sprintf(text + k, "%ld", num_rules);
           }
           goto proceed;
         }
@@ -1761,9 +1768,9 @@ next_line: {
         if (strxeq(text + k, knum_terminals)) {
           strcpy(temp1, text + k + 14);
           if (k + 14 != text_len)
-            sprintf(text + k, "%d%s", num_terminals, temp1);
+            sprintf(text + k, "%ld%s", num_terminals, temp1);
           else
-            sprintf(text + k, "%d", num_terminals);
+            sprintf(text + k, "%ld", num_terminals);
           goto proceed;
         }
       }
@@ -1772,9 +1779,9 @@ next_line: {
         if (strxeq(text + k, knum_non_terminals)) {
           strcpy(temp1, text + k + 18);
           if (k + 18 != text_len) {
-            sprintf(text + k, "%d%s", num_non_terminals, temp1);
+            sprintf(text + k, "%ld%s", num_non_terminals, temp1);
           } else {
-            sprintf(text + k, "%d", num_non_terminals);
+            sprintf(text + k, "%ld", num_non_terminals);
           }
           goto proceed;
         }
@@ -2031,7 +2038,7 @@ static void display_input(void) {
       strcat(line, temp);
     }
     if (strlen(line) < PRINT_LINE_SIZE) {
-      strcat(line, BLANK);
+      strcat(line, " ");
     }
   }
   fprintf(syslis, "\n%s", line);
@@ -2073,7 +2080,7 @@ static void display_input(void) {
         strcat(line, "  -> ");
       } else {
         for (int i = 1; i <= offset - 7; i++) {
-          strcat(line, BLANK);
+          strcat(line, " ");
         }
         strcat(line, "| ");
       }
@@ -2083,15 +2090,15 @@ static void display_input(void) {
       if (strlen(temp) + strlen(line) > PRINT_LINE_SIZE - 1) {
         char tempbuffer1[SYMBOL_SIZE + 1];
         fprintf(syslis, "\n%s", line);
-        strcpy(tempbuffer1, BLANK);
+        strcpy(tempbuffer1, " ");
         for (int j = 1; j < offset + 1; j++) {
-          strcat(tempbuffer1, BLANK);
+          strcat(tempbuffer1, " ");
         }
         print_large_token(line, temp, tempbuffer1, len);
       } else {
         strcat(line, temp);
       }
-      strcat(line, BLANK);
+      strcat(line, " ");
     }
     fprintf(syslis, "\n%s", line);
   }

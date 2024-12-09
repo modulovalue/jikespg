@@ -4,7 +4,6 @@ static char hostfile[] = __FILE__;
 #include "lpgparse.h"
 #include <string.h>
 #include "common.h"
-#include "space.h"
 
 static struct node **new_state_element_reduce_nodes;
 
@@ -78,7 +77,7 @@ static void remap_non_terminals(void) {
       }
     }
     last_symbol -= num_terminals;
-    PRNT2(msg_line, "Number of non-terminals eliminated: %d", num_non_terminals - last_symbol);
+    PRNT2(msg_line, "Number of non-terminals eliminated: %ld", num_non_terminals - last_symbol);
     /* Remap the GOTO-DEFAULT map.                                */
     /* to hold the original map.                                  */
     for ALL_NON_TERMINALS3(symbol) {
@@ -248,7 +247,6 @@ static void merge_similar_t_rows(void) {
   struct node *r;
   struct node *tail;
   short *table = Allocate_short_array(num_shift_maps + 1);
-
   empty_root = NIL;
   single_root = NIL;
   multi_root = NIL;
@@ -259,7 +257,6 @@ static void merge_similar_t_rows(void) {
   for (int i = 0; i <= num_shift_maps; i++) {
     table[i] = NIL;
   }
-
   /* We now hash all the states into TABLE, based on their shift map   */
   /* number.                                                           */
   /* The rules in the range of the REDUCE MAP are placed in sorted     */
@@ -333,10 +330,8 @@ static void merge_similar_t_rows(void) {
         new_state_element[top].link = table[hash_address];
         table[hash_address] = top;
       }
-
       new_state_element[top].thread = multi_root;
       multi_root = top;
-
       new_state_element[top].shift_number = hash_address;
       new_state_element_reduce_nodes[top] = reduce_root;
       state_list[state_no] = NIL;
@@ -369,7 +364,6 @@ static void merge_similar_t_rows(void) {
         free_nodes(reduce_root, tail);
     }
   }
-
   ffree(table);
 }
 
@@ -1649,7 +1643,7 @@ static void print_tables(void) {
   fwrite(output_buffer, sizeof(char), output_ptr - &output_buffer[0], systab);
 }
 
-void cmprspa(struct OutputFiles output_files) {
+void cmprspa(const struct OutputFiles output_files) {
   state_index = Allocate_long_array(max_la_state + 1);
   ordered_state = Allocate_long_array(max_la_state + 1);
   symbol_map = Allocate_int_array(num_symbols + 1);

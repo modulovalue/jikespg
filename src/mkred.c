@@ -2,7 +2,6 @@
 static char hostfile[] = __FILE__;
 
 #include "common.h"
-#include "reduce.h"
 
 /* STACK_ROOT is used in la_traverse to construct a stack of symbols.  */
 /* The boolean vector SINGLE_COMPLETE_ITEM identifies states whose     */

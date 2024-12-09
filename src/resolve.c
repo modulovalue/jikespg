@@ -4,7 +4,6 @@
 static char hostfile[] = __FILE__;
 
 #include "common.h"
-#include "reduce.h"
 
 /* VISITED is a structure used to mark state-symbol pairs that have    */
 /* been visited in the process of computing follow-sources for a       */

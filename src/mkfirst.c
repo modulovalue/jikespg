@@ -22,8 +22,7 @@ static void INIT_FIRST(const int nt) {
   }
 }
 
-static bool is_terminal_rhs(short *rhs_start,
-                            const bool *produces_terminals, int rule_no);
+static bool is_terminal_rhs(short *rhs_start, const bool *produces_terminals, int rule_no);
 
 static bool is_nullable_rhs(short *rhs_start, int rule_no);
 
@@ -98,7 +97,7 @@ static short *nt_list;
 
 static int top;
 
-/*    MKFIRST constructs the FIRST and FOLLOW maps, the CLOSURE map,         */
+/* MKFIRST constructs the FIRST and FOLLOW maps, the CLOSURE map,            */
 /* ADEQUATE_ITEM and ITEM_TABLE maps and all other basic maps.               */
 void mkfirst(void) {
   int symbol;
@@ -487,7 +486,7 @@ static void no_rules_produced(void) {
       } else {
         strcat(line, tok);
       }
-      strcat(line, BLANK);
+      strcat(line, " ");
     }
     PRNT(line);
     exit(12);
@@ -810,7 +809,7 @@ static void check_non_terminals(void) {
         print_large_token(line, tok, "    ", LEN);
       } else
         strcat(line, tok);
-      strcat(line, BLANK);
+      strcat(line, " ");
     }
     PRNT(line);
     exit(12);
@@ -824,8 +823,7 @@ static void check_non_terminals(void) {
 /* symbol identified by the RHS_START element is a bad non-terminal it       */
 /* returns FALSE.  Otherwise, the whole right-hand side is traversed, and it */
 /* returns the value TRUE.                                                   */
-static bool is_terminal_rhs(short *rhs_start,
-                            const bool *produces_terminals, const int rule_no) {
+static bool is_terminal_rhs(short *rhs_start, const bool *produces_terminals, const int rule_no) {
   for (rhs_start[rule_no] = rhs_start[rule_no];
        rhs_start[rule_no] <= rules[rule_no + 1].rhs - 1;
        rhs_start[rule_no]++) {
@@ -1032,9 +1030,9 @@ static void print_unreachables(void) {
         print_large_token(line, tok, "    ", LEN);
       } else {
         strcat(line, tok);
-        strcat(line, BLANK);
+        strcat(line, " ");
       }
-      strcat(line, BLANK);
+      strcat(line, " ");
     }
     PRNT(line);
   }
@@ -1065,7 +1063,7 @@ static void print_unreachables(void) {
       } else {
         strcat(line, tok);
       }
-      strcat(line, BLANK);
+      strcat(line, " ");
     }
     PRNT(line);
   }
@@ -1074,7 +1072,7 @@ static void print_unreachables(void) {
 
 /* PRINT_XREF prints out the Cross-reference map. We build a map from each   */
 /* terminal into the set of items whose Dot-symbol (symbol immediately       */
-/* following the dot ) is the terminal in question.  Note that we iterate    */
+/* following the dot) is the terminal in question.  Note that we iterate     */
 /* backwards over the rules to keep the rules associated with the items      */
 /* sorted, since they are inserted in STACK fashion in the lists:  Last-in,  */
 /* First out.                                                                */
@@ -1122,14 +1120,14 @@ static void print_xref(void) {
           sprintf(tok, "%d", rule_no);
           if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE) {
             fprintf(syslis, "\n%s", line);
-            strcpy(line, BLANK);
+            strcpy(line, " ");
             for (int j = 1; j <= offset; j++) {
-              strcat(line, BLANK);
+              strcat(line, " ");
             }
           }
           strcat(line, tok);
           if (strlen(line) < PRINT_LINE_SIZE)
-            strcat(line, BLANK);
+            strcat(line, " ");
         }
         fprintf(syslis, "\n%s", line);
         item_no = nt_items[symbol];
@@ -1140,14 +1138,14 @@ static void print_xref(void) {
           sprintf(tok, "%d", rule_no);
           if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE) {
             fprintf(syslis, "\n%s", line);
-            strcpy(line, BLANK);
+            strcpy(line, " ");
             for (int j = 1; j <= offset; j++) {
-              strcat(line, BLANK);
+              strcat(line, " ");
             }
           }
           strcat(line, tok);
           if (strlen(line) < PRINT_LINE_SIZE) {
-            strcat(line, BLANK);
+            strcat(line, " ");
           }
         }
         fprintf(syslis, "\n%s", line);
@@ -1220,7 +1218,7 @@ static void print_nt_first(void) {
         } else {
           strcat(line, tok);
         }
-        strcat(line, BLANK);
+        strcat(line, " ");
       }
     }
     fprintf(syslis, "\n%s\n", line);
@@ -1245,7 +1243,7 @@ static void print_follow_map(void) {
         } else {
           strcat(line, tok);
         }
-        strcat(line, BLANK);
+        strcat(line, " ");
       }
     }
     fprintf(syslis, "\n%s\n", line);
