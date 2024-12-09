@@ -100,7 +100,7 @@ void mystrcpy(const char *str) {
   BUFFER_CHECK(syssym);
 }
 
-void prnt_shorts(const char *title, const int init, const int bound, const int perline, const long *array) {
+void prnt_shorts(const char *title, const int init, const int bound, const int perline, const long *array, struct CLIOptions* cli_options) {
   mystrcpy(title);
   padline();
   int k = 0;
@@ -119,14 +119,14 @@ void prnt_shorts(const char *title, const int init, const int bound, const int p
     *(output_ptr - 1) = '\n';
     BUFFER_CHECK(sysdcl);
   }
-  if (java_bit) {
+  if (cli_options->java_bit) {
     mystrcpy("    };\n");
   } else {
     mystrcpy("                 };\n");
   }
 }
 
-void prnt_ints(const char *title, const int init, const int bound, const int perline, const int *array) {
+void prnt_ints(const char *title, const int init, const int bound, const int perline, const int *array, struct CLIOptions* cli_options) {
   mystrcpy(title);
   padline();
   int k = 0;
@@ -145,7 +145,7 @@ void prnt_ints(const char *title, const int init, const int bound, const int per
     *(output_ptr - 1) = '\n';
     BUFFER_CHECK(sysdcl);
   }
-  if (java_bit) {
+  if (cli_options->java_bit) {
     mystrcpy("    };\n");
   } else {
     mystrcpy("                 };\n");
@@ -375,7 +375,7 @@ char sym_tag[SYMBOL_SIZE];
 char def_tag[SYMBOL_SIZE];
 char prs_tag[SYMBOL_SIZE];
 
-void init_file(FILE **file, char *file_name, char *file_tag) {
+void init_file(FILE **file, char *file_name, char *file_tag, struct CLIOptions* cli_options) {
   const char *p = strrchr(file_name, '.');
   if ((*file = fopen(file_name, "w")) == NULL) {
     fprintf(stderr, "***ERROR: Symbol file \"%s\" cannot be opened\n", file_name);
@@ -383,21 +383,21 @@ void init_file(FILE **file, char *file_name, char *file_tag) {
   } else {
     memcpy(file_tag, file_name, p - file_name);
     file_tag[p - file_name] = '\0';
-    if (c_bit || cpp_bit) {
+    if (cli_options->c_bit || cli_options->cpp_bit) {
       fprintf(*file, "#ifndef %s_INCLUDED\n", file_tag);
       fprintf(*file, "#define %s_INCLUDED\n\n", file_tag);
     }
   }
 }
 
-void exit_file(FILE **file, char *file_tag) {
-  if (c_bit || cpp_bit) {
+void exit_file(FILE **file, char *file_tag, struct CLIOptions* cli_options) {
+  if (cli_options->c_bit || cli_options->cpp_bit) {
     fprintf(*file, "\n#endif /* %s_INCLUDED */\n", file_tag);
   }
   fclose(*file);
 }
 
-void print_error_maps(void) {
+void print_error_maps(struct CLIOptions* cli_options) {
   long *state_start;
   long *state_stack;
   long *temp;
@@ -464,10 +464,10 @@ void print_error_maps(void) {
   for ALL_STATES3(state_no) {
     action_symbols_base[state_list[state_no]] = ABS(state_start[state_list[state_no]]);
   }
-  if (java_bit) {
-    prnt_shorts("\n    public final static char asb[] = {0,\n", 1, num_states, 10, action_symbols_base);
+  if (cli_options->java_bit) {
+    prnt_shorts("\n    public final static char asb[] = {0,\n", 1, num_states, 10, action_symbols_base, cli_options);
   } else {
-    prnt_shorts("\nconst unsigned short CLASS_HEADER asb[] = {0,\n", 1, num_states, 10, action_symbols_base);
+    prnt_shorts("\nconst unsigned short CLASS_HEADER asb[] = {0,\n", 1, num_states, 10, action_symbols_base, cli_options);
   }
   ffree(action_symbols_base);
   /* Compute and write out the range of the ACTION_SYMBOLS map. */
@@ -475,29 +475,29 @@ void print_error_maps(void) {
   action_symbols_range = Allocate_long_array(offset);
   compute_action_symbols_range(state_start, state_stack, state_list, action_symbols_range);
   for (int i = 0; i < offset - 1; i++) {
-    if (action_symbols_range[i] > (java_bit ? 127 : 255)) {
+    if (action_symbols_range[i] > (cli_options->java_bit ? 127 : 255)) {
       byte_terminal_range = 0;
       break;
     }
   }
   if (byte_terminal_range) {
-    if (java_bit) {
-      prnt_shorts("\n    public final static byte asr[] = {0,\n", 0, offset - 2, 10, action_symbols_range);
+    if (cli_options->java_bit) {
+      prnt_shorts("\n    public final static byte asr[] = {0,\n", 0, offset - 2, 10, action_symbols_range, cli_options);
     } else {
-      prnt_shorts("\nconst unsigned char  CLASS_HEADER asr[] = {0,\n", 0, offset - 2, 10, action_symbols_range);
+      prnt_shorts("\nconst unsigned char  CLASS_HEADER asr[] = {0,\n", 0, offset - 2, 10, action_symbols_range, cli_options);
     }
   } else {
-    if (java_bit) {
-      prnt_shorts("\n    public final static char asr[] = {0,\n", 0, offset - 2, 10, action_symbols_range);
+    if (cli_options->java_bit) {
+      prnt_shorts("\n    public final static char asr[] = {0,\n", 0, offset - 2, 10, action_symbols_range, cli_options);
     } else {
-      prnt_shorts("\nconst unsigned short CLASS_HEADER asr[] = {0,\n", 0, offset - 2, 10, action_symbols_range);
+      prnt_shorts("\nconst unsigned short CLASS_HEADER asr[] = {0,\n", 0, offset - 2, 10, action_symbols_range, cli_options);
     }
   }
   num_bytes = 2 * num_states;
   PRNT2(msg_line, "    Storage required for ACTION_SYMBOLS_BASE map: %ld Bytes", num_bytes);
-  if (table_opt == OPTIMIZE_TIME && last_terminal <= (java_bit ? 127 : 255)) {
+  if (table_opt == OPTIMIZE_TIME && last_terminal <= (cli_options->java_bit ? 127 : 255)) {
     num_bytes = offset - 1;
-  } else if (table_opt != OPTIMIZE_TIME && num_terminals <= (java_bit ? 127 : 255)) {
+  } else if (table_opt != OPTIMIZE_TIME && num_terminals <= (cli_options->java_bit ? 127 : 255)) {
     num_bytes = offset - 1;
   } else {
     num_bytes = 2 * (offset - 1);
@@ -528,20 +528,20 @@ void print_error_maps(void) {
   for ALL_STATES3(state_no) {
     naction_symbols_base[state_list[state_no]] = ABS(state_start[state_list[state_no]]);
   }
-  if (java_bit) {
-    prnt_shorts("\n    public final static char nasb[] = {0,\n", 1, num_states, 10, naction_symbols_base);
+  if (cli_options->java_bit) {
+    prnt_shorts("\n    public final static char nasb[] = {0,\n", 1, num_states, 10, naction_symbols_base, cli_options);
   } else {
-    prnt_shorts("\nconst unsigned short CLASS_HEADER nasb[] = {0,\n", 1, num_states, 10, naction_symbols_base);
+    prnt_shorts("\nconst unsigned short CLASS_HEADER nasb[] = {0,\n", 1, num_states, 10, naction_symbols_base, cli_options);
   }
   ffree(naction_symbols_base);
   /* Compute and write out the range of the NACTION_SYMBOLS map.*/
   offset = state_start[num_states + 1];
   naction_symbols_range = Allocate_long_array(offset);
   compute_naction_symbols_range(state_start, state_stack, state_list, naction_symbols_range);
-  if (java_bit) {
-    prnt_shorts("\n    public final static char nasr[] = {0,\n", 0, offset - 2, 10, naction_symbols_range);
+  if (cli_options->java_bit) {
+    prnt_shorts("\n    public final static char nasr[] = {0,\n", 0, offset - 2, 10, naction_symbols_range, cli_options);
   } else {
-    prnt_shorts("\nconst unsigned short CLASS_HEADER nasr[] = {0,\n", 0, offset - 2, 10, naction_symbols_range);
+    prnt_shorts("\nconst unsigned short CLASS_HEADER nasr[] = {0,\n", 0, offset - 2, 10, naction_symbols_range, cli_options);
   }
   PRNT2(msg_line, "    Storage required for NACTION_SYMBOLS_BASE map: %ld Bytes", 2 * num_states);
   PRNT2(msg_line, "    Storage required for NACTION_SYMBOLS_RANGE map: %d Bytes", 2 * (offset - 1));
@@ -555,18 +555,18 @@ void print_error_maps(void) {
     for ALL_TERMINALS3(symbol) {
       temp[symbol_map[symbol]] = symno[symbol].name_index;
     }
-    if (num_names <= (java_bit ? 127 : 255)) {
-      if (java_bit) {
-        prnt_shorts("\n    public final static byte terminal_index[] = {0,\n", 1, num_terminals, 10, temp);
+    if (num_names <= (cli_options->java_bit ? 127 : 255)) {
+      if (cli_options->java_bit) {
+        prnt_shorts("\n    public final static byte terminal_index[] = {0,\n", 1, num_terminals, 10, temp, cli_options);
       } else {
-        prnt_shorts("\nconst unsigned char  CLASS_HEADER terminal_index[] = {0,\n", 1, num_terminals, 10, temp);
+        prnt_shorts("\nconst unsigned char  CLASS_HEADER terminal_index[] = {0,\n", 1, num_terminals, 10, temp, cli_options);
       }
       num_bytes = num_terminals;
     } else {
-      if (java_bit) {
-        prnt_shorts("\n    public final static char terminal_index[] = {0,\n", 1, num_terminals, 10, temp);
+      if (cli_options->java_bit) {
+        prnt_shorts("\n    public final static char terminal_index[] = {0,\n", 1, num_terminals, 10, temp, cli_options);
       } else {
-        prnt_shorts("\nconst unsigned short CLASS_HEADER terminal_index[] = {0,\n", 1, num_terminals, 10, temp);
+        prnt_shorts("\nconst unsigned short CLASS_HEADER terminal_index[] = {0,\n", 1, num_terminals, 10, temp, cli_options);
       }
       num_bytes = 2 * num_terminals;
     }
@@ -578,18 +578,18 @@ void print_error_maps(void) {
     for ALL_NON_TERMINALS3(symbol) {
       temp[symbol_map[symbol]] = symno[symbol].name_index;
     }
-    if (num_names <= (java_bit ? 127 : 255)) {
-      if (java_bit) {
-        prnt_shorts("\n    public final static byte non_terminal_index[] = {0,\n", num_terminals + 1, num_symbols, 10, temp);
+    if (num_names <= (cli_options->java_bit ? 127 : 255)) {
+      if (cli_options->java_bit) {
+        prnt_shorts("\n    public final static byte non_terminal_index[] = {0,\n", num_terminals + 1, num_symbols, 10, temp, cli_options);
       } else {
-        prnt_shorts("\nconst unsigned char  CLASS_HEADER non_terminal_index[] = {0,\n", num_terminals + 1, num_symbols, 10, temp);
+        prnt_shorts("\nconst unsigned char  CLASS_HEADER non_terminal_index[] = {0,\n", num_terminals + 1, num_symbols, 10, temp, cli_options);
       }
       num_bytes = num_non_terminals;
     } else {
-      if (java_bit) {
-        prnt_shorts("\n    public final static char non_terminal_index[] = {0,\n", num_terminals + 1, num_symbols, 10, temp);
+      if (cli_options->java_bit) {
+        prnt_shorts("\n    public final static char non_terminal_index[] = {0,\n", num_terminals + 1, num_symbols, 10, temp, cli_options);
       } else {
-        prnt_shorts("\nconst unsigned short CLASS_HEADER non_terminal_index[] = {0,\n", num_terminals + 1, num_symbols, 10, temp);
+        prnt_shorts("\nconst unsigned short CLASS_HEADER non_terminal_index[] = {0,\n", num_terminals + 1, num_symbols, 10, temp, cli_options);
       }
       num_bytes = 2 * num_non_terminals;
     }
@@ -599,24 +599,24 @@ void print_error_maps(void) {
     for ALL_SYMBOLS3(symbol) {
       temp[symbol_map[symbol]] = symno[symbol].name_index;
     }
-    if (num_names <= (java_bit ? 127 : 255)) {
-      if (java_bit) {
-        prnt_shorts("\n    public final static byte symbol_index[] = {0,\n", 1, num_symbols, 10, temp);
+    if (num_names <= (cli_options->java_bit ? 127 : 255)) {
+      if (cli_options->java_bit) {
+        prnt_shorts("\n    public final static byte symbol_index[] = {0,\n", 1, num_symbols, 10, temp, cli_options);
         mystrcpy("    public final static byte terminal_index[] = symbol_index;\n");
         mystrcpy("    public final static byte non_terminal_index[] = symbol_index;\n");
       } else {
-        prnt_shorts("\nconst unsigned char  CLASS_HEADER symbol_index[] = {0,\n", 1, num_symbols, 10, temp);
+        prnt_shorts("\nconst unsigned char  CLASS_HEADER symbol_index[] = {0,\n", 1, num_symbols, 10, temp, cli_options);
         mystrcpy("const unsigned char  *CLASS_HEADER terminal_index[] = &(symbol_index[0]);\n");
         mystrcpy("const unsigned char  *CLASS_HEADER non_terminal_index[] = &(symbol_index[0]);\n");
       }
       num_bytes = num_symbols;
     } else {
-      if (java_bit) {
-        prnt_shorts("\n    public final static char symbol_index[] = {0,\n", 1, num_symbols, 10, temp);
+      if (cli_options->java_bit) {
+        prnt_shorts("\n    public final static char symbol_index[] = {0,\n", 1, num_symbols, 10, temp, cli_options);
         mystrcpy("    public final static char terminal_index[] = symbol_index[0];\n");
         mystrcpy("    public final static char non_terminal_index[] = symbol_index;\n");
       } else {
-        prnt_shorts("\nconst unsigned short CLASS_HEADER symbol_index[] = {0,\n", 1, num_symbols, 10, temp);
+        prnt_shorts("\nconst unsigned short CLASS_HEADER symbol_index[] = {0,\n", 1, num_symbols, 10, temp, cli_options);
         mystrcpy("const unsigned short *CLASS_HEADER terminal_index[] = &(symbol_index[0]);\n");
         mystrcpy("const unsigned short *CLASS_HEADER non_terminal_index[] = &(symbol_index[0]);\n");
       }
@@ -660,7 +660,7 @@ void print_error_maps(void) {
     }
     ffree(list);
   }
-  if (java_bit) {
+  if (cli_options->java_bit) {
     // Print java names.
     long num_bytes = 0;
     max_name_length = 0;
@@ -704,7 +704,7 @@ void print_error_maps(void) {
       *output_ptr++ = '\n';
       BUFFER_CHECK(sysdcl);
     }
-    if (java_bit) {
+    if (cli_options->java_bit) {
       mystrcpy("    };\n");
     } else {
       mystrcpy("                          };\n");
@@ -752,7 +752,7 @@ void print_error_maps(void) {
     }
     *(output_ptr - 1) = '\n'; /*overwrite last comma*/
     BUFFER_CHECK(sysdcl);
-    if (java_bit) {
+    if (cli_options->java_bit) {
       mystrcpy("    };\n");
     } else {
       mystrcpy("                          };\n");
@@ -780,7 +780,7 @@ void print_error_maps(void) {
       *(output_ptr - 1) = '\n';
       BUFFER_CHECK(sysdcl);
     }
-    if (java_bit) {
+    if (cli_options->java_bit) {
       mystrcpy("    };\n");
     } else {
       mystrcpy("                          };\n");
@@ -788,20 +788,20 @@ void print_error_maps(void) {
     /* Compute and list space required for NAME_START map.           */
     PRNT2(msg_line, "    Storage required for NAME_START map: %ld Bytes", 2 * num_names);
     /* Write out NAME_LENGTH array */
-    prnt_shorts("\nconst unsigned char  CLASS_HEADER name_length[] = {0,\n", 1, num_names, 10, name_len);
+    prnt_shorts("\nconst unsigned char  CLASS_HEADER name_length[] = {0,\n", 1, num_names, 10, name_len, cli_options);
     /* Compute and list space required for NAME_LENGTH map.          */
     PRNT2(msg_line, "    Storage required for NAME_LENGTH map: %ld Bytes", num_names);
     ffree(name_len);
   }
   if (num_scopes > 0) {
-    if (scope_rhs_size <= (java_bit ? 127 : 255)) {
-      if (java_bit) {
+    if (scope_rhs_size <= (cli_options->java_bit ? 127 : 255)) {
+      if (cli_options->java_bit) {
         mystrcpy("\n    public final static byte scope_prefix[] = {\n");
       } else {
         mystrcpy("\nconst unsigned char  CLASS_HEADER scope_prefix[] = {\n");
       }
     } else {
-      if (java_bit) {
+      if (cli_options->java_bit) {
         mystrcpy("\n    public final static char scope_prefix[] = {\n");
       } else {
         mystrcpy("\nconst unsigned short CLASS_HEADER scope_prefix[] = {\n");
@@ -824,19 +824,19 @@ void print_error_maps(void) {
       *(output_ptr - 1) = '\n';
       BUFFER_CHECK(sysdcl);
     }
-    if (java_bit) {
+    if (cli_options->java_bit) {
       mystrcpy("    };\n");
     } else {
       mystrcpy("                          };\n");
     }
-    if (scope_rhs_size <= (java_bit ? 127 : 255)) {
-      if (java_bit) {
+    if (scope_rhs_size <= (cli_options->java_bit ? 127 : 255)) {
+      if (cli_options->java_bit) {
         mystrcpy("\n    public final static byte scope_suffix[] = {\n");
       } else {
         mystrcpy("\nconst unsigned char  CLASS_HEADER scope_suffix[] = {\n");
       }
     } else {
-      if (java_bit) {
+      if (cli_options->java_bit) {
         mystrcpy("\n    public final static char scope_suffix[] = {\n");
       } else {
         mystrcpy("\nconst unsigned short CLASS_HEADER scope_suffix[] = {\n");
@@ -859,19 +859,19 @@ void print_error_maps(void) {
       *(output_ptr - 1) = '\n';
       BUFFER_CHECK(sysdcl);
     }
-    if (java_bit) {
+    if (cli_options->java_bit) {
       mystrcpy("    };\n");
     } else {
       mystrcpy("                          };\n");
     }
-    if (num_symbols <= (java_bit ? 127 : 255)) {
-      if (java_bit) {
+    if (num_symbols <= (cli_options->java_bit ? 127 : 255)) {
+      if (cli_options->java_bit) {
         mystrcpy("\n    public final static byte scope_lhs[] = {\n");
       } else {
         mystrcpy("\nconst unsigned char  CLASS_HEADER scope_lhs[] = {\n");
       }
     } else {
-      if (java_bit) {
+      if (cli_options->java_bit) {
         mystrcpy("\n    public final static char scope_lhs[] = {\n");
       } else {
         mystrcpy("\nconst unsigned short CLASS_HEADER scope_lhs[] = {\n");
@@ -894,19 +894,19 @@ void print_error_maps(void) {
       *(output_ptr - 1) = '\n';
       BUFFER_CHECK(sysdcl);
     }
-    if (java_bit) {
+    if (cli_options->java_bit) {
       mystrcpy("    };\n");
     } else {
       mystrcpy("                          };\n");
     }
-    if (num_terminals <= (java_bit ? 127 : 255)) {
-      if (java_bit) {
+    if (num_terminals <= (cli_options->java_bit ? 127 : 255)) {
+      if (cli_options->java_bit) {
         mystrcpy("\n    public final static byte scope_la[] = {\n");
       } else {
         mystrcpy("\nconst unsigned char  CLASS_HEADER scope_la[] = {\n");
       }
     } else {
-      if (java_bit) {
+      if (cli_options->java_bit) {
         mystrcpy("\n    public final static char scope_la[] = {\n");
       } else {
         mystrcpy("\nconst unsigned short CLASS_HEADER scope_la[] = {\n");
@@ -929,19 +929,19 @@ void print_error_maps(void) {
       *(output_ptr - 1) = '\n';
       BUFFER_CHECK(sysdcl);
     }
-    if (java_bit) {
+    if (cli_options->java_bit) {
       mystrcpy("    };\n");
     } else {
       mystrcpy("                          };\n");
     }
-    if (scope_state_size <= (java_bit ? 127 : 255)) {
-      if (java_bit) {
+    if (scope_state_size <= (cli_options->java_bit ? 127 : 255)) {
+      if (cli_options->java_bit) {
         mystrcpy("\n    public final static byte scope_state_set[] = {\n");
       } else {
         mystrcpy("\nconst unsigned char  CLASS_HEADER scope_state_set[] = {\n");
       }
     } else {
-      if (java_bit) {
+      if (cli_options->java_bit) {
         mystrcpy("\n    public final static char scope_state_set[] = {\n");
       } else {
         mystrcpy("\nconst unsigned short CLASS_HEADER scope_state_set[] = {\n");
@@ -964,25 +964,25 @@ void print_error_maps(void) {
       *(output_ptr - 1) = '\n';
       BUFFER_CHECK(sysdcl);
     }
-    if (java_bit) {
+    if (cli_options->java_bit) {
       mystrcpy("    };\n");
     } else {
       mystrcpy("                          };\n");
     }
-    if (num_symbols <= (java_bit ? 127 : 255)) {
-      if (java_bit) {
-        prnt_shorts("\n    public final static byte scope_rhs[] = {0,\n", 1, scope_rhs_size, 10, scope_right_side);
+    if (num_symbols <= (cli_options->java_bit ? 127 : 255)) {
+      if (cli_options->java_bit) {
+        prnt_shorts("\n    public final static byte scope_rhs[] = {0,\n", 1, scope_rhs_size, 10, scope_right_side, cli_options);
       } else {
-        prnt_shorts("\nconst unsigned char  CLASS_HEADER scope_rhs[] = {0,\n", 1, scope_rhs_size, 10, scope_right_side);
+        prnt_shorts("\nconst unsigned char  CLASS_HEADER scope_rhs[] = {0,\n", 1, scope_rhs_size, 10, scope_right_side, cli_options);
       }
     } else {
-      if (java_bit) {
-        prnt_shorts("\n    public final static char scope_rhs[] = {0,\n", 1, scope_rhs_size, 10, scope_right_side);
+      if (cli_options->java_bit) {
+        prnt_shorts("\n    public final static char scope_rhs[] = {0,\n", 1, scope_rhs_size, 10, scope_right_side, cli_options);
       } else {
-        prnt_shorts("\nconst unsigned short CLASS_HEADER scope_rhs[] = {0,\n", 1, scope_rhs_size, 10, scope_right_side);
+        prnt_shorts("\nconst unsigned short CLASS_HEADER scope_rhs[] = {0,\n", 1, scope_rhs_size, 10, scope_right_side, cli_options);
       }
     }
-    if (java_bit) {
+    if (cli_options->java_bit) {
       mystrcpy("\n    public final static char scope_state[] = {0,\n");
     } else {
       mystrcpy("\nconst unsigned short CLASS_HEADER scope_state[] = {0,\n");
@@ -1008,19 +1008,19 @@ void print_error_maps(void) {
       *(output_ptr - 1) = '\n';
       BUFFER_CHECK(sysdcl);
     }
-    if (java_bit) {
+    if (cli_options->java_bit) {
       mystrcpy("    };\n");
     } else {
       mystrcpy("                          };\n");
     }
-    if (num_symbols <= (java_bit ? 127 : 255)) {
-      if (java_bit) {
+    if (num_symbols <= (cli_options->java_bit ? 127 : 255)) {
+      if (cli_options->java_bit) {
         mystrcpy("\n    public final static byte in_symb[] = {0,\n");
       } else {
         mystrcpy("\nconst unsigned char  CLASS_HEADER in_symb[] = {0,\n");
       }
     } else {
-      if (java_bit) {
+      if (cli_options->java_bit) {
         mystrcpy("\n    public final static char in_symb[] = {0,\n");
       } else {
         mystrcpy("\nconst unsigned short CLASS_HEADER in_symb[] = {0,\n");
@@ -1056,7 +1056,7 @@ void print_error_maps(void) {
       *(output_ptr - 1) = '\n';
       BUFFER_CHECK(sysdcl);
     }
-    if (java_bit) {
+    if (cli_options->java_bit) {
       mystrcpy("    };\n");
     } else {
       mystrcpy("                          };\n");
@@ -1064,27 +1064,27 @@ void print_error_maps(void) {
   }
 }
 
-void common(const bool byte_check_bit) {
+void common(const bool byte_check_bit, struct CLIOptions* cli_options) {
   // Write table common.
   {
     if (error_maps_bit) {
-      print_error_maps();
+      print_error_maps(cli_options);
     }
     if (!byte_check_bit) {
-      if (java_bit) {
+      if (cli_options->java_bit) {
         PRNT("\n***Warning: Base Check vector contains value > 127. 16-bit words used.");
       } else {
         PRNT("\n***Warning: Base Check vector contains value > 255. 16-bit words used.");
       }
     }
     if (!byte_terminal_range) {
-      if (java_bit) {
+      if (cli_options->java_bit) {
         PRNT("***Warning: Terminal symbol > 127. 16-bit words used.");
       } else {
         PRNT("***Warning: Terminal symbol > 255. 16-bit words used.");
       }
     }
-    if (java_bit) {
+    if (cli_options->java_bit) {
       mystrcpy("}\n");
     }
     fwrite(output_buffer, sizeof(char), output_ptr - &output_buffer[0], sysdcl);
@@ -1096,7 +1096,7 @@ void common(const bool byte_check_bit) {
               2 * MAX_PARM_SIZE + /* max length of prefix + suffix */
               64]; /* +64 for error messages lines  */
     /* or other fillers(blank, =,...)*/
-    if (java_bit) {
+    if (cli_options->java_bit) {
       strcpy(line, "interface ");
       strcat(line, sym_tag);
       strcat(line, "\n{\n    public final static int\n");
@@ -1114,7 +1114,7 @@ void common(const bool byte_check_bit) {
         PRNT2(line, "%s may be an invalid variable name.\n", tok);
       }
       sprintf(line, "      %s%s%s = %i,\n", prefix, tok, suffix, symbol_map[symbol]);
-      if (c_bit || cpp_bit) {
+      if (cli_options->c_bit || cli_options->cpp_bit) {
         while (strlen(line) > PARSER_LINE_SIZE) {
           fwrite(line, sizeof(char), PARSER_LINE_SIZE - 2, syssym);
           fprintf(syssym, "\\\n");
@@ -1123,18 +1123,18 @@ void common(const bool byte_check_bit) {
       }
     }
     line[strlen(line) - 2] = '\0'; /* remove the string ",\n" from last line */
-    fprintf(syssym, "%s%s", line, java_bit ? ";\n}\n" : "\n     };\n");
+    fprintf(syssym, "%s%s", line, cli_options->java_bit ? ";\n}\n" : "\n     };\n");
   }
 
   // print definitions
   {
-    if (java_bit) {
+    if (cli_options->java_bit) {
       fprintf(sysdef, "interface %s\n{\n    public final static int\n\n", def_tag);
     } else {
       fprintf(sysdef, "enum {\n");
     }
     if (error_maps_bit) {
-      if (java_bit) {
+      if (cli_options->java_bit) {
         fprintf(sysdef,
                 "      ERROR_SYMBOL      = %d,\n"
                 "      MAX_NAME_LENGTH   = %ld,\n"
@@ -1159,7 +1159,7 @@ void common(const bool byte_check_bit) {
                 num_states);
       }
     }
-    if (java_bit) {
+    if (cli_options->java_bit) {
       fprintf(sysdef,
               "      NT_OFFSET         = %ld,\n"
               "      SCOPE_UBOUND      = %ld,\n"
@@ -1238,7 +1238,7 @@ void common(const bool byte_check_bit) {
 
   // print externs
   {
-    if (c_bit || cpp_bit) {
+    if (cli_options->c_bit || cli_options->cpp_bit) {
       fprintf(sysprs,
               "%s SCOPE_REPAIR\n"
               "%s DEFERRED_RECOVERY\n"
@@ -1249,14 +1249,14 @@ void common(const bool byte_check_bit) {
               error_maps_bit ? "#define" : "#undef ",
               table_opt == OPTIMIZE_SPACE ? "#define" : "#undef ");
     }
-    if (c_bit) {
+    if (cli_options->c_bit) {
       fprintf(sysprs,
               "#define original_state(state) (-%s[state])\n"
               "#define asi(state)            asb[original_state(state)]\n"
               "#define nasi(state)           nasb[original_state(state)]\n"
               "#define in_symbol(state)      in_symb[original_state(state)]\n\n",
               table_opt == OPTIMIZE_TIME ? "check" : "base_check");
-    } else if (cpp_bit) {
+    } else if (cli_options->cpp_bit) {
       fprintf(sysprs,
               "class LexStream;\n\n"
               "class %s_table\n"
@@ -1278,7 +1278,7 @@ void common(const bool byte_check_bit) {
         }
       }
       fprintf(sysprs, "\n");
-    } else if (java_bit) {
+    } else if (cli_options->java_bit) {
       fprintf(sysprs, "abstract class %s extends %s implements %s\n{\n", prs_tag, dcl_tag, def_tag);
       if (error_maps_bit || debug_bit) {
         fprintf(sysprs, "    public final static int original_state(int state) { return -%s(state); }\n", table_opt == OPTIMIZE_TIME ? "check" : "base_check");
@@ -1291,34 +1291,34 @@ void common(const bool byte_check_bit) {
         fprintf(sysprs, "\n");
       }
     }
-    if (c_bit || cpp_bit) {
-      fprintf(sysprs, "%s const unsigned char  rhs[];\n", c_bit ? "extern" : "    static");
+    if (cli_options->c_bit || cli_options->cpp_bit) {
+      fprintf(sysprs, "%s const unsigned char  rhs[];\n", cli_options->c_bit ? "extern" : "    static");
       if (check_size > 0 || table_opt == OPTIMIZE_TIME) {
         const bool small = byte_check_bit && !error_maps_bit;
         fprintf(sysprs, "%s const %s check_table[];\n"
                 "%s const %s *%s;\n",
-                c_bit ? "extern" : "    static",
+                cli_options->c_bit ? "extern" : "    static",
                 small ? "unsigned char " : "  signed short",
-                c_bit ? "extern" : "    static",
+                cli_options->c_bit ? "extern" : "    static",
                 small ? "unsigned char " : "  signed short",
                 table_opt == OPTIMIZE_TIME ? "check" : "base_check");
       }
       fprintf(sysprs, "%s const unsigned short lhs[];\n"
               "%s const unsigned short *%s;\n",
-              c_bit ? "extern" : "    static",
-              c_bit ? "extern" : "    static",
+              cli_options->c_bit ? "extern" : "    static",
+              cli_options->c_bit ? "extern" : "    static",
               table_opt == OPTIMIZE_TIME ? "action" : "base_action");
       if (goto_default_bit) {
-        fprintf(sysprs, "%s const unsigned short default_goto[];\n", c_bit ? "extern" : "    static");
+        fprintf(sysprs, "%s const unsigned short default_goto[];\n", cli_options->c_bit ? "extern" : "    static");
       }
       if (table_opt == OPTIMIZE_SPACE) {
-        fprintf(sysprs, "%s const unsigned %s term_check[];\n", c_bit ? "extern" : "    static", num_terminals <= (java_bit ? 127 : 255) ? "char " : "short");
-        fprintf(sysprs, "%s const unsigned short term_action[];\n", c_bit ? "extern" : "    static");
+        fprintf(sysprs, "%s const unsigned %s term_check[];\n", cli_options->c_bit ? "extern" : "    static", num_terminals <= (cli_options->java_bit ? 127 : 255) ? "char " : "short");
+        fprintf(sysprs, "%s const unsigned short term_action[];\n", cli_options->c_bit ? "extern" : "    static");
         if (shift_default_bit) {
-          fprintf(sysprs, "%s const unsigned short default_reduce[];\n", c_bit ? "extern" : "    static");
-          fprintf(sysprs, "%s const unsigned short shift_state[];\n", c_bit ? "extern" : "    static");
-          fprintf(sysprs, "%s const unsigned %s shift_check[];\n", c_bit ? "extern" : "    static", num_terminals <= (java_bit ? 127 : 255) ? "char " : "short");
-          fprintf(sysprs, "%s const unsigned short default_shift[];\n", c_bit ? "extern" : "    static");
+          fprintf(sysprs, "%s const unsigned short default_reduce[];\n", cli_options->c_bit ? "extern" : "    static");
+          fprintf(sysprs, "%s const unsigned short shift_state[];\n", cli_options->c_bit ? "extern" : "    static");
+          fprintf(sysprs, "%s const unsigned %s shift_check[];\n", cli_options->c_bit ? "extern" : "    static", num_terminals <= (cli_options->java_bit ? 127 : 255) ? "char " : "short");
+          fprintf(sysprs, "%s const unsigned short default_shift[];\n", cli_options->c_bit ? "extern" : "    static");
         }
       }
       if (error_maps_bit) {
@@ -1331,32 +1331,32 @@ void common(const bool byte_check_bit) {
                 "%s const unsigned short name_start[];\n"
                 "%s const unsigned char  name_length[];\n"
                 "%s const          char  string_buffer[];\n",
-                c_bit ? "extern" : "    static",
-                c_bit ? "extern" : "    static",
-                byte_terminal_range <= (java_bit ? 127 : 255) ? "char " : "short",
-                c_bit ? "extern" : "    static",
-                c_bit ? "extern" : "    static",
-                c_bit ? "extern" : "    static",
-                c_bit ? "extern" : "    static",
-                c_bit ? "extern" : "    static");
+                cli_options->c_bit ? "extern" : "    static",
+                cli_options->c_bit ? "extern" : "    static",
+                byte_terminal_range <= (cli_options->java_bit ? 127 : 255) ? "char " : "short",
+                cli_options->c_bit ? "extern" : "    static",
+                cli_options->c_bit ? "extern" : "    static",
+                cli_options->c_bit ? "extern" : "    static",
+                cli_options->c_bit ? "extern" : "    static",
+                cli_options->c_bit ? "extern" : "    static");
         if (table_opt == OPTIMIZE_SPACE) {
           fprintf(sysprs,
                   "%s const unsigned %s terminal_index[];\n"
                   "%s const unsigned %s non_terminal_index[];\n",
-                  c_bit ? "extern" : "    static",
-                  num_names <= (java_bit ? 127 : 255) ? "char " : "short",
-                  c_bit ? "extern" : "    static",
-                  num_names <= (java_bit ? 127 : 255) ? "char " : "short");
+                  cli_options->c_bit ? "extern" : "    static",
+                  num_names <= (cli_options->java_bit ? 127 : 255) ? "char " : "short",
+                  cli_options->c_bit ? "extern" : "    static",
+                  num_names <= (cli_options->java_bit ? 127 : 255) ? "char " : "short");
         } else {
           fprintf(sysprs, "%s const unsigned %s symbol_index[];\n"
                   "%s const unsigned %s *terminal_index;\n"
                   "%s const unsigned %s *non_terminal_index;\n",
-                  c_bit ? "extern" : "    static",
-                  num_names <= (java_bit ? 127 : 255) ? "char " : "short",
-                  c_bit ? "extern" : "    static",
-                  num_names <= (java_bit ? 127 : 255) ? "char " : "short",
-                  c_bit ? "extern" : "    static",
-                  num_names <= (java_bit ? 127 : 255) ? "char " : "short");
+                  cli_options->c_bit ? "extern" : "    static",
+                  num_names <= (cli_options->java_bit ? 127 : 255) ? "char " : "short",
+                  cli_options->c_bit ? "extern" : "    static",
+                  num_names <= (cli_options->java_bit ? 127 : 255) ? "char " : "short",
+                  cli_options->c_bit ? "extern" : "    static",
+                  num_names <= (cli_options->java_bit ? 127 : 255) ? "char " : "short");
         }
         if (num_scopes > 0) {
           fprintf(sysprs, "%s const unsigned %s scope_prefix[];\n"
@@ -1367,21 +1367,21 @@ void common(const bool byte_check_bit) {
                   "%s const unsigned %s scope_rhs[];\n"
                   "%s const unsigned short scope_state[];\n"
                   "%s const unsigned %s in_symb[];\n",
-                  c_bit ? "extern" : "    static",
-                  scope_rhs_size <= (java_bit ? 127 : 255) ? "char " : "short",
-                  c_bit ? "extern" : "    static",
-                  scope_rhs_size <= (java_bit ? 127 : 255) ? "char " : "short",
-                  c_bit ? "extern" : "    static",
-                  num_symbols <= (java_bit ? 127 : 255) ? "char " : "short",
-                  c_bit ? "extern" : "    static",
-                  num_terminals <= (java_bit ? 127 : 255) ? "char " : "short",
-                  c_bit ? "extern" : "    static",
-                  scope_state_size <= (java_bit ? 127 : 255) ? "char " : "short",
-                  c_bit ? "extern" : "    static",
-                  num_symbols <= (java_bit ? 127 : 255) ? "char " : "short",
-                  c_bit ? "extern" : "    static",
-                  c_bit ? "extern" : "    static",
-                  num_symbols <= (java_bit ? 127 : 255) ? "char " : "short");
+                  cli_options->c_bit ? "extern" : "    static",
+                  scope_rhs_size <= (cli_options->java_bit ? 127 : 255) ? "char " : "short",
+                  cli_options->c_bit ? "extern" : "    static",
+                  scope_rhs_size <= (cli_options->java_bit ? 127 : 255) ? "char " : "short",
+                  cli_options->c_bit ? "extern" : "    static",
+                  num_symbols <= (cli_options->java_bit ? 127 : 255) ? "char " : "short",
+                  cli_options->c_bit ? "extern" : "    static",
+                  num_terminals <= (cli_options->java_bit ? 127 : 255) ? "char " : "short",
+                  cli_options->c_bit ? "extern" : "    static",
+                  scope_state_size <= (cli_options->java_bit ? 127 : 255) ? "char " : "short",
+                  cli_options->c_bit ? "extern" : "    static",
+                  num_symbols <= (cli_options->java_bit ? 127 : 255) ? "char " : "short",
+                  cli_options->c_bit ? "extern" : "    static",
+                  cli_options->c_bit ? "extern" : "    static",
+                  num_symbols <= (cli_options->java_bit ? 127 : 255) ? "char " : "short");
         }
       }
       fprintf(sysprs, "\n");
@@ -1390,13 +1390,13 @@ void common(const bool byte_check_bit) {
       if (goto_default_bit) {
         // non_terminal_space_action
         {
-          if (c_bit) {
+          if (cli_options->c_bit) {
             fprintf(sysprs,
                     "#define nt_action(state, sym) \\\n"
                     "           ((base_check[state + sym] == sym) ? \\\n"
                     "               base_action[state + sym] : "
                     "default_goto[sym])\n\n");
-          } else if (cpp_bit) {
+          } else if (cli_options->cpp_bit) {
             fprintf(sysprs,
                     "    static int nt_action(int state, int sym)\n"
                     "    {\n"
@@ -1404,7 +1404,7 @@ void common(const bool byte_check_bit) {
                     "                             ? base_action[state + sym]\n"
                     "                             : default_goto[sym];\n"
                     "    }\n\n");
-          } else if (java_bit) {
+          } else if (cli_options->java_bit) {
             fprintf(sysprs,
                     "    public final static int nt_action(int state, int sym)\n"
                     "    {\n"
@@ -1417,15 +1417,15 @@ void common(const bool byte_check_bit) {
       } else {
         // non_terminal_no_goto_default_space_action
         {
-          if (c_bit) {
+          if (cli_options->c_bit) {
             fprintf(sysprs,
                     "#define nt_action(state, sym) "
                     "base_action[state + sym]\n\n");
-          } else if (cpp_bit) {
+          } else if (cli_options->cpp_bit) {
             fprintf(sysprs,
                     "    static int nt_action(int state, int sym)\n"
                     "    {\n        return base_action[state + sym];\n    }\n\n");
-          } else if (java_bit) {
+          } else if (cli_options->java_bit) {
             fprintf(sysprs,
                     "    public final static int nt_action(int state, int sym)\n"
                     "    {\n        return base_action[state + sym];\n    }\n\n");
@@ -1436,7 +1436,7 @@ void common(const bool byte_check_bit) {
         if (shift_default_bit) {
           // terminal_shift_default_space_lalr_k
           {
-            if (c_bit) {
+            if (cli_options->c_bit) {
               fprintf(sysprs,
                       "static int t_action(int state, int sym, TokenObject next_tok)\n"
                       "{\n"
@@ -1474,7 +1474,7 @@ void common(const bool byte_check_bit) {
                       "    }\n\n"
                       "    return act;\n"
                       "}\n\n");
-            } else if (cpp_bit) {
+            } else if (cli_options->cpp_bit) {
               fprintf(sysprs,
                       "    static int t_action(int act, int sym, LexStream *stream)\n"
                       "    {\n"
@@ -1516,7 +1516,7 @@ void common(const bool byte_check_bit) {
                       "        }\n\n"
                       "        return act;\n"
                       "    }\n");
-            } else if (java_bit) {
+            } else if (cli_options->java_bit) {
               fprintf(sysprs,
                       "    public final static int t_action(int act, int sym, LexStream stream)\n"
                       "    {\n"
@@ -1563,7 +1563,7 @@ void common(const bool byte_check_bit) {
         } else {
           // terminal_space_lalr_k
           {
-            if (c_bit) {
+            if (cli_options->c_bit) {
               fprintf(sysprs,
                       "static int t_action(int state, int sym, TokenObject next_tok)\n"
                       "{\n"
@@ -1585,7 +1585,7 @@ void common(const bool byte_check_bit) {
                       "    }\n\n"
                       "    return act;\n"
                       "}\n\n");
-            } else if (cpp_bit) {
+            } else if (cli_options->cpp_bit) {
               fprintf(sysprs,
                       "    static int t_action(int act, int sym, LexStream *stream)\n"
                       "    {\n"
@@ -1608,7 +1608,7 @@ void common(const bool byte_check_bit) {
                       "        }\n\n"
                       "        return act;\n"
                       "    }\n");
-            } else if (java_bit) {
+            } else if (cli_options->java_bit) {
               fprintf(sysprs,
                       "    public final static int t_action(int act, int sym, LexStream stream)\n"
                       "    {\n"
@@ -1638,7 +1638,7 @@ void common(const bool byte_check_bit) {
         if (shift_default_bit) {
           // terminal_shift_default_space_action
           {
-            if (c_bit) {
+            if (cli_options->c_bit) {
               fprintf(sysprs,
                       "static int t_action(int state, int sym, TokenObject next_tok)\n"
                       "{\n"
@@ -1652,7 +1652,7 @@ void common(const bool byte_check_bit) {
                       "    return ((shift_check[shift_state[i] + sym] == sym) ?\n"
                       "                 default_shift[sym] : default_reduce[i]);\n"
                       "}\n\n");
-            } else if (cpp_bit) {
+            } else if (cli_options->cpp_bit) {
               fprintf(sysprs,
                       "    static int t_action(int state, int sym, LexStream *stream)\n"
                       "    {\n"
@@ -1665,7 +1665,7 @@ void common(const bool byte_check_bit) {
                       "        return ((shift_check[shift_state[i] + sym] == sym) ?\n"
                       "                      default_shift[sym] : default_reduce[i]);\n"
                       "    }\n");
-            } else if (java_bit) {
+            } else if (cli_options->java_bit) {
               fprintf(sysprs,
                       "    public final static int t_action(int state, int sym, LexStream stream)\n"
                       "    {\n"
@@ -1683,12 +1683,12 @@ void common(const bool byte_check_bit) {
         } else {
           // terminal_space_action
           {
-            if (c_bit) {
+            if (cli_options->c_bit) {
               fprintf(sysprs,
                       "#define t_action(state, sym, next_tok) \\\n"
                       "  term_action[term_check[base_action[state]+sym] == sym ? \\\n"
                       "          base_action[state] + sym : base_action[state]]\n\n");
-            } else if (cpp_bit) {
+            } else if (cli_options->cpp_bit) {
               fprintf(sysprs,
                       "    static int t_action(int state, int sym, LexStream *stream)\n"
                       "    {\n"
@@ -1697,7 +1697,7 @@ void common(const bool byte_check_bit) {
                       "                               ? base_action[state] + sym\n"
                       "                               : base_action[state]];\n"
                       "    }\n");
-            } else if (java_bit) {
+            } else if (cli_options->java_bit) {
               fprintf(sysprs,
                       "    public final static int t_action(int state, int sym, LexStream stream)\n"
                       "    {\n"
@@ -1714,13 +1714,13 @@ void common(const bool byte_check_bit) {
       if (goto_default_bit) {
         // non_terminal_time_action
         {
-          if (c_bit) {
+          if (cli_options->c_bit) {
             fprintf(sysprs,
                     "#define nt_action(state, sym) \\\n"
                     "           ((check[state+sym] == sym) ? \\\n"
                     "                   action[state + sym] : "
                     "default_goto[sym])\n\n");
-          } else if (cpp_bit) {
+          } else if (cli_options->cpp_bit) {
             fprintf(sysprs,
                     "    static int nt_action(int state, int sym)\n"
                     "    {\n"
@@ -1728,7 +1728,7 @@ void common(const bool byte_check_bit) {
                     "                                    ? action[state + sym]\n"
                     "                                    : default_goto[sym];\n"
                     "    }\n\n");
-          } else if (java_bit) {
+          } else if (cli_options->java_bit) {
             fprintf(sysprs,
                     "    public final static int nt_action(int state, int sym)\n"
                     "    {\n"
@@ -1741,14 +1741,14 @@ void common(const bool byte_check_bit) {
       } else {
         // non_terminal_no_goto_default_time_action
         {
-          if (c_bit) {
+          if (cli_options->c_bit) {
             fprintf(sysprs,
                     "#define nt_action(state, sym) action[state + sym]\n\n");
-          } else if (cpp_bit) {
+          } else if (cli_options->cpp_bit) {
             fprintf(sysprs,
                     "    static int nt_action(int state, int sym)\n"
                     "    {\n        return action[state + sym];\n    }\n\n");
-          } else if (java_bit) {
+          } else if (cli_options->java_bit) {
             fprintf(sysprs,
                     "    public final static int nt_action(int state, int sym)\n"
                     "    {\n        return action[state + sym];\n    }\n\n");
@@ -1758,7 +1758,7 @@ void common(const bool byte_check_bit) {
       if (lalr_level > 1) {
         // terminal_time_lalr_k
         {
-          if (c_bit) {
+          if (cli_options->c_bit) {
             fprintf(sysprs,
                     "static int t_action(int act, int sym, TokenObject next_tok)\n"
                     "{\n"
@@ -1779,7 +1779,7 @@ void common(const bool byte_check_bit) {
                     "    }\n\n"
                     "    return act;\n"
                     "}\n\n");
-          } else if (cpp_bit) {
+          } else if (cli_options->cpp_bit) {
             fprintf(sysprs,
                     "    static int t_action(int act, int sym, LexStream *stream)\n"
                     "    {\n"
@@ -1801,7 +1801,7 @@ void common(const bool byte_check_bit) {
                     "        }\n\n"
                     "        return act;\n"
                     "    }\n\n");
-          } else if (java_bit) {
+          } else if (cli_options->java_bit) {
             fprintf(sysprs,
                     "    public final static int t_action(int act, int sym, LexStream stream)\n"
                     "    {\n"
@@ -1828,18 +1828,18 @@ void common(const bool byte_check_bit) {
       } else {
         // terminal_time_action
         {
-          if (c_bit) {
+          if (cli_options->c_bit) {
             fprintf(sysprs,
                     "#define t_action(state, sym, next_tok) \\\n"
                     "   action[check[state + sym] == sym ? state + sym : state]\n\n");
-          } else if (cpp_bit) {
+          } else if (cli_options->cpp_bit) {
             fprintf(sysprs,
                     "    static int t_action(int state, int sym, LexStream *stream)\n"
                     "    {\n"
                     "        return action[check[state + sym] == sym"
                     " ? state + sym : state];\n"
                     "    }\n");
-          } else if (java_bit) {
+          } else if (cli_options->java_bit) {
             fprintf(sysprs,
                     "    public final static int t_action(int state, int sym, LexStream stream)\n"
                     "    {\n"
@@ -1850,19 +1850,19 @@ void common(const bool byte_check_bit) {
         }
       }
     }
-    if (cpp_bit) {
+    if (cli_options->cpp_bit) {
       fprintf(sysprs, "};\n");
-    } else if (java_bit) {
+    } else if (cli_options->java_bit) {
       fprintf(sysprs, "}\n");
     }
   }
 
   // exit parser files
   {
-    exit_file(&sysdcl, dcl_tag);
-    exit_file(&syssym, sym_tag);
-    exit_file(&sysdef, def_tag);
-    exit_file(&sysprs, prs_tag);
+    exit_file(&sysdcl, dcl_tag, cli_options);
+    exit_file(&syssym, sym_tag, cli_options);
+    exit_file(&sysdef, def_tag, cli_options);
+    exit_file(&sysprs, prs_tag, cli_options);
   }
 }
 
@@ -1876,7 +1876,7 @@ void common(const bool byte_check_bit) {
 /*   5) The map from each symbol into the set of staes that can              */
 /*      possibly be reached after a transition on the symbol in              */
 /*      question: TRANSITION_STATES                                          */
-void process_error_maps(void) {
+void process_error_maps(struct CLIOptions* cli_options) {
   long *state_start;
   long *state_stack;
   int *temp;
@@ -2450,7 +2450,7 @@ void process_error_maps(void) {
     offset += num_symbols;
   }
   PRNT2(msg_line, "    Storage required for indirect NAME map: %ld Bytes", num_bytes + offset);
-  if (scopes_bit) {
+  if (cli_options->scopes_bit) {
     for (int i = 1; i <= scope_rhs_size; i++) {
       if (scope_right_side[i] != 0) {
         scope_right_side[i] = symbol_map[scope_right_side[i]];
@@ -2602,7 +2602,7 @@ void process_error_maps(void) {
   ffree(term_list);
 }
 
-void print_space_parser() {
+void print_space_parser(struct CLIOptions* cli_options) {
   bool byte_check_bit = true; {
     int *check;
     int *action;
@@ -2672,7 +2672,7 @@ void print_space_parser() {
       for (int j = 1; j <= go_to.size; j++) {
         int symbol = go_to.map[j].symbol;
         int i = indx + symbol;
-        if (goto_default_bit || nt_check_bit) {
+        if (goto_default_bit || cli_options->nt_check_bit) {
           check[i] = symbol;
         }
         int act = go_to.map[j].action;
@@ -2697,13 +2697,13 @@ void print_space_parser() {
       }
     }
     for (int i = 1; i <= check_size; i++) {
-      if (check[i] < 0 || check[i] > (java_bit ? 127 : 255)) {
+      if (check[i] < 0 || check[i] > (cli_options->java_bit ? 127 : 255)) {
         byte_check_bit = false;
       }
     }
-    if (c_bit) {
+    if (cli_options->c_bit) {
       mystrcpy("\n#define CLASS_HEADER\n\n");
-    } else if (cpp_bit) {
+    } else if (cli_options->cpp_bit) {
       mystrcpy("\n#define CLASS_HEADER ");
       mystrcpy(prs_tag);
       mystrcpy("_table::\n\n");
@@ -2715,7 +2715,7 @@ void print_space_parser() {
       mystrcpy("\n{\n");
     }
     /* Write size of right hand side of rules followed by CHECK table.   */
-    if (java_bit) {
+    if (cli_options->java_bit) {
       mystrcpy("    public final static byte rhs[] = {0,\n");
     } else {
       mystrcpy("const unsigned char  CLASS_HEADER rhs[] = {0,\n");
@@ -2735,7 +2735,7 @@ void print_space_parser() {
     }
     *(output_ptr - 1) = '\n';
     BUFFER_CHECK(sysdcl);
-    if (java_bit) {
+    if (cli_options->java_bit) {
       mystrcpy("    };\n");
     } else {
       mystrcpy("                 };\n");
@@ -2743,13 +2743,13 @@ void print_space_parser() {
     *output_ptr++ = '\n';
     if (check_size > 0) {
       if (byte_check_bit && !error_maps_bit) {
-        if (java_bit) {
+        if (cli_options->java_bit) {
           mystrcpy("    public final static byte check_table[] = {\n");
         } else {
           mystrcpy("const unsigned char  CLASS_HEADER check_table[] = {\n");
         }
       } else {
-        if (java_bit) {
+        if (cli_options->java_bit) {
           mystrcpy("    public final static short check_table[] = {\n");
         } else {
           mystrcpy("const   signed short CLASS_HEADER check_table[] = {\n");
@@ -2770,20 +2770,20 @@ void print_space_parser() {
       }
       *(output_ptr - 1) = '\n';
       BUFFER_CHECK(sysdcl);
-      if (java_bit) {
+      if (cli_options->java_bit) {
         mystrcpy("    };\n");
       } else {
         mystrcpy("                 };\n");
       }
       *output_ptr++ = '\n';
       if (byte_check_bit && !error_maps_bit) {
-        if (java_bit) {
+        if (cli_options->java_bit) {
           mystrcpy("    public final static byte base_check(int i)\n    {\n        return check_table[i - (NUM_RULES + 1)];\n    }\n");
         } else {
           mystrcpy("const unsigned char  *CLASS_HEADER base_check = &(check_table[0]) - (NUM_RULES + 1);\n");
         }
       } else {
-        if (java_bit) {
+        if (cli_options->java_bit) {
           mystrcpy("    public final static short base_check(int i) \n    {\n        return check_table[i - (NUM_RULES + 1)];\n    }\n");
         } else {
           mystrcpy("const   signed short *CLASS_HEADER base_check = &(check_table[0]) - (NUM_RULES + 1);\n");
@@ -2792,7 +2792,7 @@ void print_space_parser() {
       *output_ptr++ = '\n';
     }
     /* Write left hand side symbol of rules followed by ACTION table.    */
-    if (java_bit) {
+    if (cli_options->java_bit) {
       mystrcpy("    public final static char lhs[] = {0,\n");
     } else {
       mystrcpy("const unsigned short CLASS_HEADER lhs[] = {0,\n");
@@ -2849,14 +2849,14 @@ void print_space_parser() {
       *(output_ptr - 1) = '\n';
       BUFFER_CHECK(sysdcl);
     }
-    if (java_bit) {
+    if (cli_options->java_bit) {
       mystrcpy("    };\n");
     } else {
       mystrcpy("                 };\n");
     }
     *output_ptr++ = '\n';
     BUFFER_CHECK(sysdcl);
-    if (java_bit) {
+    if (cli_options->java_bit) {
       mystrcpy("    public final static char base_action[] = lhs;\n");
     } else {
       mystrcpy("const unsigned short *CLASS_HEADER base_action = lhs;\n");
@@ -2928,28 +2928,28 @@ void print_space_parser() {
     PRNT2(msg_line, "     Number of Reduces: %d", reduce_count);
     PRNT2(msg_line, "     Number of Defaults: %d", default_count);
     /* Write Terminal Check Table.                                      */
-    if (num_terminals <= (java_bit ? 127 : 255)) {
-      if (java_bit) {
-        prnt_ints("\n    public final static byte term_check[] = {0,\n", 1, term_check_size, 15, check);
+    if (num_terminals <= (cli_options->java_bit ? 127 : 255)) {
+      if (cli_options->java_bit) {
+        prnt_ints("\n    public final static byte term_check[] = {0,\n", 1, term_check_size, 15, check, cli_options);
       } else {
-        prnt_ints("\nconst unsigned char  CLASS_HEADER term_check[] = {0,\n", 1, term_check_size, 15, check);
+        prnt_ints("\nconst unsigned char  CLASS_HEADER term_check[] = {0,\n", 1, term_check_size, 15, check, cli_options);
       }
     } else {
-      if (java_bit) {
-        prnt_ints("\n    public final static char term_check[] = {0,\n", 1, term_check_size, 15, check);
+      if (cli_options->java_bit) {
+        prnt_ints("\n    public final static char term_check[] = {0,\n", 1, term_check_size, 15, check, cli_options);
       } else {
-        prnt_ints("\nconst unsigned short CLASS_HEADER term_check[] = {0,\n", 1, term_check_size, 15, check);
+        prnt_ints("\nconst unsigned short CLASS_HEADER term_check[] = {0,\n", 1, term_check_size, 15, check, cli_options);
       }
     }
     /* Write Terminal Action Table.                                      */
-    if (java_bit) {
-      prnt_ints("\n    public final static char term_action[] = {0,\n", 1, term_action_size, 10, action);
+    if (cli_options->java_bit) {
+      prnt_ints("\n    public final static char term_action[] = {0,\n", 1, term_action_size, 10, action, cli_options);
     } else {
-      prnt_ints("\nconst unsigned short CLASS_HEADER term_action[] = {0,\n", 1, term_action_size, 10, action);
+      prnt_ints("\nconst unsigned short CLASS_HEADER term_action[] = {0,\n", 1, term_action_size, 10, action, cli_options);
     }
     /* If GOTO_DEFAULT is requested, we print out the GOTODEF vector.   */
     if (goto_default_bit) {
-      if (java_bit) {
+      if (cli_options->java_bit) {
         mystrcpy("\n    public final static char default_goto[] = {0,\n");
       } else {
         mystrcpy("\nconst unsigned short CLASS_HEADER default_goto[] = {0,\n");
@@ -2979,14 +2979,14 @@ void print_space_parser() {
         *(output_ptr - 1) = '\n';
         BUFFER_CHECK(sysdcl);
       }
-      if (java_bit) {
+      if (cli_options->java_bit) {
         mystrcpy("    };\n");
       } else {
         mystrcpy("                 };\n");
       }
     }
     if (shift_default_bit) {
-      if (java_bit) {
+      if (cli_options->java_bit) {
         mystrcpy("\n    public final static char default_reduce[] = {0,\n");
       } else {
         mystrcpy("\nconst unsigned short CLASS_HEADER default_reduce[] = {0,\n");
@@ -3010,12 +3010,12 @@ void print_space_parser() {
         *(output_ptr - 1) = '\n';
         BUFFER_CHECK(sysdcl);
       }
-      if (java_bit) {
+      if (cli_options->java_bit) {
         mystrcpy("    };\n");
       } else {
         mystrcpy("                 };\n");
       }
-      if (java_bit) {
+      if (cli_options->java_bit) {
         mystrcpy("\n    public final static char shift_state[] = {0,\n");
       } else {
         mystrcpy("\nconst unsigned short CLASS_HEADER shift_state[] = {0,\n");
@@ -3037,7 +3037,7 @@ void print_space_parser() {
         *(output_ptr - 1) = '\n';
         BUFFER_CHECK(sysdcl);
       }
-      if (java_bit) {
+      if (cli_options->java_bit) {
         mystrcpy("    };\n");
       } else {
         mystrcpy("                 };\n");
@@ -3054,14 +3054,14 @@ void print_space_parser() {
           check[indx + symbol] = symbol;
         }
       }
-      if (num_terminals <= (java_bit ? 127 : 255)) {
-        if (java_bit) {
+      if (num_terminals <= (cli_options->java_bit ? 127 : 255)) {
+        if (cli_options->java_bit) {
           mystrcpy("\n    public final static byte shift_check[] = {0,\n");
         } else {
           mystrcpy("\nconst unsigned char  CLASS_HEADER shift_check[] = {0,\n");
         }
       } else {
-        if (java_bit) {
+        if (cli_options->java_bit) {
           mystrcpy("\n    public final static char shift_check[] = {0,\n");
         } else {
           mystrcpy("\nconst unsigned short CLASS_HEADER shift_check[] = {0,\n");
@@ -3085,12 +3085,12 @@ void print_space_parser() {
         *(output_ptr - 1) = '\n';
         BUFFER_CHECK(sysdcl);
       }
-      if (java_bit) {
+      if (cli_options->java_bit) {
         mystrcpy("    };\n");
       } else {
         mystrcpy("                 };\n");
       }
-      if (java_bit) {
+      if (cli_options->java_bit) {
         mystrcpy("\n    public final static char default_shift[] = {0,\n");
       } else {
         mystrcpy("\nconst unsigned short CLASS_HEADER default_shift[] = {0,\n");
@@ -3126,7 +3126,7 @@ void print_space_parser() {
         *(output_ptr - 1) = '\n';
         BUFFER_CHECK(sysdcl);
       }
-      if (java_bit) {
+      if (cli_options->java_bit) {
         mystrcpy("    };\n");
       } else {
         mystrcpy("                 };\n");
@@ -3135,10 +3135,10 @@ void print_space_parser() {
     ffree(check);
     ffree(action);
   }
-  common(byte_check_bit);
+  common(byte_check_bit, cli_options);
 }
 
-void print_time_parser() {
+void print_time_parser(struct CLIOptions* cli_options) {
   bool byte_check_bit = true; {
     long *action;
     long *check;
@@ -3192,7 +3192,7 @@ void print_time_parser() {
         for (int j = 1; j <= go_to.size; j++) {
           int symbol = go_to.map[j].symbol;
           long i = indx + symbol;
-          if (goto_default_bit || nt_check_bit) {
+          if (goto_default_bit || cli_options->nt_check_bit) {
             check[i] = symbol;
           } else {
             check[i] = DEFAULT_SYMBOL;
@@ -3280,17 +3280,17 @@ void print_time_parser() {
       }
     }
     for (int i = 1; i <= (int) table_size; i++) {
-      if (check[i] < 0 || check[i] > (java_bit ? 127 : 255)) {
+      if (check[i] < 0 || check[i] > (cli_options->java_bit ? 127 : 255)) {
         byte_check_bit = 0;
       }
     }
-    if (c_bit) {
+    if (cli_options->c_bit) {
       mystrcpy("\n#define CLASS_HEADER\n\n");
-    } else if (cpp_bit) {
+    } else if (cli_options->cpp_bit) {
       mystrcpy("\n#define CLASS_HEADER ");
       mystrcpy(prs_tag);
       mystrcpy("_table::\n\n");
-    } else if (java_bit) {
+    } else if (cli_options->java_bit) {
       mystrcpy("abstract class ");
       mystrcpy(dcl_tag);
       mystrcpy(" implements ");
@@ -3298,7 +3298,7 @@ void print_time_parser() {
       mystrcpy("\n{\n");
     }
     /* Write size of right hand side of rules followed by CHECK table.   */
-    if (java_bit) {
+    if (cli_options->java_bit) {
       mystrcpy("    public final static byte rhs[] = {0,\n");
     } else {
       mystrcpy("const unsigned char  CLASS_HEADER rhs[] = {0,\n");
@@ -3318,7 +3318,7 @@ void print_time_parser() {
     }
     *(output_ptr - 1) = '\n';
     BUFFER_CHECK(sysdcl);
-    if (java_bit) {
+    if (cli_options->java_bit) {
       mystrcpy("    };\n");
     } else {
       mystrcpy("                 };\n");
@@ -3326,13 +3326,13 @@ void print_time_parser() {
     *output_ptr++ = '\n';
     /* Write CHECK table.                                            */
     if (byte_check_bit && !error_maps_bit) {
-      if (java_bit) {
+      if (cli_options->java_bit) {
         mystrcpy("    public final static byte check_table[] = {\n");
       } else {
         mystrcpy("const unsigned char  CLASS_HEADER check_table[] = {\n");
       }
     } else {
-      if (java_bit) {
+      if (cli_options->java_bit) {
         mystrcpy("     public final static short check_table[] = {\n");
       } else {
         mystrcpy("const   signed short CLASS_HEADER check_table[] = {\n");
@@ -3353,7 +3353,7 @@ void print_time_parser() {
     }
     *(output_ptr - 1) = '\n';
     BUFFER_CHECK(sysdcl);
-    if (java_bit) {
+    if (cli_options->java_bit) {
       mystrcpy("    };\n");
     } else {
       mystrcpy("                 };\n");
@@ -3361,13 +3361,13 @@ void print_time_parser() {
     *output_ptr++ = '\n';
     BUFFER_CHECK(sysdcl);
     if (byte_check_bit && !error_maps_bit) {
-      if (java_bit) {
+      if (cli_options->java_bit) {
         mystrcpy("    public final static byte check(int i) \n    {\n        return check_table[i - (NUM_RULES + 1)];\n    }\n");
       } else {
         mystrcpy("const unsigned char  *CLASS_HEADER check = &(check_table[0]) - (NUM_RULES + 1);\n");
       }
     } else {
-      if (java_bit) {
+      if (cli_options->java_bit) {
         mystrcpy("    public final static short check(int i) \n    {\n        return check_table[i - (NUM_RULES + 1)];\n    }\n");
       } else {
         mystrcpy("const   signed short *CLASS_HEADER check = &(check_table[0]) - (NUM_RULES + 1);\n");
@@ -3375,7 +3375,7 @@ void print_time_parser() {
     }
     *output_ptr++ = '\n';
     /* Write left hand side symbol of rules followed by ACTION table.    */
-    if (java_bit) {
+    if (cli_options->java_bit) {
       mystrcpy("    public final static char lhs[] = {0,\n");
     } else {
       mystrcpy("const unsigned short CLASS_HEADER lhs[] = {0,\n");
@@ -3433,14 +3433,14 @@ void print_time_parser() {
       *(output_ptr - 1) = '\n';
       BUFFER_CHECK(sysdcl);
     }
-    if (java_bit) {
+    if (cli_options->java_bit) {
       mystrcpy("    };\n");
     } else {
       mystrcpy("                 };\n");
     }
     *output_ptr++ = '\n';
     BUFFER_CHECK(sysdcl);
-    if (java_bit) {
+    if (cli_options->java_bit) {
       mystrcpy("    public final static char action[] = lhs;\n");
     } else {
       mystrcpy("const unsigned short *CLASS_HEADER action = lhs;\n");
@@ -3449,7 +3449,7 @@ void print_time_parser() {
     /* If GOTO_DEFAULT is requested, we print out the GOTODEF vector.   */
     if (goto_default_bit) {
       short *default_map = Allocate_short_array(num_symbols + 1);
-      if (java_bit) {
+      if (cli_options->java_bit) {
         mystrcpy("\n    public final static char default_goto[] = {0,\n");
       } else {
         mystrcpy("\nconst unsigned short CLASS_HEADER default_goto[] = {0,\n");
@@ -3486,7 +3486,7 @@ void print_time_parser() {
         *(output_ptr - 1) = '\n';
         BUFFER_CHECK(sysdcl);
       }
-      if (java_bit) {
+      if (cli_options->java_bit) {
         mystrcpy("    };\n");
       } else {
         mystrcpy("                 };\n");
@@ -3495,14 +3495,14 @@ void print_time_parser() {
     ffree(next);
     ffree(previous);
   }
-  common(byte_check_bit);
+  common(byte_check_bit, cli_options);
 }
 
-void init_parser_files(struct OutputFiles output_files) {
-  init_file(&sysdcl, output_files.dcl_file, dcl_tag);
-  init_file(&syssym, output_files.sym_file, sym_tag);
-  init_file(&sysdef, output_files.def_file, def_tag);
-  init_file(&sysprs, output_files.prs_file, prs_tag);
+void init_parser_files(struct OutputFiles output_files, struct CLIOptions* cli_options) {
+  init_file(&sysdcl, output_files.dcl_file, dcl_tag, cli_options);
+  init_file(&syssym, output_files.sym_file, sym_tag, cli_options);
+  init_file(&sysdef, output_files.def_file, def_tag, cli_options);
+  init_file(&sysprs, output_files.prs_file, prs_tag, cli_options);
 }
 
 /// PT_STATS prints all the states of the parser.

@@ -206,12 +206,10 @@ void options(char *file_prefix, struct CLIOptions* cli_options) {
       } else {
         flag = true;
       }
-      if (memcmp("ACTION", token, token_len) == 0) {
-        action_bit = flag;
-      } else if (memcmp("BYTE", token, token_len) == 0) {
+      if (memcmp("BYTE", token, token_len) == 0) {
         byte_bit = flag;
       } else if (memcmp("CONFLICTS", token, token_len) == 0) {
-        conflicts_bit = flag;
+        cli_options->conflicts_bit = flag;
       } else if (memcmp("DEBUG", token, token_len) == 0) {
         debug_bit = flag;
       } else if (memcmp("DEFERRED", token, token_len) == 0) {
@@ -231,11 +229,11 @@ void options(char *file_prefix, struct CLIOptions* cli_options) {
       } else if (memcmp("LIST", token, token_len) == 0) {
         cli_options->list_bit = flag;
       } else if (memcmp("NTCHECK", token, token_len) == 0) {
-        nt_check_bit = flag;
+        cli_options->nt_check_bit = flag;
       } else if (memcmp("READREDUCE", token, token_len) == 0) {
         read_reduce_bit = flag;
       } else if (memcmp("SCOPES", token, token_len) == 0) {
-        scopes_bit = flag;
+        cli_options->scopes_bit = flag;
       } else if (memcmp("SHIFTDEFAULT", token, token_len) == 0) {
         shift_default_bit = flag;
       } else if (memcmp("SINGLEPRODUCTIONS", token, token_len) == 0) {
@@ -244,13 +242,13 @@ void options(char *file_prefix, struct CLIOptions* cli_options) {
         cli_options->slr_bit = flag;
         lalr_level = 1;
       } else if (memcmp("STATES", token, token_len) == 0) {
-        states_bit = flag;
+        cli_options->states_bit = flag;
       } else if (memcmp("VERBOSE", token, token_len) == 0) {
         cli_options->verbose_bit = flag;
       } else if (memcmp("WARNINGS", token, token_len) == 0) {
         warnings_bit = flag;
       } else if (memcmp("XREF", token, token_len) == 0) {
-        xref_bit = flag;
+        cli_options->xref_bit = flag;
       } else {
         PRNTERR2(msg_line, "\"%s\" is an invalid option", temp);
       }
@@ -287,17 +285,17 @@ void options(char *file_prefix, struct CLIOptions* cli_options) {
         file_prefix[MIN(5, strlen(temp))] = '\0';
       } else if (memcmp("GENERATEPARSER", token, token_len) == 0) {
         if (strxeq(temp, "c")) {
-          c_bit = true;
-          cpp_bit = false;
-          java_bit = false;
+          cli_options->c_bit = true;
+          cli_options->cpp_bit = false;
+          cli_options->java_bit = false;
         } else if (strxeq(temp, "cpp")) {
-          c_bit = false;
-          cpp_bit = true;
-          java_bit = false;
+          cli_options->c_bit = false;
+          cli_options->cpp_bit = true;
+          cli_options->java_bit = false;
         } else if (strxeq(temp, "java")) {
-          c_bit = false;
-          cpp_bit = false;
-          java_bit = true;
+          cli_options->c_bit = false;
+          cli_options->cpp_bit = false;
+          cli_options->java_bit = true;
         } else {
           PRNTERR2(msg_line, "\"%s\" is an invalid language for %s", temp, token);
         }
@@ -465,22 +463,22 @@ struct CLIOptions process_options_lines(char *grm_file, struct OutputFiles *outp
     deferred_bit = false;
   }
   if (act_file[0] == '\0') {
-    sprintf(act_file, "%sact.%s", file_prefix, java_bit ? "java" : "h");
+    sprintf(act_file, "%sact.%s", file_prefix, cli_options.java_bit ? "java" : "h");
   }
   if (hact_file[0] == '\0') {
-    sprintf(hact_file, "%shdr.%s", file_prefix, java_bit ? "java" : "h");
+    sprintf(hact_file, "%shdr.%s", file_prefix, cli_options.java_bit ? "java" : "h");
   }
-  sprintf(output_files->sym_file, "%ssym.%s", file_prefix, java_bit ? "java" : "h");
-  sprintf(output_files->def_file, "%sdef.%s", file_prefix, java_bit ? "java" : "h");
-  sprintf(output_files->prs_file, "%sprs.%s", file_prefix, java_bit ? "java" : "h");
-  sprintf(output_files->dcl_file, "%sdcl.%s", file_prefix, java_bit ? "java" : "h");
+  sprintf(output_files->sym_file, "%ssym.%s", file_prefix, cli_options.java_bit ? "java" : "h");
+  sprintf(output_files->def_file, "%sdef.%s", file_prefix, cli_options.java_bit ? "java" : "h");
+  sprintf(output_files->prs_file, "%sprs.%s", file_prefix, cli_options.java_bit ? "java" : "h");
+  sprintf(output_files->dcl_file, "%sdcl.%s", file_prefix, cli_options.java_bit ? "java" : "h");
   /* turn everything on */
   if (cli_options.verbose_bit) {
     cli_options.first_bit = true;
     cli_options.follow_bit = true;
     cli_options.list_bit = true;
-    states_bit = true;
-    xref_bit = true;
+    cli_options.states_bit = true;
+    cli_options.xref_bit = true;
     warnings_bit = true;
   }
   /*                          PRINT OPTIONS:                                   */
@@ -489,18 +487,13 @@ struct CLIOptions process_options_lines(char *grm_file, struct OutputFiles *outp
   /* goes up, the bound of the array, opt_string, should be changed.           */
   /* BLOCKB, BLOCKE, HBLOCKB and HBLOCKE can generate the longest strings      */
   /* since their value can be up to MAX_PARM_SIZE characters long.             */
-  if (action_bit) {
-    strcpy(opt_string[++top], "ACTION");
-  } else {
-    strcpy(opt_string[++top], "NOACTION");
-  }
   sprintf(opt_string[++top], "ACTFILENAME=%s", act_file);
   sprintf(opt_string[++top], "BLOCKB=%s", blockb);
   sprintf(opt_string[++top], "BLOCKE=%s", blocke);
   if (byte_bit) {
     strcpy(opt_string[++top], "BYTE");
   }
-  if (conflicts_bit) {
+  if (cli_options.conflicts_bit) {
     strcpy(opt_string[++top], "CONFLICTS");
   } else {
     strcpy(opt_string[++top], "NOCONFLICTS");
@@ -542,11 +535,11 @@ struct CLIOptions process_options_lines(char *grm_file, struct OutputFiles *outp
   } else {
     strcpy(opt_string[++top], "NOFOLLOW");
   }
-  if (c_bit) {
+  if (cli_options.c_bit) {
     sprintf(opt_string[++top], "GENERATE-PARSER=C");
-  } else if (cpp_bit) {
-    sprintf(opt_string[++top], "GENERATE-PARSER=C++");
-  } else if (java_bit) {
+  } else if (cli_options.cpp_bit) {
+    sprintf(opt_string[++top], "GENERATE-PARSER=CPP");
+  } else if (cli_options.java_bit) {
     sprintf(opt_string[++top], "GENERATE-PARSER=JAVA");
   } else {
     strcpy(opt_string[++top], "NOGENERATE-PARSER");
@@ -581,7 +574,7 @@ struct CLIOptions process_options_lines(char *grm_file, struct OutputFiles *outp
   } else {
     strcpy(opt_string[++top], "NAMES=OPTIMIZED");
   }
-  if (nt_check_bit) {
+  if (cli_options.nt_check_bit) {
     strcpy(opt_string[++top], "NT-CHECK");
   } else {
     strcpy(opt_string[++top], "NONT-CHECK");
@@ -593,7 +586,7 @@ struct CLIOptions process_options_lines(char *grm_file, struct OutputFiles *outp
   } else {
     strcpy(opt_string[++top], "NOREAD-REDUCE");
   }
-  if (scopes_bit) {
+  if (cli_options.scopes_bit) {
     strcpy(opt_string[++top], "SCOPES");
   } else {
     strcpy(opt_string[++top], "NOSCOPES");
@@ -612,7 +605,7 @@ struct CLIOptions process_options_lines(char *grm_file, struct OutputFiles *outp
     strcpy(opt_string[++top], "SLR");
   }
   sprintf(opt_string[++top], "STACK-SIZE=%d", stack_size);
-  if (states_bit) {
+  if (cli_options.states_bit) {
     strcpy(opt_string[++top], "STATES");
   } else {
     strcpy(opt_string[++top], "NOSTATES");
@@ -642,7 +635,7 @@ struct CLIOptions process_options_lines(char *grm_file, struct OutputFiles *outp
   } else {
     strcpy(opt_string[++top], "NOWARNINGS");
   }
-  if (xref_bit) {
+  if (cli_options.xref_bit) {
     strcpy(opt_string[++top], "XREF");
   } else {
     strcpy(opt_string[++top], "NOXREF");
@@ -1995,9 +1988,8 @@ void accept_action(char *grm_file, const struct CLIOptions *cli_options) {
     rules[num_rules + 1].rhs = rhs_ct; /* Fence !! */
   }
   fclose(sysgrm); /* Close grammar input file. */
-  if (action_bit) {
-    process_actions(grm_file, cli_options);
-  } else if (cli_options->list_bit) {
+  process_actions(grm_file, cli_options);
+  if (cli_options->list_bit) {
     display_input();
   }
 }

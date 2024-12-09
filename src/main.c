@@ -176,7 +176,7 @@ int main(const int argc, char *argv[]) {
             PRNT2(msg_line, "Number of Single Productions: %ld", num_single_productions);
           }
           PRNT2(msg_line, "Number of Items: %ld", num_items);
-          if (scopes_bit) {
+          if (cli_options.scopes_bit) {
             PRNT2(msg_line, "Number of Scopes: %ld", num_scopes);
           }
           PRNT2(msg_line, "Number of States: %ld", num_states);
@@ -194,12 +194,12 @@ int main(const int argc, char *argv[]) {
           PRNT2(msg_line, "Number of Reduce-Reduce conflicts: %ld", num_rr_conflicts);
         }
 
-        if (states_bit) {
+        if (cli_options.states_bit) {
           ptstats();
         }
 
         if (table_opt != 0) {
-          if (goto_default_bit && nt_check_bit) {
+          if (goto_default_bit && cli_options.nt_check_bit) {
             PRNTERR("The options GOTO_DEFAULT and NT_CHECK are incompatible. Tables not generated");
           } else {
             num_entries = max_la_state + num_shifts + num_shift_reduces + num_gotos + num_goto_reduces + num_reductions;
@@ -232,7 +232,7 @@ int main(const int argc, char *argv[]) {
             null_nt += num_terminals + 1;
             ffree(null_nt);
             if (follow != NULL) {
-              if (!error_maps_bit || c_bit || cpp_bit || java_bit) {
+              if (!error_maps_bit || cli_options.c_bit || cli_options.cpp_bit || cli_options.java_bit) {
                 follow += (num_terminals + 1) * term_set_size;
                 ffree(follow);
               }

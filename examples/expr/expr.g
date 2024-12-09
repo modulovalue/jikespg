@@ -1,5 +1,4 @@
 %Options GENERATEPARSER=java
-%Options ACT
 %Options ACTFILENAME=expract.java
 %Options HACTFILENAME=exprhdr.java
 %Options TABLE=space

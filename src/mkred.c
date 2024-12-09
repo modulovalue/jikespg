@@ -659,7 +659,7 @@ void mkrdcts(struct CLIOptions* cli_options) {
       /* element (if the conflicts were reduce-reduce conflicts, only   */
       /* the first element in the ACTION(t) list is returned).          */
       if (symbol_root != NIL) {
-        resolve_conflicts(state_no, action, symbol_list, symbol_root, cli_options->slr_bit);
+        resolve_conflicts(state_no, action, symbol_list, symbol_root, cli_options->slr_bit, cli_options->conflicts_bit);
         for (symbol = symbol_root;
              symbol != NIL; symbol = symbol_list[symbol]) {
           if (action[symbol] != NULL) {

@@ -640,7 +640,7 @@ void produce(struct CLIOptions* cli_options) {
       }
     }
   }
-  if (scopes_bit) {
+  if (cli_options->scopes_bit) {
     // Process scopes.
     {
       /* Compute set of "scopes" and use it to construct SCOPE map.     */

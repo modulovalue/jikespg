@@ -1,6 +1,5 @@
 %Options LALR=2
 %Options GENERATEPARSER=java
-%Options ACT
 %Options ACTFILENAME=bnfact.java
 %Options HACTFILENAME=bnfhdr.java
 %Options TABLE=space

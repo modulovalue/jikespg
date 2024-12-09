@@ -1,6 +1,5 @@
 %Options NOGOTODEFAULT
 %Options ESC=$
-%Options ACTION
 %Options ACTFILE=lpgact.c
 %Options FILEPREFIX=lpg
 %Options GENERATEPARSER=c
@@ -175,8 +174,7 @@ static void act$rule_number(void)
 /.$location
 static void act$rule_number(void)
 {
-    if (action_bit)
-        add_macro_definition(SYM1.name, &(SYM2));
+    add_macro_definition(SYM1.name, &(SYM2));
 }
 ./
                  | macro_list macro_name_symbol macro_block
@@ -184,8 +182,7 @@ static void act$rule_number(void)
 /.$location
 static void act$rule_number(void)
 {
-    if (action_bit)
-        add_macro_definition(SYM2.name, &(SYM3));
+    add_macro_definition(SYM2.name, &(SYM3));
 }
 ./
 
@@ -786,8 +783,7 @@ static void act$rule_number(void)
 /.$location
 static void act$rule_number(void)
 {
-    if (action_bit)
-        add_block_definition(&(SYM1));
+    add_block_definition(&(SYM1));
 }
 ./
                    | HBLOCK
@@ -795,8 +791,7 @@ static void act$rule_number(void)
 /.$location
 static void act$rule_number(void)
 {
-    if (action_bit)
-        add_block_definition(&(SYM1));
+    add_block_definition(&(SYM1));
 }
 ./
 

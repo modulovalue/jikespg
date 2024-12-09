@@ -1190,7 +1190,7 @@ void mkbasic(struct CLIOptions* cli_options) {
   }
   /* If a Cross_Reference listing is requested, it is generated  */
   /* here.                                                       */
-  if (xref_bit) {
+  if (cli_options->xref_bit) {
     print_xref();
   }
   /* If a listing of the FIRST map is requested, it is generated */

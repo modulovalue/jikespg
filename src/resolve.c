@@ -1349,7 +1349,7 @@ void free_conflict_space(void) {
 /* where k > 1, then we attempt to resolve the conflicts by computing  */
 /* more lookaheads. Shift-Reduce conflicts are processed first,        */
 /* followed by Reduce-Reduce conflicts.                                */
-void resolve_conflicts(const int state_no, struct node **action, const short *symbol_list, const int reduce_root, bool slr_bit) {
+void resolve_conflicts(const int state_no, struct node **action, const short *symbol_list, const int reduce_root, bool slr_bit, bool conflicts_bit) {
   struct node *p;
   struct node *tail;
   struct stack_element *q;

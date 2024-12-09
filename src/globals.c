@@ -37,11 +37,6 @@ long scope_rhs_size = 0;
 long scope_state_size = 0;
 long num_error_rules = 0;
 
-bool action_bit = false;
-bool states_bit = false;
-bool xref_bit = false;
-bool nt_check_bit = false;
-bool conflicts_bit = true;
 bool read_reduce_bit = true;
 bool goto_default_bit = true;
 bool shift_default_bit = false;
@@ -51,10 +46,6 @@ bool single_productions_bit = false;
 bool error_maps_bit = false;
 bool debug_bit = false;
 bool deferred_bit = true;
-bool c_bit = false;
-bool cpp_bit = false;
-bool java_bit = false;
-bool scopes_bit = false;
 
 int lalr_level = 1;
 int default_opt = 5;

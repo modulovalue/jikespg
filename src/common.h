@@ -198,6 +198,14 @@ struct CLIOptions {
   bool verbose_bit;
   bool first_bit;
   bool follow_bit;
+  bool states_bit;
+  bool xref_bit;
+  bool nt_check_bit;
+  bool conflicts_bit;
+  bool c_bit;
+  bool cpp_bit;
+  bool java_bit;
+  bool scopes_bit;
 };
 
 static struct CLIOptions init_cli_options() {
@@ -208,14 +216,17 @@ static struct CLIOptions init_cli_options() {
     .verbose_bit = false,
     .first_bit = false,
     .follow_bit = false,
+    .states_bit = false,
+    .xref_bit = false,
+    .nt_check_bit = false,
+    .conflicts_bit = true,
+    .c_bit = false,
+    .cpp_bit = false,
+    .java_bit = false,
+    .scopes_bit = false,
   };
 }
 
-extern bool action_bit;
-extern bool states_bit;
-extern bool xref_bit;
-extern bool nt_check_bit;
-extern bool conflicts_bit;
 extern bool read_reduce_bit;
 extern bool goto_default_bit;
 extern bool shift_default_bit;
@@ -225,10 +236,6 @@ extern bool single_productions_bit;
 extern bool error_maps_bit;
 extern bool debug_bit;
 extern bool deferred_bit;
-extern bool c_bit;
-extern bool cpp_bit;
-extern bool java_bit;
-extern bool scopes_bit;
 
 extern int lalr_level;
 extern int default_opt;
@@ -445,13 +452,13 @@ void print_state(int state_no);
 
 void produce(struct CLIOptions* cli_options);
 
-void process_error_maps(void);
+void process_error_maps(struct CLIOptions* cli_options);
 
-void print_space_parser();
+void print_space_parser(struct CLIOptions* cli_options);
 
-void print_time_parser();
+void print_time_parser(struct CLIOptions* cli_options);
 
-void init_parser_files(struct OutputFiles output_files);
+void init_parser_files(struct OutputFiles output_files, struct CLIOptions* cli_options);
 
 void process_tables(char *tab_file, struct OutputFiles output_files, struct CLIOptions* cli_options);
 
@@ -463,7 +470,7 @@ void sortdes(long array[], long count[], long low, long high, long max);
 
 void reallocate(struct CLIOptions* cli_options);
 
-void resolve_conflicts(int state_no, struct node **action, const short *symbol_list, int reduce_root, bool slr_bit);
+void resolve_conflicts(int state_no, struct node **action, const short *symbol_list, int reduce_root, bool slr_bit, bool conflicts_bit);
 
 void restore_symbol(char *out, const char *in);
 

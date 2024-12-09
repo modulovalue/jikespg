@@ -297,7 +297,7 @@ static void overlap_tables(struct CLIOptions* cli_options) {
   PRNT2(msg_line, "Percentage of increase: %ld.%ld%%", percentage / 10, percentage % 10);
   if (byte_bit) {
     num_bytes = 2 * action_size + table_size;
-    if (!goto_default_bit && !nt_check_bit) {
+    if (!goto_default_bit && !cli_options->nt_check_bit) {
       for (; last_symbol >= 1 && !is_terminal[last_symbol]; last_symbol--) {
       }
     }
@@ -324,7 +324,7 @@ static void overlap_tables(struct CLIOptions* cli_options) {
 }
 
 /* We now write out the tables to the SYSTAB file.                   */
-static void print_tables(void) {
+static void print_tables(struct CLIOptions* cli_options) {
   long *action;
   long *check;
   struct goto_header_type go_to;
@@ -378,7 +378,7 @@ static void print_tables(void) {
       for (int j = 1; j <= go_to.size; j++) {
         symbol = go_to.map[j].symbol;
         long i = indx + symbol;
-        if (goto_default_bit || nt_check_bit) {
+        if (goto_default_bit || cli_options->nt_check_bit) {
           check[i] = symbol;
         } else {
           check[i] = DEFAULT_SYMBOL;
@@ -461,7 +461,7 @@ static void print_tables(void) {
   /* Prepare Header with proper information, and write it out.         */
   output_buffer[0] = 'T';
   output_buffer[1] = goto_default_bit ? '1' : '0';
-  output_buffer[2] = nt_check_bit ? '1' : '0';
+  output_buffer[2] = cli_options->nt_check_bit ? '1' : '0';
   output_buffer[3] = read_reduce_bit ? '1' : '0';
   output_buffer[4] = single_productions_bit ? '1' : '0';
   if (default_opt == 0) {
@@ -656,7 +656,7 @@ static void print_tables(void) {
   /* because we also construct a list of the original state numbers    */
   /* that reflects the permutation of the new state numbers.           */
   /* During the backward iteration,  we construct the list as a stack. */
-  if (error_maps_bit || states_bit) {
+  if (error_maps_bit || cli_options->states_bit) {
     long max_indx = accept_act - num_rules - 1;
     for (int i = 1; i <= max_indx; i++) {
       action[i] = OMEGA;
@@ -689,7 +689,7 @@ static void print_tables(void) {
   /*       question: TRANSITION_STATES                                 */
   /*                                                                   */
   if (error_maps_bit) {
-    process_error_maps();
+    process_error_maps(cli_options);
   }
   fwrite(output_buffer, sizeof(char), output_ptr - &output_buffer[0], systab);
 }
@@ -703,10 +703,10 @@ static void print_tables(void) {
 void cmprtim(const struct OutputFiles output_files, struct CLIOptions* cli_options) {
   remap_symbols();
   overlap_tables(cli_options);
-  if (c_bit || cpp_bit || java_bit) {
-    init_parser_files(output_files);
-    print_time_parser();
+  if (cli_options->c_bit || cli_options->cpp_bit || cli_options->java_bit) {
+    init_parser_files(output_files, cli_options);
+    print_time_parser(cli_options);
   } else {
-    print_tables();
+    print_tables(cli_options);
   }
 }

@@ -12,7 +12,7 @@ struct action_element {
 
 /* The array ACTION_COUNT is used to construct a map from each terminal     */
 /* into the set (list) of actions defined on that terminal. A count of the  */
-/* number of occurences of each action in the automaton is kept.            */
+/* number of occurrences of each action in the automaton is kept.            */
 /* This procedure is invoked with a specific shift map which it processes   */
 /* and updates the ACTION_COUNT map accordingly.                            */
 static void process_shift_actions(struct action_element **action_count, const int shift_no) {
@@ -38,9 +38,9 @@ static void process_shift_actions(struct action_element **action_count, const in
   }
 }
 
-/* This procedure updates the vector SHIFTDF, indexable by the terminals in */
-/* the grammar. Its task is to assign to each element of SHIFTDF, the action*/
-/* most frequently defined on the symbol in question.                       */
+/* This procedure updates the vector SHIFTDF, indexable by the terminals in  */
+/* the grammar. Its task is to assign to each element of SHIFTDF, the action */
+/* most frequently defined on the symbol in question.                        */
 static void compute_shift_default(void) {
   int shift_count = 0;
   int shift_reduce_count = 0;
@@ -86,7 +86,7 @@ static void compute_shift_default(void) {
   ffree(action_count);
 }
 
-/*   COMPUTE_GOTO_DEFAULT constructs the vector GOTODEF, which is indexed by */
+/* COMPUTE_GOTO_DEFAULT constructs the vector GOTODEF, which is indexed by   */
 /* the non-terminals in the grammar. Its task is to assign to each element   */
 /* of the array the Action which is most frequently defined on the symbol in */
 /* question, and remove all such actions from the state automaton.           */
@@ -174,8 +174,8 @@ static void compute_goto_default(void) {
   ffree(action_count);
 }
 
-/* Remap symbols, apply transition default actions  and call           */
-/* appropriate table compression routine.                              */
+/* Remap symbols, apply transition default actions  and call                 */
+/* appropriate table compression routine.                                    */
 void process_tables(char *tab_file, const struct OutputFiles output_files, struct CLIOptions* cli_options) {
   struct reduce_header_type red;
   /*        First, we decrease by 1 the constants NUM_SYMBOLS        */
@@ -268,7 +268,7 @@ void process_tables(char *tab_file, const struct OutputFiles output_files, struc
   if (output_buffer == NULL) {
     nospace(__FILE__, __LINE__);
   }
-  if (!c_bit && !cpp_bit && !java_bit) {
+  if (!cli_options->c_bit && !cli_options->cpp_bit && !cli_options->java_bit) {
     if ((systab = fopen(tab_file, "w")) == NULL) {
       fprintf(stderr, "***ERROR: Table file \"%s\" cannot be opened\n", tab_file);
       exit(12);
@@ -279,12 +279,12 @@ void process_tables(char *tab_file, const struct OutputFiles output_files, struc
   } else if (table_opt == OPTIMIZE_TIME) {
     cmprtim(output_files, cli_options);
   }
-  if (!c_bit && !cpp_bit && !java_bit) {
+  if (!cli_options->c_bit && !cli_options->cpp_bit && !cli_options->java_bit) {
     fclose(systab);
   }
   /* If printing of the states was requested,  print the new mapping   */
   /* of the states.                                                    */
-  if (states_bit) {
+  if (cli_options->states_bit) {
     fprintf(syslis, "\nMapping of new state numbers into original numbers:\n");
     for ALL_STATES3(state_no) {
       fprintf(syslis, "\n%5ld  ==>>  %5ld", ordered_state[state_no], state_list[state_no]);
