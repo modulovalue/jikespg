@@ -58,7 +58,6 @@ bool IsAlpha(const int c) {
   return code[c] == ALPHA_CODE;
 }
 
-int output_size = 5000;
 int line_no = 0;
 
 /*                             IO variables                        */
@@ -97,7 +96,7 @@ void read_input(char *grm_file) {
 /* VERIFY takes as argument a character string and checks whether each       */
 /* character is a digit. If all are digits, then 1 is returned; if not, then */
 /* 0 is returned.                                                            */
-bool verify(const char *item) {
+bool verify_is_digit(const char *item) {
   while (IsDigit(*item)) {
     item++;
   }
@@ -146,10 +145,6 @@ char hact_file[80];
 /* certain setting just by their appearance, and valued options which are    */
 /* followed by an equal sign and the value to be assigned to them.           */
 static void options(char* file_prefix) {
-  const char *oconflicts = "CONFLICTS";
-  const char *odefault = "DEFAULT";
-  const char *omax = "MAXIMUM";
-  const char *otrace = "TRACE";
   char token[MAX_PARM_SIZE + 1];
   char temp[MAX_PARM_SIZE + 1];
   char delim;
@@ -215,53 +210,41 @@ static void options(char* file_prefix) {
         action_bit = flag;
       } else if (memcmp("BYTE", token, token_len) == 0) {
         byte_bit = flag;
-      } else if (memcmp(oconflicts, token, token_len) == 0) {
+      } else if (memcmp("CONFLICTS", token, token_len) == 0) {
         conflicts_bit = flag;
-      } else if (memcmp(odefault, token, token_len) == 0) {
-        if (flag) {
-          default_opt = 5;
-        } else {
-          default_opt = 0;
-        }
       } else if (memcmp("DEBUG", token, token_len) == 0) {
         debug_bit = flag;
       } else if (memcmp("DEFERRED", token, token_len) == 0) {
         deferred_bit = flag;
       } else if (memcmp("EDIT", token, token_len) == 0) {
         edit_bit = flag;
-      } else if (memcmp("ERRORMAPS", token, token_len) == 0 || strcmp("EM", token) == 0 || memcmp("ERROR_MAPS", token, token_len) == 0 || memcmp("ERROR-MAPS", token, token_len) == 0) {
+      } else if (memcmp("ERRORMAPS", token, token_len) == 0) {
         error_maps_bit = flag;
       } else if (memcmp("FIRST", token, token_len) == 0) {
         first_bit = flag;
       } else if (memcmp("FOLLOW", token, token_len) == 0) {
         follow_bit = flag;
-      } else if (token_len >= 2 && (strcmp(token, "GD") == 0 || memcmp("GOTODEFAULT", token, token_len) == 0 || memcmp("GOTO_DEFAULT", token, token_len) == 0 || memcmp("GOTO-DEFAULT", token, token_len) == 0)) {
+      } else if (memcmp("GOTODEFAULT", token, token_len) == 0) {
         goto_default_bit = flag;
-      } else if (strcmp(token, "HW") == 0 || memcmp("HALFWORD", token, token_len) == 0 || memcmp("HALF_WORD", token, token_len) == 0 || memcmp("HALF-WORD", token, token_len) == 0) {
+      } else if (memcmp("HALFWORD", token, token_len) == 0) {
         byte_bit = !flag;
       } else if (memcmp("LIST", token, token_len) == 0) {
         list_bit = flag;
-      } else if (strcmp(token, "NC") == 0 || memcmp("NTCHECK", token, token_len) == 0 || memcmp("NT_CHECK", token, token_len) == 0 || memcmp("NT-CHECK", token, token_len) == 0) {
+      } else if (memcmp("NTCHECK", token, token_len) == 0) {
         nt_check_bit = flag;
-      } else if (strcmp(token, "RR") == 0 || memcmp("READREDUCE", token, token_len) == 0 || memcmp("READ_REDUCE", token, token_len) == 0 || memcmp("READ-REDUCE", token, token_len) == 0) {
+      } else if (memcmp("READREDUCE", token, token_len) == 0) {
         read_reduce_bit = flag;
       } else if (memcmp("SCOPES", token, token_len) == 0) {
         scopes_bit = flag;
-      } else if (strcmp(token, "SD") == 0 || memcmp("SHIFTDEFAULT", token, token_len) == 0 || memcmp("SHIFT-DEFAULT", token, token_len) == 0 || memcmp("SHIFT_DEFAULT", token, token_len) == 0) {
+      } else if (memcmp("SHIFTDEFAULT", token, token_len) == 0) {
         shift_default_bit = flag;
-      } else if (strcmp(token, "SP") == 0 || memcmp("SINGLEPRODUCTIONS", token, token_len) == 0 || memcmp("SINGLE-PRODUCTIONS", token, token_len) == 0 || memcmp("SINGLE_PRODUCTIONS", token, token_len) == 0) {
+      } else if (memcmp("SINGLEPRODUCTIONS", token, token_len) == 0) {
         single_productions_bit = flag;
       } else if (memcmp("SLR", token, token_len) == 0) {
         slr_bit = flag;
         lalr_level = 1;
       } else if (memcmp("STATES", token, token_len) == 0) {
         states_bit = flag;
-      } else if (memcmp(otrace, token, token_len) == 0) {
-        if (flag) {
-          trace_opt = TRACE_CONFLICTS;
-        } else {
-          trace_opt = NOTRACE;
-        }
       } else if (memcmp("VERBOSE", token, token_len) == 0) {
         verbose_bit = flag;
       } else if (memcmp("WARNINGS", token, token_len) == 0) {
@@ -291,8 +274,8 @@ static void options(char* file_prefix) {
         strcpy(blockb, temp);
       } else if (strcmp(token, "BLOCKE") == 0) {
         strcpy(blocke, temp);
-      } else if (memcmp(odefault, token, token_len) == 0) {
-        if (verify(temp)) {
+      } else if (memcmp("DEFAULT", token, token_len) == 0) {
+        if (verify_is_digit(temp)) {
           default_opt = MIN(atoi(temp), 5);
         } else {
           PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
@@ -325,62 +308,59 @@ static void options(char* file_prefix) {
       } else if (strcmp(token, "HBLOCKE") == 0) {
         strcpy(hblocke, temp);
       } else if (memcmp("LALR", token, token_len) == 0) {
-        token_len = strlen(temp);
+        register int token_len = strlen(temp);
         if (token_len > MAX_PARM_SIZE) {
           temp[MAX_PARM_SIZE - 1] = '\0';
         }
-        if (!verify(temp) && memcmp(translate(temp, token_len), omax, token_len) != 0) {
-          PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
-        } else {
+        if (verify_is_digit(temp)) {
           slr_bit = false;
-          if (memcmp(omax, translate(temp, token_len), token_len) == 0) {
+          lalr_level = atoi(temp);
+          if (lalr_level > MAXIMUM_LA_LEVEL) {
+            PRNTWNG2(msg_line, "\"%s\" exceeds maximum value of %d allowed for %s", temp, MAXIMUM_LA_LEVEL, token);
             lalr_level = MAXIMUM_LA_LEVEL;
-          } else {
-            lalr_level = atoi(temp);
-            if (lalr_level > MAXIMUM_LA_LEVEL) {
-              PRNTWNG2(msg_line, "\"%s\" exceeds maximum value of %d allowed for %s", temp, MAXIMUM_LA_LEVEL, token);
-              lalr_level = MAXIMUM_LA_LEVEL;
-            }
           }
+        } else if (memcmp(translate(temp, token_len), "MAXIMUM", token_len) != 0) {
+          PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
+        } else if (memcmp("MAXIMUM", translate(temp, token_len), token_len) == 0) {
+          slr_bit = false;
+          lalr_level = MAXIMUM_LA_LEVEL;
         }
-      } else if (token_len >= 2 && (memcmp(token, "MAXDISTANCE", token_len) == 0 || memcmp(token, "MAX_DISTANCE", token_len) == 0 || memcmp(token, "MAX-DISTANCE", token_len) == 0)) {
-        if (verify(temp)) {
+      } else if (memcmp(token, "MAXDISTANCE", token_len) == 0) {
+        if (verify_is_digit(temp)) {
           maximum_distance = atoi(temp);
         } else {
           PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
         }
-      } else if (token_len >= 2 && (memcmp(token, "MINDISTANCE", token_len) == 0 || memcmp(token, "MIN_DISTANCE", token_len) == 0 || memcmp(token, "MIN-DISTANCE", token_len) == 0)) {
-        if (verify(temp)) {
+      } else if (memcmp(token, "MINDISTANCE", token_len) == 0) {
+        if (verify_is_digit(temp)) {
           minimum_distance = atoi(temp);
         } else {
           PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
         }
       } else if (memcmp("NAMES", token, token_len) == 0) {
-        token_len = strlen(temp);
-        if (token_len >= 2 && memcmp(omax, translate(temp, token_len), token_len) == 0) {
+        register int token_len = strlen(temp);
+        if (memcmp("MAXIMUM", translate(temp, token_len), token_len) == 0) {
           names_opt = MAXIMUM_NAMES;
-        } else if (token_len >= 2 && memcmp("MINIMUM", translate(temp, token_len), token_len) == 0) {
+        } else if (memcmp("MINIMUM", translate(temp, token_len), token_len) == 0) {
           names_opt = MINIMUM_NAMES;
         } else if (memcmp(translate(temp, token_len), "OPTIMIZED", token_len) == 0) {
           names_opt = OPTIMIZE_PHRASES;
-        } else if ((temp[0] == 'm' || temp[0] == 'M') && temp[1] != '\0') {
-          PRNTERR2(msg_line, "\"M\" is an ambiguous value for %s: MAXIMUM, MINIMUM?", token);
         } else {
           PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
         }
-      } else if (token_len >= 2 && memcmp(token, "ORMARK", token_len) == 0) {
+      } else if (memcmp(token, "ORMARK", token_len) == 0) {
         ormark = temp[0];
       } else if (memcmp(token, "PREFIX", token_len) == 0) {
         strcpy(prefix, temp);
-      } else if (strcmp(token, "SS") == 0 || (memcmp(token, "STACKSIZE", token_len) == 0 || memcmp(token, "STACK_SIZE", token_len) == 0 || memcmp(token, "STACK-SIZE", token_len) == 0)) {
-        if (verify(temp)) {
+      } else if (memcmp(token, "STACKSIZE", token_len) == 0) {
+        if (verify_is_digit(temp)) {
           stack_size = atoi(temp);
         } else {
           PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
         }
-      } else if (token_len >= 2 && memcmp(token, "SUFFIX", token_len) == 0) {
+      } else if (memcmp(token, "SUFFIX", token_len) == 0) {
         strcpy(suffix, temp);
-      } else if (token_len >= 2 && memcmp(token, "TABLE", token_len) == 0) {
+      } else if (memcmp(token, "TABLE", token_len) == 0) {
         register int token_len = strlen(temp);
         if (token_len > MAX_PARM_SIZE) {
           temp[MAX_PARM_SIZE - 1] = '\0';
@@ -392,32 +372,20 @@ static void options(char* file_prefix) {
         } else {
           PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
         }
-      } else if (token_len >= 2 && memcmp(token, otrace, token_len) == 0) {
+      } else if (memcmp(token, "TRACE", token_len) == 0) {
         token_len = strlen(temp);
         if (token_len > MAX_PARM_SIZE) {
           temp[MAX_PARM_SIZE - 1] = '\0';
         }
-        if (memcmp(oconflicts, translate(temp, token_len), token_len) == 0) {
+        if (memcmp("CONFLICTS", translate(temp, token_len), token_len) == 0) {
           trace_opt = TRACE_CONFLICTS;
         } else if (memcmp(translate(temp, token_len), "FULL", token_len) == 0) {
           trace_opt = TRACE_FULL;
+        } else if (memcmp(translate(temp, token_len), "NO", token_len) == 0) {
+          trace_opt = NOTRACE;
         } else {
           PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
         }
-      } else if (strcmp(token, "BLOCK") == 0) {
-        PRNTERR("Option \"BLOCK\" is ambiguous: BLOCKB, BLOCKE ?");
-      } else if (strcmp("E", token) == 0) {
-        PRNTERR("Option \"E\" is ambiguous: ERROR-PROC, ERROR-MAPS ?");
-      } else if (strcmp(token, "H") == 0) {
-        PRNTERR("Option \"H\" is ambiguous: HBLOCKB, HBLOCKE ?");
-      } else if (strcmp(token, "HBLOCK") == 0) {
-        PRNTERR("Option \"HBLOCK\" is ambiguous: HBLOCKB, HBLOCKE ?");
-      } else if (strcmp("M", token) == 0 || strcmp("MD", token) == 0) {
-        PRNTERR2(msg_line, "Option \"%s\" is ambiguous: MAX-DISTANCE, MIN-DISTANCE?", token);
-      } else if (strcmp("O", token) == 0) {
-        PRNTERR("Option \"O\" is ambiguous: OUTPUT-SIZE, ORMARK ?");
-      } else if (strcmp("T", token) == 0) {
-        PRNTERR("Option \"T\" is ambiguous: TABLE, TRACE?");
       } else {
         PRNTERR2(msg_line, "\"%s\" is an invalid option", token);
       }
@@ -525,7 +493,7 @@ static void process_options_lines(char *grm_file, struct OutputFiles *output_fil
   } else {
     strcpy(opt_string[++top], "NOACTION");
   }
-  sprintf(opt_string[++top], "ACTFILE-NAME=%s", act_file);
+  sprintf(opt_string[++top], "ACTFILENAME=%s", act_file);
   sprintf(opt_string[++top], "BLOCKB=%s", blockb);
   sprintf(opt_string[++top], "BLOCKE=%s", blocke);
   if (byte_bit) {
@@ -583,13 +551,13 @@ static void process_options_lines(char *grm_file, struct OutputFiles *output_fil
     strcpy(opt_string[++top], "NOGENERATE-PARSER");
   }
   if (goto_default_bit) {
-    strcpy(opt_string[++top], "GOTO-DEFAULT");
+    strcpy(opt_string[++top], "GOTODEFAULT");
   } else {
-    strcpy(opt_string[++top], "NOGOTO-DEFAULT");
+    strcpy(opt_string[++top], "NOGOTODEFAULT");
   }
-  sprintf(opt_string[++top], "HACTFILE-NAME=%s", hact_file);
+  sprintf(opt_string[++top], "HACTFILENAME=%s", hact_file);
   if (!byte_bit) {
-    strcpy(opt_string[++top], "HALF-WORD");
+    strcpy(opt_string[++top], "HALFWORD");
   }
   sprintf(opt_string[++top], "HBLOCKB=%s", hblockb);
   sprintf(opt_string[++top], "HBLOCKE=%s", hblocke);
@@ -618,7 +586,6 @@ static void process_options_lines(char *grm_file, struct OutputFiles *output_fil
     strcpy(opt_string[++top], "NONT-CHECK");
   }
   sprintf(opt_string[++top], "ORMARK=%c", ormark);
-  sprintf(opt_string[++top], "OUTPUT-SIZE=%d", output_size);
   sprintf(opt_string[++top], "PREFIX=%s", prefix);
   if (read_reduce_bit) {
     strcpy(opt_string[++top], "READ-REDUCE");
@@ -1305,6 +1272,7 @@ void process_action_line(FILE *sysout, char *text, const int line_no, const int 
   char temp1[MAX_LINE_SIZE + 1];
   char suffix[MAX_LINE_SIZE + 1];
   char symbol[SYMBOL_SIZE + 1];
+  const int output_size = 5000;
   struct line_elemt *q;
   struct line_elemt *root = NULL;
   struct line_elemt *input_line_root = NULL;

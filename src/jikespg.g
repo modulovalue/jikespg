@@ -1,13 +1,12 @@
-%Options nogotodefault
-%Options esc=$
-%Options action
-%Options actfile=lpgact.c
-%Options noem
+%Options NOGOTODEFAULT
+%Options ESC=$
+%Options ACTION
+%Options ACTFILE=lpgact.c
 %Options FILEPREFIX=lpg
 %Options GENERATEPARSER=c
-%Options nodefer
-%Options suffix=_TK
-%Options stacksize=21
+%Options NODEFER
+%Options SUFFIX=_TK
+%Options STACKSIZE=21
 %Options HACTFILENAME=lpgact.h
 
 -- $Id: jikespg.g,v 1.2 1999/11/04 14:02:22 shields Exp $

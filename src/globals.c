@@ -2,7 +2,6 @@ static char hostfile[] = __FILE__;
 
 #include "common.h"
 
-/*  The variables below are global counters.          */
 long num_items = 0;
 long num_states = 0;
 long max_la_state;
@@ -15,8 +14,6 @@ long num_rules = 0;
 long num_single_productions = 0;
 long gotodom_size = 0;
 
-/*   The variables below are used to hold information about special  */
-/* grammar symbols.                                                  */
 int accept_image;
 int eoft_image;
 int eolt_image;

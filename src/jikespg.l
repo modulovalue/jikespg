@@ -1,5 +1,13 @@
-%OPTIONS nogoto-default,esc=$,action,actfile=lpgact.c,noem
-%OPTIONS fp=lpg,gp,nodefer,suffix=_TK,stack_size=21,hactfile=lpgact.h
+%OPTIONS NOGOTODEFAULT
+%OPTIONS ESC=$
+%OPTIONS ACTION
+%OPTIONS ACTFILE=lpgact.c
+%OPTIONS FILEPREFIX=lpg
+%OPTIONS GENERATEPARSER=c
+%OPTIONS NODEFER
+%OPTIONS SUFFIX=_TK
+%OPTIONS STACKSIZE=21
+%OPTIONS HACTFILENAME=lpgact.h
 
 Options in effect:
     ACTION  ACTFILE-NAME=lpgact.c  BLOCKB=/.  BLOCKE=./  BYTE  CONFLICTS  

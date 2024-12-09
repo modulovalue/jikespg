@@ -1,13 +1,13 @@
 %Options GENERATEPARSER=java
-%Options act
+%Options ACT
 %Options ACTFILENAME=expract.java
 %Options HACTFILENAME=exprhdr.java
 %Options TABLE=space
 %Options FILEPREFIX=expr
-%Options prefix=TK_
-%Options nogotodefault
-%Options name=max
-%Options errormaps
+%Options PREFIX=TK_
+%Options NOGOTODEFAULT
+%Options NAME=max
+%Options ERRORMAPS
 
 %Define
 -- This software is subject to the terms of the IBM Jikes Parser
