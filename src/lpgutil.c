@@ -326,7 +326,7 @@ void print_item(const int item_no) {
   strcat(line, tok);
   len = PRINT_LINE_SIZE - (offset + 1);
   for (int i = rules[rule_no].rhs +
-           item_table[item_no].dot; /* symbols after dot*/
+               item_table[item_no].dot; /* symbols after dot*/
        i <= rules[rule_no + 1].rhs - 1; i++) {
     symbol = rhs_sym[i];
     restore_symbol(tok, RETRIEVE_STRING(symbol));

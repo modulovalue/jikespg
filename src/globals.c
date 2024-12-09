@@ -123,5 +123,3 @@ int highest_level = 0;
 long la_top = 0;
 short *la_index = NULL;
 bool not_lrk;
-
-

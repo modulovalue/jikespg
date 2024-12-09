@@ -53,13 +53,13 @@ struct state_element *lr0_state_map(struct node *kernel) {
          p = p->next, r = q, q = q->next) {
       if (p->value != q->value)
         break;
-         }
+    }
     /* Both P and Q are NULL? */
     if (p == q) {
       free_nodes(kernel, r);
       return state_ptr;
     }
-       }
+  }
   /* Add a new state based on the KERNEL set.                        */
   struct state_element *ptr = talloc(sizeof(struct state_element));
   if (ptr == (struct state_element *) NULL) {

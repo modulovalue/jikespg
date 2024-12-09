@@ -1,5 +1,5 @@
-%Options gp=java,act,tab,an=expract.java,hn=exprhdr.java,tab=space,fp=expr,prefix=TK_,
-%Options nogoto-default,output-size=125,name=max,error-maps
+%Options GENERATEPARSER=java,act,tab,ACTFILENAME=expract.java,hn=exprhdr.java,tab=space,FILEPREFIX=expr,prefix=TK_,
+%Options nogotodefault,name=max,errormaps
 %Define
 
 -- This software is subject to the terms of the IBM Jikes Parser

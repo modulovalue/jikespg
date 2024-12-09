@@ -176,7 +176,7 @@ static void compute_goto_default(void) {
 
 /* Remap symbols, apply transition default actions  and call           */
 /* appropriate table compression routine.                              */
-void process_tables(char* tab_file, const struct OutputFiles output_files) {
+void process_tables(char *tab_file, const struct OutputFiles output_files) {
   struct reduce_header_type red;
   /*        First, we decrease by 1 the constants NUM_SYMBOLS        */
   /* and NUM_TERMINALS, remove the EMPTY symbol(1) and remap the     */

@@ -1,5 +1,5 @@
-%Options la=2,gp=java,act,an=bnfact.java,hn=bnfhdr.java,tab=space,fp=bnf,prefix=TK_,
-%Options nogoto-default,names=max,error-maps
+%Options la=2,GENERATEPARSER=java,act,ACTFILENAME=bnfact.java,hn=bnfhdr.java,tab=space,FILEPREFIX=bnf,prefix=TK_,
+%Options nogotodefault,names=max,errormaps
 %Define
 -- This software is subject to the terms of the IBM Jikes Parser
 -- Generator License Agreement available at the following URL:

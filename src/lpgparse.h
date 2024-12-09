@@ -130,4 +130,3 @@ static int symbol_image(const char *item);
 static int name_map(const char *symb);
 
 static void build_symno(void);
-

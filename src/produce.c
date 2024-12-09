@@ -71,7 +71,7 @@ bool scope_check(const int lhs_symbol, const int target, const int source) {
   if (IS_IN_NTSET(right_produces, target, source - num_terminals) &&
       IS_IN_NTSET(right_produces, lhs_symbol, source - num_terminals)) {
     return false;
-      }
+  }
   for (int item_no = item_of[source];
        item_no != NIL; item_no = next_item[item_no]) {
     if (item_table[item_no].dot != 0) {
@@ -85,7 +85,7 @@ bool scope_check(const int lhs_symbol, const int target, const int source) {
         return 1;
       }
     }
-       }
+  }
   return false;
 }
 
@@ -382,7 +382,7 @@ static void compute_produces(const int symbol) {
          new_symbol != symbol; new_symbol = stack[--top]) {
       ASSIGN_NTSET(produces, new_symbol, produces, symbol);
       index_of[new_symbol] = INFINITY;
-         }
+    }
     index_of[symbol] = INFINITY;
     top--;
   }

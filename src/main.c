@@ -103,10 +103,10 @@ int main(const int argc, char *argv[]) {
     return 4;
   } else {
     char tab_file[80];
-    char file_prefix[80] = "";
 
     // Process input.
     {
+      char file_prefix[80] = "";
       char grm_file[80];
       char lis_file[80];
       /* Create file names for output files */

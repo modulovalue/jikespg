@@ -338,7 +338,7 @@ bool is_nullable_rhs(short *rhs_start, const int rule_no) {
     {
       return false;
     }
-       }
+  }
   return true;
 }
 
