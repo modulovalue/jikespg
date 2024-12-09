@@ -14,8 +14,7 @@ struct action_element {
 /* number of occurences of each action in the automaton is kept.            */
 /* This procedure is invoked with a specific shift map which it processes   */
 /* and updates the ACTION_COUNT map accordingly.                            */
-static void process_shift_actions(struct action_element **action_count,
-                                  const int shift_no) {
+static void process_shift_actions(struct action_element **action_count, const int shift_no) {
   struct action_element *q;
   const struct shift_header_type sh = shift[shift_no];
   for (int i = 1; i <= sh.size; i++) {

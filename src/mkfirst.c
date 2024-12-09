@@ -6,6 +6,10 @@ static char hostfile[] = __FILE__;
 #include <string.h>
 #include "common.h"
 
+SET_PTR nt_first = NULL;
+SET_PTR first = NULL;
+SET_PTR follow = NULL;
+
 int const LEN = PRINT_LINE_SIZE - 4;
 
 int NEXT_RULE_SIZE() {

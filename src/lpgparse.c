@@ -15,33 +15,45 @@ static char hostfile[] = __FILE__;
 #include "lpgact.h"
 #include "lpgprs.h"
 
+char parm[256] = "";
+
+long symno_size; /* NUM_SYMBOLS + 1 */
+
+long string_offset = 0;
+long string_size = 0;
+
+char blockb[MAX_PARM_SIZE] = {'/', '.'};
+char blocke[MAX_PARM_SIZE] = {'.', '/'};
+char hblockb[MAX_PARM_SIZE] = {'/', ':'};
+char hblocke[MAX_PARM_SIZE] = {':', '/'};
+
 FILE *sysgrm;
 FILE *sysact;
 FILE *syshact;
 
-static const int SPACE_CODE = 1;
-static const int DIGIT_CODE = 2;
-static const int ALPHA_CODE = 3;
+const int SPACE_CODE = 1;
+const int DIGIT_CODE = 2;
+const int ALPHA_CODE = 3;
 
-static char code[256] = {0};
+char code[256] = {0};
 
-static bool IsSpace(const int c) {
+bool IsSpace(const int c) {
   return code[c] == SPACE_CODE;
 }
 
-static bool IsDigit(const int c) {
+bool IsDigit(const int c) {
   return code[c] == DIGIT_CODE;
 }
 
-static bool IsAlpha(const int c) {
+bool IsAlpha(const int c) {
   return code[c] == ALPHA_CODE;
 }
 
-static int output_size = 5000;
-static int line_no = 0;
+int output_size = 5000;
+int line_no = 0;
 
 /*         READ_INPUT fills the buffer from p1 to the end.          */
-static void read_input(char *grm_file) {
+void read_input(char *grm_file) {
   long num_read = input_buffer + IOBUFFER_SIZE - bufend;
   if ((num_read = fread(bufend, 1, num_read, sysgrm)) == 0) {
     if (ferror(sysgrm) != 0) {
@@ -92,7 +104,7 @@ static bool strxeq(char *s1, char *s2) {
 char act_file[80];
 char hact_file[80];
 
-// TODO • parse options into a struct.
+// TODO • parse options into a struct?
 /* OPTION handles the decoding of options passed by the user and resets      */
 /* them appropriately. "options" may be called twice: when a parameter line  */
 /* is passed to the main program and when the user codes an %OPTIONS line in */
@@ -501,7 +513,7 @@ static void options(void) {
   }
 }
 
-/*    In this function, we read the first line(s) of the input text to see  */
+/* In this function, we read the first line(s) of the input text to see     */
 /* if they are (it is an) "options" line(s).  If so, the options are        */
 /* processed.  Then, we process user-supplied options if there are any.  In */
 /* any case, the options in effect are printed.                             */
@@ -2105,7 +2117,25 @@ static void display_input(void) {
 }
 
 /* This procedure opens all relevant files and processes the input grammar.*/
-void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_files) {
+void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_files, const int argc, char *argv[]) {
+  // Parse args.
+  {
+    /* If options are passed to the program, copy them into "parm". */
+    if (argc > 2) {
+      int j = 0;
+      parm[0] = '\0';
+      while (j < argc - 2) {
+        if (*argv[++j] == '-') {
+          strcat(parm, argv[j]+1);
+        } else {
+          strcat(parm, argv[j]);
+          printf("***WARNING: Option \"%s\" is missing preceding '-'.\n", argv[j]);
+        }
+        strcat(parm, " ");
+      }
+    }
+  }
+
   /* Open input grammar file. If the file cannot be opened and that file name */
   /* did not have an extension, then the extension ".g" is added to the file  */
   /* name and we try again. If no file can be found an error message is       */

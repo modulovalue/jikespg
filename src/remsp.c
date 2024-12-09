@@ -3,24 +3,24 @@ static char hostfile[] = __FILE__;
 
 #include "common.h"
 
-static int max_sp_state;
+int max_sp_state;
 
-static struct action_element {
+struct action_element {
   struct action_element *next;
   int symbol;
   int action;
 } **new_action;
 
-static struct action_element *action_element_pool = NULL;
+struct action_element *action_element_pool = NULL;
 
-static struct update_action_element {
+struct update_action_element {
   struct update_action_element *next;
   short symbol;
   int action;
   short state;
 } **update_action;
 
-static struct sp_state_element {
+struct sp_state_element {
   struct sp_state_element *next;
   struct sp_state_element *link;
   struct action_element *action_root;
@@ -31,14 +31,14 @@ static struct sp_state_element {
   short action_count;
 } **sp_table;
 
-static struct sp_state_element *sp_state_root;
+struct sp_state_element *sp_state_root;
 
-static short *sp_rules;
-static short *stack;
-static short *index_of;
-static short *next_rule;
-static short *rule_list;
-static short **sp_action;
+short *sp_rules;
+short *stack;
+short *index_of;
+short *next_rule;
+short *rule_list;
+short **sp_action;
 
 bool IS_SP_RHS(const long symbol) {
   return sp_rules[symbol] != NIL;
@@ -48,18 +48,18 @@ bool IS_SP_RULE(const long rule_no) {
   return rule_list[rule_no] != OMEGA;
 }
 
-static bool *is_conflict_symbol;
+bool *is_conflict_symbol;
 
-static SET_PTR look_ahead;
+SET_PTR look_ahead;
 
-static int top;
-static int symbol_root;
-static int rule_root;
+int top;
+int symbol_root;
+int rule_root;
 
 /* This function first tries to recycle an action_element node from a */
 /* free list. If the list is empty a new node is allocated from       */
 /* temporary storage.                                                 */
-static struct action_element *allocate_action_element(void) {
+struct action_element *allocate_action_element(void) {
   struct action_element *p = action_element_pool;
   if (p != NULL) {
     action_element_pool = p->next;
@@ -74,7 +74,7 @@ static struct action_element *allocate_action_element(void) {
 
 /* This routine returns a list of action_element structures to the    */
 /* free list.                                                         */
-static void free_action_elements(struct action_element *head, struct action_element *tail) {
+void free_action_elements(struct action_element *head, struct action_element *tail) {
   tail->next = action_element_pool;
   action_element_pool = head;
 }
@@ -88,7 +88,7 @@ static void free_action_elements(struct action_element *head, struct action_elem
 /*                                                                    */
 /*   2) As a side effect, it uses the ordering above to order all     */
 /*      the SP rules.                                                 */
-static void compute_sp_map(const int symbol) {
+void compute_sp_map(const int symbol) {
   int rule_no;
   stack[++top] = symbol;
   const int indx = top;
@@ -137,7 +137,7 @@ static void compute_sp_map(const int symbol) {
   }
 }
 
-/* When the parser enters STATE_NO and it is processing SYMBOL, its   */
+/* When the parser enters STATE_NO, and it is processing SYMBOL, its   */
 /* next move is ACTION. Given these 3 parameters, compute_sp_action   */
 /* computes the set of reduce actions that may be executed after      */
 /* SYMBOL is shifted in STATE_NO.                                     */
@@ -146,7 +146,7 @@ static void compute_sp_map(const int symbol) {
 /* transition on SYMBOL is a lookahead-shift, indicating that the     */
 /* parser requires extra lookahead on a particular symbol, the set of */
 /* reduce actions for that symbol is calculated as the empty set.     */
-static void compute_sp_action(const short state_no, const short symbol, const short action) {
+void compute_sp_action(const short state_no, const short symbol, const short action) {
   int rule_no;
   int lhs_symbol;
   int k;
@@ -227,7 +227,7 @@ static void compute_sp_action(const short state_no, const short symbol, const sh
 /* rule_no that may be reduced when the parser enters state_no.        */
 /* Sp_default_action tries to determine the highest rule that may be  */
 /* reached via a sequence of SP reductions.                           */
-static short sp_default_action(const short state_no, short rule_no) {
+short sp_default_action(const short state_no, short rule_no) {
   const struct goto_header_type go_to = statset[state_no].go_to;
   /* While the rule we have at hand is a single production, ...         */
   while (IS_SP_RULE(rule_no)) {
@@ -274,7 +274,7 @@ static short sp_default_action(const short state_no, short rule_no) {
 /* be processed after taking the transition. It returns the reduce    */
 /* action that follows the transition if an action on la_symbol is    */
 /* found, otherwise it returns the most suitable default action.      */
-static int sp_nt_action(const short state_no, const int lhs_symbol, const short la_symbol) {
+int sp_nt_action(const short state_no, const int lhs_symbol, const short la_symbol) {
   const struct goto_header_type go_to = statset[state_no].go_to;
   int ii;
   for (ii = 1; go_to.map[ii].symbol != lhs_symbol; ii++) {
@@ -306,9 +306,7 @@ static int sp_nt_action(const short state_no, const int lhs_symbol, const short 
 /* is also executed ending with RULE2.                                */
 /* The goal of this function is to find the greatest ancestor of      */
 /* BASE_RULE that is also a descendant of both RULE1 and RULE2.       */
-static int greatest_common_ancestor(const short base_rule, const short la_symbol,
-                                    const short state1, const short rule1,
-                                    const short state2, const short rule2) {
+int greatest_common_ancestor(const short base_rule, const short la_symbol, const short state1, const short rule1, const short state2, const short rule2) {
   int act1 = base_rule;
   int act2 = base_rule;
   int rule_no;
@@ -328,8 +326,7 @@ static int greatest_common_ancestor(const short base_rule, const short la_symbol
 /* SYMBOL is the right-hand side of a SP rule and the global map      */
 /* sp_action[SYMBOL] yields a set of update reduce actions that may   */
 /* follow the transition on SYMBOL into STATE_NO.                     */
-static void compute_update_actions(const short source_state,
-                                   const short state_no, const short symbol) {
+void compute_update_actions(const short source_state, const short state_no, const short symbol) {
   struct update_action_element *p;
   const struct reduce_header_type red = reduce[state_no];
   for (int i = 1; i <= red.size; i++) {
@@ -380,9 +377,7 @@ static void compute_update_actions(const short source_state,
 /* map sp_symbol[SYMBOL]. The value SP_RULE_COUNT is the number of    */
 /* rules in the list. The value SP_ACTION_COUNT is the number of      */
 /* actions in the map sp_symbol[SYMBOL].                              */
-static short sp_state_map(const int rule_head, const int item_no,
-                          const int sp_rule_count,
-                          const int sp_action_count, const int symbol) {
+short sp_state_map(const int rule_head, const int item_no, const int sp_rule_count, const int sp_action_count, const int symbol) {
   struct sp_state_element *state;
   struct node *p;
   int rule_no;

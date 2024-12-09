@@ -1,9 +1,7 @@
 CC = gcc $(CPPFLAGS) $(CFLAGS)
 
-jikespg: ctabs.o globals.o lpgparse.o lpgutil.o main.o mkfirst.o mkred.o mkstates.o partset.o prntstat.o produce.o ptables.o remsp.o resolve.o spacetab.o timetab.o
-	$(CC) $(LDFLAGS) -o jikespg ctabs.o globals.o lpgparse.o lpgutil.o main.o \
-	    mkfirst.o mkred.o mkstates.o partset.o prntstat.o produce.o \
-	    ptables.o remsp.o resolve.o spacetab.o timetab.o
+jikespg: ctabs.o globals.o lpgparse.o lpgutil.o main.o mkfirst.o mkred.o mkstates.o partset.o produce.o ptables.o remsp.o resolve.o spacetab.o timetab.o
+	$(CC) $(LDFLAGS) -o jikespg ctabs.o globals.o lpgparse.o lpgutil.o main.o  mkfirst.o mkred.o mkstates.o partset.o produce.o ptables.o remsp.o resolve.o spacetab.o timetab.o
 
 main.o:	main.c common.h
 	$(CC) -c main.c
@@ -22,9 +20,6 @@ mkfirst.o: mkfirst.c common.h
 
 mkstates.o: mkstates.c common.h
 	$(CC) -c mkstates.c
-
-prntstat.o: prntstat.c common.h
-	$(CC) -c prntstat.c
 
 mkred.o: mkred.c common.h
 	$(CC) -c mkred.c
@@ -64,8 +59,7 @@ clean:
 	rm -f mkred.o
 	rm -f mkstates.o 
 	rm -f partset.o 
-	rm -f prntstat.o 
-	rm -f produce.o 
+	rm -f produce.o
 	rm -f ptables.o 
 	rm -f remsp.o
 	rm -f resolve.o

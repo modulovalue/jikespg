@@ -103,16 +103,6 @@ void *talloc(const long size) {
   return &temp_base[i >> LOG_BLKSIZE][i];
 }
 
-/* Return the total size of temporary space allocated.                */
-long temporary_space_allocated(void) {
-  return temp_base_size * sizeof(cell **) + temp_size * sizeof(cell);
-}
-
-/* Return the total size of temporary space used.                     */
-long temporary_space_used(void) {
-  return (temp_size >> LOG_BLKSIZE) * sizeof(cell **) + temp_top * sizeof(cell);
-}
-
 /* The following are global variables and constants used to manage a  */
 /* pool of global space. Externally, the user invokes one of the      */
 /* functions:                                                         */
@@ -131,23 +121,6 @@ static long global_base_size = 0;
 
 static struct node *node_pool = NULL;
 
-/* This function is invoked when the space left in a segment is not   */
-/* enough for GALLOC to allocate a requested object. Rather than      */
-/* waste the space, as many NODE structures as possible are allocated */
-/* in that space and stacked up in the NODE_POOL list.                */
-static void process_global_waste(long top) {
-  while (true) {
-    const long i = top;
-    top += (sizeof(struct node) + sizeof(cell) - 1) / sizeof(cell);
-    if (top > global_size) {
-      break;
-    }
-    struct node *p = (struct node *) &global_base[i >> LOG_BLKSIZE][i];
-    p->next = node_pool;
-    node_pool = p;
-  }
-}
-
 /* galloc allocates an object of size "size" in global space and      */
 /* returns a pointer to it. It is analoguous to "talloc", but it      */
 /* is a local (static) routine that is only invoked in this file by   */
@@ -156,7 +129,23 @@ static void *galloc(const long size) {
   long i = global_top;
   global_top += (size + sizeof(cell) - 1) / sizeof(cell);
   if (global_top > global_size) {
-    process_global_waste(i);
+    {
+      /* This function is invoked when the space left in a segment is not   */
+      /* enough for GALLOC to allocate a requested object. Rather than      */
+      /* waste the space, as many NODE structures as possible are allocated */
+      /* in that space and stacked up in the NODE_POOL list.                */
+      int top = i;
+      while (true) {
+        const long i = top;
+        top += (sizeof(struct node) + sizeof(cell) - 1) / sizeof(cell);
+        if (top > global_size) {
+          break;
+        }
+        struct node *p = (struct node *) &global_base[i >> LOG_BLKSIZE][i];
+        p->next = node_pool;
+        node_pool = p;
+      }
+    }
     i = global_size;
     global_top = global_size +
                  (size + sizeof(cell) - 1) / sizeof(cell);
@@ -169,8 +158,16 @@ static void *galloc(const long size) {
   return &global_base[i >> LOG_BLKSIZE][i];
 }
 
-/*   This function allocates a node structure and returns a pointer to it.  */
-/* it there are nodes in the free pool, one of them is returned. Otherwise, */
+/*  This function frees a linked list of nodes by adding them to the free   */
+/* list.  Head points to head of linked list and tail to the end.           */
+void free_nodes(struct node *head, struct node *tail) {
+  tail->next = node_pool;
+  node_pool = head;
+}
+
+// TODO • inline?
+/* This function allocates a node structure and returns a pointer to it.    */
+/* If there are nodes in the free pool, one of them is returned. Otherwise, */
 /* a new node is allocated from the global storage pool.                    */
 struct node *allocate_node(char *file, const long line) {
   struct node *p = node_pool;
@@ -186,14 +183,8 @@ struct node *allocate_node(char *file, const long line) {
   return p;
 }
 
-/*  This function frees a linked list of nodes by adding them to the free   */
-/* list.  Head points to head of linked list and tail to the end.           */
-void free_nodes(struct node *head, struct node *tail) {
-  tail->next = node_pool;
-  node_pool = head;
-}
-
-/*   This function allocates space for a goto map with "size" elements,     */
+// TODO • inline?
+/* This function allocates space for a goto map with "size" elements,       */
 /* initializes and returns a goto header for that map. NOTE that after the  */
 /* map is successfully allocated, it is offset by one element. This is      */
 /* to allow the array in question to be indexed from 1..size instead of     */
@@ -208,7 +199,8 @@ struct goto_header_type allocate_goto_map(const int size, char *file, const long
   return go_to;
 }
 
-/*   This function allocates space for a shift map with "size" elements,    */
+// TODO • inline?
+/* This function allocates space for a shift map with "size" elements,      */
 /* initializes and returns a shift header for that map. NOTE that after the */
 /* map is successfully allocated, it is offset by one element. This is      */
 /* to allow the array in question to be indexed from 1..size instead of     */
@@ -223,7 +215,8 @@ struct shift_header_type allocate_shift_map(const int size, char *file, const lo
   return sh;
 }
 
-/*   This function allocates space for a REDUCE map with "size"+1 elements, */
+// TODO • inline?
+/* This function allocates space for a REDUCE map with "size"+1 elements,   */
 /* initializes and returns a REDUCE header for that map. The 0th element of */
 /* a reduce map is used for the default reduction.                          */
 struct reduce_header_type allocate_reduce_map(const int size, char *file, const long line) {
@@ -235,17 +228,8 @@ struct reduce_header_type allocate_reduce_map(const int size, char *file, const 
   return red;
 }
 
-/* Return the total size of global space allocated.                   */
-long global_space_allocated(void) {
-  return global_base_size * sizeof(cell **) + global_size * sizeof(cell);
-}
-
-/* Return the total size of global space used.                        */
-long global_space_used(void) {
-  return (global_size >> LOG_BLKSIZE) * sizeof(cell **) + global_top * sizeof(cell);
-}
-
-/*   This function allocates an array of size "size" of int integers.       */
+// TODO • inline?
+/* This function allocates an array of size "size" of int integers.         */
 int *allocate_int_array(const long size, char *file, const long line) {
   int *p;
   p = (int *) calloc(size, sizeof(int));
@@ -254,7 +238,8 @@ int *allocate_int_array(const long size, char *file, const long line) {
   return &p[0];
 }
 
-/*   This function allocates an array of size "size" of int integers.       */
+// TODO • inline?
+/* This function allocates an array of size "size" of int integers.         */
 long *allocate_long_array(const long size, char *file, const long line) {
   long *p;
   p = (long *) calloc(size, sizeof(long));
@@ -263,7 +248,8 @@ long *allocate_long_array(const long size, char *file, const long line) {
   return &p[0];
 }
 
-/*   This function allocates an array of size "size" of short integers.     */
+// TODO • inline?
+/* This function allocates an array of size "size" of short integers.       */
 short *allocate_short_array(const long size, char *file, const long line) {
   short *p;
   p = (short *) calloc(size, sizeof(short));
@@ -272,7 +258,8 @@ short *allocate_short_array(const long size, char *file, const long line) {
   return &p[0];
 }
 
-/*   This function allocates an array of size "size" of type boolean.       */
+// TODO • inline?
+/* This function allocates an array of size "size" of type boolean.         */
 bool *allocate_boolean_array(const long size, char *file, const long line) {
   bool *p;
   p = (bool *) calloc(size, sizeof(bool));
@@ -616,24 +603,4 @@ void print_state(const int state_no) {
 void nospace(char *file_name, const long line_number) {
   fprintf(stderr, "*** Cannot allocate space ... LPG terminated in file %s at line %ld\n", file_name, line_number);
   exit(12);
-}
-
-/* StrUpr and StrLwr.                                                   */
-/* These routines set all characters in a string to upper case and lower*/
-/*  case (respectively.)  These are library routines in DOS, but        */
-/*  are defined here for the 370 compiler.                              */
-char *strupr(char *string) {
-  /* While not at end of string, change all lower case to upper case.  */
-  for (char *s = string; *s != '\0'; s++) {
-    *s = islower(*s) ? toupper(*s) : *s;
-  }
-  return string;
-}
-
-char *strlwr(char *string) {
-  /* While not at end of string, change all upper case to lower case.  */
-  for (char *s = string; *s != '\0'; s++) {
-    *s = isupper(*s) ? tolower(*s) : *s;
-  }
-  return string;
 }

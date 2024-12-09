@@ -164,7 +164,7 @@ struct OutputFiles {
   char dcl_file[80];
 };
 
-void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_files);
+void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_files, const int argc, char *argv[]);
 
 extern char file_prefix[];
 extern char prefix[];
@@ -190,12 +190,10 @@ extern long num_states;
 extern long max_la_state;
 
 extern long num_symbols;
-extern long symno_size; /* NUM_SYMBOLS + 1 */
 extern long num_names;
 extern long num_terminals;
 extern long num_non_terminals;
 extern long num_rules;
-extern long num_conflict_elements;
 extern long num_single_productions;
 extern long gotodom_size;
 
@@ -244,16 +242,6 @@ extern int stack_size;
 
 extern char escape;
 extern char ormark;
-extern char record_format;
-
-extern char blockb[];
-extern char blocke[];
-extern char hblockb[];
-extern char hblocke[];
-extern char errmsg[];
-extern char gettok[];
-extern char smactn[];
-extern char tkactn[];
 
 // The variables below are used to hold information about special grammar symbols.
 extern int accept_image;
@@ -265,8 +253,6 @@ extern int error_image;
 extern int num_first_sets;
 extern int num_shift_maps;
 
-extern long string_offset;
-extern long string_size;
 extern long num_shifts;
 extern long num_shift_reduces;
 extern long num_gotos;
@@ -397,14 +383,6 @@ extern SET_PTR action_symbols;
 
 extern bool byte_terminal_range;
 
-long temporary_space_allocated(void);
-
-long temporary_space_used(void);
-
-long global_space_allocated(void);
-
-long global_space_used(void);
-
 void reset_temporary_space(void);
 
 void free_temporary_space(void);
@@ -499,10 +477,6 @@ void resolve_conflicts(int state_no, struct node **action, const short *symbol_l
 
 void restore_symbol(char *out, const char *in);
 
-char *strlwr(char *string);
-
-char *strupr(char *string);
-
 /**                       ALLOCATE/FREE MACROS                    **/
 /* The following macro definitions are used to preprocess calls to */
 /* allocate routines that require locations. The FFREE macro is    */
@@ -513,6 +487,7 @@ static struct node *Allocate_node() {
   return allocate_node(hostfile, __LINE__);
 }
 
+// TODO • only use long arrays never int?
 static int *Allocate_int_array(const long n) {
   return allocate_int_array(n, hostfile, __LINE__);
 }

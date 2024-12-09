@@ -138,7 +138,7 @@ static short *item_list = NULL;
 /* digraph algorithm, the variables STACK, INDEX_OF and TOP are used   */
 /* for that algorithm.                                                 */
 /*                                                                     */
-/* RMPSELF is a boolean vector that indicates whether or not a given   */
+/* RMPSELF is a boolean vector that indicates whether a given          */
 /* non-terminal can right-most produce itself. It is only constructed  */
 /* when LALR_LEVEL > 1.                                                */
 static bool *lalr_visited;
@@ -197,8 +197,7 @@ static struct stack_element *allocate_stack_element(void) {
 
 /* This routine returns a list of stack_element structures to the     */
 /* free pool.                                                         */
-static void free_stack_elements(struct stack_element *head,
-                                struct stack_element *tail) {
+static void free_stack_elements(struct stack_element *head, struct stack_element *tail) {
   tail->next = stack_pool;
   stack_pool = head;
 }
@@ -277,8 +276,7 @@ static void free_sources(struct sources_element sources) {
 
 /* This function takes as argument two pointers to sorted lists of stacks. */
 /* It merges the lists in the proper order and returns the resulting list. */
-static struct stack_element *union_config_sets(struct stack_element *root1,
-                                               struct stack_element *root2) {
+static struct stack_element *union_config_sets(struct stack_element *root1, struct stack_element *root2) {
   struct stack_element *p1;
   struct stack_element *p2;
   struct stack_element *root = NULL;
@@ -351,9 +349,7 @@ static struct stack_element *union_config_sets(struct stack_element *root1,
 /* set (sorted list) of configurations. It adds the set of configurations  */
 /* to the previous set of configurations associated with the ACTION in the */
 /* SOURCES_ELEMENT map.                                                    */
-static struct sources_element add_configs(struct sources_element sources,
-                                          const int action,
-                                          struct stack_element *config_root) {
+static struct sources_element add_configs(struct sources_element sources, const int action, struct stack_element *config_root) {
   if (config_root != NULL) {
     if (sources.configs[action] == NULL) {
       /* The previous was empty? */
@@ -482,9 +478,7 @@ static void print_root_path(const int item_no) {
 /* to a state where the conflict symbol can be read. If a path is      */
 /* found, all items along the path are printed and SUCCESS is returned.*/
 /*  Otherwise, FAILURE is returned.                                    */
-static bool lalr_path_retraced(const int state_no,
-                               const int goto_indx,
-                               const int conflict_symbol) {
+static bool lalr_path_retraced(const int state_no, const int goto_indx, const int conflict_symbol) {
   struct node *q;
   struct node *tail;
   struct goto_header_type go_to = statset[state_no].go_to;
@@ -531,9 +525,7 @@ static bool lalr_path_retraced(const int state_no,
 /*   In this procedure, we attempt to retrace an LALR conflict path    */
 /* (there may be more than one) of CONFLICT_SYMBOL in the state        */
 /* automaton that led to ITEM_NO in state STATE_NO.                    */
-static void print_relevant_lalr_items(const int state_no,
-                                      const int item_no,
-                                      const int conflict_symbol) {
+static void print_relevant_lalr_items(const int state_no, const int item_no, const int conflict_symbol) {
   struct node *p;
   struct node *tail;
   const int lhs_symbol = rules[item_table[item_no].rule_number].lhs;
@@ -716,8 +708,7 @@ static void add_conflict_symbol(const int state_no, const int symbol) {
 /* until new state(s) are reached where a transition is possible on    */
 /* the lookahead symbol. It then returns the new set of configurations */
 /* found on which a transition on LA_SYMBOL is possible.               */
-static struct stack_element *follow_sources(struct stack_element *stack,
-                                            int symbol, const int la_symbol) {
+static struct stack_element *follow_sources(struct stack_element *stack, int symbol, const int la_symbol) {
   struct shift_header_type sh;
   struct goto_header_type go_to;
   struct stack_element *q;
@@ -811,9 +802,7 @@ static struct stack_element *follow_sources(struct stack_element *stack,
   }
   /* We now iterate over the kernel set of items associated with the */
   /* ACTion defined on SYMBOL...                                     */
-  for (const struct node *item_ptr = act > 0
-                                       ? statset[act].kernel_items
-                                       : adequate_item[-act];
+  for (const struct node *item_ptr = act > 0 ? statset[act].kernel_items : adequate_item[-act];
        item_ptr != NULL; item_ptr = item_ptr->next) {
     int item_no = item_ptr->value;
     /* For each item that is a final item whose left-hand side     */
@@ -881,8 +870,7 @@ static struct stack_element *follow_sources(struct stack_element *stack,
 /* outside, LOOK_AHEAD is assumed to be initialized to the empty set.  */
 /* NEXT_LA first executes the transition on SYMBOL and thereafter, all */
 /* terminal symbols that can be read are added to LOOKAHEAD.           */
-static void next_la(struct stack_element *stack,
-                    const int symbol, const SET_PTR look_ahead) {
+static void next_la(struct stack_element *stack, const int symbol, const SET_PTR look_ahead) {
   struct goto_header_type go_to;
   struct stack_element *q;
   int act;
@@ -980,8 +968,7 @@ static void next_la(struct stack_element *stack,
 /* STACK. It searches the hash table to see if it already contained    */
 /* the stack in question. If yes, it returns TRUE. Otherwise, it       */
 /* inserts the stack into the table and returns FALSE.                 */
-static bool stack_was_seen(struct stack_element **stack_seen,
-                           struct stack_element *stack) {
+static bool stack_was_seen(struct stack_element **stack_seen, struct stack_element *stack) {
   struct stack_element *p;
   struct stack_element *q;
   struct stack_element *r;
@@ -1013,8 +1000,7 @@ static bool stack_was_seen(struct stack_element **stack_seen,
 /* conflicts by doing more look-ahead.  If the conflict resolution     */
 /* is successful, then a new state is created and returned; otherwise, */
 /* the NULL pointer is returned.                                       */
-static struct state_element *state_to_resolve_conflicts
-(struct sources_element sources, int la_symbol, int level) {
+static struct state_element *state_to_resolve_conflicts(struct sources_element sources, int la_symbol, int level) {
   struct sources_element new_sources;
   struct node **action;
   struct node *p;
@@ -1354,7 +1340,7 @@ void init_rmpself(const SET_PTR produces) {
 /* maps. Initialize SHIFT_TABLE. Note that each element of SHIFT_TABLE */
 /* is automatically initialized to NULL by CALLOC.                     */
 /* (See STATE_TO_RESOLVE_CONFLICTS)                                    */
-/* Second, we check whether or not the grammar is not LR(k) for any k  */
+/* Second, we check whether the grammar is not LR(k) for any k  */
 /* because there exist a nonterminal A such that                       */
 /*                                                                     */
 /*                     A =>+rm A                                       */
@@ -1425,8 +1411,7 @@ void free_conflict_space(void) {
 /* where k > 1, then we attempt to resolve the conflicts by computing  */
 /* more lookaheads. Shift-Reduce conflicts are processed first,        */
 /* followed by Reduce-Reduce conflicts.                                */
-void resolve_conflicts(const int state_no, struct node **action,
-                       const short *symbol_list, const int reduce_root) {
+void resolve_conflicts(const int state_no, struct node **action, const short *symbol_list, const int reduce_root) {
   struct node *p;
   struct node *tail;
   struct stack_element *q;
@@ -1604,9 +1589,7 @@ void create_lastats(void) {
   /* Allocate LASTATS structure to permanently construct lookahead   */
   /* states and reallocate SHIFT map as we may have to construct     */
   /* new shift maps.                                                 */
-  lastats = (struct lastats_type *)
-      calloc(max_la_state - num_states,
-             sizeof(struct lastats_type));
+  lastats = (struct lastats_type *) calloc(max_la_state - num_states, sizeof(struct lastats_type));
   if (lastats == NULL)
     nospace(__FILE__, __LINE__);
   lastats -= num_states + 1;

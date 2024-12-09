@@ -106,20 +106,6 @@ int main(const int argc, char *argv[]) {
     char tab_file[80];
     // Process input.
     {
-      /* If options are passed to the program, copy them into "parm". */
-      if (argc > 2) {
-        int j = 0;
-        parm[0] = '\0';
-        while (j < argc - 2) {
-          if (*argv[++j] == '-') {
-            strcat(parm, argv[j]+1);
-          } else {
-            strcat(parm, argv[j]);
-            printf("***WARNING: Option \"%s\" is missing preceding '-'.\n", argv[j]);
-          }
-          strcat(parm, " ");
-        }
-      }
       char grm_file[80];
       char lis_file[80];
       /* Create file names for output files */
@@ -160,7 +146,7 @@ int main(const int argc, char *argv[]) {
       }
       strcat(lis_file, ".l"); /* add .l extension for listing file */
       strcat(tab_file, ".t"); /* add .t extension for table file */
-      process_input(grm_file, lis_file, &output_files);
+      process_input(grm_file, lis_file, &output_files, argc, argv);
     }
 
     // Process rest.

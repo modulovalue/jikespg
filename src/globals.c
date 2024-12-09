@@ -2,12 +2,10 @@ static char hostfile[] = __FILE__;
 
 #include "common.h"
 
-const long MAX_TABLE_SIZE = (USHRT_MAX < INT_MAX ? USHRT_MAX : INT_MAX) - 1;
-
+// TODO • build in main and pass to options builder.
 char file_prefix[80] = "";
 char prefix[MAX_PARM_SIZE] = "";
 char suffix[MAX_PARM_SIZE] = "";
-char parm[256] = "";
 char msg_line[MAX_MSG_SIZE];
 
 FILE *syslis;
@@ -21,12 +19,10 @@ long num_states = 0;
 long max_la_state;
 
 long num_symbols = 0;
-long symno_size;
 long num_names = 0;
 long num_terminals;
 long num_non_terminals;
 long num_rules = 0;
-long num_conflict_elements = 0;
 long num_single_productions = 0;
 long gotodom_size = 0;
 
@@ -38,13 +34,9 @@ int eolt_image;
 int empty;
 int error_image;
 
-/* Miscellaneous counters. */
-
 int num_first_sets;
 int num_shift_maps = 0;
 
-long string_offset = 0;
-long string_size = 0;
 long num_shifts = 0;
 long num_shift_reduces = 0;
 long num_gotos = 0;
@@ -60,7 +52,7 @@ long scope_state_size = 0;
 long num_error_rules = 0;
 
 bool list_bit = false;
-// TODO • remove SLR(1).
+// TODO • remove SLR(1)?
 bool slr_bit = false;
 bool verbose_bit = false;
 bool first_bit = false;
@@ -97,16 +89,6 @@ int stack_size = 128;
 
 char escape = '%';
 char ormark = '|';
-char record_format = 'V';
-
-char blockb[MAX_PARM_SIZE] = {'/', '.'};
-char blocke[MAX_PARM_SIZE] = {'.', '/'};
-char hblockb[MAX_PARM_SIZE] = {'/', ':'};
-char hblocke[MAX_PARM_SIZE] = {':', '/'};
-char errmsg[MAX_PARM_SIZE] = "errmsg";
-char gettok[MAX_PARM_SIZE] = "gettok";
-char smactn[MAX_PARM_SIZE] = "smactn";
-char tkactn[MAX_PARM_SIZE] = "tkactn";
 
 char *string_table = NULL;
 
@@ -128,10 +110,6 @@ int term_set_size;
 int non_term_set_size;
 int state_set_size;
 
-SET_PTR nt_first = NULL;
-SET_PTR first = NULL;
-SET_PTR follow = NULL;
-
 struct shift_header_type *shift = NULL;
 
 struct reduce_header_type *reduce = NULL;
@@ -149,40 +127,11 @@ struct lastats_type *lastats = NULL;
 
 struct node **in_stat = NULL;
 
-struct scope_type *scope = NULL;
-
 long *scope_right_side = NULL;
 short *scope_state = NULL;
 
 char *output_ptr = NULL;
 char *output_buffer = NULL;
-
-int *symbol_map = NULL;
-long *ordered_state = NULL;
-long *state_list = NULL;
-
-long *next = NULL;
-long *previous = NULL;
-long *state_index = NULL;
-
-long table_size;
-long action_size;
-long increment_size;
-
-long last_non_terminal = 0;
-long last_terminal = 0;
-
-long accept_act;
-long error_act;
-long first_index;
-long last_index;
-long last_symbol;
-long max_name_length = 0;
-
-SET_PTR naction_symbols = NULL;
-SET_PTR action_symbols = NULL;
-
-bool byte_terminal_range = true;
 
 struct node **conflict_symbols = NULL;
 SET_PTR la_set = NULL;
@@ -192,17 +141,4 @@ long la_top = 0;
 short *la_index = NULL;
 bool not_lrk;
 
-struct new_state_type *new_state_element;
 
-short *shift_image = NULL;
-short *real_shift_number = NULL;
-
-int *term_state_index = NULL;
-int *shift_check_index = NULL;
-
-int shift_domain_count;
-int num_terminal_states;
-int check_size;
-int term_check_size;
-int term_action_size;
-int shift_check_size;

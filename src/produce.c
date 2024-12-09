@@ -6,321 +6,354 @@ static char hostfile[] = __FILE__;
 #include <string.h>
 #include "common.h"
 
-static short *stack;
-static short *index_of;
-static short *nt_list;
-static short *item_list;
-static short *item_of;
-static short *next_item;
-static short *scope_table;
+short *stack;
+short *index_of;
+short *nt_list;
+short *item_list;
+short *item_of;
+short *next_item;
+short *scope_table;
 
-static int scope_top = 0;
+long scope_top = 0;
 
-static struct node **direct_produces;
+struct node **direct_produces;
 
-static struct scope_elmt {
+struct scope_elmt {
   short link;
   short item;
   short index;
 } *scope_element;
 
-static bool *symbol_seen;
+bool *symbol_seen;
 
-static SET_PTR produces;
-static SET_PTR right_produces;
-static SET_PTR left_produces;
+SET_PTR produces;
+SET_PTR right_produces;
+SET_PTR left_produces;
 
-static int top;
+int top;
 
-static void compute_produces(int symbol);
-
-static void print_name_map(int symbol);
-
-static void process_scopes(void);
-
-static bool is_scope(int item_no);
-
-static bool scope_check(int lhs_symbol, int target, int source);
-
-static int insert_prefix(int item_no);
-
-static bool is_prefix_equal(int item_no, int item_no2);
-
-static int insert_suffix(int item_no);
-
-static bool is_suffix_equal(int item_no1, int item_no2);
-
-static void print_scopes(void);
-
-static int get_shift_symbol(int lhs_symbol);
-
-/* This procedure computes for each state the set of non-terminal symbols   */
-/* that are required as candidates for secondary error recovery.  If the    */
-/* option NAMES=OPTIMIZED is requested, the NAME map is optimized and SYMNO */
-/* is updated accordingly.                                                  */
-void produce(void) {
-  /* TOP, STACK, and INDEX are used for the digraph algorithm      */
-  /* in the routines COMPUTE_PRODUCES.                             */
-  /*                                                               */
-  /* The array PRODUCES is used to construct two maps:             */
-  /*                                                               */
-  /* 1) PRODUCES, a mapping from each non-terminal A to the set of */
-  /* non-terminals C such that:                                    */
-  /*                                                               */
-  /*                   A  =>*  x C w                               */
-  /*                                                               */
-  /* 2) RIGHT_MOST_PRODUCES, a mapping from each non-terminal A to */
-  /* the set of non-terminals C such that:                         */
-  /*                                                               */
-  /*                   C =>+ A x   and   x =>* %empty.             */
-  /*                                                               */
-  /* NOTE: This is really a reverse right-most produces mapping,   */
-  /*       since given the above rule, we say that                 */
-  /*       C right-most produces A.                                */
-  /*                                                               */
-  int item_no;
-  int rule_no;
-  struct node *p;
-  struct node *q;
-  stack = Allocate_short_array(num_symbols + 1);
-  index_of = Allocate_short_array(num_symbols + 1);
-  short *names_map = Allocate_short_array(num_names + 1);
-  bool *name_used = Allocate_boolean_array(num_names + 1);
-  item_list = Allocate_short_array(num_items + 1);
-  nt_list = Allocate_short_array(num_non_terminals + 1);
-  nt_list -= num_terminals + 1;
-  const SET_PTR set = calloc(1, non_term_set_size * sizeof(BOOLEAN_CELL));
-  if (set == NULL) {
-    nospace(__FILE__, __LINE__);
+/* This procedure prints the name associated with a given symbol. */
+/* The same format that was used in the procedure DISPLAY_INPUT   */
+/* to print aliases is used to print name mappings.               */
+void print_name_map(const int symbol) {
+  char line[PRINT_LINE_SIZE];
+  char tok[SYMBOL_SIZE + 1];
+  restore_symbol(tok, RETRIEVE_STRING(symbol));
+  int len = PRINT_LINE_SIZE - 5;
+  print_large_token(line, tok, "", len);
+  strcat(line, " ::= ");
+  restore_symbol(tok, RETRIEVE_NAME(symno[symbol].name_index));
+  if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 1) {
+    fprintf(syslis, "\n%s", line);
+    len = PRINT_LINE_SIZE - 4;
+    print_large_token(line, tok, "    ", len);
+  } else {
+    strcat(line, tok);
   }
-  produces = (SET_PTR)
-      calloc(num_non_terminals, non_term_set_size * sizeof(BOOLEAN_CELL));
-  if (produces == NULL) {
-    nospace(__FILE__, __LINE__);
+  fprintf(syslis, "\n%s", line);
+}
+
+/*                             SCOPE_CHECK:                          */
+/* Given a nonterminal LHS_SYMBOL and a nonterminal TARGET where,    */
+/*                                                                   */
+/*                     LHS_SYMBOL ::= TARGET x                       */
+/*                                                                   */
+/* find out if whenever LHS_SYMBOL is introduced through closure, it */
+/* is introduced by a nonterminal SOURCE such that                   */
+/*                                                                   */
+/*                     SOURCE ->rm* LHS_SYMBOL                       */
+/*                                                                   */
+/*                               and                                 */
+/*                                                                   */
+/*                     SOURCE ->rm+ TARGET                           */
+bool scope_check(const int lhs_symbol, const int target, const int source) {
+  symbol_seen[source] = true;
+  if (IS_IN_NTSET(right_produces, target, source - num_terminals) &&
+      IS_IN_NTSET(right_produces, lhs_symbol, source - num_terminals)) {
+    return false;
+      }
+  for (int item_no = item_of[source];
+       item_no != NIL; item_no = next_item[item_no]) {
+    if (item_table[item_no].dot != 0) {
+      return true;
+    }
+    const int rule_no = item_table[item_no].rule_number;
+    const int symbol = rules[rule_no].lhs;
+    if (!symbol_seen[symbol]) {
+      /* not yet processed */
+      if (scope_check(lhs_symbol, target, symbol)) {
+        return 1;
+      }
+    }
+       }
+  return false;
+}
+
+/* This procedure checks whether an item of the form:                */
+/* [A  ->  w B x  where  B ->* y A z  is a valid scope.              */
+/*                                                                   */
+/* Such an item is a valid scope if the following conditions hold:   */
+/*                                                                   */
+/* 1) it is not the case that x =>* %empty                           */
+/* 2) either it is not the case that w =>* %empty, or it is not the   */
+/*    case that B =>lm* A.                                           */
+/* 3) it is not the case that whenever A is introduced through       */
+/*    closure, it is introduced by a nonterminal C where C =>rm* A   */
+/*    and C =>rm+ B.                                                 */
+bool is_scope(const int item_no) {
+  for (int i = item_no - item_table[item_no].dot; i < item_no; i++) {
+    const int symbol = item_table[i].symbol;
+    if (IS_A_TERMINAL(symbol)) {
+      return true;
+    }
+    if (!null_nt[symbol]) {
+      return true;
+    }
   }
-  produces -= (num_terminals + 1) * non_term_set_size;
-  direct_produces = (struct node **) calloc(num_non_terminals, sizeof(struct node *));
-  if (direct_produces == NULL) {
-    nospace(__FILE__, __LINE__);
+  const int lhs_symbol = rules[item_table[item_no].rule_number].lhs;
+  const int target = item_table[item_no].symbol;
+  if (IS_IN_NTSET(left_produces, target, lhs_symbol - num_terminals)) {
+    return false;
   }
-  direct_produces -= num_terminals + 1;
-  struct node **goto_domain = calloc(num_states + 1, sizeof(struct node *));
-  if (goto_domain == NULL) {
-    nospace(__FILE__, __LINE__);
+  if (item_table[item_no].dot > 0) {
+    return true;
   }
-  /* Note that the space allocated for PRODUCES and DIRECT_PRODUCES    */
-  /* is automatically initialized to 0 by calloc. Logically, this sets */
-  /* all the sets in the PRODUCES map to the empty set and all the     */
-  /* pointers in DIRECT_PRODUCES are set to NULL.                      */
-  /*                                                                   */
-  /* Next, PRODUCES is initialized to compute RIGHT_MOST_PRODUCES.     */
-  /* Also, we count the number of error rules and verify that they are */
-  /* in the right format.                                              */
-  int item_root = NIL;
   for ALL_NON_TERMINALS3(nt) {
-    for (bool end_node = (p = clitems[nt]) == NULL;
-         !end_node; end_node = p == clitems[nt]) {
+    symbol_seen[nt] = false;
+  }
+  return scope_check(lhs_symbol, target, lhs_symbol);
+}
+
+/* This boolean function takes two items as arguments and checks  */
+/* whether they have the same prefix.                      */
+bool is_prefix_equal(const int item_no, const int item_no2) {
+  /* a suffix */
+  if (item_no > 0) {
+    return false;
+  }
+  const int item_no1 = -item_no;
+  if (item_table[item_no1].dot != item_table[item_no2].dot) {
+    return false;
+  }
+  int j = rules[item_table[item_no1].rule_number].rhs;
+  const int start = rules[item_table[item_no2].rule_number].rhs;
+  const int dot = start + item_table[item_no2].dot - 1;
+  for (int i = start; i <= dot; i++) {
+    /* symbols before dot */
+    if (rhs_sym[i] != rhs_sym[j]) {
+      return false;
+    }
+    j++;
+  }
+  return true;
+}
+
+/* This procedure takes as argument an item and inserts the string   */
+/* prefix of the item preceeding the "dot" into the scope table, if  */
+/* that string is not already there.  In any case, the index  number */
+/* associated with the prefix in question is returned.               */
+/* NOTE that since both prefixes and suffixes are entered in the     */
+/* table, the prefix of a given item, ITEM_NO, is encoded as         */
+/* -ITEM_NO, whereas the suffix of that item is encoded as +ITEM_NO. */
+int insert_prefix(const int item_no) {
+  unsigned long hash_address = 0;
+  const int rule_no = item_table[item_no].rule_number;
+  int ii;
+  for (ii = rules[rule_no].rhs; /* symbols before dot */
+       ii < rules[rule_no].rhs + item_table[item_no].dot; ii++)
+    hash_address += rhs_sym[ii];
+  ii = hash_address % SCOPE_SIZE;
+  for (int j = scope_table[ii]; j != NIL; j = scope_element[j].link) {
+    if (is_prefix_equal(scope_element[j].item, item_no)) {
+      return scope_element[j].index;
+    }
+  }
+  scope_top++;
+  scope_element[scope_top].item = -item_no;
+  scope_element[scope_top].index = scope_rhs_size + 1;
+  scope_element[scope_top].link = scope_table[ii];
+  scope_table[ii] = scope_top;
+  scope_rhs_size += item_table[item_no].dot + 1;
+  return scope_element[scope_top].index;
+}
+
+/* This boolean function takes two items as arguments and checks  */
+/* whether they have the same suffix.                      */
+bool is_suffix_equal(const int item_no1, const int item_no2) {
+  if (item_no1 < 0) {
+    /* a prefix */
+    return false;
+  }
+  int rule_no = item_table[item_no1].rule_number;
+  int i = rules[rule_no].rhs + item_table[item_no1].dot;
+  const int dot1 = rules[rule_no + 1].rhs - 1;
+  rule_no = item_table[item_no2].rule_number;
+  int j = rules[rule_no].rhs + item_table[item_no2].dot;
+  const int dot2 = rules[rule_no + 1].rhs - 1;
+  while (i <= dot1 && j <= dot2) {
+    /* non-nullable syms before dot */
+    if (IS_A_NON_TERMINAL(rhs_sym[i])) {
+      if (null_nt[rhs_sym[i]]) {
+        i++;
+        continue;
+      }
+    } else if (rhs_sym[i] == error_image) {
+      i++;
+      continue;
+    }
+    if (IS_A_NON_TERMINAL(rhs_sym[j])) {
+      if (null_nt[rhs_sym[j]]) {
+        j++;
+        continue;
+      }
+    } else if (rhs_sym[j] == error_image) {
+      j++;
+      continue;
+    }
+    if (rhs_sym[i] != rhs_sym[j]) {
+      return false;
+    }
+    j++;
+    i++;
+  }
+  for (; i <= dot1; i++) {
+    if (IS_A_NON_TERMINAL(rhs_sym[i])) {
+      if (!null_nt[rhs_sym[i]]) {
+        return false;
+      }
+    } else if (rhs_sym[i] != error_image) {
+      return false;
+    }
+  }
+  for (; j <= dot2; j++) {
+    if (IS_A_NON_TERMINAL(rhs_sym[j])) {
+      if (!null_nt[rhs_sym[j]]) {
+        return false;
+      }
+    } else if (rhs_sym[j] != error_image) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/* This procedure is analoguous to INSERT_PREFIX.  It takes as       */
+/* argument an item, and inserts the suffix string following the dot */
+/* in the item into the scope table, if it is not already there.     */
+/* In any case, it returns the index associated with the suffix.     */
+/* When inserting a suffix into the table, all nullable nonterminals */
+/* in the suffix are disregarded.                                    */
+int insert_suffix(const int item_no) {
+  int num_elements = 0;
+  unsigned long hash_address = 0;
+  const int rule_no = item_table[item_no].rule_number;
+  int ii;
+  for (ii = rules[rule_no].rhs + item_table[item_no].dot;
+       ii < rules[rule_no + 1].rhs; /* symbols after dot */
+       ii++) {
+    if (IS_A_NON_TERMINAL(rhs_sym[ii])) {
+      if (!null_nt[rhs_sym[ii]]) {
+        hash_address += rhs_sym[ii];
+        num_elements++;
+      }
+    } else if (rhs_sym[ii] != error_image) {
+      hash_address += rhs_sym[ii];
+      num_elements++;
+    }
+  }
+  ii = hash_address % SCOPE_SIZE;
+  for (int j = scope_table[ii]; j != NIL; j = scope_element[j].link) {
+    if (is_suffix_equal(scope_element[j].item, item_no)) {
+      return scope_element[j].index;
+    }
+  }
+  scope_top++;
+  scope_element[scope_top].item = item_no;
+  scope_element[scope_top].index = scope_rhs_size + 1;
+  scope_element[scope_top].link = scope_table[ii];
+  scope_table[ii] = scope_top;
+  scope_rhs_size += num_elements + 1;
+  return scope_element[scope_top].index;
+}
+
+/* This procedure is similar to the global procedure PTITEM.      */
+void print_scopes(void) {
+  fprintf(syslis, "\nScopes:\n");
+  for (int k = 1; k <= num_scopes; k++) {
+    char tmp[PRINT_LINE_SIZE];
+    char tok[SYMBOL_SIZE + 1];
+    char line[PRINT_LINE_SIZE + 1];
+    int symbol = scope[k].lhs_symbol;
+    restore_symbol(tok, RETRIEVE_STRING(symbol));
+    int len = PRINT_LINE_SIZE - 5;
+    print_large_token(line, tok, "", len);
+    strcat(line, " ::= ");
+    const int offset = MIN(strlen(line) - 1, PRINT_LINE_SIZE / 2 - 1);
+    len = PRINT_LINE_SIZE - (offset + 4);
+    /* locate end of list */
+    int ii;
+    for (ii = scope[k].prefix; scope_right_side[ii] != 0; ii++) {
+    }
+    /* symbols before dot */
+    for (ii = ii - 1; ii >= scope[k].prefix; ii--) {
+      symbol = scope_right_side[ii];
+      restore_symbol(tok, RETRIEVE_STRING(symbol));
+      if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 4) {
+        fprintf(syslis, "\n%s", line);
+        fill_in(tmp, offset, ' ');
+        print_large_token(line, tok, tmp, len);
+      } else {
+        strcat(line, tok);
+      }
+      strcat(line, " ");
+    }
+    /* We now add a dot "." to the output line, and print the remaining  */
+    /* symbols on the right hand side.                                   */
+    strcat(line, " .");
+    len = PRINT_LINE_SIZE - (offset + 1);
+    for (ii = scope[k].suffix; scope_right_side[ii] != 0; ii++) {
+      symbol = scope_right_side[ii];
+      restore_symbol(tok, RETRIEVE_STRING(symbol));
+      if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 1) {
+        fprintf(syslis, "\n%s", line);
+        fill_in(tmp, offset, ' ');
+        print_large_token(line, tok, tmp, len);
+      } else {
+        strcat(line, tok);
+      }
+      strcat(line, " ");
+    }
+    fprintf(syslis, "\n%s", line);
+  }
+}
+
+/* This procedure takes as parameter a nonterminal, LHS_SYMBOL, and  */
+/* determines whether there is a terminal symbol t such that  */
+/* LHS_SYMBOL can rightmost produce a string tX.  If so, t is        */
+/* returned, otherwise EMPTY is returned.                            */
+int get_shift_symbol(const int lhs_symbol) {
+  if (!symbol_seen[lhs_symbol]) {
+    struct node *p;
+    symbol_seen[lhs_symbol] = true;
+    for (bool end_node = (p = clitems[lhs_symbol]) == NULL;
+         !end_node; end_node = p == clitems[lhs_symbol]) {
       p = p->next;
-      item_no = p->value;
-      int symbol = item_table[item_no].symbol;
-      if (IS_A_NON_TERMINAL(symbol)) {
-        const int i = item_table[item_no].suffix_index;
-        if (IS_IN_SET(first, i, empty) &&
-            !IS_IN_NTSET(produces, symbol, nt - num_terminals)) {
-          NTSET_BIT_IN(produces, symbol, nt - num_terminals);
-          q = Allocate_node();
-          q->value = nt;
-          q->next = direct_produces[symbol];
-          direct_produces[symbol] = q;
-        }
-      }
-      rule_no = item_table[item_no].rule_number;
-      int ii;
-      for (ii = 0; ii < RHS_SIZE(rule_no); ii++) {
-        if (item_table[item_no + ii].symbol == error_image) {
-          break;
-        }
-      }
-      item_no += ii;
-      symbol = item_table[item_no].symbol;
-      if (symbol == error_image) {
-        if (IS_A_NON_TERMINAL(item_table[item_no + 1].symbol) && ii > 0) {
-          symbol = item_table[item_no + 2].symbol;
-          if (symbol == empty) {
-            num_error_rules++;
+      const int item_no = p->value;
+      const int rule_no = item_table[item_no].rule_number;
+      if (RHS_SIZE(rule_no) > 0) {
+        int symbol = rhs_sym[rules[rule_no].rhs];
+        if (IS_A_TERMINAL(symbol)) {
+          return symbol;
+        } else {
+          symbol = get_shift_symbol(symbol);
+          if (symbol != empty) {
+            return symbol;
           }
         }
-        if (warnings_bit && symbol != empty) {
-          item_list[item_no] = item_root;
-          item_root = item_no;
-        }
-      }
-      symbol = eoft_image;
-    }
-  }
-  /* If WARNINGS_BIT is on and some error rules are in the wrong,      */
-  /* format, report them.                                              */
-  if (warnings_bit && item_root != NIL) {
-    if (item_list[item_root] == NIL) {
-      fprintf(syslis, "*** This error rule is not in manual format:\n\n");
-    } else {
-      fprintf(syslis, "*** These error rules are not in manual format:\n\n");
-    }
-    for (item_no = item_root;
-         item_no != NIL; item_no = item_list[item_no]) {
-      print_item(item_no);
-    }
-  }
-  /* Complete the construction of the RIGHT_MOST_PRODUCES map for     */
-  /* non-terminals using the digraph algorithm.                       */
-  /* We make sure that each non-terminal A is not present in its own  */
-  /* PRODUCES set since we are interested in the non-reflexive        */
-  /* (positive) transitive closure.                                   */
-  for ALL_SYMBOLS3(symbol) {
-    index_of[symbol] = OMEGA;
-  }
-  top = 0;
-  for ALL_NON_TERMINALS3(nt) {
-    if (index_of[nt] == OMEGA) {
-      compute_produces(nt);
-    }
-    NTRESET_BIT_IN(produces, nt, nt - num_terminals);
-  }
-  /* Construct the minimum subset of the domain of the GOTO map       */
-  /* needed for automatic secondary level error recovery.   For each  */
-  /* state, we start out with the set of all nonterminals on which    */
-  /* there is a transition in that state, and pare it down to a       */
-  /* subset S, by removing all nonterminals B in S such that there    */
-  /* is a goto-reduce action on B by a single production.  If the     */
-  /* READ-REDUCE option is not turned on, then, we check whether or   */
-  /* not the goto action on B is to an LR(0) reduce state.Once we have*/
-  /* our subset S, we further reduce its size as follows.  For each   */
-  /* nonterminal A in S such that there exists another nonterminal    */
-  /* B in S, where B ^= A,  A ->+ Bx  and  x =>* %empty, we remove A  */
-  /* from S.                                                          */
-  /* At the end of this process, the nonterminal elements whose       */
-  /* NT_LIST values are still OMEGA are precisely the nonterminal     */
-  /* symbols that are never used as candidates.                       */
-  for ALL_NON_TERMINALS3(i) {
-    nt_list[i] = OMEGA;
-  }
-  nt_list[accept_image] = NIL;
-  for ALL_STATES3(state_no) {
-    const struct goto_header_type go_to = statset[state_no].go_to;
-    int nt_root = NIL;
-    INIT_NTSET(set);
-    for (int i = 1; i <= go_to.size; i++) {
-      const int symbol = go_to.map[i].symbol;
-      const int state = go_to.map[i].action;
-      if (state < 0) {
-        rule_no = -state;
-      } else {
-        q = statset[state].kernel_items;
-        item_no = q->value;
-        if (q->next != NULL) {
-          rule_no = 0;
-        } else {
-          rule_no = item_table[item_no].rule_number;
-        }
-      }
-      if (rule_no == 0 || RHS_SIZE(rule_no) != 1) {
-        nt_list[symbol] = nt_root;
-        nt_root = symbol;
-        NTSET_UNION(set, 0, produces, symbol);
-      }
-    }
-    goto_domain[state_no] = NULL;
-    for (int symbol = nt_root; symbol != NIL; symbol = nt_list[symbol]) {
-      if (!IS_ELEMENT(set, symbol - num_terminals)) {
-        q = Allocate_node();
-        q->value = symbol;
-        q->next = goto_domain[state_no];
-        goto_domain[state_no] = q;
-        gotodom_size++;
       }
     }
   }
-  /* Allocate and construct the permanent goto domain structure:      */
-  /*   GD_INDEX and GD_RANGE.                                         */
-  int n = 0;
-  gd_index = Allocate_short_array(num_states + 2);
-  gd_range = Allocate_short_array(gotodom_size + 1);
-  for ALL_STATES3(state_no) {
-    gd_index[state_no] = n + 1;
-    for (p = goto_domain[state_no]; p != NULL; q = p, p = p->next) {
-      gd_range[++n] = p->value;
-    }
-    if (goto_domain[state_no] != NULL) {
-      free_nodes(goto_domain[state_no], q);
-    }
-  }
-  gd_index[num_states + 1] = n + 1;
-  /* Remove names assigned to nonterminals that are never used as   */
-  /* error candidates.                                              */
-  if (names_opt == OPTIMIZE_PHRASES) {
-    /* In addition to nonterminals that are never used as candidates,*/
-    /* if a nullable nonterminal was assigned a name by default      */
-    /* (nonterminals that were "named" by default are identified     */
-    /* with negative indices), that name is also removed.            */
-    for ALL_NON_TERMINALS3(symbol) {
-      if (nt_list[symbol] == OMEGA) {
-        symno[symbol].name_index = symno[accept_image].name_index;
-      } else if (symno[symbol].name_index < 0) {
-        if (null_nt[symbol]) {
-          symno[symbol].name_index = symno[accept_image].name_index;
-        } else {
-          symno[symbol].name_index = -symno[symbol].name_index;
-        }
-      }
-    }
-    /* Adjust name map to remove unused elements and update SYMNO map. */
-    for (int i = 1; i <= num_names; i++) {
-      name_used[i] = false;
-    }
-    for ALL_SYMBOLS3(symbol) {
-      name_used[symno[symbol].name_index] = true;
-    }
-    n = 0;
-    for (int i = 1; i <= num_names; i++) {
-      if (name_used[i]) {
-        name[++n] = name[i];
-        names_map[i] = n;
-      }
-    }
-    num_names = n;
-    for ALL_SYMBOLS3(symbol) {
-      symno[symbol].name_index = names_map[symno[symbol].name_index];
-    }
-  }
-  /* If the option LIST_BIT is ON, print the name map.                */
-  if (list_bit) {
-    fprintf(syslis, "\nName map:\n");
-    for ALL_SYMBOLS3(symbol) {
-      if (symno[symbol].name_index != symno[accept_image].name_index) {
-        print_name_map(symbol);
-      }
-    }
-    for ALL_SYMBOLS3(symbol) {
-      if (symbol != accept_image && symno[symbol].name_index == symno[accept_image].name_index) {
-        print_name_map(symbol);
-      }
-    }
-  }
-  if (scopes_bit) {
-    process_scopes();
-  }
-  ffree(stack);
-  ffree(index_of);
-  ffree(names_map);
-  ffree(name_used);
-  nt_list += num_terminals + 1;
-  ffree(nt_list);
-  ffree(set);
-  produces += (num_terminals + 1) * non_term_set_size;
-  ffree(produces);
-  direct_produces += num_terminals + 1;
-  ffree(direct_produces);
-  ffree(goto_domain);
+  return empty;
 }
 
 /* This procedure is used to compute the transitive closure of    */
@@ -349,35 +382,14 @@ static void compute_produces(const int symbol) {
          new_symbol != symbol; new_symbol = stack[--top]) {
       ASSIGN_NTSET(produces, new_symbol, produces, symbol);
       index_of[new_symbol] = INFINITY;
-    }
+         }
     index_of[symbol] = INFINITY;
     top--;
   }
 }
 
-/* This procedure prints the name associated with a given symbol. */
-/* The same format that was used in the procedure DISPLAY_INPUT   */
-/* to print aliases is used to print name mappings.               */
-static void print_name_map(const int symbol) {
-  char line[PRINT_LINE_SIZE];
-  char tok[SYMBOL_SIZE + 1];
-  restore_symbol(tok, RETRIEVE_STRING(symbol));
-  int len = PRINT_LINE_SIZE - 5;
-  print_large_token(line, tok, "", len);
-  strcat(line, " ::= ");
-  restore_symbol(tok, RETRIEVE_NAME(symno[symbol].name_index));
-  if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 1) {
-    fprintf(syslis, "\n%s", line);
-    len = PRINT_LINE_SIZE - 4;
-    print_large_token(line, tok, "    ", len);
-  } else {
-    strcat(line, tok);
-  }
-  fprintf(syslis, "\n%s", line);
-}
-
 /* Compute set of "scopes" and use it to construct SCOPE map.     */
-static void process_scopes(void) {
+void process_scopes(void) {
   short *prefix_index;
   short *suffix_index;
   short *state_index;
@@ -823,304 +835,271 @@ process_scope_states: {
   ffree(scope_element);
 }
 
-/* This procedure checks whether an item of the form:                */
-/* [A  ->  w B x  where  B ->* y A z  is a valid scope.              */
-/*                                                                   */
-/* Such an item is a valid scope if the following conditions hold:   */
-/*                                                                   */
-/* 1) it is not the case that x =>* %empty                           */
-/* 2) either it is not the case that w =>* %empty or it is not the   */
-/*    case that B =>lm* A.                                           */
-/* 3) it is not the case that whenever A is introduced through       */
-/*    closure, it is introduced by a nonterminal C where C =>rm* A   */
-/*    and C =>rm+ B.                                                 */
-static bool is_scope(const int item_no) {
-  for (int i = item_no - item_table[item_no].dot; i < item_no; i++) {
-    const int symbol = item_table[i].symbol;
-    if (IS_A_TERMINAL(symbol)) {
-      return true;
-    }
-    if (!null_nt[symbol]) {
-      return true;
-    }
+/* This procedure computes for each state the set of non-terminal symbols   */
+/* that are required as candidates for secondary error recovery.  If the    */
+/* option NAMES=OPTIMIZED is requested, the NAME map is optimized and SYMNO */
+/* is updated accordingly.                                                  */
+void produce(void) {
+  /* TOP, STACK, and INDEX are used for the digraph algorithm      */
+  /* in the routines COMPUTE_PRODUCES.                             */
+  /*                                                               */
+  /* The array PRODUCES is used to construct two maps:             */
+  /*                                                               */
+  /* 1) PRODUCES, a mapping from each non-terminal A to the set of */
+  /* non-terminals C such that:                                    */
+  /*                                                               */
+  /*                   A  =>*  x C w                               */
+  /*                                                               */
+  /* 2) RIGHT_MOST_PRODUCES, a mapping from each non-terminal A to */
+  /* the set of non-terminals C such that:                         */
+  /*                                                               */
+  /*                   C =>+ A x   and   x =>* %empty.             */
+  /*                                                               */
+  /* NOTE: This is really a reverse right-most produces mapping,   */
+  /*       since given the above rule, we say that                 */
+  /*       C right-most produces A.                                */
+  /*                                                               */
+  int item_no;
+  int rule_no;
+  struct node *p;
+  struct node *q;
+  stack = Allocate_short_array(num_symbols + 1);
+  index_of = Allocate_short_array(num_symbols + 1);
+  short *names_map = Allocate_short_array(num_names + 1);
+  bool *name_used = Allocate_boolean_array(num_names + 1);
+  item_list = Allocate_short_array(num_items + 1);
+  nt_list = Allocate_short_array(num_non_terminals + 1);
+  nt_list -= num_terminals + 1;
+  const SET_PTR set = calloc(1, non_term_set_size * sizeof(BOOLEAN_CELL));
+  if (set == NULL) {
+    nospace(__FILE__, __LINE__);
   }
-  const int lhs_symbol = rules[item_table[item_no].rule_number].lhs;
-  const int target = item_table[item_no].symbol;
-  if (IS_IN_NTSET(left_produces, target, lhs_symbol - num_terminals)) {
-    return false;
+  produces = (SET_PTR)
+      calloc(num_non_terminals, non_term_set_size * sizeof(BOOLEAN_CELL));
+  if (produces == NULL) {
+    nospace(__FILE__, __LINE__);
   }
-  if (item_table[item_no].dot > 0) {
-    return true;
+  produces -= (num_terminals + 1) * non_term_set_size;
+  direct_produces = (struct node **) calloc(num_non_terminals, sizeof(struct node *));
+  if (direct_produces == NULL) {
+    nospace(__FILE__, __LINE__);
   }
+  direct_produces -= num_terminals + 1;
+  struct node **goto_domain = calloc(num_states + 1, sizeof(struct node *));
+  if (goto_domain == NULL) {
+    nospace(__FILE__, __LINE__);
+  }
+  /* Note that the space allocated for PRODUCES and DIRECT_PRODUCES    */
+  /* is automatically initialized to 0 by calloc. Logically, this sets */
+  /* all the sets in the PRODUCES map to the empty set and all the     */
+  /* pointers in DIRECT_PRODUCES are set to NULL.                      */
+  /*                                                                   */
+  /* Next, PRODUCES is initialized to compute RIGHT_MOST_PRODUCES.     */
+  /* Also, we count the number of error rules and verify that they are */
+  /* in the right format.                                              */
+  int item_root = NIL;
   for ALL_NON_TERMINALS3(nt) {
-    symbol_seen[nt] = false;
-  }
-  return scope_check(lhs_symbol, target, lhs_symbol);
-}
-
-/*                             SCOPE_CHECK:                          */
-/* Given a nonterminal LHS_SYMBOL and a nonterminal TARGET where,    */
-/*                                                                   */
-/*                     LHS_SYMBOL ::= TARGET x                       */
-/*                                                                   */
-/* find out if whenever LHS_SYMBOL is introduced through closure, it */
-/* is introduced by a nonterminal SOURCE such that                   */
-/*                                                                   */
-/*                     SOURCE ->rm* LHS_SYMBOL                       */
-/*                                                                   */
-/*                               and                                 */
-/*                                                                   */
-/*                     SOURCE ->rm+ TARGET                           */
-static bool scope_check(const int lhs_symbol, const int target, const int source) {
-  symbol_seen[source] = true;
-  if (IS_IN_NTSET(right_produces, target, source - num_terminals) &&
-      IS_IN_NTSET(right_produces, lhs_symbol, source - num_terminals)) {
-    return false;
-  }
-  for (int item_no = item_of[source];
-       item_no != NIL; item_no = next_item[item_no]) {
-    if (item_table[item_no].dot != 0) {
-      return true;
-    }
-    const int rule_no = item_table[item_no].rule_number;
-    const int symbol = rules[rule_no].lhs;
-    if (!symbol_seen[symbol]) {
-      /* not yet processed */
-      if (scope_check(lhs_symbol, target, symbol)) {
-        return 1;
-      }
-    }
-  }
-  return false;
-}
-
-/* This procedure takes as argument an item and inserts the string   */
-/* prefix of the item preceeding the "dot" into the scope table, if  */
-/* that string is not already there.  In any case, the index  number */
-/* associated with the prefix in question is returned.               */
-/* NOTE that since both prefixes and suffixes are entered in the     */
-/* table, the prefix of a given item, ITEM_NO, is encoded as         */
-/* -ITEM_NO, whereas the suffix of that item is encoded as +ITEM_NO. */
-static int insert_prefix(const int item_no) {
-  unsigned long hash_address = 0;
-  const int rule_no = item_table[item_no].rule_number;
-  int ii;
-  for (ii = rules[rule_no].rhs; /* symbols before dot */
-       ii < rules[rule_no].rhs + item_table[item_no].dot; ii++)
-    hash_address += rhs_sym[ii];
-  ii = hash_address % SCOPE_SIZE;
-  for (int j = scope_table[ii]; j != NIL; j = scope_element[j].link) {
-    if (is_prefix_equal(scope_element[j].item, item_no)) {
-      return scope_element[j].index;
-    }
-  }
-  scope_top++;
-  scope_element[scope_top].item = -item_no;
-  scope_element[scope_top].index = scope_rhs_size + 1;
-  scope_element[scope_top].link = scope_table[ii];
-  scope_table[ii] = scope_top;
-  scope_rhs_size += item_table[item_no].dot + 1;
-  return scope_element[scope_top].index;
-}
-
-/* This boolean function takes two items as arguments and checks  */
-/* whether they have the same prefix.                      */
-static bool is_prefix_equal(const int item_no, const int item_no2) {
-  /* a suffix */
-  if (item_no > 0) {
-    return false;
-  }
-  const int item_no1 = -item_no;
-  if (item_table[item_no1].dot != item_table[item_no2].dot) {
-    return false;
-  }
-  int j = rules[item_table[item_no1].rule_number].rhs;
-  const int start = rules[item_table[item_no2].rule_number].rhs;
-  const int dot = start + item_table[item_no2].dot - 1;
-  for (int i = start; i <= dot; i++) {
-    /* symbols before dot */
-    if (rhs_sym[i] != rhs_sym[j])
-      return false;
-    j++;
-  }
-  return true;
-}
-
-/* This procedure is analoguous to INSERT_PREFIX.  It takes as       */
-/* argument an item, and inserts the suffix string following the dot */
-/* in the item into the scope table, if it is not already there.     */
-/* In any case, it returns the index associated with the suffix.     */
-/* When inserting a suffix into the table, all nullable nonterminals */
-/* in the suffix are disregarded.                                    */
-static int insert_suffix(const int item_no) {
-  int num_elements = 0;
-  unsigned long hash_address = 0;
-  const int rule_no = item_table[item_no].rule_number;
-  int ii;
-  for (ii = rules[rule_no].rhs + item_table[item_no].dot;
-       ii < rules[rule_no + 1].rhs; /* symbols after dot */
-       ii++) {
-    if (IS_A_NON_TERMINAL(rhs_sym[ii])) {
-      if (!null_nt[rhs_sym[ii]]) {
-        hash_address += rhs_sym[ii];
-        num_elements++;
-      }
-    } else if (rhs_sym[ii] != error_image) {
-      hash_address += rhs_sym[ii];
-      num_elements++;
-    }
-  }
-  ii = hash_address % SCOPE_SIZE;
-  for (int j = scope_table[ii]; j != NIL; j = scope_element[j].link) {
-    if (is_suffix_equal(scope_element[j].item, item_no)) {
-      return scope_element[j].index;
-    }
-  }
-  scope_top++;
-  scope_element[scope_top].item = item_no;
-  scope_element[scope_top].index = scope_rhs_size + 1;
-  scope_element[scope_top].link = scope_table[ii];
-  scope_table[ii] = scope_top;
-  scope_rhs_size += num_elements + 1;
-  return scope_element[scope_top].index;
-}
-
-/* This boolean function takes two items as arguments and checks  */
-/* whether they have the same suffix.                      */
-static bool is_suffix_equal(const int item_no1, const int item_no2) {
-  if (item_no1 < 0) {
-    /* a prefix */
-    return false;
-  }
-  int rule_no = item_table[item_no1].rule_number;
-  int i = rules[rule_no].rhs + item_table[item_no1].dot;
-  const int dot1 = rules[rule_no + 1].rhs - 1;
-  rule_no = item_table[item_no2].rule_number;
-  int j = rules[rule_no].rhs + item_table[item_no2].dot;
-  const int dot2 = rules[rule_no + 1].rhs - 1;
-  while (i <= dot1 && j <= dot2) {
-    /* non-nullable syms before dot */
-    if (IS_A_NON_TERMINAL(rhs_sym[i])) {
-      if (null_nt[rhs_sym[i]]) {
-        i++;
-        continue;
-      }
-    } else if (rhs_sym[i] == error_image) {
-      i++;
-      continue;
-    }
-    if (IS_A_NON_TERMINAL(rhs_sym[j])) {
-      if (null_nt[rhs_sym[j]]) {
-        j++;
-        continue;
-      }
-    } else if (rhs_sym[j] == error_image) {
-      j++;
-      continue;
-    }
-    if (rhs_sym[i] != rhs_sym[j]) {
-      return false;
-    }
-    j++;
-    i++;
-  }
-  for (; i <= dot1; i++) {
-    if (IS_A_NON_TERMINAL(rhs_sym[i])) {
-      if (!null_nt[rhs_sym[i]]) {
-        return false;
-      }
-    } else if (rhs_sym[i] != error_image) {
-      return false;
-    }
-  }
-  for (; j <= dot2; j++) {
-    if (IS_A_NON_TERMINAL(rhs_sym[j])) {
-      if (!null_nt[rhs_sym[j]]) {
-        return false;
-      }
-    } else if (rhs_sym[j] != error_image) {
-      return false;
-    }
-  }
-  return true;
-}
-
-/* This procedure is similar to the global procedure PTITEM.      */
-static void print_scopes(void) {
-  fprintf(syslis, "\nScopes:\n");
-  for (int k = 1; k <= num_scopes; k++) {
-    char tmp[PRINT_LINE_SIZE];
-    char tok[SYMBOL_SIZE + 1];
-    char line[PRINT_LINE_SIZE + 1];
-    int symbol = scope[k].lhs_symbol;
-    restore_symbol(tok, RETRIEVE_STRING(symbol));
-    int len = PRINT_LINE_SIZE - 5;
-    print_large_token(line, tok, "", len);
-    strcat(line, " ::= ");
-    const int offset = MIN(strlen(line) - 1, PRINT_LINE_SIZE / 2 - 1);
-    len = PRINT_LINE_SIZE - (offset + 4);
-    /* locate end of list */
-    int ii;
-    for (ii = scope[k].prefix; scope_right_side[ii] != 0; ii++) {
-    }
-    /* symbols before dot */
-    for (ii = ii - 1; ii >= scope[k].prefix; ii--) {
-      symbol = scope_right_side[ii];
-      restore_symbol(tok, RETRIEVE_STRING(symbol));
-      if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 4) {
-        fprintf(syslis, "\n%s", line);
-        fill_in(tmp, offset, ' ');
-        print_large_token(line, tok, tmp, len);
-      } else {
-        strcat(line, tok);
-      }
-      strcat(line, " ");
-    }
-    /* We now add a dot "." to the output line, and print the remaining  */
-    /* symbols on the right hand side.                                   */
-    strcat(line, " .");
-    len = PRINT_LINE_SIZE - (offset + 1);
-    for (ii = scope[k].suffix; scope_right_side[ii] != 0; ii++) {
-      symbol = scope_right_side[ii];
-      restore_symbol(tok, RETRIEVE_STRING(symbol));
-      if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 1) {
-        fprintf(syslis, "\n%s", line);
-        fill_in(tmp, offset, ' ');
-        print_large_token(line, tok, tmp, len);
-      } else {
-        strcat(line, tok);
-      }
-      strcat(line, " ");
-    }
-    fprintf(syslis, "\n%s", line);
-  }
-}
-
-/* This procedure takes as parameter a nonterminal, LHS_SYMBOL, and  */
-/* determines whether there is a terminal symbol t such that  */
-/* LHS_SYMBOL can rightmost produce a string tX.  If so, t is        */
-/* returned, otherwise EMPTY is returned.                            */
-static int get_shift_symbol(const int lhs_symbol) {
-  if (!symbol_seen[lhs_symbol]) {
-    struct node *p;
-    symbol_seen[lhs_symbol] = true;
-    for (bool end_node = (p = clitems[lhs_symbol]) == NULL;
-         !end_node; end_node = p == clitems[lhs_symbol]) {
+    for (bool end_node = (p = clitems[nt]) == NULL;
+         !end_node; end_node = p == clitems[nt]) {
       p = p->next;
-      const int item_no = p->value;
-      const int rule_no = item_table[item_no].rule_number;
-      if (RHS_SIZE(rule_no) > 0) {
-        int symbol = rhs_sym[rules[rule_no].rhs];
-        if (IS_A_TERMINAL(symbol)) {
-          return symbol;
-        } else {
-          symbol = get_shift_symbol(symbol);
-          if (symbol != empty) {
-            return symbol;
+      item_no = p->value;
+      int symbol = item_table[item_no].symbol;
+      if (IS_A_NON_TERMINAL(symbol)) {
+        const int i = item_table[item_no].suffix_index;
+        if (IS_IN_SET(first, i, empty) &&
+            !IS_IN_NTSET(produces, symbol, nt - num_terminals)) {
+          NTSET_BIT_IN(produces, symbol, nt - num_terminals);
+          q = Allocate_node();
+          q->value = nt;
+          q->next = direct_produces[symbol];
+          direct_produces[symbol] = q;
+        }
+      }
+      rule_no = item_table[item_no].rule_number;
+      int ii;
+      for (ii = 0; ii < RHS_SIZE(rule_no); ii++) {
+        if (item_table[item_no + ii].symbol == error_image) {
+          break;
+        }
+      }
+      item_no += ii;
+      symbol = item_table[item_no].symbol;
+      if (symbol == error_image) {
+        if (IS_A_NON_TERMINAL(item_table[item_no + 1].symbol) && ii > 0) {
+          symbol = item_table[item_no + 2].symbol;
+          if (symbol == empty) {
+            num_error_rules++;
           }
+        }
+        if (warnings_bit && symbol != empty) {
+          item_list[item_no] = item_root;
+          item_root = item_no;
+        }
+      }
+      symbol = eoft_image;
+    }
+  }
+  /* If WARNINGS_BIT is on and some error rules are in the wrong,      */
+  /* format, report them.                                              */
+  if (warnings_bit && item_root != NIL) {
+    if (item_list[item_root] == NIL) {
+      fprintf(syslis, "*** This error rule is not in manual format:\n\n");
+    } else {
+      fprintf(syslis, "*** These error rules are not in manual format:\n\n");
+    }
+    for (item_no = item_root;
+         item_no != NIL; item_no = item_list[item_no]) {
+      print_item(item_no);
+    }
+  }
+  /* Complete the construction of the RIGHT_MOST_PRODUCES map for     */
+  /* non-terminals using the digraph algorithm.                       */
+  /* We make sure that each non-terminal A is not present in its own  */
+  /* PRODUCES set since we are interested in the non-reflexive        */
+  /* (positive) transitive closure.                                   */
+  for ALL_SYMBOLS3(symbol) {
+    index_of[symbol] = OMEGA;
+  }
+  top = 0;
+  for ALL_NON_TERMINALS3(nt) {
+    if (index_of[nt] == OMEGA) {
+      compute_produces(nt);
+    }
+    NTRESET_BIT_IN(produces, nt, nt - num_terminals);
+  }
+  /* Construct the minimum subset of the domain of the GOTO map       */
+  /* needed for automatic secondary level error recovery.   For each  */
+  /* state, we start out with the set of all nonterminals on which    */
+  /* there is a transition in that state, and pare it down to a       */
+  /* subset S, by removing all nonterminals B in S such that there    */
+  /* is a goto-reduce action on B by a single production.  If the     */
+  /* READ-REDUCE option is not turned on, then, we check whether or   */
+  /* not the goto action on B is to an LR(0) reduce state.Once we have*/
+  /* our subset S, we further reduce its size as follows.  For each   */
+  /* nonterminal A in S such that there exists another nonterminal    */
+  /* B in S, where B ^= A,  A ->+ Bx  and  x =>* %empty, we remove A  */
+  /* from S.                                                          */
+  /* At the end of this process, the nonterminal elements whose       */
+  /* NT_LIST values are still OMEGA are precisely the nonterminal     */
+  /* symbols that are never used as candidates.                       */
+  for ALL_NON_TERMINALS3(i) {
+    nt_list[i] = OMEGA;
+  }
+  nt_list[accept_image] = NIL;
+  for ALL_STATES3(state_no) {
+    const struct goto_header_type go_to = statset[state_no].go_to;
+    int nt_root = NIL;
+    INIT_NTSET(set);
+    for (int i = 1; i <= go_to.size; i++) {
+      const int symbol = go_to.map[i].symbol;
+      const int state = go_to.map[i].action;
+      if (state < 0) {
+        rule_no = -state;
+      } else {
+        q = statset[state].kernel_items;
+        item_no = q->value;
+        if (q->next != NULL) {
+          rule_no = 0;
+        } else {
+          rule_no = item_table[item_no].rule_number;
+        }
+      }
+      if (rule_no == 0 || RHS_SIZE(rule_no) != 1) {
+        nt_list[symbol] = nt_root;
+        nt_root = symbol;
+        NTSET_UNION(set, 0, produces, symbol);
+      }
+    }
+    goto_domain[state_no] = NULL;
+    for (int symbol = nt_root; symbol != NIL; symbol = nt_list[symbol]) {
+      if (!IS_ELEMENT(set, symbol - num_terminals)) {
+        q = Allocate_node();
+        q->value = symbol;
+        q->next = goto_domain[state_no];
+        goto_domain[state_no] = q;
+        gotodom_size++;
+      }
+    }
+  }
+  /* Allocate and construct the permanent goto domain structure:      */
+  /*   GD_INDEX and GD_RANGE.                                         */
+  int n = 0;
+  gd_index = Allocate_short_array(num_states + 2);
+  gd_range = Allocate_short_array(gotodom_size + 1);
+  for ALL_STATES3(state_no) {
+    gd_index[state_no] = n + 1;
+    for (p = goto_domain[state_no]; p != NULL; q = p, p = p->next) {
+      gd_range[++n] = p->value;
+    }
+    if (goto_domain[state_no] != NULL) {
+      free_nodes(goto_domain[state_no], q);
+    }
+  }
+  gd_index[num_states + 1] = n + 1;
+  /* Remove names assigned to nonterminals that are never used as   */
+  /* error candidates.                                              */
+  if (names_opt == OPTIMIZE_PHRASES) {
+    /* In addition to nonterminals that are never used as candidates,*/
+    /* if a nullable nonterminal was assigned a name by default      */
+    /* (nonterminals that were "named" by default are identified     */
+    /* with negative indices), that name is also removed.            */
+    for ALL_NON_TERMINALS3(symbol) {
+      if (nt_list[symbol] == OMEGA) {
+        symno[symbol].name_index = symno[accept_image].name_index;
+      } else if (symno[symbol].name_index < 0) {
+        if (null_nt[symbol]) {
+          symno[symbol].name_index = symno[accept_image].name_index;
+        } else {
+          symno[symbol].name_index = -symno[symbol].name_index;
         }
       }
     }
+    /* Adjust name map to remove unused elements and update SYMNO map. */
+    for (int i = 1; i <= num_names; i++) {
+      name_used[i] = false;
+    }
+    for ALL_SYMBOLS3(symbol) {
+      name_used[symno[symbol].name_index] = true;
+    }
+    n = 0;
+    for (int i = 1; i <= num_names; i++) {
+      if (name_used[i]) {
+        name[++n] = name[i];
+        names_map[i] = n;
+      }
+    }
+    num_names = n;
+    for ALL_SYMBOLS3(symbol) {
+      symno[symbol].name_index = names_map[symno[symbol].name_index];
+    }
   }
-  return empty;
+  /* If the option LIST_BIT is ON, print the name map.                */
+  if (list_bit) {
+    fprintf(syslis, "\nName map:\n");
+    for ALL_SYMBOLS3(symbol) {
+      if (symno[symbol].name_index != symno[accept_image].name_index) {
+        print_name_map(symbol);
+      }
+    }
+    for ALL_SYMBOLS3(symbol) {
+      if (symbol != accept_image && symno[symbol].name_index == symno[accept_image].name_index) {
+        print_name_map(symbol);
+      }
+    }
+  }
+  if (scopes_bit) {
+    process_scopes();
+  }
+  ffree(stack);
+  ffree(index_of);
+  ffree(names_map);
+  ffree(name_used);
+  nt_list += num_terminals + 1;
+  ffree(nt_list);
+  ffree(set);
+  produces += (num_terminals + 1) * non_term_set_size;
+  ffree(produces);
+  direct_produces += num_terminals + 1;
+  ffree(direct_produces);
+  ffree(goto_domain);
 }
