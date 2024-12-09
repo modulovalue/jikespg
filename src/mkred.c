@@ -441,9 +441,6 @@ static void build_in_stat(void) {
 /* For a complete description of the lookahead algorithm used in this        */
 /* program, see Charles, PhD thesis, NYU 1991.                               */
 void mkrdcts(void) {
-  int item_no;
-  int rule_no;
-  int n;
   struct node *q;
   struct node *item_ptr;
   /* Set up a pool of temporary space. If LALR(k), k > 1 is requested,  */
@@ -514,7 +511,7 @@ void mkrdcts(void) {
   for ALL_STATES3(state_no) {
     no_shift_on_error_sym[state_no] = true;
     if (default_opt == 5) {
-      n = statset[state_no].shift_number;
+      int n = statset[state_no].shift_number;
       const struct shift_header_type sh = shift[n];
       for (int i = 1; i <= sh.size; ++i) {
         if (sh.map[i].symbol == error_image) {
@@ -528,7 +525,7 @@ void mkrdcts(void) {
     /* will not contain such states. Also, states are marked only when    */
     /* default actions are requested.                                     */
     item_ptr = statset[state_no].kernel_items;
-    item_no = item_ptr->value;
+    int item_no = item_ptr->value;
     single_complete_item[state_no] =
         !read_reduce_bit &&
         !single_productions_bit &&
@@ -606,8 +603,8 @@ void mkrdcts(void) {
       /*  In the code below, we first check for category 3.  If it is not   */
       /* satisfied, then we check for the others. Note that in any case,    */
       /* default reductions are never taken on the ACCEPT rule.             */
-      item_no = item_ptr->value;
-      rule_no = item_table[item_no].rule_number;
+      int item_no = item_ptr->value;
+      int rule_no = item_table[item_no].rule_number;
       int symbol = rules[rule_no].lhs;
       if (single_complete_item[state_no] && symbol != accept_image) {
         default_rule = rule_no;
@@ -636,7 +633,7 @@ void mkrdcts(void) {
             } else {
               /* Always place the rule with the largest     */
               /* right-hand side first in the list.         */
-              n = item_table[action[symbol]->value].rule_number;
+              int n = item_table[action[symbol]->value].rule_number;
               if (RHS_SIZE(n) >= RHS_SIZE(rule_no)) {
                 p->value = action[symbol]->value;
                 action[symbol]->value = item_no;
@@ -686,11 +683,10 @@ void mkrdcts(void) {
       /* Compute REDUCE_SIZE, the number of reductions in the state and */
       /* DEFAULT_RULE: the rule with the highest number of reductions   */
       /* to it.                                                         */
-      n = 0;
-      for (q = statset[state_no].complete_items;
-           q != NULL; q = q->next) {
-        item_no = q->value;
-        rule_no = item_table[item_no].rule_number;
+      int n = 0;
+      for (q = statset[state_no].complete_items; q != NULL; q = q->next) {
+        const int item_no = q->value;
+        const int rule_no = item_table[item_no].rule_number;
         const int symbol = rules[rule_no].lhs;
         reduce_size += rule_count[rule_no];
         if (rule_count[rule_no] > n &&
@@ -712,8 +708,8 @@ void mkrdcts(void) {
                  !single_productions_bit) {
         q = statset[state_no].complete_items;
         if (q->next == NULL) {
-          item_no = q->value;
-          rule_no = item_table[item_no].rule_number;
+          const int item_no = q->value;
+          const int rule_no = item_table[item_no].rule_number;
           if (default_opt > 2 || /* No empty rule defined */
               (default_opt == 2 && RHS_SIZE(rule_no) != 0)) {
             reduce_size -= n;
@@ -735,7 +731,7 @@ void mkrdcts(void) {
     red.map[0].rule_number = default_rule;
     for (int symbol = symbol_root; symbol != NIL; symbol = symbol_list[symbol]) {
       if (action[symbol] != NULL) {
-        rule_no = item_table[action[symbol]->value].rule_number;
+        const int rule_no = item_table[action[symbol]->value].rule_number;
         if (rule_no != default_rule ||
             table_opt == OPTIMIZE_SPACE ||
             table_opt == OPTIMIZE_TIME ||
@@ -750,7 +746,7 @@ void mkrdcts(void) {
     }
     /* Reset RULE_COUNT elements used in this state.            */
     for (q = statset[state_no].complete_items; q != NULL; q = q->next) {
-      rule_no = item_table[q->value].rule_number;
+      const int rule_no = item_table[q->value].rule_number;
       rule_count[rule_no] = 0;
     }
   }

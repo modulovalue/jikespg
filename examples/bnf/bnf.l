@@ -1,5 +1,14 @@
-%OPTIONS la=2,GP=java,act,ACTFILENAME=bnfact.java,hn=bnfhdr.java,TABLE=space,FILEPREFIX=bnf,prefix=TK_,
-%OPTIONS nogotodefault,names=max,errormaps
+%OPTIONS LA=2
+%OPTIONS GENERATEPARSER=java
+%OPTIONS act
+%OPTIONS ACTFILENAME=bnfact.java
+%OPTIONS HACTFILENAME=bnfhdr.java
+%OPTIONS TABLE=space
+%OPTIONS FILEPREFIX=bnf
+%OPTIONS prefix=TK_
+%OPTIONS nogotodefault
+%OPTIONS names=max
+%OPTIONS errormaps
 
 Options in effect:
     ACTION  ACTFILE-NAME=bnfact.java  BLOCKB=/.  BLOCKE=./  BYTE  CONFLICTS  

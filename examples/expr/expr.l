@@ -1,5 +1,13 @@
-%OPTIONS GP=java,act,ACTFILENAME=expract.java,hn=exprhdr.java,TABLE=space,FILEPREFIX=expr,prefix=TK_,
-%OPTIONS nogotodefault,name=max,errormaps
+%OPTIONS GENERATEPARSER=java
+%OPTIONS act
+%OPTIONS ACTFILENAME=expract.java
+%OPTIONS HACTFILENAME=exprhdr.java
+%OPTIONS TABLE=space
+%OPTIONS FILEPREFIX=expr
+%OPTIONS prefix=TK_
+%OPTIONS nogotodefault
+%OPTIONS name=max
+%OPTIONS errormaps
 
 Options in effect:
     ACTION  ACTFILE-NAME=expract.java  BLOCKB=/.  BLOCKE=./  BYTE  CONFLICTS  

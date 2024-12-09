@@ -1,7 +1,15 @@
-%Options GP=java,act,ACTFILENAME=expract.java,hn=exprhdr.java,TABLE=space,FILEPREFIX=expr,prefix=TK_,
-%Options nogotodefault,name=max,errormaps
-%Define
+%Options GENERATEPARSER=java
+%Options act
+%Options ACTFILENAME=expract.java
+%Options HACTFILENAME=exprhdr.java
+%Options TABLE=space
+%Options FILEPREFIX=expr
+%Options prefix=TK_
+%Options nogotodefault
+%Options name=max
+%Options errormaps
 
+%Define
 -- This software is subject to the terms of the IBM Jikes Parser
 -- Generator License Agreement available at the following URL:
 -- http://www.ibm.com/research/jikes.

@@ -1,5 +1,15 @@
-%Options nogotodefault,esc=$,action,actfile=lpgact.c,noem
-%Options FILEPREFIX=lpg,GENERATEPARSER,nodefer,suffix=_TK,stacksize=21,hactfile=lpgact.h
+%Options nogotodefault
+%Options esc=$
+%Options action
+%Options actfile=lpgact.c
+%Options noem
+%Options FILEPREFIX=lpg
+%Options GENERATEPARSER=c
+%Options nodefer
+%Options suffix=_TK
+%Options stacksize=21
+%Options HACTFILENAME=lpgact.h
+
 -- $Id: jikespg.g,v 1.2 1999/11/04 14:02:22 shields Exp $
 -- This software is subject to the terms of the IBM Jikes Compiler
 -- License Agreement available at the following URL:

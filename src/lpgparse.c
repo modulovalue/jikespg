@@ -131,7 +131,7 @@ bool strxeq(char *s1, char *s2) {
 }
 
 const int OUTPUT_PARM_SIZE = MAX_PARM_SIZE + 7;
-const int MAXIMUM_LA_LEVEL = 15;
+const int MAXIMUM_LA_LEVEL = 100;
 const int STRING_BUFFER_SIZE = 8192;
 
 char act_file[80];
@@ -148,14 +148,11 @@ char hact_file[80];
 static void options(char* file_prefix) {
   const char *oconflicts = "CONFLICTS";
   const char *odefault = "DEFAULT";
-  const char *olalr = "LALR";
   const char *omax = "MAXIMUM";
   const char *otrace = "TRACE";
-
   char token[MAX_PARM_SIZE + 1];
   char temp[MAX_PARM_SIZE + 1];
   char delim;
-  bool flag;
   char *c;
   /* If we scan the comment sign, we stop processing the rest of the */
   /* parameter string.                                               */
@@ -189,8 +186,7 @@ static void options(char* file_prefix) {
       i++;
     }
     if (parm[i] != '\0') {
-      /* not end of parameter line */
-      delim = parm[i];
+      delim = parm[i]; /* not end of parameter line */
     } else {
       delim = ' ';
     }
@@ -207,13 +203,11 @@ static void options(char* file_prefix) {
     /* and TOKEN contains the upper-case folded value of TEMP.                   */
     /* if switch parameter then process */
     if (delim != '=') {
-      /* option has "NO" */
-      if (token_len > 2 && memcmp(token, "NO", 2) == 0) {
-        /* prefix?         */
+      bool flag;
+      if (memcmp(token, "NO", 2) == 0) {
         flag = false;
         token_len = token_len - 2;
-        /* get rid of "NO" prefix */
-        memmove(token, token + 2, strlen(token + 2) + 1);
+        memmove(token, token + 2, strlen(token + 2) + 1); /* get rid of "NO" prefix */
       } else {
         flag = true;
       }
@@ -223,7 +217,7 @@ static void options(char* file_prefix) {
         byte_bit = flag;
       } else if (memcmp(oconflicts, token, token_len) == 0) {
         conflicts_bit = flag;
-      } else if (token_len >= 4 && memcmp(odefault, token, token_len) == 0) {
+      } else if (memcmp(odefault, token, token_len) == 0) {
         if (flag) {
           default_opt = 5;
         } else {
@@ -245,27 +239,24 @@ static void options(char* file_prefix) {
         goto_default_bit = flag;
       } else if (strcmp(token, "HW") == 0 || memcmp("HALFWORD", token, token_len) == 0 || memcmp("HALF_WORD", token, token_len) == 0 || memcmp("HALF-WORD", token, token_len) == 0) {
         byte_bit = !flag;
-      } else if (token_len >= 2 && memcmp(olalr, token, token_len) == 0) {
-        slr_bit = !flag;
-        lalr_level = 1;
-      } else if (token_len >= 2 && memcmp("LIST", token, token_len) == 0) {
+      } else if (memcmp("LIST", token, token_len) == 0) {
         list_bit = flag;
       } else if (strcmp(token, "NC") == 0 || memcmp("NTCHECK", token, token_len) == 0 || memcmp("NT_CHECK", token, token_len) == 0 || memcmp("NT-CHECK", token, token_len) == 0) {
         nt_check_bit = flag;
       } else if (strcmp(token, "RR") == 0 || memcmp("READREDUCE", token, token_len) == 0 || memcmp("READ_REDUCE", token, token_len) == 0 || memcmp("READ-REDUCE", token, token_len) == 0) {
         read_reduce_bit = flag;
-      } else if (token_len >= 2 && memcmp("SCOPES", token, token_len) == 0) {
+      } else if (memcmp("SCOPES", token, token_len) == 0) {
         scopes_bit = flag;
-      } else if (token_len >= 2 && (strcmp(token, "SD") == 0 || memcmp("SHIFTDEFAULT", token, token_len) == 0 || memcmp("SHIFT-DEFAULT", token, token_len) == 0 || memcmp("SHIFT_DEFAULT", token, token_len) == 0)) {
+      } else if (strcmp(token, "SD") == 0 || memcmp("SHIFTDEFAULT", token, token_len) == 0 || memcmp("SHIFT-DEFAULT", token, token_len) == 0 || memcmp("SHIFT_DEFAULT", token, token_len) == 0) {
         shift_default_bit = flag;
-      } else if (token_len >= 2 && (strcmp(token, "SP") == 0 || memcmp("SINGLEPRODUCTIONS", token, token_len) == 0 || memcmp("SINGLE-PRODUCTIONS", token, token_len) == 0 || memcmp("SINGLE_PRODUCTIONS", token, token_len) == 0)) {
+      } else if (strcmp(token, "SP") == 0 || memcmp("SINGLEPRODUCTIONS", token, token_len) == 0 || memcmp("SINGLE-PRODUCTIONS", token, token_len) == 0 || memcmp("SINGLE_PRODUCTIONS", token, token_len) == 0) {
         single_productions_bit = flag;
-      } else if (token_len >= 2 && memcmp("SLR", token, token_len) == 0) {
+      } else if (memcmp("SLR", token, token_len) == 0) {
         slr_bit = flag;
         lalr_level = 1;
-      } else if (token_len >= 2 && memcmp("STATES", token, token_len) == 0) {
+      } else if (memcmp("STATES", token, token_len) == 0) {
         states_bit = flag;
-      } else if (token_len >= 2 && memcmp(otrace, token, token_len) == 0) {
+      } else if (memcmp(otrace, token, token_len) == 0) {
         if (flag) {
           trace_opt = TRACE_CONFLICTS;
         } else {
@@ -277,22 +268,6 @@ static void options(char* file_prefix) {
         warnings_bit = flag;
       } else if (memcmp("XREF", token, token_len) == 0) {
         xref_bit = flag;
-      } else if (strcmp(token, "D") == 0 || strcmp(token, "DE") == 0) {
-        PRNTERR2(msg_line, "\"%s\" is an ambiguous option: DEBUG, DEFAULT, DEFERRED ?", temp);
-      } else if (strcmp(token, "DEF") == 0) {
-        PRNTERR("\"DEF\" is an ambiguous option: DEFAULT, DEFERRED ?");
-      } else if (strcmp(token, "E") == 0) {
-        PRNTERR("\"E\" is an ambiguous option: EDIT, ERROR-MAPS ?");
-      } else if (strcmp(token, "F") == 0) {
-        PRNTERR("\"F\" is an ambiguous option: FOLLOW, FIRST ?");
-      } else if (strcmp(token, "G") == 0) {
-        PRNTERR("\"G\" is an ambiguous option: GENERATE-PARSER, GOTO-DEFAULT ?");
-      } else if (strcmp(token, "L") == 0) {
-        PRNTERR("\"L\" is an ambiguous option: LALR, LIST ?");
-      } else if (strcmp(token, "S") == 0) {
-        PRNTERR("\"S\" is an ambiguous option:\n SCOPES, SEARCH, STATES, SLR, SHIFT-DEFAULT, SINGLE-PRODUCTIONS  ?");
-      } else if (strcmp(token, "T") == 0) {
-        PRNTERR("\"T\" is an ambiguous option:  TABLE, TRACE ?");
       } else {
         PRNTERR2(msg_line, "\"%s\" is an invalid option", temp);
       }
@@ -310,7 +285,7 @@ static void options(char* file_prefix) {
       }
       memcpy(temp, parm+j, i - j); /* copy into TEMP */
       temp[i - j] = '\0';
-      if (strcmp(token, "AN") == 0 || memcmp(token, "ACTFILENAME", token_len) == 0 || memcmp(token, "ACTFILE-NAME", token_len) == 0 || memcmp(token, "ACTFILE_NAME", token_len) == 0) {
+      if (memcmp(token, "ACTFILENAME", token_len) == 0) {
         strcpy(act_file, temp);
       } else if (strcmp(token, "BLOCKB") == 0) {
         strcpy(blockb, temp);
@@ -322,12 +297,12 @@ static void options(char* file_prefix) {
         } else {
           PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
         }
-      } else if (token_len >= 2 && memcmp(token, "ESCAPE", token_len) == 0) {
+      } else if (memcmp(token, "ESCAPE", token_len) == 0) {
         escape = temp[0];
-      } else if (strcmp(token, "FP") == 0 || memcmp(token, "FILEPREFIX", token_len) == 0 || memcmp(token, "FILE_PREFIX", token_len) == 0 || memcmp(token, "FILE-PREFIX", token_len) == 0) {
+      } else if (memcmp(token, "FILEPREFIX", token_len) == 0) {
         memcpy(file_prefix, temp, 5);
         file_prefix[MIN(5, strlen(temp))] = '\0';
-      } else if (strcmp(token, "GP") == 0 || memcmp("GENERATEPARSER", token, token_len) == 0 || memcmp("GENERATE_PARSER", token, token_len) == 0 || memcmp("GENERATE-PARSER", token, token_len) == 0) {
+      } else if (memcmp("GENERATEPARSER", token, token_len) == 0) {
         if (strxeq(temp, "c")) {
           c_bit = true;
           cpp_bit = false;
@@ -343,13 +318,13 @@ static void options(char* file_prefix) {
         } else {
           PRNTERR2(msg_line, "\"%s\" is an invalid language for %s", temp, token);
         }
-      } else if (strcmp(token, "HN") == 0 || (token_len >= 2 && (memcmp(token, "HACTFILENAME", token_len) == 0 || memcmp(token, "HACTFILE-NAME", token_len) == 0 || memcmp(token, "HACTFILE_NAME", token_len) == 0))) {
+      } else if (memcmp(token, "HACTFILENAME", token_len) == 0) {
         strcpy(hact_file, temp);
-      } else if (token_len >= 2 && strcmp(token, "HBLOCKB") == 0) {
+      } else if (strcmp(token, "HBLOCKB") == 0) {
         strcpy(hblockb, temp);
-      } else if (token_len >= 2 && strcmp(token, "HBLOCKE") == 0) {
+      } else if (strcmp(token, "HBLOCKE") == 0) {
         strcpy(hblocke, temp);
-      } else if (memcmp(olalr, token, token_len) == 0) {
+      } else if (memcmp("LALR", token, token_len) == 0) {
         token_len = strlen(temp);
         if (token_len > MAX_PARM_SIZE) {
           temp[MAX_PARM_SIZE - 1] = '\0';

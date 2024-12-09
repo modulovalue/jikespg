@@ -1,5 +1,15 @@
-%Options la=2,GP=java,act,ACTFILENAME=bnfact.java,hn=bnfhdr.java,TABLE=space,FILEPREFIX=bnf,prefix=TK_,
-%Options nogotodefault,names=max,errormaps
+%Options LA=2
+%Options GENERATEPARSER=java
+%Options act
+%Options ACTFILENAME=bnfact.java
+%Options HACTFILENAME=bnfhdr.java
+%Options TABLE=space
+%Options FILEPREFIX=bnf
+%Options prefix=TK_
+%Options nogotodefault
+%Options names=max
+%Options errormaps
+
 %Define
 -- This software is subject to the terms of the IBM Jikes Parser
 -- Generator License Agreement available at the following URL:
