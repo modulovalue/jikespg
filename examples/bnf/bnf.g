@@ -1,4 +1,4 @@
-%Options la=2,GENERATEPARSER=java,act,ACTFILENAME=bnfact.java,hn=bnfhdr.java,tab=space,FILEPREFIX=bnf,prefix=TK_,
+%Options la=2,GP=java,act,ACTFILENAME=bnfact.java,hn=bnfhdr.java,TABLE=space,FILEPREFIX=bnf,prefix=TK_,
 %Options nogotodefault,names=max,errormaps
 %Define
 -- This software is subject to the terms of the IBM Jikes Parser

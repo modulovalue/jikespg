@@ -1,5 +1,5 @@
-%OPTIONS la=2,gp=java,act,an=bnfact.java,hn=bnfhdr.java,tab=space,fp=bnf,prefix=TK_,
-%OPTIONS nogoto-default,names=max,error-maps
+%OPTIONS la=2,GP=java,act,ACTFILENAME=bnfact.java,hn=bnfhdr.java,TABLE=space,FILEPREFIX=bnf,prefix=TK_,
+%OPTIONS nogotodefault,names=max,errormaps
 
 Options in effect:
     ACTION  ACTFILE-NAME=bnfact.java  BLOCKB=/.  BLOCKE=./  BYTE  CONFLICTS  

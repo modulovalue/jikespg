@@ -1,4 +1,4 @@
-%Options GENERATEPARSER=java,act,tab,ACTFILENAME=expract.java,hn=exprhdr.java,tab=space,FILEPREFIX=expr,prefix=TK_,
+%Options GP=java,act,ACTFILENAME=expract.java,hn=exprhdr.java,TABLE=space,FILEPREFIX=expr,prefix=TK_,
 %Options nogotodefault,name=max,errormaps
 %Define
 

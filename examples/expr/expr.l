@@ -1,6 +1,5 @@
-%OPTIONS gp=java,act,tab,an=expract.java,hn=exprhdr.java,tab=space,fp=expr,prefix=TK_,
-%OPTIONS nogoto-default,output-size=125,name=max,error-maps
-***ERROR: "OUTPUT-SIZE" is an invalid option
+%OPTIONS GP=java,act,ACTFILENAME=expract.java,hn=exprhdr.java,TABLE=space,FILEPREFIX=expr,prefix=TK_,
+%OPTIONS nogotodefault,name=max,errormaps
 
 Options in effect:
     ACTION  ACTFILE-NAME=expract.java  BLOCKB=/.  BLOCKE=./  BYTE  CONFLICTS  
