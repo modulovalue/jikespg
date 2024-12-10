@@ -43,7 +43,6 @@ int main(const int argc, char *argv[]) {
         "-byte                                     \n"
         "-conflicts                                \n"
         "-default=<0|1|2|3|4|5>                    \n"
-        "-edit                                     \n"
         "-errormaps                                \n"
         // TODO • remove?
         "-escape=character                         \n"
@@ -67,15 +66,12 @@ int main(const int argc, char *argv[]) {
         "-states                                   \n"
         "-table=<space|time>                       \n"
         "-trace=<CONFLICTS|FULL|NO>                \n"
-        "-verbose                                  \n"
-        "-warnings                                 \n"
         "-xref                                     \n"
         "                                          \n"
         "The following options are valid only if   \n"
-        "GENERATE-PARSER and TABLE are activated:  \n"
+        "GENERATEPARSER and TABLE are activated:  \n"
         "                                          \n"
         "-debug                                    \n"
-        "-deferred                                 \n"
         "-fileprefix=string                        \n"
         "-maxdistance=integer                      \n"
         "-mindistance=integer                      \n"
@@ -146,97 +142,83 @@ int main(const int argc, char *argv[]) {
     // Process rest.
     {
       mkbasic(&cli_options);
-      // If the user only wanted to edit his grammar, we quit the program.
-      if (cli_options.edit_bit) {
-        // Edit.
-        {
-          PRNT3("\nNumber of Terminals: %ld", num_terminals - 1); /*-1 for %empty */
-          PRNT3("Number of Nonterminals: %ld", num_non_terminals - 1); /* -1 for %ACC */
-          PRNT3("Number of Productions: %ld", num_rules + 1);
-          if (cli_options.single_productions_bit) {
-            PRNT3("Number of Single Productions: %ld", num_single_productions);
-          }
-          PRNT3("Number of Items: %ld", num_items);
-          fclose(syslis); /* close listing file */
-          return 0;
+
+      PRNT3("\nNumber of Terminals: %ld", num_terminals - 1); /*-1 for %empty */
+      PRNT3("Number of Nonterminals: %ld", num_non_terminals - 1); /* -1 for %ACC */
+      PRNT3("Number of Productions: %ld", num_rules + 1);
+      if (cli_options.single_productions_bit) {
+        PRNT3("Number of Single Productions: %ld", num_single_productions);
+      }
+      PRNT3("Number of Items: %ld", num_items);
+
+      mkstats(&cli_options);
+
+      mkrdcts(&cli_options);
+
+      // Basic statistics.
+      {
+        if (cli_options.scopes_bit) {
+          PRNT3("Number of Scopes: %ld", num_scopes);
         }
-      } else {
-        mkstats(&cli_options);
-
-        mkrdcts(&cli_options);
-
-        // Basic statistics.
-        {
-          PRNT3("\nNumber of Terminals: %ld", num_terminals - 1);
-          PRNT3("Number of Nonterminals: %ld", num_non_terminals - 1);
-          PRNT3("Number of Productions: %ld", num_rules + 1);
-          if (cli_options.single_productions_bit) {
-            PRNT3("Number of Single Productions: %ld", num_single_productions);
-          }
-          PRNT3("Number of Items: %ld", num_items);
-          if (cli_options.scopes_bit) {
-            PRNT3("Number of Scopes: %ld", num_scopes);
-          }
-          PRNT3("Number of States: %ld", num_states);
-          if (max_la_state > num_states) {
-            PRNT3("Number of look-ahead states: %ld", max_la_state - num_states);
-          }
-          PRNT3("Number of Shift actions: %ld", num_shifts);
-          PRNT3("Number of Goto actions: %ld", num_gotos);
-          if (cli_options.read_reduce_bit) {
-            PRNT3("Number of Shift/Reduce actions: %ld", num_shift_reduces);
-            PRNT3("Number of Goto/Reduce actions: %ld", num_goto_reduces);
-          }
-          PRNT3("Number of Reduce actions: %ld", num_reductions);
-          PRNT3("Number of Shift-Reduce conflicts: %ld", num_sr_conflicts);
-          PRNT3("Number of Reduce-Reduce conflicts: %ld", num_rr_conflicts);
+        PRNT3("Number of States: %ld", num_states);
+        if (max_la_state > num_states) {
+          PRNT3("Number of look-ahead states: %ld", max_la_state - num_states);
         }
-
-        if (cli_options.states_bit) {
-          ptstats(&cli_options);
+        PRNT3("Number of Shift actions: %ld", num_shifts);
+        PRNT3("Number of Goto actions: %ld", num_gotos);
+        if (cli_options.read_reduce_bit) {
+          PRNT3("Number of Shift/Reduce actions: %ld", num_shift_reduces);
+          PRNT3("Number of Goto/Reduce actions: %ld", num_goto_reduces);
         }
+        PRNT3("Number of Reduce actions: %ld", num_reductions);
+        PRNT3("Number of Shift-Reduce conflicts: %ld", num_sr_conflicts);
+        PRNT3("Number of Reduce-Reduce conflicts: %ld", num_rr_conflicts);
+      }
 
-        if (cli_options.table_opt != 0) {
-          if (cli_options.goto_default_bit && cli_options.nt_check_bit) {
-            PRNTERR("The options GOTO_DEFAULT and NT_CHECK are incompatible. Tables not generated");
-          } else {
-            num_entries = max_la_state + num_shifts + num_shift_reduces + num_gotos + num_goto_reduces + num_reductions;
-            // We release space used by RHS_SYM, the ADEQUATE_ITEM
-            // map, ITEM_TABLE (if we don't have to dump error maps),
-            // IN_STAT, FIRST, NULL_NT and FOLLOW (if it's no longer
-            // needed).
-            ffree(rhs_sym);
-            if (adequate_item != NULL) {
-              for ALL_RULES3(rule_no) {
-                struct node *q = adequate_item[rule_no];
-                if (q != NULL) {
-                  free_nodes(q, q);
-                }
-              }
-              ffree(adequate_item);
-            }
-            if (!error_maps_bit) {
-              ffree(item_table);
-            }
-            for ALL_STATES3(state_no) {
-              struct node *head = in_stat[state_no];
-              if (head != NULL) {
-                head = head->next;
-                free_nodes(head, in_stat[state_no]);
+      if (cli_options.states_bit) {
+        ptstats(&cli_options);
+      }
+
+      if (cli_options.table_opt != 0) {
+        if (cli_options.goto_default_bit && cli_options.nt_check_bit) {
+          PRNTERR("The options GOTO_DEFAULT and NT_CHECK are incompatible. Tables not generated");
+        } else {
+          num_entries = max_la_state + num_shifts + num_shift_reduces + num_gotos + num_goto_reduces + num_reductions;
+          // We release space used by RHS_SYM, the ADEQUATE_ITEM
+          // map, ITEM_TABLE (if we don't have to dump error maps),
+          // IN_STAT, FIRST, NULL_NT and FOLLOW (if it's no longer
+          // needed).
+          ffree(rhs_sym);
+          if (adequate_item != NULL) {
+            for ALL_RULES3(rule_no) {
+              struct node *q = adequate_item[rule_no];
+              if (q != NULL) {
+                free_nodes(q, q);
               }
             }
-            ffree(in_stat);
-            ffree(first);
-            null_nt += num_terminals + 1;
-            ffree(null_nt);
-            if (follow != NULL) {
-              if (!error_maps_bit || cli_options.c_bit || cli_options.cpp_bit || cli_options.java_bit) {
-                follow += (num_terminals + 1) * term_set_size;
-                ffree(follow);
-              }
-            }
-            process_tables(tab_file, &output_files, &cli_options);
+            ffree(adequate_item);
           }
+          if (!error_maps_bit) {
+            ffree(item_table);
+          }
+          for ALL_STATES3(state_no) {
+            struct node *head = in_stat[state_no];
+            if (head != NULL) {
+              head = head->next;
+              free_nodes(head, in_stat[state_no]);
+            }
+          }
+          ffree(in_stat);
+          ffree(first);
+          null_nt += num_terminals + 1;
+          ffree(null_nt);
+          if (follow != NULL) {
+            if (!error_maps_bit || cli_options.c_bit || cli_options.cpp_bit || cli_options.java_bit) {
+              follow += (num_terminals + 1) * term_set_size;
+              ffree(follow);
+            }
+          }
+          process_tables(tab_file, &output_files, &cli_options);
         }
 
         fclose(syslis);

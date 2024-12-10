@@ -208,8 +208,6 @@ void options(char *file_prefix, struct CLIOptions *cli_options) {
         cli_options->conflicts_bit = flag;
       } else if (memcmp("DEBUG", token, token_len) == 0) {
         cli_options->debug_bit = flag;
-      } else if (memcmp("EDIT", token, token_len) == 0) {
-        cli_options->edit_bit = flag;
       } else if (memcmp("ERRORMAPS", token, token_len) == 0) {
         error_maps_bit = flag;
       } else if (memcmp("FIRST", token, token_len) == 0) {
@@ -478,11 +476,6 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
     strcpy(opt_string[++top], "DEBUG");
   } else {
     strcpy(opt_string[++top], "NODEBUG");
-  }
-  if (cli_options->edit_bit) {
-    strcpy(opt_string[++top], "EDIT");
-  } else {
-    strcpy(opt_string[++top], "NOEDIT");
   }
   if (error_maps_bit) {
     strcpy(opt_string[++top], "ERROR-MAPS");
