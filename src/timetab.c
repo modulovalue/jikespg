@@ -324,7 +324,7 @@ static void overlap_tables(struct CLIOptions* cli_options) {
 }
 
 /* We now write out the tables to the SYSTAB file.                   */
-static void print_tables(struct CLIOptions* cli_options) {
+static void print_tables(struct CLIOptions* cli_options, FILE *systab) {
   long *action;
   long *check;
   struct goto_header_type go_to;
@@ -689,7 +689,7 @@ static void print_tables(struct CLIOptions* cli_options) {
   /*       question: TRANSITION_STATES                                 */
   /*                                                                   */
   if (error_maps_bit) {
-    process_error_maps(cli_options);
+    process_error_maps(cli_options, systab);
   }
   fwrite(output_buffer, sizeof(char), output_ptr - &output_buffer[0], systab);
 }
@@ -700,13 +700,13 @@ static void print_tables(struct CLIOptions* cli_options) {
 /* together, to achieve maximum speed efficiency.                    */
 /* Otherwise, the compression technique used in this table is        */
 /* analogous to the technique used in the routine CMPRSPA.          */
-void cmprtim(const struct OutputFiles output_files, struct CLIOptions* cli_options) {
+void cmprtim(struct OutputFiles* output_files, struct CLIOptions* cli_options, FILE *systab) {
   remap_symbols();
   overlap_tables(cli_options);
   if (cli_options->c_bit || cli_options->cpp_bit || cli_options->java_bit) {
     init_parser_files(output_files, cli_options);
     print_time_parser(cli_options);
   } else {
-    print_tables(cli_options);
+    print_tables(cli_options, systab);
   }
 }

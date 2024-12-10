@@ -183,6 +183,8 @@ struct CLIOptions {
   int maximum_distance;
   int minimum_distance;
   int stack_size;
+  char act_file[80];
+  char hact_file[80];
 };
 
 static struct CLIOptions init_cli_options() {
@@ -227,7 +229,6 @@ extern char suffix[];
 extern char msg_line[];
 
 extern FILE *syslis;
-extern FILE *systab;
 extern FILE *syssym;
 extern FILE *sysdcl;
 
@@ -416,9 +417,9 @@ struct shift_header_type allocate_shift_map(int n, char *file, long line);
 
 struct reduce_header_type allocate_reduce_map(int n, char *file, long line);
 
-void cmprtim(struct OutputFiles output_files, struct CLIOptions* cli_options);
+void cmprtim(struct OutputFiles* output_files, struct CLIOptions* cli_options, FILE *systab);
 
-void cmprspa(struct OutputFiles output_files, struct CLIOptions* cli_options);
+void cmprspa(struct OutputFiles* output_files, struct CLIOptions* cli_options, FILE *systab);
 
 void compute_la(int state_no, int item_no, SET_PTR look_ahead);
 
@@ -466,15 +467,15 @@ void print_state(int state_no);
 
 void produce(struct CLIOptions* cli_options);
 
-void process_error_maps(struct CLIOptions* cli_options);
+void process_error_maps(struct CLIOptions* cli_options, FILE *systab);
 
 void print_space_parser(struct CLIOptions* cli_options);
 
 void print_time_parser(struct CLIOptions* cli_options);
 
-void init_parser_files(struct OutputFiles output_files, struct CLIOptions* cli_options);
+void init_parser_files(struct OutputFiles* output_files, struct CLIOptions* cli_options);
 
-void process_tables(char *tab_file, struct OutputFiles output_files, struct CLIOptions* cli_options);
+void process_tables(char *tab_file, struct OutputFiles* output_files, struct CLIOptions* cli_options);
 
 void ptstats(struct CLIOptions* cli_options);
 

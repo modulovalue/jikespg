@@ -176,7 +176,7 @@ static void compute_goto_default(void) {
 
 /* Remap symbols, apply transition default actions  and call                 */
 /* appropriate table compression routine.                                    */
-void process_tables(char *tab_file, const struct OutputFiles output_files, struct CLIOptions* cli_options) {
+void process_tables(char *tab_file, struct OutputFiles* output_files, struct CLIOptions* cli_options) {
   struct reduce_header_type red;
   /*        First, we decrease by 1 the constants NUM_SYMBOLS        */
   /* and NUM_TERMINALS, remove the EMPTY symbol(1) and remap the     */
@@ -268,6 +268,7 @@ void process_tables(char *tab_file, const struct OutputFiles output_files, struc
   if (output_buffer == NULL) {
     nospace(__FILE__, __LINE__);
   }
+  FILE *systab;
   if (!cli_options->c_bit && !cli_options->cpp_bit && !cli_options->java_bit) {
     if ((systab = fopen(tab_file, "w")) == NULL) {
       fprintf(stderr, "***ERROR: Table file \"%s\" cannot be opened\n", tab_file);
@@ -275,9 +276,9 @@ void process_tables(char *tab_file, const struct OutputFiles output_files, struc
     }
   }
   if (cli_options->table_opt == OPTIMIZE_SPACE) {
-    cmprspa(output_files, cli_options);
+    cmprspa(output_files, cli_options, systab);
   } else if (cli_options->table_opt == OPTIMIZE_TIME) {
-    cmprtim(output_files, cli_options);
+    cmprtim(output_files, cli_options, systab);
   }
   if (!cli_options->c_bit && !cli_options->cpp_bit && !cli_options->java_bit) {
     fclose(systab);

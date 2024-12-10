@@ -237,7 +237,7 @@ int main(const int argc, char *argv[]) {
                 ffree(follow);
               }
             }
-            process_tables(tab_file, output_files, &cli_options);
+            process_tables(tab_file, &output_files, &cli_options);
           }
         }
 

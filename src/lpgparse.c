@@ -1,4 +1,5 @@
 #include <stdlib.h>
+
 static char hostfile[] = __FILE__;
 
 #include <string.h>
@@ -60,7 +61,6 @@ bool IsAlpha(const int c) {
 
 int line_no = 0;
 
-/*                             IO variables                        */
 /* The two character pointer variables, P1 and P2, are used in     */
 /* processing the io buffer, INPUT_BUFFER.                         */
 char *p1;
@@ -112,8 +112,8 @@ char *translate(char *str, const int len) {
   return str;
 }
 
-/* Compare two character strings s1 and s2 to check whether s2 */
-/* is a substring of s1.  The string s2 is assumed to be in lowercase */
+/* Compare two character strings s1 and s2 to check whether s2        */
+/* is a substring of s1. The string s2 is assumed to be in lowercase  */
 /* and NULL terminated. However, s1 does not have to (indeed, may not)*/
 /* be NULL terminated.                                                */
 /*                                                                    */
@@ -133,10 +133,6 @@ const int OUTPUT_PARM_SIZE = MAX_PARM_SIZE + 7;
 const int MAXIMUM_LA_LEVEL = 100;
 const int STRING_BUFFER_SIZE = 8192;
 
-char act_file[80];
-char hact_file[80];
-
-// TODO • parse all options into a struct and pass that around?
 /* OPTION handles the decoding of options passed by the user and resets      */
 /* them appropriately. "options" may be called twice: when a parameter line  */
 /* is passed to the main program and when the user codes an %OPTIONS line in */
@@ -267,7 +263,7 @@ void options(char *file_prefix, struct CLIOptions* cli_options) {
       memcpy(temp, parm+j, i - j); /* copy into TEMP */
       temp[i - j] = '\0';
       if (memcmp(token, "ACTFILENAME", token_len) == 0) {
-        strcpy(act_file, temp);
+        strcpy(cli_options->act_file, temp);
       } else if (strcmp(token, "BLOCKB") == 0) {
         strcpy(blockb, temp);
       } else if (strcmp(token, "BLOCKE") == 0) {
@@ -300,7 +296,7 @@ void options(char *file_prefix, struct CLIOptions* cli_options) {
           PRNTERR2(msg_line, "\"%s\" is an invalid language for %s", temp, token);
         }
       } else if (memcmp(token, "HACTFILENAME", token_len) == 0) {
-        strcpy(hact_file, temp);
+        strcpy(cli_options->hact_file, temp);
       } else if (strcmp(token, "HBLOCKB") == 0) {
         strcpy(hblockb, temp);
       } else if (strcmp(token, "HBLOCKE") == 0) {
@@ -404,9 +400,9 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
   char opt_string[60][OUTPUT_PARM_SIZE + 1];
   char *line_end;
   char temp[SYMBOL_SIZE + 1];
-  static char ooptions[9] = " OPTIONS";
   int top = 0;
   strcpy(old_parm, parm); /* Save new options passed to program */
+  static char ooptions[9] = " OPTIONS";
   ooptions[0] = escape; /* "ooptions" always uses default escape symbol */
   /* Until end-of-file is reached, process */
   while (p1 != NULL) {
@@ -461,11 +457,11 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
   if (!error_maps_bit) {
     cli_options->deferred_bit = false;
   }
-  if (act_file[0] == '\0') {
-    sprintf(act_file, "%sact.%s", file_prefix, cli_options->java_bit ? "java" : "h");
+  if (cli_options->act_file[0] == '\0') {
+    sprintf(cli_options->act_file, "%sact.%s", file_prefix, cli_options->java_bit ? "java" : "h");
   }
-  if (hact_file[0] == '\0') {
-    sprintf(hact_file, "%shdr.%s", file_prefix, cli_options->java_bit ? "java" : "h");
+  if (cli_options->hact_file[0] == '\0') {
+    sprintf(cli_options->hact_file, "%shdr.%s", file_prefix, cli_options->java_bit ? "java" : "h");
   }
   sprintf(output_files->sym_file, "%ssym.%s", file_prefix, cli_options->java_bit ? "java" : "h");
   sprintf(output_files->def_file, "%sdef.%s", file_prefix, cli_options->java_bit ? "java" : "h");
@@ -481,12 +477,12 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
     cli_options->warnings_bit = true;
   }
   /*                          PRINT OPTIONS:                                   */
-  /* Here we print all options set by the user.  As of now, only about 48      */
-  /* different options and related aliases are allowed.  In case that number   */
+  /* Here we print all options set by the user. As of now, only about 48       */
+  /* different options and related aliases are allowed. In case that number    */
   /* goes up, the bound of the array, opt_string, should be changed.           */
   /* BLOCKB, BLOCKE, HBLOCKB and HBLOCKE can generate the longest strings      */
   /* since their value can be up to MAX_PARM_SIZE characters long.             */
-  sprintf(opt_string[++top], "ACTFILENAME=%s", act_file);
+  sprintf(opt_string[++top], "ACTFILENAME=%s", cli_options->act_file);
   sprintf(opt_string[++top], "BLOCKB=%s", blockb);
   sprintf(opt_string[++top], "BLOCKE=%s", blocke);
   if (cli_options->byte_bit) {
@@ -548,7 +544,7 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
   } else {
     strcpy(opt_string[++top], "NOGOTODEFAULT");
   }
-  sprintf(opt_string[++top], "HACTFILENAME=%s", hact_file);
+  sprintf(opt_string[++top], "HACTFILENAME=%s", cli_options->hact_file);
   if (!cli_options->byte_bit) {
     strcpy(opt_string[++top], "HALFWORD");
   }
@@ -1695,14 +1691,14 @@ void process_actions(char *grm_file, struct CLIOptions *cli_options) {
   register int len;
   register char *p;
   char line[MAX_LINE_SIZE + 1];
-  FILE *sysact = fopen(act_file, "w");
-  FILE *syshact = fopen(hact_file, "w");
+  FILE *sysact = fopen(cli_options->act_file, "w");
+  FILE *syshact = fopen(cli_options->hact_file, "w");
   if (sysact == (FILE *) NULL) {
-    fprintf(stderr, "***ERROR: Action file \"%s\" cannot be opened.\n", act_file);
+    fprintf(stderr, "***ERROR: Action file \"%s\" cannot be opened.\n", cli_options->act_file);
     exit(12);
   }
   if (syshact == (FILE *) NULL) {
-    fprintf(stderr, "***ERROR: Header Action file \"%s\" cannot be opened.\n", hact_file);
+    fprintf(stderr, "***ERROR: Header Action file \"%s\" cannot be opened.\n", cli_options->hact_file);
     exit(12);
   }
   if ((sysgrm = fopen(grm_file, "r")) == (FILE *) NULL) {
@@ -2226,6 +2222,8 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
     goto process_terminal;
   }
 
+  end: {}
+
   // Exit grammar.
   {
     /* This routine is invoked to free all space used to process the input that  */
@@ -2244,7 +2242,4 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
     ffree(input_buffer);
     ffree(rulehdr); /* allocated in action LPGACT when grammar is not empty */
   }
-
-  end:
-  {}
 }

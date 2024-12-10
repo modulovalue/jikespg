@@ -388,18 +388,6 @@ void merge_shift_domains(struct CLIOptions* cli_options) {
 
   bool *shift_symbols;
 
-  unsigned long hash_address;
-
-  int indx,
-      max_indx,
-      k_bytes,
-      old_table_size,
-      percentage,
-      shift_size,
-      shift_no;
-
-  long num_bytes;
-
   /* Some of the rows in the shift action map have already been merged */
   /* by the merging of compatible states... We simply need to increase */
   /* the size of the granularity by merging these new terminal states  */
@@ -428,33 +416,26 @@ void merge_shift_domains(struct CLIOptions* cli_options) {
   shift_image = Allocate_short_array(max_la_state + 1);
   real_shift_number = Allocate_short_array(num_shift_maps + 1);
   shift_symbols = Allocate_boolean_array(num_terminals + 1);
-
   shift_check_index = Allocate_int_array(num_shift_maps + 1);
-
   for (int i = 0; i <= SHIFT_TABLE_UBOUND; i++) {
     shift_domain_table[i] = NIL;
   }
-
   num_table_entries = 0;
   shift_domain_count = 0;
-
   for (int state_no = 1; state_no <= num_terminal_states; state_no++) {
-    shift_no = new_state_element[state_no].shift_number;
+    int shift_no = new_state_element[state_no].shift_number;
     for (int i = 1; i <= num_terminals; i++) {
       shift_symbols[i] = false;
     }
-
     sh = shift[shift_no];
-    shift_size = sh.size;
-    hash_address = shift_size;
+    int shift_size = sh.size;
+    unsigned long hash_address = shift_size;
     for (int i = 1; i <= shift_size; i++) {
       int symbol = sh.map[i].symbol;
       hash_address += symbol;
       shift_symbols[symbol] = true;
     }
-
     hash_address %= SHIFT_TABLE_SIZE;
-
     for (int i = shift_domain_table[hash_address]; i != NIL; i = shift_domain_link[i]) {
       sh = shift[new_state_element[i].shift_number];
       if (sh.size == shift_size) {
@@ -472,71 +453,60 @@ void merge_shift_domains(struct CLIOptions* cli_options) {
     }
     shift_domain_link[state_no] = shift_domain_table[hash_address];
     shift_domain_table[hash_address] = state_no;
-
     shift_domain_count++;
     shift_image[state_no] = shift_domain_count;
-
     real_shift_number[shift_domain_count] = shift_no;
-
     ordered_shift[shift_domain_count] = shift_domain_count;
     row_size[shift_domain_count] = shift_size;
     num_table_entries += shift_size;
   continu:;
   }
-
   /*   Compute the frequencies, and remap the terminal symbols         */
   /* accordingly.                                                      */
   for ALL_TERMINALS3(symbol) {
     frequency_symbol[symbol] = symbol;
     frequency_count[symbol] = 0;
   }
-
   for (int i = 1; i <= shift_domain_count; i++) {
-    shift_no = real_shift_number[i];
+    int shift_no = real_shift_number[i];
     sh = shift[shift_no];
     for (int j = 1; j <= sh.size; j++) {
       int symbol = sh.map[j].symbol;
       frequency_count[symbol]++;
     }
   }
-
-  sortdes(frequency_symbol, frequency_count, 1, num_terminals,
-          shift_domain_count);
-
+  sortdes(frequency_symbol, frequency_count, 1, num_terminals, shift_domain_count);
   for ALL_TERMINALS3(symbol) {
     symbol_map[frequency_symbol[symbol]] = symbol;
   }
-
   symbol_map[DEFAULT_SYMBOL] = DEFAULT_SYMBOL;
   eoft_image = symbol_map[eoft_image];
   if (error_maps_bit) {
     error_image = symbol_map[error_image];
     eolt_image = symbol_map[eolt_image];
   }
-
   for (int i = 1; i <= num_shift_maps; i++) {
     sh = shift[i];
     for (int j = 1; j <= sh.size; j++) {
       sh.map[j].symbol = symbol_map[sh.map[j].symbol];
     }
   }
-
   for (int state_no = 1; state_no <= num_terminal_states; state_no++) {
     red = new_state_element[state_no].reduce;
-    for (int i = 1; i <= red.size; i++)
+    for (int i = 1; i <= red.size; i++) {
       red.map[i].symbol = symbol_map[red.map[i].symbol];
+    }
   }
-
   /* If ERROR_MAPS are requested, we also have to remap the original   */
   /* REDUCE maps.                                                      */
   if (error_maps_bit) {
     for ALL_STATES3(state_no) {
       red = reduce[state_no];
-      for (int i = 1; i <= red.size; i++)
+      for (int i = 1; i <= red.size; i++) {
         red.map[i].symbol = symbol_map[red.map[i].symbol];
+      }
     }
   }
-
   /* Remap the SHIFT_DEFAULT map.                             */
   temp_shift_default = Allocate_short_array(num_terminals + 1);
   for ALL_TERMINALS3(symbol) {
@@ -544,41 +514,37 @@ void merge_shift_domains(struct CLIOptions* cli_options) {
   }
   ffree(shiftdf);
   shiftdf = temp_shift_default;
-
   /* We now compute the starting position for each Shift check row     */
   /* as we did for the terminal states.  The starting positions are    */
   /* stored in the vector SHIFT_CHECK_INDEX.                           */
   sortdes(ordered_shift, row_size, 1, shift_domain_count, num_terminals);
-
-  increment_size = MAX(num_table_entries / 100 * increment,
-                       num_terminals + 1);
-  old_table_size = table_size;
+  increment_size = MAX(num_table_entries / 100 * increment, num_terminals + 1);
+  int old_table_size = table_size;
   table_size = MIN(num_table_entries + increment_size, MAX_TABLE_SIZE);
   if ((int) table_size > old_table_size) {
     ffree(previous);
     ffree(next);
     previous = Allocate_long_array(table_size + 1);
     next = Allocate_long_array(table_size + 1);
-  } else
+  } else {
     table_size = old_table_size;
-
+  }
   first_index = 1;
   previous[first_index] = NIL;
   next[first_index] = first_index + 1;
-  for (indx = 2; indx < (int) table_size; indx++) {
+  for (int indx = 2; indx < (int) table_size; indx++) {
     next[indx] = indx + 1;
     previous[indx] = indx - 1;
   }
   last_index = table_size;
   previous[last_index] = last_index - 1;
   next[last_index] = NIL;
-  max_indx = first_index;
-
+  int max_indx = first_index;
   /* Look for a suitable index where to overlay the shift check row.   */
   for (int k = 1; k <= shift_domain_count; k++) {
-    shift_no = ordered_shift[k];
+    int shift_no = ordered_shift[k];
     sh = shift[real_shift_number[shift_no]];
-    indx = first_index;
+    int indx = first_index;
   look_for_match_in_sh_chk_tab:
     if (indx == NIL) {
       indx = table_size + 1;
@@ -593,7 +559,6 @@ void merge_shift_domains(struct CLIOptions* cli_options) {
         goto look_for_match_in_sh_chk_tab;
       }
     }
-
     /* INDX marks the starting position for the row, remove all the      */
     /* positions that are claimed by that shift check row.               */
     /* If a position has the value 0,   then it is the starting position */
@@ -613,7 +578,6 @@ void merge_shift_domains(struct CLIOptions* cli_options) {
       }
       next[i] = OMEGA;
     }
-
     /* We now remove the starting position itself from the list without  */
     /* marking it as taken, since it can still be used for a shift check.*/
     /* MAX_INDX is updated if required.                                  */
@@ -632,28 +596,25 @@ void merge_shift_domains(struct CLIOptions* cli_options) {
       previous[next[indx]] = previous[indx];
     }
     next[indx] = 0;
-
-    if (indx > max_indx)
+    if (indx > max_indx) {
       max_indx = indx;
+    }
     shift_check_index[shift_no] = indx;
   }
-
   /* Update all counts, and report statistics.                         */
   shift_check_size = max_indx + num_terminals;
-
   printf("\n");
   PRNT2(msg_line, "Length of Shift Check Table: %d", shift_check_size);
-
   PRNT2(msg_line, "Number of entries in Shift Check Table: %ld", num_table_entries);
-
   int kk;
   for (kk = shift_check_size; kk >= max_indx; kk--) {
     if (next[kk] == OMEGA) {
       break;
     }
   }
-  percentage = ((long) kk - num_table_entries) * 1000 / num_table_entries;
-  PRNT2(msg_line, "Percentage of increase: %d.%d%%", percentage/10, percentage % 10);
+  long percentage = (kk - num_table_entries) * 1000 / num_table_entries;
+  PRNT2(msg_line, "Percentage of increase: %ld.%ld%%", percentage/10, percentage % 10);
+  int num_bytes;
   if (cli_options->byte_bit) {
     num_bytes = shift_check_size;
     if (num_terminals > 255) {
@@ -663,13 +624,9 @@ void merge_shift_domains(struct CLIOptions* cli_options) {
     num_bytes = 2 * shift_check_size;
   }
   num_bytes += 2 * (num_terminal_states + num_terminals);
-
-  k_bytes = num_bytes / 1024 + 1;
-
-  PRNT2(msg_line, "Storage required for Shift Check Table: %ld Bytes, %dK", num_bytes, k_bytes);
-
+  int k_bytes = num_bytes / 1024 + 1;
+  PRNT2(msg_line, "Storage required for Shift Check Table: %d Bytes, %dK", num_bytes, k_bytes);
   total_bytes += num_bytes;
-
   ffree(ordered_shift);
   ffree(terminal_list);
   ffree(shift_symbols);
@@ -1149,7 +1106,7 @@ void overlap_t_rows(struct CLIOptions* cli_options) {
 }
 
 /* We now write out the tables to the SYSTAB file.                   */
-void print_tables(struct CLIOptions* cli_options) {
+void print_tables(struct CLIOptions* cli_options, FILE *systab) {
   int *check;
   int *action;
   int la_state_offset;
@@ -1623,12 +1580,12 @@ void print_tables(struct CLIOptions* cli_options) {
   ffree(check);
   ffree(action);
   if (error_maps_bit) {
-    process_error_maps(cli_options);
+    process_error_maps(cli_options, systab);
   }
   fwrite(output_buffer, sizeof(char), output_ptr - &output_buffer[0], systab);
 }
 
-void cmprspa(const struct OutputFiles output_files, struct CLIOptions* cli_options) {
+void cmprspa(struct OutputFiles* output_files, struct CLIOptions* cli_options, FILE *systab) {
   state_index = Allocate_long_array(max_la_state + 1);
   ordered_state = Allocate_long_array(max_la_state + 1);
   symbol_map = Allocate_int_array(num_symbols + 1);
@@ -1651,6 +1608,6 @@ void cmprspa(const struct OutputFiles output_files, struct CLIOptions* cli_optio
     init_parser_files(output_files, cli_options);
     print_space_parser(cli_options);
   } else {
-    print_tables(cli_options);
+    print_tables(cli_options, systab);
   }
 }

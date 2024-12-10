@@ -11,7 +11,6 @@ char suffix[MAX_PARM_SIZE] = "";
 char msg_line[MAX_MSG_SIZE];
 
 FILE *syslis;
-FILE *systab;
 FILE *syssym;
 FILE *sysdcl;
 
@@ -64,8 +63,8 @@ SET_PTR action_symbols = NULL;
 const char digits[] = "0123456789";
 
 /* ITOC takes as arguments an integer NUM. NUM is an integer containing at */
-/* most 11 digits which is converted into a character string and placed in  */
-/* the iobuffer.  Leading zeros are eliminated and if the number is        */
+/* most 11 digits which is converted into a character string and placed in */
+/* the iobuffer. Leading zeros are eliminated and if the number is         */
 /* negative, a leading "-" is added.                                       */
 void itoc(const int num) {
   char tmp[12];
@@ -1876,7 +1875,7 @@ void common(const bool byte_check_bit, struct CLIOptions* cli_options) {
 /*   5) The map from each symbol into the set of staes that can              */
 /*      possibly be reached after a transition on the symbol in              */
 /*      question: TRANSITION_STATES                                          */
-void process_error_maps(struct CLIOptions* cli_options) {
+void process_error_maps(struct CLIOptions* cli_options, FILE *systab) {
   long *state_start;
   long *state_stack;
   int *temp;
@@ -3400,7 +3399,7 @@ void print_time_parser(struct CLIOptions* cli_options) {
     padline();
     k = 0;
     if (error_maps_bit) {
-      int max_indx;
+      long max_indx;
       /* Construct a map from new state numbers into original      */
       /*   state numbers using the array check[]                   */
       max_indx = accept_act - num_rules - 1;
@@ -3499,11 +3498,11 @@ void print_time_parser(struct CLIOptions* cli_options) {
   common(byte_check_bit, cli_options);
 }
 
-void init_parser_files(struct OutputFiles output_files, struct CLIOptions* cli_options) {
-  init_file(&sysdcl, output_files.dcl_file, dcl_tag, cli_options);
-  init_file(&syssym, output_files.sym_file, sym_tag, cli_options);
-  init_file(&sysdef, output_files.def_file, def_tag, cli_options);
-  init_file(&sysprs, output_files.prs_file, prs_tag, cli_options);
+void init_parser_files(struct OutputFiles* output_files, struct CLIOptions* cli_options) {
+  init_file(&sysdcl, output_files->dcl_file, dcl_tag, cli_options);
+  init_file(&syssym, output_files->sym_file, sym_tag, cli_options);
+  init_file(&sysdef, output_files->def_file, def_tag, cli_options);
+  init_file(&sysprs, output_files->prs_file, prs_tag, cli_options);
 }
 
 /// PT_STATS prints all the states of the parser.
