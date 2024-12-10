@@ -19,6 +19,7 @@ static const int MAX_LINE_SIZE = 512;
 static const int OPTIMIZE_NO_TABLE = 0;
 static const int OPTIMIZE_TIME = 1;
 static const int OPTIMIZE_SPACE = 2;
+
 static const int MINIMUM_NAMES = 1;
 static const int MAXIMUM_NAMES = 2;
 static const int OPTIMIZE_PHRASES = 3;

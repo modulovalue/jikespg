@@ -457,41 +457,19 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
   sprintf(opt_string[++top], "ACTFILENAME=%s", cli_options->act_file);
   sprintf(opt_string[++top], "BLOCKB=%s", blockb);
   sprintf(opt_string[++top], "BLOCKE=%s", blocke);
-  if (cli_options->byte_bit) {
-    strcpy(opt_string[++top], "BYTE");
-  }
-  if (cli_options->conflicts_bit) {
-    strcpy(opt_string[++top], "CONFLICTS");
-  } else {
-    strcpy(opt_string[++top], "NOCONFLICTS");
-  }
+  strcpy(opt_string[++top], cli_options->byte_bit ? "BYTE" : "NOBYTE");
+  strcpy(opt_string[++top], cli_options->conflicts_bit ? "CONFLICTS" : "NOCONFLICTS");
   if (cli_options->default_opt == 0) {
     strcpy(opt_string[++top], "NODEFAULT");
   } else {
     sprintf(opt_string[++top], "DEFAULT=%d", cli_options->default_opt);
   }
-  if (cli_options->debug_bit) {
-    strcpy(opt_string[++top], "DEBUG");
-  } else {
-    strcpy(opt_string[++top], "NODEBUG");
-  }
-  if (error_maps_bit) {
-    strcpy(opt_string[++top], "ERROR-MAPS");
-  } else {
-    strcpy(opt_string[++top], "NOERROR-MAPS");
-  }
+  strcpy(opt_string[++top], cli_options->debug_bit ? "DEBUG" : "NODEBUG");
+  strcpy(opt_string[++top], error_maps_bit ? "ERROR-MAPS" : "NOERROR-MAPS");
   sprintf(opt_string[++top], "ESCAPE=%c", escape);
   sprintf(opt_string[++top], "FILE-PREFIX=%s", file_prefix);
-  if (cli_options->first_bit) {
-    strcpy(opt_string[++top], "FIRST");
-  } else {
-    strcpy(opt_string[++top], "NOFIRST");
-  }
-  if (cli_options->follow_bit) {
-    strcpy(opt_string[++top], "FOLLOW");
-  } else {
-    strcpy(opt_string[++top], "NOFOLLOW");
-  }
+  strcpy(opt_string[++top], cli_options->first_bit ? "FIRST" : "NOFIRST");
+  strcpy(opt_string[++top], cli_options->follow_bit ? "FOLLOW" : "NOFOLLOW");
   if (cli_options->c_bit) {
     sprintf(opt_string[++top], "GENERATE-PARSER=C");
   } else if (cli_options->cpp_bit) {
@@ -501,25 +479,24 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
   } else {
     strcpy(opt_string[++top], "NOGENERATE-PARSER");
   }
-  if (cli_options->goto_default_bit) {
-    strcpy(opt_string[++top], "GOTODEFAULT");
-  } else {
-    strcpy(opt_string[++top], "NOGOTODEFAULT");
-  }
+  strcpy(opt_string[++top], cli_options->goto_default_bit ? "GOTODEFAULT" : "NOGOTODEFAULT");
   sprintf(opt_string[++top], "HACTFILENAME=%s", cli_options->hact_file);
-  if (!cli_options->byte_bit) {
-    strcpy(opt_string[++top], "HALFWORD");
-  }
   sprintf(opt_string[++top], "HBLOCKB=%s", hblockb);
   sprintf(opt_string[++top], "HBLOCKE=%s", hblocke);
   sprintf(opt_string[++top], "LALR=%d", cli_options->lalr_level);
-  if (cli_options->list_bit) {
-    strcpy(opt_string[++top], "LIST");
-  } else {
-    strcpy(opt_string[++top], "NOLIST");
+  strcpy(opt_string[++top], cli_options->list_bit ? "LIST" : "NOLIST"); {
+    sprintf(opt_string[++top], "MIN-DISTANCE=%d", cli_options->minimum_distance);
+    if (cli_options->minimum_distance <= 1) {
+      PRNT("MIN_DISTANCE must be > 1");
+      exit(12);
+    }
+  } {
+    sprintf(opt_string[++top], "MAX-DISTANCE=%d", cli_options->maximum_distance);
+    if (cli_options->maximum_distance <= cli_options->minimum_distance + 1) {
+      PRNT("MAX_DISTANCE must be > MIN_DISTANCE + 1");
+      exit(12);
+    }
   }
-  sprintf(opt_string[++top], "MAX-DISTANCE=%d", cli_options->maximum_distance);
-  sprintf(opt_string[++top], "MIN-DISTANCE=%d", cli_options->minimum_distance);
   if (cli_options->names_opt == MAXIMUM_NAMES) {
     strcpy(opt_string[++top], "NAMES=MAXIMUM");
   } else if (cli_options->names_opt == MINIMUM_NAMES) {
@@ -527,53 +504,35 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
   } else {
     strcpy(opt_string[++top], "NAMES=OPTIMIZED");
   }
-  if (cli_options->nt_check_bit) {
-    strcpy(opt_string[++top], "NT-CHECK");
-  } else {
-    strcpy(opt_string[++top], "NONT-CHECK");
-  }
+  strcpy(opt_string[++top], cli_options->nt_check_bit ? "NTCHECK" : "NONTCHECK");
   sprintf(opt_string[++top], "ORMARK=%c", ormark);
   sprintf(opt_string[++top], "PREFIX=%s", prefix);
-  if (cli_options->read_reduce_bit) {
-    strcpy(opt_string[++top], "READ-REDUCE");
-  } else {
-    strcpy(opt_string[++top], "NOREAD-REDUCE");
-  }
-  if (cli_options->scopes_bit) {
-    strcpy(opt_string[++top], "SCOPES");
-  } else {
-    strcpy(opt_string[++top], "NOSCOPES");
-  }
-  if (cli_options->shift_default_bit) {
-    strcpy(opt_string[++top], "SHIFT-DEFAULT");
-  } else {
-    strcpy(opt_string[++top], "NOSHIFT-DEFAULT");
-  }
-  if (cli_options->single_productions_bit) {
-    strcpy(opt_string[++top], "SINGLE-PRODUCTIONS");
-  } else {
-    strcpy(opt_string[++top], "NOSINGLE-PRODUCTIONS");
-  }
+  strcpy(opt_string[++top], cli_options->read_reduce_bit ? "READREDUCE" : "NOREADREDUCE");
+  strcpy(opt_string[++top], cli_options->scopes_bit ? "SCOPES" : "NOSCOPES");
+  strcpy(opt_string[++top], cli_options->shift_default_bit ? "SHIFT-DEFAULT" : "NOSHIFT-DEFAULT");
+  strcpy(opt_string[++top], cli_options->single_productions_bit ? "SINGLE-PRODUCTIONS" : "NOSINGLE-PRODUCTIONS");
   sprintf(opt_string[++top], "STACK-SIZE=%d", cli_options->stack_size);
-  if (cli_options->states_bit) {
-    strcpy(opt_string[++top], "STATES");
-  } else {
-    strcpy(opt_string[++top], "NOSTATES");
-  }
+  strcpy(opt_string[++top], cli_options->states_bit ? "STATES" : "NOSTATES");
   sprintf(opt_string[++top], "SUFFIX=%s", suffix);
-  if (cli_options->table_opt == 0) {
+  if (cli_options->table_opt == OPTIMIZE_NO_TABLE) {
     strcpy(opt_string[++top], "NOTABLE");
   } else if (cli_options->table_opt == OPTIMIZE_SPACE) {
     strcpy(opt_string[++top], "TABLE=SPACE");
-  } else {
+  } else if (cli_options->table_opt == OPTIMIZE_TIME) {
     strcpy(opt_string[++top], "TABLE=TIME");
+  } else {
+    PRNT("Unsupported table optimization option.");
+    exit(12);
   }
   if (cli_options->trace_opt == NOTRACE) {
     strcpy(opt_string[++top], "NOTRACE");
   } else if (cli_options->trace_opt == TRACE_CONFLICTS) {
     strcpy(opt_string[++top], "TRACE=CONFLICTS");
-  } else {
+  } else if (cli_options->trace_opt == TRACE_FULL) {
     strcpy(opt_string[++top], "TRACE=FULL");
+  } else {
+    PRNT("Unsupported trace option.");
+    exit(12);
   }
   PRNT("Options in effect:");
   strcpy(output_line, "    ");
@@ -600,14 +559,6 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
   }
   // Check if there are any conflicts in the options.
   temp[0] = '\0';
-  if (cli_options->minimum_distance <= 1) {
-    PRNT("MIN_DISTANCE must be > 1");
-    exit(12);
-  }
-  if (cli_options->maximum_distance <= cli_options->minimum_distance + 1) {
-    PRNT("MAX_DISTANCE must be > MIN_DISTANCE + 1");
-    exit(12);
-  }
   if (strcmp(blockb, blocke) == 0) {
     strcpy(temp, "BLOCKB and BLOCKE");
   } else if (strlen(blockb) == 1 && blockb[0] == escape) {
@@ -675,8 +626,9 @@ void insert_string(struct hash_type *q, const char *string) {
     }
   }
   q->st_ptr = string_offset;
-  while ((string_table[string_offset++] = *string++)); /* Copy until NULL */
-  // is copied.
+  // Copy until NULL is copied.
+  while ((string_table[string_offset++] = *string++)) {
+  }
 }
 
 bool EQUAL_STRING(const char *symb, const struct hash_type *p) {
@@ -782,7 +734,7 @@ int hblocke_len;
 #define min(x, y) ((x) < (y) ? (x) : (y))
 
 /// SCANNER scans the input stream and returns the next input token.
-void scanner(char *grm_file, struct CLIOptions *cli_options) {
+void scanner(char *grm_file) {
   register int i;
   char tok_string[SYMBOL_SIZE + 1];
 scan_token:
@@ -2084,7 +2036,7 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
     // LALR(1) parser table generated by LPG to recognize the grammar which it
     // places in the rulehdr structure.
     short state_stack[STACK_SIZE];
-    scanner(grm_file, cli_options); /* Get first token */
+    scanner(grm_file); /* Get first token */
     register int act = START_STATE;
   process_terminal:
     // Note that this driver assumes that the tables are LPG SPACE
@@ -2119,7 +2071,7 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
           }
         }
       }
-      scanner(grm_file, cli_options);
+      scanner(grm_file);
       if (act < ACCEPT_ACTION) {
         goto process_terminal;
       }
