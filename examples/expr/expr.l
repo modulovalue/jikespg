@@ -10,21 +10,22 @@
 
 Options in effect:
     ACTFILENAME=expract.java  BLOCKB=/.  BLOCKE=./  BYTE  CONFLICTS  DEFAULT=5
-    NODEBUG  DEFERRED  NOEDIT  ERROR-MAPS  ESCAPE=%  FILE-PREFIX=expr  NOFIRST
-    NOFOLLOW  GENERATE-PARSER=JAVA  NOGOTODEFAULT  HACTFILENAME=exprhdr.java  
-    HBLOCKB=/:  HBLOCKE=:/  LALR=1  NOLIST  MAX-DISTANCE=30  MIN-DISTANCE=3  
-    NAMES=MAXIMUM  NONT-CHECK  ORMARK=|  PREFIX=TK_  READ-REDUCE  NOSCOPES  
-    NOSHIFT-DEFAULT  NOSINGLE-PRODUCTIONS  STACK-SIZE=128  NOSTATES  SUFFIX=  
-    TABLE=SPACE  TRACE=CONFLICTS  NOVERBOSE  WARNINGS  NOXREF  
+    NODEBUG  ERROR-MAPS  ESCAPE=%  FILE-PREFIX=expr  NOFIRST  NOFOLLOW  
+    GENERATE-PARSER=JAVA  NOGOTODEFAULT  HACTFILENAME=exprhdr.java  HBLOCKB=/:
+    HBLOCKE=:/  LALR=1  NOLIST  MIN-DISTANCE=3  MAX-DISTANCE=30  NAMES=MAXIMUM
+    NONTCHECK  ORMARK=|  PREFIX=TK_  READREDUCE  NOSCOPES  NOSHIFT-DEFAULT  
+    NOSINGLE-PRODUCTIONS  STACK-SIZE=128  NOSTATES  SUFFIX=  TABLE=SPACE  
+    TRACE=CONFLICTS  
 
-
-
-This grammar is LALR(1).
 
 Number of Terminals: 9
 Number of Nonterminals: 4
 Number of Productions: 12
 Number of Items: 34
+
+
+This grammar is LALR(1).
+
 Number of States: 13
 Number of Shift actions: 22
 Number of Goto actions: 7
@@ -42,6 +43,7 @@ Number of unique terminal states: 9
 Number of Shift actions saved by merging: 12
 Number of Reduce actions saved by merging: 0
 Number of Reduce saved by default: 14
+Reallocating storage for SPACE table, adding 10 entries
 Length of Terminal Check Table: 41
 Length of Terminal Action Table: 37
 Number of entries in Terminal Action Table: 28

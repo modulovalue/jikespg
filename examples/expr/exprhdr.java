@@ -19,8 +19,7 @@ class exprhdr extends expract
         new act11(),
     };
 
-    exprhdr(Parser parser)
-    {
+    exprhdr(Parser parser) {
         super(parser);
     }
 }

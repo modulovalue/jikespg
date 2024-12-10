@@ -10,9 +10,9 @@ static char hostfile[] = __FILE__;
 /// The vector LA_BASE is used in COMPUTE_READ and TRACE_LALR_PATH to
 /// identify states whose read sets can be completely computed from
 /// their kernel items.
-static struct node *stack_root = NULL;
-static bool *single_complete_item;
-static int *la_base;
+struct node *stack_root = NULL;
+bool *single_complete_item;
+int *la_base;
 
 /// Given a STATE_NO and an ITEM_NO, ACCESS computes the set of states where
 /// the rule from which ITEM_NO is derived was introduced through closure.
@@ -51,7 +51,7 @@ struct node *lpgaccess(const int state_no, const int item_no) {
 /// STATE_NO.  A number is assigned to all pairs (S, B), where S is a state,
 /// and B is a non-terminal, involved in the paths. GOTO_INDX points to the
 /// GOTO_ELEMENT of (STATE_NO, A).
-static void trace_lalr_path(const int state_no, const int goto_indx, struct CLIOptions *cli_options) {
+void trace_lalr_path(const int state_no, const int goto_indx, struct CLIOptions *cli_options) {
   struct node *p;
   struct node *r;
   //  If STATE is a state number we first check to see if its base
@@ -118,7 +118,7 @@ static void trace_lalr_path(const int state_no, const int goto_indx, struct CLIO
 /// follow a non-terminal in a given state.
 ///  These sets are initialized to the set of terminals that can immediately
 /// follow the non-terminal in the state to which it can shift (READ set).
-static void compute_read(struct CLIOptions *cli_options) {
+void compute_read(struct CLIOptions *cli_options) {
   int item_no;
   int rule_no;
   int lhs_symbol;
@@ -393,7 +393,7 @@ void compute_la(const int state_no, const int item_no, const SET_PTR look_ahead)
 /// This map is implemented as a table of pointers that can be indexed
 /// by the states to a circular list of integers representing other
 /// states that contain transitions to the state in question.
-static void build_in_stat(void) {
+void build_in_stat(void) {
   struct node *q;
   for ALL_STATES3(state_no) {
     int n = statset[state_no].shift_number;
@@ -776,23 +776,25 @@ void mkrdcts(struct CLIOptions *cli_options) {
   // Print informational messages and free all temporary space that
   // was used to compute lookahead information.
   if (not_lrk) {
-    printf("This grammar is not LR(K).\n");
-    fprintf(syslis, "This grammar is not LR(K).\n");
-  } else if (num_rr_conflicts > 0 || num_sr_conflicts > 0) {
-    if (highest_level != INFINITY) {
-      printf("This grammar is not LALR(%d).\n", highest_level);
-      fprintf(syslis, "This grammar is not LALR(%d).\n", highest_level);
-    } else {
-      printf("This grammar is not LALR(K).\n");
-      fprintf(syslis, "This grammar is not LALR(K).\n");
-    }
+    printf("This grammar is not LR(K).\n\n");
+    fprintf(syslis, "This grammar is not LR(K).\n\n");
   } else {
-    if (highest_level == 0) {
-      printf("This grammar is LR(0).\n");
-      fprintf(syslis, "This grammar is LR(0).\n");
+    if (num_rr_conflicts > 0 || num_sr_conflicts > 0) {
+      if (highest_level != INFINITY) {
+        printf("This grammar is not LALR(%d).\n\n", highest_level);
+        fprintf(syslis, "This grammar is not LALR(%d).\n\n", highest_level);
+      } else {
+        printf("This grammar is not LALR(K).\n\n");
+        fprintf(syslis, "This grammar is not LALR(K).\n\n");
+      }
     } else {
-      printf("This grammar is LALR(%d).\n", highest_level);
-      fprintf(syslis, "This grammar is LALR(%d).\n", highest_level);
+      if (highest_level == 0) {
+        printf("This grammar is LR(0).\n\n");
+        fprintf(syslis, "This grammar is LR(0).\n\n");
+      } else {
+        printf("This grammar is LALR(%d).\n\n", highest_level);
+        fprintf(syslis, "This grammar is LALR(%d).\n\n", highest_level);
+      }
     }
   }
   ffree(rule_count);

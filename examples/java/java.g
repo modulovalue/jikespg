@@ -22,8 +22,6 @@
 %options VERBOSE
 %options LIST
 %options STATES
-%options XREF
-%options WARNINGS
 
 %options DEFERRED
 %options NAMES=MAX

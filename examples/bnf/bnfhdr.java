@@ -11,8 +11,7 @@ class bnfhdr extends bnfact
         new act7(),
     };
 
-    bnfhdr(Parser parser)
-    {
+    bnfhdr(Parser parser) {
         super(parser);
     }
 }
