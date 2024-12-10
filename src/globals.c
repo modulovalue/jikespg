@@ -20,8 +20,8 @@ int eolt_image;
 int empty;
 int error_image;
 
-int num_first_sets;
-int num_shift_maps = 0;
+long num_first_sets;
+long num_shift_maps = 0;
 
 long num_shifts = 0;
 long num_shift_reduces = 0;
@@ -56,9 +56,9 @@ struct itemtab *item_table = NULL;
 
 bool *null_nt = NULL;
 
-int term_set_size;
-int non_term_set_size;
-int state_set_size;
+long term_set_size;
+long non_term_set_size;
+long state_set_size;
 
 struct shift_header_type *shift = NULL;
 

@@ -222,8 +222,8 @@ int number_len(int state_no) {
 }
 
 /// This procedure takes two character strings as arguments: IN and OUT.
-/// IN identifies a grammar symbol or name that is checked as to whether
-/// or not it needs to be quoted. If so, the necessary quotes are added
+/// IN identifies a grammar symbol or name that is checked whether
+/// it needs to be quoted. If so, the necessary quotes are added
 /// as IN is copied into the space identified by OUT.
 /// NOTE that it is assumed that IN and OUT do not overlap each other.
 void restore_symbol(char *out, const char *in) {

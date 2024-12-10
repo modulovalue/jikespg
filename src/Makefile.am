@@ -9,7 +9,6 @@ jikespg_SOURCES = ctabs.c \
                   mkred.c \
                   mkstates.c \
                   partset.c \
-                  produce.c \
                   ptables.c \
                   remsp.c \
                   resolve.c \

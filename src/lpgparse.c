@@ -617,8 +617,7 @@ void insert_string(struct hash_type *q, const char *string) {
   if (string_offset + strlen(string) >= string_size) {
     string_size += STRING_BUFFER_SIZE;
     INT_CHECK(string_size);
-    string_table = (char *)
-    (string_table == (char *) NULL
+    string_table = (char *) (string_table == (char *) NULL
        ? malloc(string_size * sizeof(char))
        : realloc(string_table, string_size * sizeof(char)));
     if (string_table == (char *) NULL) {
@@ -655,10 +654,7 @@ void assign_symbol_no(const char *string_ptr, const int image) {
     if (EQUAL_STRING(string_ptr, p)) /* Are they the same */
       return;
   }
-  p = (struct hash_type *) talloc(sizeof(struct hash_type));
-  if (p == (struct hash_type *) NULL) {
-    nospace(__FILE__, __LINE__);
-  }
+  talloc0(p, struct hash_type);
   if (image == OMEGA) {
     num_symbols++;
     p->number = num_symbols;
@@ -714,9 +710,7 @@ static int name_map(const char *symb) {
       }
     }
   }
-  p = (struct hash_type *) talloc(sizeof(struct hash_type));
-  if (p == (struct hash_type *) NULL)
-    nospace(__FILE__, __LINE__);
+  talloc0(p, struct hash_type);
   p->number = 0;
   insert_string(p, symb);
   p->link = hash_table[i];
@@ -1063,10 +1057,7 @@ struct line_elemt *alloc_line(void) {
   if (p != NULL) {
     line_pool_root = p->link;
   } else {
-    p = (struct line_elemt *) talloc(sizeof(struct line_elemt));
-    if (p == (struct line_elemt *) NULL) {
-      nospace(__FILE__, __LINE__);
-    }
+    talloc0(p, struct line_elemt);
   }
   return p;
 }
@@ -1402,7 +1393,7 @@ next_line: {
 /// This procedure takes as argument a macro definition.  If the name of the
 /// macro is one of the predefined names, it issues an error.  Otherwise, it
 /// inserts the macro definition into the table headed by MACRO_TABLE.
-void mapmacro(const int def_index, struct CLIOptions *cli_options) {
+void mapmacro(const int def_index) {
   if (strcmp(defelmt[def_index].name, krule_text) == 0 ||
       strcmp(defelmt[def_index].name, krule_number) == 0 ||
       strcmp(defelmt[def_index].name, knum_rules) == 0 ||
@@ -1603,9 +1594,7 @@ void process_actions(char *grm_file, struct CLIOptions *cli_options) {
   line_no = 1;
   // Read in all the macro definitions and insert them into macro_table.
   for (int i = 0; i < num_defs; i++) {
-    defelmt[i].macro = (char *) calloc(defelmt[i].length + 2, sizeof(char));
-    if (defelmt[i].macro == (char *) NULL)
-      nospace(__FILE__, __LINE__);
+    calloc0(defelmt[i].macro, defelmt[i].length + 2, char);
     for (; line_no < defelmt[i].start_line; line_no++) {
       while (*p1 != '\n') {
         p1++;
@@ -1644,7 +1633,7 @@ void process_actions(char *grm_file, struct CLIOptions *cli_options) {
     for (p = defelmt[i].name; *p != '\0'; p++) {
       *p = isupper(*p) ? tolower(*p) : *p;
     }
-    mapmacro(i, cli_options);
+    mapmacro(i);
   }
   // If LISTING was requested, invoke listing procedure.
   if (cli_options->list_bit) {
@@ -1771,10 +1760,7 @@ void accept_action(char *grm_file, struct CLIOptions *cli_options) {
           }
         }
       }
-      // Allocate NAME table.
-      name = (int *) calloc(num_names + 1, sizeof(int));
-      if (name == (int *) NULL)
-        nospace(__FILE__, __LINE__);
+      calloc0(name, num_names + 1, int);
       for (register int i = 0; i < HT_SIZE; i++) {
         for (const register struct hash_type *p = hash_table[i]; p != NULL; p = p->link) {
           if (p->name_index != OMEGA) {
@@ -1807,9 +1793,7 @@ void accept_action(char *grm_file, struct CLIOptions *cli_options) {
   {
     register struct node *ptr;
     register int rhs_ct = 0;
-    rules = (struct ruletab_type *) calloc(num_rules + 2, sizeof(struct ruletab_type));
-    if (rules == (struct ruletab_type *) NULL)
-      nospace(__FILE__, __LINE__);
+    calloc0(rules, num_rules + 2, struct ruletab_type);
     rhs_sym = Allocate_short_array(num_items + 1);
     num_items += num_rules + 1;
     SHORT_CHECK(num_items);
@@ -1879,9 +1863,7 @@ void accept_action(char *grm_file, struct CLIOptions *cli_options) {
 /// symbol number into that symbol.
 static void build_symno(void) {
   const long symno_size = num_symbols + 1;
-  symno = (struct symno_type *) calloc(symno_size, sizeof(struct symno_type));
-  if (symno == (struct symno_type *) NULL)
-    nospace(__FILE__, __LINE__);
+  calloc0(symno, symno_size, struct symno_type);
   // Go through entire hash table. For each non_empty bucket, go through
   // linked list in that bucket.
   for (register int i = 0; i < HT_SIZE; ++i) {
@@ -1979,19 +1961,12 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
     //
     // Set up a pool of temporary space.
     reset_temporary_space();
-    terminal = (struct terminal_type *) calloc(STACK_SIZE, sizeof(struct terminal_type));
-    if (terminal == (struct terminal_type *) NULL)
-      nospace(__FILE__, __LINE__);
-    hash_table = (struct hash_type **) calloc(HT_SIZE, sizeof(struct hash_type *));
-    if (hash_table == (struct hash_type **) NULL)
-      nospace(__FILE__, __LINE__);
+    calloc0(terminal, STACK_SIZE, struct terminal_type);
+    calloc0(hash_table, HT_SIZE, struct hash_type *);
     // Allocate space for input buffer and read in initial data in input
     // file. Next, invoke PROCESS_OPTION_LINES to process all lines in
     // input file that are options line.
-    input_buffer = (char *) calloc(IOBUFFER_SIZE + 1 + MAX_LINE_SIZE, sizeof(char));
-    if (input_buffer == (char *) NULL) {
-      nospace(__FILE__, __LINE__);
-    }
+    calloc0(input_buffer, IOBUFFER_SIZE + 1 + MAX_LINE_SIZE, char);
     bufend = &input_buffer[0];
     read_input(grm_file);
     p2 = &input_buffer[0];

@@ -15,7 +15,7 @@ struct action_element {
 /// number of occurrences of each action in the automaton is kept.
 /// This procedure is invoked with a specific shift map which it processes
 /// and updates the ACTION_COUNT map accordingly.
-static void process_shift_actions(struct action_element **action_count, const int shift_no) {
+void process_shift_actions(struct action_element **action_count, const int shift_no) {
   struct action_element *q;
   const struct shift_header_type sh = shift[shift_no];
   for (int i = 1; i <= sh.size; i++) {
@@ -27,9 +27,7 @@ static void process_shift_actions(struct action_element **action_count, const in
     }
     if (q == NULL) /* new action not yet seen */
     {
-      q = (struct action_element *) talloc(sizeof(struct action_element));
-      if (q == NULL)
-        nospace(__FILE__, __LINE__);
+      talloc0(q, struct action_element);
       q->action = act;
       q->count = 1;
       q->next = action_count[symbol];
@@ -41,15 +39,14 @@ static void process_shift_actions(struct action_element **action_count, const in
 /// This procedure updates the vector SHIFTDF, indexable by the terminals in
 /// the grammar. Its task is to assign to each element of SHIFTDF, the action
 /// most frequently defined on the symbol in question.
-static void compute_shift_default(void) {
+void compute_shift_default(void) {
   int shift_count = 0;
   int shift_reduce_count = 0;
   // Set up a pool of temporary space.
   reset_temporary_space();
   shiftdf = Allocate_short_array(num_terminals + 1);
-  struct action_element **action_count = calloc(num_terminals + 1, sizeof(struct action_element *));
-  if (action_count == NULL)
-    nospace(__FILE__, __LINE__);
+  struct action_element **action_count;
+  calloc0(action_count, num_terminals + 1, struct action_element *);
   // For each state, invoke PROCESS_SHIFT_ACTIONS to process the
   // shift map associated with that state.
   for ALL_STATES3(state_no) {
@@ -90,7 +87,7 @@ static void compute_shift_default(void) {
 /// the non-terminals in the grammar. Its task is to assign to each element
 /// of the array the Action which is most frequently defined on the symbol in
 /// question, and remove all such actions from the state automaton.
-static void compute_goto_default(void) {
+void compute_goto_default(void) {
   struct goto_header_type go_to;
   struct action_element *q;
   int goto_count = 0;
@@ -99,7 +96,8 @@ static void compute_goto_default(void) {
   reset_temporary_space();
   gotodef = Allocate_short_array(num_non_terminals);
   gotodef -= num_terminals + 1;
-  struct action_element **action_count = calloc(num_non_terminals, sizeof(struct action_element *));
+  struct action_element **action_count;
+  calloc0(action_count, num_non_terminals, struct action_element *);
   action_count -= num_terminals + 1;
   if (action_count == NULL) {
     nospace(__FILE__, __LINE__);
@@ -120,10 +118,7 @@ static void compute_goto_default(void) {
       }
       if (q == NULL) /* new action not yet seen */
       {
-        q = (struct action_element *)
-            talloc(sizeof(struct action_element));
-        if (q == NULL)
-          nospace(__FILE__, __LINE__);
+        talloc0(q, struct action_element);
         q->action = act;
         q->count = 1;
         q->next = action_count[symbol];
@@ -255,19 +250,10 @@ void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLI
   // We allocate the necessary structures, open the appropriate
   // output file and call the appropriate compression routine.
   if (error_maps_bit) {
-    naction_symbols = (SET_PTR) calloc(num_states + 1, non_term_set_size * sizeof(BOOLEAN_CELL));
-    if (naction_symbols == NULL) {
-      nospace(__FILE__, __LINE__);
-    }
-    action_symbols = (SET_PTR) calloc(num_states + 1, term_set_size * sizeof(BOOLEAN_CELL));
-    if (action_symbols == NULL) {
-      nospace(__FILE__, __LINE__);
-    }
+    calloc0_set(naction_symbols, num_states + 1, non_term_set_size);
+    calloc0_set(action_symbols, num_states + 1, term_set_size);
   }
-  output_buffer = (char *) calloc(IOBUFFER_SIZE, sizeof(char));
-  if (output_buffer == NULL) {
-    nospace(__FILE__, __LINE__);
-  }
+  calloc0(output_buffer, IOBUFFER_SIZE, char);
   FILE *systab;
   if (!cli_options->c_bit && !cli_options->cpp_bit && !cli_options->java_bit) {
     if ((systab = fopen(tab_file, "w")) == NULL) {

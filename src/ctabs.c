@@ -30,12 +30,12 @@ struct new_state_type *new_state_element;
 short *shift_image = NULL;
 short *real_shift_number = NULL;
 
-int *term_state_index = NULL;
-int *shift_check_index = NULL;
+long *term_state_index = NULL;
+long *shift_check_index = NULL;
 
 bool byte_terminal_range = true;
 
-int *symbol_map = NULL;
+long *symbol_map = NULL;
 long *ordered_state = NULL;
 long *state_list = NULL;
 
@@ -68,7 +68,26 @@ const char digits[] = "0123456789";
 /// negative, a leading "-" is added.
 void itoc(const int num) {
   char tmp[12];
-  register int val = ABS(num);
+  register long val = ABS(num);
+  tmp[11] = '\0';
+  register char *p = &tmp[11];
+  do {
+    p--;
+    *p = digits[val % 10];
+    val /= 10;
+  } while (val > 0);
+  if (num < 0) {
+    p--;
+    *p = '-';
+  }
+  while (*p != '\0') {
+    *output_ptr++ = *p++;
+  }
+}
+
+void ltoc(const long num) {
+  char tmp[12];
+  register long val = ABS(num);
   tmp[11] = '\0';
   register char *p = &tmp[11];
   do {
@@ -99,33 +118,7 @@ void mystrcpy(const char *str) {
   BUFFER_CHECK(syssym);
 }
 
-void prnt_shorts(const char *title, const int init, const int bound, const int perline, const long *array, struct CLIOptions *cli_options) {
-  mystrcpy(title);
-  padline();
-  int k = 0;
-  for (int i = init; i <= bound; i++) {
-    itoc(array[i]);
-    *output_ptr++ = COMMA;
-    k++;
-    if (k == perline && i != bound) {
-      *output_ptr++ = '\n';
-      BUFFER_CHECK(sysdcl);
-      padline();
-      k = 0;
-    }
-  }
-  if (k != 0) {
-    *(output_ptr - 1) = '\n';
-    BUFFER_CHECK(sysdcl);
-  }
-  if (cli_options->java_bit) {
-    mystrcpy("    };\n");
-  } else {
-    mystrcpy("                 };\n");
-  }
-}
-
-void prnt_ints(const char *title, const int init, const int bound, const int perline, const int *array, struct CLIOptions *cli_options) {
+void prnt_longs(const char *title, const int init, const int bound, const int perline, const long *array, struct CLIOptions *cli_options) {
   mystrcpy(title);
   padline();
   int k = 0;
@@ -462,9 +455,9 @@ void print_error_maps(struct CLIOptions *cli_options) {
     action_symbols_base[state_list[state_no]] = ABS(state_start[state_list[state_no]]);
   }
   if (cli_options->java_bit) {
-    prnt_shorts("\n    public final static char asb[] = {0,\n", 1, num_states, 10, action_symbols_base, cli_options);
+    prnt_longs("\n    public final static char asb[] = {0,\n", 1, num_states, 10, action_symbols_base, cli_options);
   } else {
-    prnt_shorts("\nconst unsigned short CLASS_HEADER asb[] = {0,\n", 1, num_states, 10, action_symbols_base, cli_options);
+    prnt_longs("\nconst unsigned short CLASS_HEADER asb[] = {0,\n", 1, num_states, 10, action_symbols_base, cli_options);
   }
   ffree(action_symbols_base);
   // Compute and write out the range of the ACTION_SYMBOLS map.
@@ -479,15 +472,15 @@ void print_error_maps(struct CLIOptions *cli_options) {
   }
   if (byte_terminal_range) {
     if (cli_options->java_bit) {
-      prnt_shorts("\n    public final static byte asr[] = {0,\n", 0, offset - 2, 10, action_symbols_range, cli_options);
+      prnt_longs("\n    public final static byte asr[] = {0,\n", 0, offset - 2, 10, action_symbols_range, cli_options);
     } else {
-      prnt_shorts("\nconst unsigned char  CLASS_HEADER asr[] = {0,\n", 0, offset - 2, 10, action_symbols_range, cli_options);
+      prnt_longs("\nconst unsigned char  CLASS_HEADER asr[] = {0,\n", 0, offset - 2, 10, action_symbols_range, cli_options);
     }
   } else {
     if (cli_options->java_bit) {
-      prnt_shorts("\n    public final static char asr[] = {0,\n", 0, offset - 2, 10, action_symbols_range, cli_options);
+      prnt_longs("\n    public final static char asr[] = {0,\n", 0, offset - 2, 10, action_symbols_range, cli_options);
     } else {
-      prnt_shorts("\nconst unsigned short CLASS_HEADER asr[] = {0,\n", 0, offset - 2, 10, action_symbols_range, cli_options);
+      prnt_longs("\nconst unsigned short CLASS_HEADER asr[] = {0,\n", 0, offset - 2, 10, action_symbols_range, cli_options);
     }
   }
   num_bytes = 2 * num_states;
@@ -526,9 +519,9 @@ void print_error_maps(struct CLIOptions *cli_options) {
     naction_symbols_base[state_list[state_no]] = ABS(state_start[state_list[state_no]]);
   }
   if (cli_options->java_bit) {
-    prnt_shorts("\n    public final static char nasb[] = {0,\n", 1, num_states, 10, naction_symbols_base, cli_options);
+    prnt_longs("\n    public final static char nasb[] = {0,\n", 1, num_states, 10, naction_symbols_base, cli_options);
   } else {
-    prnt_shorts("\nconst unsigned short CLASS_HEADER nasb[] = {0,\n", 1, num_states, 10, naction_symbols_base, cli_options);
+    prnt_longs("\nconst unsigned short CLASS_HEADER nasb[] = {0,\n", 1, num_states, 10, naction_symbols_base, cli_options);
   }
   ffree(naction_symbols_base);
   // Compute and write out the range of the NACTION_SYMBOLS map.
@@ -536,9 +529,9 @@ void print_error_maps(struct CLIOptions *cli_options) {
   naction_symbols_range = Allocate_long_array(offset);
   compute_naction_symbols_range(state_start, state_stack, state_list, naction_symbols_range);
   if (cli_options->java_bit) {
-    prnt_shorts("\n    public final static char nasr[] = {0,\n", 0, offset - 2, 10, naction_symbols_range, cli_options);
+    prnt_longs("\n    public final static char nasr[] = {0,\n", 0, offset - 2, 10, naction_symbols_range, cli_options);
   } else {
-    prnt_shorts("\nconst unsigned short CLASS_HEADER nasr[] = {0,\n", 0, offset - 2, 10, naction_symbols_range, cli_options);
+    prnt_longs("\nconst unsigned short CLASS_HEADER nasr[] = {0,\n", 0, offset - 2, 10, naction_symbols_range, cli_options);
   }
   PRNT3("    Storage required for NACTION_SYMBOLS_BASE map: %ld Bytes", 2 * num_states);
   PRNT3("    Storage required for NACTION_SYMBOLS_RANGE map: %d Bytes", 2 * (offset - 1));
@@ -554,16 +547,16 @@ void print_error_maps(struct CLIOptions *cli_options) {
     }
     if (num_names <= (cli_options->java_bit ? 127 : 255)) {
       if (cli_options->java_bit) {
-        prnt_shorts("\n    public final static byte terminal_index[] = {0,\n", 1, num_terminals, 10, temp, cli_options);
+        prnt_longs("\n    public final static byte terminal_index[] = {0,\n", 1, num_terminals, 10, temp, cli_options);
       } else {
-        prnt_shorts("\nconst unsigned char  CLASS_HEADER terminal_index[] = {0,\n", 1, num_terminals, 10, temp, cli_options);
+        prnt_longs("\nconst unsigned char  CLASS_HEADER terminal_index[] = {0,\n", 1, num_terminals, 10, temp, cli_options);
       }
       num_bytes = num_terminals;
     } else {
       if (cli_options->java_bit) {
-        prnt_shorts("\n    public final static char terminal_index[] = {0,\n", 1, num_terminals, 10, temp, cli_options);
+        prnt_longs("\n    public final static char terminal_index[] = {0,\n", 1, num_terminals, 10, temp, cli_options);
       } else {
-        prnt_shorts("\nconst unsigned short CLASS_HEADER terminal_index[] = {0,\n", 1, num_terminals, 10, temp, cli_options);
+        prnt_longs("\nconst unsigned short CLASS_HEADER terminal_index[] = {0,\n", 1, num_terminals, 10, temp, cli_options);
       }
       num_bytes = 2 * num_terminals;
     }
@@ -577,16 +570,16 @@ void print_error_maps(struct CLIOptions *cli_options) {
     }
     if (num_names <= (cli_options->java_bit ? 127 : 255)) {
       if (cli_options->java_bit) {
-        prnt_shorts("\n    public final static byte non_terminal_index[] = {0,\n", num_terminals + 1, num_symbols, 10, temp, cli_options);
+        prnt_longs("\n    public final static byte non_terminal_index[] = {0,\n", num_terminals + 1, num_symbols, 10, temp, cli_options);
       } else {
-        prnt_shorts("\nconst unsigned char  CLASS_HEADER non_terminal_index[] = {0,\n", num_terminals + 1, num_symbols, 10, temp, cli_options);
+        prnt_longs("\nconst unsigned char  CLASS_HEADER non_terminal_index[] = {0,\n", num_terminals + 1, num_symbols, 10, temp, cli_options);
       }
       num_bytes = num_non_terminals;
     } else {
       if (cli_options->java_bit) {
-        prnt_shorts("\n    public final static char non_terminal_index[] = {0,\n", num_terminals + 1, num_symbols, 10, temp, cli_options);
+        prnt_longs("\n    public final static char non_terminal_index[] = {0,\n", num_terminals + 1, num_symbols, 10, temp, cli_options);
       } else {
-        prnt_shorts("\nconst unsigned short CLASS_HEADER non_terminal_index[] = {0,\n", num_terminals + 1, num_symbols, 10, temp, cli_options);
+        prnt_longs("\nconst unsigned short CLASS_HEADER non_terminal_index[] = {0,\n", num_terminals + 1, num_symbols, 10, temp, cli_options);
       }
       num_bytes = 2 * num_non_terminals;
     }
@@ -598,22 +591,22 @@ void print_error_maps(struct CLIOptions *cli_options) {
     }
     if (num_names <= (cli_options->java_bit ? 127 : 255)) {
       if (cli_options->java_bit) {
-        prnt_shorts("\n    public final static byte symbol_index[] = {0,\n", 1, num_symbols, 10, temp, cli_options);
+        prnt_longs("\n    public final static byte symbol_index[] = {0,\n", 1, num_symbols, 10, temp, cli_options);
         mystrcpy("    public final static byte terminal_index[] = symbol_index;\n");
         mystrcpy("    public final static byte non_terminal_index[] = symbol_index;\n");
       } else {
-        prnt_shorts("\nconst unsigned char  CLASS_HEADER symbol_index[] = {0,\n", 1, num_symbols, 10, temp, cli_options);
+        prnt_longs("\nconst unsigned char  CLASS_HEADER symbol_index[] = {0,\n", 1, num_symbols, 10, temp, cli_options);
         mystrcpy("const unsigned char  *CLASS_HEADER terminal_index[] = &(symbol_index[0]);\n");
         mystrcpy("const unsigned char  *CLASS_HEADER non_terminal_index[] = &(symbol_index[0]);\n");
       }
       num_bytes = num_symbols;
     } else {
       if (cli_options->java_bit) {
-        prnt_shorts("\n    public final static char symbol_index[] = {0,\n", 1, num_symbols, 10, temp, cli_options);
+        prnt_longs("\n    public final static char symbol_index[] = {0,\n", 1, num_symbols, 10, temp, cli_options);
         mystrcpy("    public final static char terminal_index[] = symbol_index[0];\n");
         mystrcpy("    public final static char non_terminal_index[] = symbol_index;\n");
       } else {
-        prnt_shorts("\nconst unsigned short CLASS_HEADER symbol_index[] = {0,\n", 1, num_symbols, 10, temp, cli_options);
+        prnt_longs("\nconst unsigned short CLASS_HEADER symbol_index[] = {0,\n", 1, num_symbols, 10, temp, cli_options);
         mystrcpy("const unsigned short *CLASS_HEADER terminal_index[] = &(symbol_index[0]);\n");
         mystrcpy("const unsigned short *CLASS_HEADER non_terminal_index[] = &(symbol_index[0]);\n");
       }
@@ -785,7 +778,7 @@ void print_error_maps(struct CLIOptions *cli_options) {
     // Compute and list space required for NAME_START map.
     PRNT3("    Storage required for NAME_START map: %ld Bytes", 2 * num_names);
     // Write out NAME_LENGTH array
-    prnt_shorts("\nconst unsigned char  CLASS_HEADER name_length[] = {0,\n", 1, num_names, 10, name_len, cli_options);
+    prnt_longs("\nconst unsigned char  CLASS_HEADER name_length[] = {0,\n", 1, num_names, 10, name_len, cli_options);
     // Compute and list space required for NAME_LENGTH map.
     PRNT3("    Storage required for NAME_LENGTH map: %ld Bytes", num_names);
     ffree(name_len);
@@ -968,15 +961,15 @@ void print_error_maps(struct CLIOptions *cli_options) {
     }
     if (num_symbols <= (cli_options->java_bit ? 127 : 255)) {
       if (cli_options->java_bit) {
-        prnt_shorts("\n    public final static byte scope_rhs[] = {0,\n", 1, scope_rhs_size, 10, scope_right_side, cli_options);
+        prnt_longs("\n    public final static byte scope_rhs[] = {0,\n", 1, scope_rhs_size, 10, scope_right_side, cli_options);
       } else {
-        prnt_shorts("\nconst unsigned char  CLASS_HEADER scope_rhs[] = {0,\n", 1, scope_rhs_size, 10, scope_right_side, cli_options);
+        prnt_longs("\nconst unsigned char  CLASS_HEADER scope_rhs[] = {0,\n", 1, scope_rhs_size, 10, scope_right_side, cli_options);
       }
     } else {
       if (cli_options->java_bit) {
-        prnt_shorts("\n    public final static char scope_rhs[] = {0,\n", 1, scope_rhs_size, 10, scope_right_side, cli_options);
+        prnt_longs("\n    public final static char scope_rhs[] = {0,\n", 1, scope_rhs_size, 10, scope_right_side, cli_options);
       } else {
-        prnt_shorts("\nconst unsigned short CLASS_HEADER scope_rhs[] = {0,\n", 1, scope_rhs_size, 10, scope_right_side, cli_options);
+        prnt_longs("\nconst unsigned short CLASS_HEADER scope_rhs[] = {0,\n", 1, scope_rhs_size, 10, scope_right_side, cli_options);
       }
     }
     if (cli_options->java_bit) {
@@ -1111,7 +1104,7 @@ void common(const bool byte_check_bit, struct CLIOptions *cli_options) {
       } else if (strpbrk(tok, "!%^&*()-+={}[];:\"`~|\\,.<>/?\'") != NULL) {
         PRNT4(line, line_size, "%s may be an invalid variable name.\n", tok);
       }
-      snprintf(line, sizeof(line), "      %s%s%s = %i,\n", prefix, tok, suffix, symbol_map[symbol]);
+      snprintf(line, sizeof(line), "      %s%s%s = %li,\n", prefix, tok, suffix, symbol_map[symbol]);
       if (cli_options->c_bit || cli_options->cpp_bit) {
         while (strlen(line) > PARSER_LINE_SIZE) {
           fwrite(line, sizeof(char), PARSER_LINE_SIZE - 2, syssym);
@@ -1875,11 +1868,10 @@ void common(const bool byte_check_bit, struct CLIOptions *cli_options) {
 void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
   long *state_start;
   long *state_stack;
-  int *temp;
-  int *original = NULL;
-  int *symbol_root;
-  int *symbol_count;
-  int *term_list;
+  long *original = NULL;
+  long *symbol_root;
+  long *symbol_count;
+  long *term_list;
   long *as_size;
   long *action_symbols_range;
   long *naction_symbols_range;
@@ -1898,11 +1890,11 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
   non_terminal_ubound = cli_options->table_opt == OPTIMIZE_TIME
                           ? num_symbols
                           : num_non_terminals;
-  symbol_root = Allocate_int_array(num_symbols + 1);
-  symbol_count = Allocate_int_array(num_symbols + 1);
+  symbol_root = Allocate_long_array(num_symbols + 1);
+  symbol_count = Allocate_long_array(num_symbols + 1);
   state_start = Allocate_long_array(num_states + 2);
   state_stack = Allocate_long_array(num_states + 1);
-  term_list = Allocate_int_array(num_symbols + 1);
+  term_list = Allocate_long_array(num_symbols + 1);
   PRNT("\nError maps storage:");
   // The FOLLOW map is written out as two vectors where the first
   // vector indexed by a Symbol gives the starting location in the
@@ -2028,7 +2020,7 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
   // Partition Heuristic and print it.
   as_size = Allocate_long_array(num_states + 1);
   if (cli_options->table_opt == OPTIMIZE_TIME) {
-    original = Allocate_int_array(num_symbols + 1);
+    original = Allocate_long_array(num_symbols + 1);
     // In a compressed TIME table, the terminal and non-terminal
     // symbols are mixed together when they are remapped.
     // We shall now recover the original number associated with
@@ -2361,7 +2353,7 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
   // is used to remap the NAME_INDEX values based on the new symbol
   // numberings. If time tables are requested, the terminals and non-
   // terminals are mixed together.
-  temp = Allocate_int_array(num_symbols + 1);
+  long *temp = Allocate_long_array(num_symbols + 1);
   if (cli_options->table_opt == OPTIMIZE_TIME) {
     for ALL_SYMBOLS3(symbol) {
       temp[symbol_map[symbol]] = symno[symbol].name_index;
@@ -2601,9 +2593,7 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
 
 void print_space_parser(struct CLIOptions *cli_options) {
   bool byte_check_bit = true; {
-    int *check;
-    int *action;
-    int la_state_offset;
+    long la_state_offset;
     int k;
     int indx;
     long result_act;
@@ -2616,8 +2606,8 @@ void print_space_parser(struct CLIOptions *cli_options) {
     int shift_reduce_count = 0;
     int rule_no;
     long offset;
-    check = Allocate_int_array(table_size + 1);
-    action = Allocate_int_array(table_size + 1);
+    long *check = Allocate_long_array(table_size + 1);
+    long *action = Allocate_long_array(table_size + 1);
     output_ptr = &output_buffer[0];
     // Prepare header card with proper information, and write it out.
     offset = error_act;
@@ -2927,22 +2917,22 @@ void print_space_parser(struct CLIOptions *cli_options) {
     // Write Terminal Check Table.
     if (num_terminals <= (cli_options->java_bit ? 127 : 255)) {
       if (cli_options->java_bit) {
-        prnt_ints("\n    public final static byte term_check[] = {0,\n", 1, term_check_size, 15, check, cli_options);
+        prnt_longs("\n    public final static byte term_check[] = {0,\n", 1, term_check_size, 15, check, cli_options);
       } else {
-        prnt_ints("\nconst unsigned char  CLASS_HEADER term_check[] = {0,\n", 1, term_check_size, 15, check, cli_options);
+        prnt_longs("\nconst unsigned char  CLASS_HEADER term_check[] = {0,\n", 1, term_check_size, 15, check, cli_options);
       }
     } else {
       if (cli_options->java_bit) {
-        prnt_ints("\n    public final static char term_check[] = {0,\n", 1, term_check_size, 15, check, cli_options);
+        prnt_longs("\n    public final static char term_check[] = {0,\n", 1, term_check_size, 15, check, cli_options);
       } else {
-        prnt_ints("\nconst unsigned short CLASS_HEADER term_check[] = {0,\n", 1, term_check_size, 15, check, cli_options);
+        prnt_longs("\nconst unsigned short CLASS_HEADER term_check[] = {0,\n", 1, term_check_size, 15, check, cli_options);
       }
     }
     // Write Terminal Action Table.
     if (cli_options->java_bit) {
-      prnt_ints("\n    public final static char term_action[] = {0,\n", 1, term_action_size, 10, action, cli_options);
+      prnt_longs("\n    public final static char term_action[] = {0,\n", 1, term_action_size, 10, action, cli_options);
     } else {
-      prnt_ints("\nconst unsigned short CLASS_HEADER term_action[] = {0,\n", 1, term_action_size, 10, action, cli_options);
+      prnt_longs("\nconst unsigned short CLASS_HEADER term_action[] = {0,\n", 1, term_action_size, 10, action, cli_options);
     }
     // If GOTO_DEFAULT is requested, we print out the GOTODEF vector.
     if (cli_options->goto_default_bit) {

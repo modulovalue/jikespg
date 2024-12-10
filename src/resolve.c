@@ -158,13 +158,10 @@ static struct state_element **shift_table;
 /// from the temporary storage pool.
 static void *allocate_conflict_element(void) {
   void *p = conflict_element_pool;
-  if (p != NULL)
+  if (p != NULL) {
     conflict_element_pool = ((struct sr_conflict_element *) p)->next;
-  else {
-    p = talloc(MAX(sizeof(struct sr_conflict_element),
-                   sizeof(struct rr_conflict_element)));
-    if (p == NULL)
-      nospace(__FILE__, __LINE__);
+  } else {
+    talloc0_raw(p, void, MAX(sizeof(struct sr_conflict_element), sizeof(struct rr_conflict_element)));
   }
   return p;
 }
@@ -186,10 +183,7 @@ static struct stack_element *allocate_stack_element(void) {
   if (p != NULL) {
     stack_pool = p->next;
   } else {
-    p = (struct stack_element *)
-        talloc(sizeof(struct stack_element));
-    if (p == NULL)
-      nospace(__FILE__, __LINE__);
+    talloc0(p, struct stack_element);
   }
   return p;
 }
@@ -229,17 +223,9 @@ static void free_dangling_stack_elements(void) {
 /// See definition of SOURCE_ELEMENT above.
 static struct sources_element allocate_sources(void) {
   struct sources_element sources;
-  sources.configs = (struct stack_element **)
-      calloc(num_rules + num_rules + num_states + 1,
-             sizeof(struct stack_element *));
-  if (sources.configs == NULL)
-    nospace(__FILE__, __LINE__);
+  calloc0(sources.configs, num_rules + num_rules + num_states + 1, struct stack_element *);
   sources.configs += num_rules;
-  sources.stack_seen = (struct stack_element **)
-      calloc(STATE_TABLE_SIZE,
-             sizeof(struct stack_element *));
-  if (sources.stack_seen == NULL)
-    nospace(__FILE__, __LINE__);
+  calloc0(sources.stack_seen, STATE_TABLE_SIZE, struct stack_element *);
   sources.list = Allocate_short_array(num_rules + num_rules + num_states + 1);
   sources.list += num_rules;
   sources.root = NIL;
@@ -913,22 +899,12 @@ static struct state_element *state_to_resolve_conflicts(struct sources_element s
   int count;
   int act;
   new_sources = allocate_sources();
-  action = (struct node **)
-      calloc(num_terminals + 1, sizeof(struct node *));
-  if (action == NULL)
-    nospace(__FILE__, __LINE__);
+  calloc0(action, num_terminals + 1, struct node *);
   symbol_list = Allocate_short_array(num_terminals + 1);
   action_list = Allocate_short_array(num_terminals + 1);
   rule_count = Allocate_short_array(num_rules + 1);
-  look_ahead = (SET_PTR)
-      calloc(1, term_set_size * sizeof(BOOLEAN_CELL));
-  if (look_ahead == NULL)
-    nospace(__FILE__, __LINE__);
-  la_shift_state = (struct state_element **)
-      calloc(num_terminals + 1,
-             sizeof(struct state_element *));
-  if (la_shift_state == NULL)
-    nospace(__FILE__, __LINE__);
+  calloc0_set(look_ahead, 1, term_set_size);
+  calloc0(la_shift_state, num_terminals + 1, struct state_element *);
   // Initialize new lookahead state. Initialize counters. Check and
   // adjust HIGHEST_LEVEL reached so far, if necessary.
   state = NULL;
@@ -1081,10 +1057,7 @@ static struct state_element *state_to_resolve_conflicts(struct sources_element s
   // is updated with S.
   // Otherwise, this field indicates that this look-ahead state is
   // dangling - no other state point to it.
-  state = (struct state_element *)
-      talloc(sizeof(struct state_element));
-  if (state == (struct state_element *) NULL)
-    nospace(__FILE__, __LINE__);
+  talloc0(state, struct state_element);
   state->link = la_state_root;
   la_state_root = state;
   max_la_state++;
@@ -1244,9 +1217,7 @@ void init_rmpself(const SET_PTR produces) {
 void init_lalrk_process(struct CLIOptions *cli_options) {
   not_lrk = false;
   if (cli_options->lalr_level > 1) {
-    shift_table = (struct state_element **) calloc(SHIFT_TABLE_SIZE, sizeof(struct state_element *));
-    if (shift_table == NULL)
-      nospace(__FILE__, __LINE__);
+    calloc0(shift_table, SHIFT_TABLE_SIZE, struct state_element *);
     for ALL_NON_TERMINALS3(symbol) {
       not_lrk = not_lrk || rmpself[symbol];
     }
@@ -1266,10 +1237,7 @@ void init_lalrk_process(struct CLIOptions *cli_options) {
     ffree(stack);
     ffree(index_of);
     sources = allocate_sources();
-    visited.map = (struct node **)
-        calloc(num_states + 1, sizeof(struct node *));
-    if (visited.map == NULL)
-      nospace(__FILE__, __LINE__);
+    calloc0(visited.map, num_states + 1, struct node *);
     visited.list = Allocate_short_array(num_states + 1);
     visited.root = NIL;
   }
@@ -1527,18 +1495,13 @@ void create_lastats(void) {
   // Allocate LASTATS structure to permanently construct lookahead
   // states and reallocate SHIFT map as we may have to construct
   // new shift maps.
-  lastats = (struct lastats_type *) calloc(max_la_state - num_states, sizeof(struct lastats_type));
-  if (lastats == NULL)
-    nospace(__FILE__, __LINE__);
+  calloc0(lastats, max_la_state - num_states, struct lastats_type);
   lastats -= num_states + 1;
-  shift = (struct shift_header_type *) realloc(shift, (max_la_state + 1) * sizeof(struct shift_header_type));
-  if (shift == NULL)
-    nospace(__FILE__, __LINE__);
+  realloc0(shift, shift, max_la_state + 1, struct shift_header_type);
   // Allocate temporary space used to construct final lookahead
   // states.
-  struct state_element **new_shift_actions = calloc(num_states + 1, sizeof(struct state_element *));
-  if (new_shift_actions == NULL)
-    nospace(__FILE__, __LINE__);
+  struct state_element **new_shift_actions;
+  calloc0(new_shift_actions, num_states + 1, struct state_element *);
   short *shift_action = Allocate_short_array(num_terminals + 1);
   short *shift_list = Allocate_short_array(num_terminals + 1);
   short *shift_count = Allocate_short_array(max_la_state + 1);

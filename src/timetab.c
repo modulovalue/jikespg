@@ -6,20 +6,20 @@ static char hostfile[] = __FILE__;
 #include <string.h>
 #include "common.h"
 
-static int default_saves = 0;
-static short default_rule;
+int default_saves = 0;
+short default_rule;
 
-static bool *is_terminal;
+bool *is_terminal;
 
 /// We now remap the symbols in the unified Table based on frequency.
 /// We also remap the states based on frequency.
-static void remap_symbols(void) {
+void remap_symbols(void) {
   struct goto_header_type go_to;
   struct shift_header_type sh;
   struct reduce_header_type red;
   long symbol;
   ordered_state = Allocate_long_array(max_la_state + 1);
-  symbol_map = Allocate_int_array(num_symbols + 1);
+  symbol_map = Allocate_long_array(num_symbols + 1);
   is_terminal = Allocate_boolean_array(num_symbols + 1);
   long *frequency_symbol = Allocate_long_array(num_symbols + 1);
   long *frequency_count = Allocate_long_array(num_symbols + 1);
@@ -169,14 +169,14 @@ static void remap_symbols(void) {
 /// compute the starting position in a vector where each of its rows
 /// may be placed without clobbering elements in another row.
 /// The starting positions are stored in the vector STATE_INDEX.
-static void overlap_tables(struct CLIOptions *cli_options) {
+void overlap_tables(struct CLIOptions *cli_options) {
   struct shift_header_type sh;
   struct reduce_header_type red;
   int symbol;
   long indx;
   long num_bytes;
   state_index = Allocate_long_array(max_la_state + 1);
-  int *symbol_list = Allocate_int_array(num_symbols + 1);
+  long *symbol_list = Allocate_long_array(num_symbols + 1);
   num_entries -= default_saves;
   increment_size = MAX(num_entries * increment / 100, num_symbols + 1);
   table_size = MIN(num_entries + increment_size, MAX_TABLE_SIZE);
@@ -324,7 +324,7 @@ static void overlap_tables(struct CLIOptions *cli_options) {
 }
 
 /// We now write out the tables to the SYSTAB file.
-static void print_tables(struct CLIOptions *cli_options, FILE *systab) {
+void print_tables_time(struct CLIOptions *cli_options, FILE *systab) {
   long *action;
   long *check;
   struct goto_header_type go_to;
@@ -707,6 +707,6 @@ void cmprtim(struct OutputFiles *output_files, struct CLIOptions *cli_options, F
     init_parser_files(output_files, cli_options);
     print_time_parser(cli_options);
   } else {
-    print_tables(cli_options, systab);
+    print_tables_time(cli_options, systab);
   }
 }

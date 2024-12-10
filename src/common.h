@@ -9,6 +9,36 @@
 
 static char hostfile[];
 
+#define galloc0(into, x, times) \
+  into = (x *) galloc(times * sizeof(x)); \
+  if (into == (x *) NULL) \
+    nospace(hostfile, __LINE__);
+
+#define talloc0(into, x) \
+  into = (x *) talloc(sizeof(x)); \
+  if (into == (x *) NULL) \
+    nospace(hostfile, __LINE__);
+
+#define realloc0(into, size, times, t) \
+  into = (t *) realloc(size, sizeof(t)); \
+  if (into == (t *) NULL) \
+    nospace(hostfile, __LINE__);
+
+#define talloc0_raw(into, xyz, s) \
+  into = (xyz *) talloc(s); \
+  if (into == (xyz *) NULL) \
+    nospace(hostfile, __LINE__);
+
+#define calloc0(into, size, x) \
+  into = (x *) calloc(size, sizeof(x)); \
+  if (into == (x *) NULL) \
+    nospace(hostfile, __LINE__);
+
+#define calloc0_set(into, size, l) \
+  into = (SET_PTR) calloc(size, l * sizeof(BOOLEAN_CELL)); \
+  if (into == (SET_PTR) NULL) \
+    nospace(hostfile, __LINE__);
+
 static const int MAX_PARM_SIZE = 22;
 static const int SYMBOL_SIZE = 256;
 static const int MAX_MSG_SIZE = 256 + SYMBOL_SIZE;
@@ -252,8 +282,8 @@ extern int eolt_image;
 extern int empty;
 extern int error_image;
 
-extern int num_first_sets;
-extern int num_shift_maps;
+extern long num_first_sets;
+extern long num_shift_maps;
 
 extern long num_shifts;
 extern long num_shift_reduces;
@@ -348,7 +378,7 @@ extern short *scope_state;
 extern char *output_ptr;
 extern char *output_buffer;
 
-extern int *symbol_map;
+extern long *symbol_map;
 extern long *ordered_state;
 extern long *state_list;
 
@@ -374,6 +404,8 @@ extern SET_PTR naction_symbols;
 extern SET_PTR action_symbols;
 
 extern bool byte_terminal_range;
+
+void compute_produces(int symbol);
 
 void reset_temporary_space(void);
 
@@ -401,8 +433,6 @@ void cmprtim(struct OutputFiles *output_files, struct CLIOptions *cli_options, F
 
 void cmprspa(struct OutputFiles *output_files, struct CLIOptions *cli_options, FILE *systab);
 
-void compute_la(int state_no, int item_no, SET_PTR look_ahead);
-
 void create_lastats(void);
 
 void dump_tables(void);
@@ -423,7 +453,7 @@ void free_nodes(struct node *head, struct node *tail);
 
 struct node *lpgaccess(int state_no, int item_no);
 
-void mkbasic(struct CLIOptions *cli_options);
+void mkbasic(const struct CLIOptions *cli_options);
 
 void mkrdcts(struct CLIOptions *cli_options);
 
@@ -444,8 +474,6 @@ void print_item(int item_no);
 void print_large_token(char *line, char *token, const char *indent, int len);
 
 void print_state(int state_no);
-
-void produce(struct CLIOptions *cli_options);
 
 void process_error_maps(struct CLIOptions *cli_options, FILE *systab);
 
@@ -470,38 +498,23 @@ void resolve_conflicts(int state_no, struct node **action, const short *symbol_l
 void restore_symbol(char *out, const char *in);
 
 /// This function allocates an array of size "size" of int integers.
-static int *Allocate_int_array(const long n) {
-  int *p;
-  p = (int *) calloc(n, sizeof(int));
-  if (p == (int *) NULL)
-    nospace(hostfile, __LINE__);
-  return &p[0];
-}
-
-/// This function allocates an array of size "size" of int integers.
 static long *Allocate_long_array(const long n) {
   long *p;
-  p = (long *) calloc(n, sizeof(long));
-  if (p == (long *) NULL)
-    nospace(hostfile, __LINE__);
+  calloc0(p, n, long);
   return &p[0];
 }
 
 /// This function allocates an array of size "size" of short integers.
 static short *Allocate_short_array(const long n) {
   short *p;
-  p = (short *) calloc(n, sizeof(short));
-  if (p == (short *) NULL)
-    nospace(hostfile, __LINE__);
+  calloc0(p, n, short);
   return &p[0];
 }
 
 /// This function allocates an array of size "size" of type boolean.
 static bool *Allocate_boolean_array(const long n) {
   bool *p;
-  p = (bool *) calloc(n, sizeof(bool));
-  if (p == (bool *) 0)
-    nospace(hostfile, __LINE__);
+  calloc0(p, n, bool);
   return &p[0];
 }
 
@@ -518,10 +531,7 @@ static struct node *Allocate_node() {
     // Is free list not empty?
     node_pool = p->next;
   } else {
-    p = (struct node *) galloc(sizeof(struct node));
-    if (p == NULL) {
-      nospace(hostfile, __LINE__);
-    }
+    galloc0(p, struct node, 1);
   }
   return p;
 }
@@ -534,9 +544,7 @@ static struct node *Allocate_node() {
 static struct goto_header_type Allocate_goto_map(const long n) {
   struct goto_header_type go_to;
   go_to.size = n;
-  go_to.map = (struct goto_type *) galloc(n * sizeof(struct goto_type));
-  if (go_to.map == NULL)
-    nospace(hostfile, __LINE__);
+  galloc0(go_to.map, struct goto_type, n);
   go_to.map--; /* map will be indexed in range 1..size */
   return go_to;
 }
@@ -549,9 +557,7 @@ static struct goto_header_type Allocate_goto_map(const long n) {
 static struct shift_header_type Allocate_shift_map(const long n) {
   struct shift_header_type sh;
   sh.size = n;
-  sh.map = (struct shift_type *) galloc(n * sizeof(struct shift_type));
-  if (sh.map == NULL)
-    nospace(hostfile, __LINE__);
+  galloc0(sh.map, struct shift_type, n)
   sh.map--; /* map will be indexed in range 1..size */
   return sh;
 }
@@ -561,9 +567,7 @@ static struct shift_header_type Allocate_shift_map(const long n) {
 /// a reduce map is used for the default reduction.
 static struct reduce_header_type Allocate_reduce_map(const long n) {
   struct reduce_header_type red;
-  red.map = (struct reduce_type *) galloc((n + 1) * sizeof(struct reduce_type));
-  if (red.map == NULL)
-    nospace(hostfile, __LINE__);
+  galloc0(red.map, struct reduce_type, (n + 1));
   red.size = n;
   return red;
 }
@@ -576,15 +580,15 @@ static int TOUPPER(const int c) {
   return islower(c) ? toupper(c) : c;
 }
 
-static int MAX(const long a, const long b) {
+static long MAX(const long a, const long b) {
   return a > b ? a : b;
 }
 
-static int MIN(const long a, const long b) {
+static long MIN(const long a, const long b) {
   return a < b ? a : b;
 }
 
-static int ABS(const long x) {
+static long ABS(const long x) {
   return x < 0 ? -x : x;
 }
 
@@ -661,8 +665,8 @@ extern struct new_state_type *new_state_element;
 extern short *shift_image;
 extern short *real_shift_number;
 
-extern int *term_state_index;
-extern int *shift_check_index;
+extern long *term_state_index;
+extern long *shift_check_index;
 
 extern int shift_domain_count;
 extern int num_terminal_states;

@@ -64,10 +64,7 @@ struct action_element *allocate_action_element(void) {
   if (p != NULL) {
     action_element_pool = p->next;
   } else {
-    p = (struct action_element *) talloc(sizeof(struct action_element));
-    if (p == (struct action_element *) NULL) {
-      nospace(__FILE__, __LINE__);
-    }
+    talloc0(p, struct action_element);
   }
   return p;
 }
@@ -339,9 +336,7 @@ void compute_update_actions(const short source_state, const short state_no, cons
       // common ancestor of the initial reduce action and the two
       // contending updates as the update action.
       if (p == NULL) {
-        p = (struct update_action_element *) talloc(sizeof(struct update_action_element));
-        if (p == (struct update_action_element *) NULL)
-          nospace(__FILE__, __LINE__);
+        talloc0(p, struct update_action_element);
         p->next = update_action[state_no];
         update_action[state_no] = p;
         p->symbol = red.map[i].symbol;
@@ -452,10 +447,7 @@ short sp_state_map(const int rule_head, const int item_no, const int sp_rule_cou
   // If we did not find a compatible state, construct a new one.
   // Add it to the list of state and add it to the hash table.
   if (state == NULL) {
-    state = (struct sp_state_element *) talloc(sizeof(struct sp_state_element));
-    if (state == NULL) {
-      nospace(__FILE__, __LINE__);
-    }
+    talloc0(state, struct sp_state_element);
     state->next = sp_state_root;
     sp_state_root = state;
     state->link = sp_table[hash_address];
@@ -512,10 +504,6 @@ void remove_single_productions() {
   short *shift_transition;
   short *rule_count;
   short shift_table[SHIFT_TABLE_SIZE];
-  struct new_shift_element {
-    short link,
-        shift_number;
-  } *new_shift;
   // Set up a pool of temporary space.
   reset_temporary_space();
   // Allocate all other necessary temporary objects.
@@ -527,30 +515,17 @@ void remove_single_productions() {
   symbol_list = Allocate_short_array(num_symbols + 1);
   shift_transition = Allocate_short_array(num_symbols + 1);
   rule_count = Allocate_short_array(num_rules + 1);
-  new_shift = (struct new_shift_element *) calloc(max_la_state + 1, sizeof(struct new_shift_element));
-  if (new_shift == NULL)
-    nospace(__FILE__, __LINE__);
-  look_ahead = (SET_PTR) calloc(1, term_set_size * sizeof(BOOLEAN_CELL));
-  if (look_ahead == NULL)
-    nospace(__FILE__, __LINE__);
-  sp_action = (short **) calloc(num_symbols + 1, sizeof(short *));
-  if (sp_action == NULL)
-    nospace(__FILE__, __LINE__);
-  is_conflict_symbol = (bool *) calloc(num_symbols + 1, sizeof(bool));
-  if (is_conflict_symbol == NULL)
-    nospace(__FILE__, __LINE__);
-  sp_table = (struct sp_state_element **) calloc(STATE_TABLE_SIZE, sizeof(struct sp_state_element *));
-  if (sp_table == NULL) {
-    nospace(__FILE__, __LINE__);
-  }
-  new_action = (struct action_element **) calloc(num_states + 1, sizeof(struct action_element *));
-  if (new_action == NULL) {
-    nospace(__FILE__, __LINE__);
-  }
-  update_action = (struct update_action_element **) calloc(num_states + 1, sizeof(struct update_action_element *));
-  if (update_action == NULL) {
-    nospace(__FILE__, __LINE__);
-  }
+  struct new_shift_element {
+    short link;
+    short shift_number;
+  } *new_shift;
+  calloc0(new_shift, max_la_state + 1, struct new_shift_element);
+  calloc0_set(look_ahead, 1, term_set_size);
+  calloc0(sp_action, num_symbols + 1, short *);
+  calloc0(is_conflict_symbol, num_symbols + 1, bool);
+  calloc0(sp_table, STATE_TABLE_SIZE, struct sp_state_element *);
+  calloc0(new_action, num_states + 1, struct action_element *);
+  calloc0(update_action, num_states + 1, struct update_action_element *);
   // Initialize all relevant sets and maps to the empty set.
   rule_root = NIL;
   symbol_root = NIL;
@@ -825,17 +800,11 @@ void remove_single_productions() {
   }
   // We are now ready to extend all global maps based on states and
   // permanently install the new states.
-  statset = (struct statset_type *) realloc(statset, (max_sp_state + 1) * sizeof(struct statset_type));
-  if (statset == NULL)
-    nospace(__FILE__, __LINE__);
-  reduce = (struct reduce_header_type *) realloc(reduce, (max_sp_state + 1) * sizeof(struct reduce_header_type));
-  if (reduce == NULL)
-    nospace(__FILE__, __LINE__);
+  realloc0(statset, statset, (max_sp_state + 1), struct statset_type);
+  realloc0(reduce, reduce, max_sp_state + 1, struct reduce_header_type);
   // see routine PRODUCE
   if (gd_index != NULL) {
-    gd_index = (short *) realloc(gd_index, (max_sp_state + 2) * sizeof(short));
-    if (gd_index == NULL)
-      nospace(__FILE__, __LINE__);
+    realloc0(gd_index, gd_index, (max_sp_state + 2), short);
     // Each element gd_index[i] points to the starting location
     // of a slice in another array. The last element of the slice
     // can be computed as (gd_index[i+1] - 1). After extending
@@ -846,9 +815,7 @@ void remove_single_productions() {
       gd_index[state_no] = gd_index[state_no - 1];
     }
   }
-  in_stat = (struct node **) realloc(in_stat, (max_sp_state + 1) * sizeof(struct node *));
-  if (in_stat == NULL)
-    nospace(__FILE__, __LINE__);
+  realloc0(in_stat, in_stat, (max_sp_state + 1), struct node*);
   for (int state_no = num_states + 1; state_no <= max_sp_state; state_no++) {
     in_stat[state_no] = NULL;
   }
@@ -930,11 +897,7 @@ void remove_single_productions() {
   // At most, the shift array contains 1..num_states elements. As,
   // each of these elements might be (theoretically) replaced by a
   // new one, we need to double its size.
-  shift = (struct shift_header_type *)
-      realloc(shift,
-              2 * (num_states + 1) * sizeof(struct shift_header_type));
-  if (shift == NULL)
-    nospace(__FILE__, __LINE__);
+  realloc0(shift, shift, 2 * (num_states + 1), struct shift_header_type);
   // For each state with updates or new actions, take appropriate
   // actions.
   for ALL_STATES3(state_no) {

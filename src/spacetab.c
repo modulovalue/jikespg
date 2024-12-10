@@ -416,7 +416,7 @@ void merge_shift_domains(struct CLIOptions *cli_options) {
   shift_image = Allocate_short_array(max_la_state + 1);
   real_shift_number = Allocate_short_array(num_shift_maps + 1);
   shift_symbols = Allocate_boolean_array(num_terminals + 1);
-  shift_check_index = Allocate_int_array(num_shift_maps + 1);
+  shift_check_index = Allocate_long_array(num_shift_maps + 1);
   for (int i = 0; i <= SHIFT_TABLE_UBOUND; i++) {
     shift_domain_table[i] = NIL;
   }
@@ -965,13 +965,11 @@ void overlay_sim_t_rows(struct CLIOptions *cli_options) {
 /// as we did for the non-terminal states.
 /// The starting positions are stored in the vector TERM_STATE_INDEX.
 void overlap_t_rows(struct CLIOptions *cli_options) {
-  int symbol;
-  int indx;
   long num_bytes;
   short *terminal_list = Allocate_short_array(num_terminals + 1);
-  term_state_index = Allocate_int_array(max_la_state + 1);
+  term_state_index = Allocate_long_array(max_la_state + 1);
   increment_size = MAX(num_table_entries * increment / 100, num_terminals + 1);
-  const int old_size = table_size;
+  const long old_size = table_size;
   table_size = MIN(num_table_entries + increment_size, MAX_TABLE_SIZE);
   if ((int) table_size > old_size) {
     ffree(previous);
@@ -984,7 +982,7 @@ void overlap_t_rows(struct CLIOptions *cli_options) {
   first_index = 1;
   previous[first_index] = NIL;
   next[first_index] = first_index + 1;
-  for (indx = 2; indx < (int) table_size; indx++) {
+  for (int indx = 2; indx < (int) table_size; indx++) {
     next[indx] = indx + 1;
     previous[indx] = indx - 1;
   }
@@ -1001,7 +999,7 @@ void overlap_t_rows(struct CLIOptions *cli_options) {
     int root_symbol = NIL;
     const struct shift_header_type sh = shift[new_state_element[state_no].shift_number];
     for (int i = 1; i <= sh.size; i++) {
-      symbol = sh.map[i].symbol;
+      int symbol = sh.map[i].symbol;
       if (!cli_options->shift_default_bit ||
           sh.map[i].action != shiftdf[symbol]) {
         terminal_list[symbol] = root_symbol;
@@ -1014,7 +1012,7 @@ void overlap_t_rows(struct CLIOptions *cli_options) {
       root_symbol = red.map[i].symbol;
     }
     // Look for a suitable index where to overlay the state.
-    indx = first_index;
+    int indx = first_index;
   look_for_match_in_term_table:
     if (indx == NIL) {
       indx = table_size + 1;
@@ -1022,7 +1020,7 @@ void overlap_t_rows(struct CLIOptions *cli_options) {
     if (indx + num_terminals > (int) table_size) {
       reallocate(cli_options);
     }
-    for (symbol = root_symbol; symbol != NIL; symbol = terminal_list[symbol]) {
+    for (int symbol = root_symbol; symbol != NIL; symbol = terminal_list[symbol]) {
       if (next[indx + symbol] == OMEGA) {
         indx = next[indx];
         goto look_for_match_in_term_table;
@@ -1030,7 +1028,7 @@ void overlap_t_rows(struct CLIOptions *cli_options) {
     }
     // INDX marks the starting position for the state, remove all the
     // positions that are claimed by terminal actions in the state.
-    for (symbol = root_symbol; symbol != NIL; symbol = terminal_list[symbol]) {
+    for (int symbol = root_symbol; symbol != NIL; symbol = terminal_list[symbol]) {
       const int i = indx + symbol;
       if (i == last_index) {
         last_index = previous[last_index];
@@ -1106,9 +1104,7 @@ void overlap_t_rows(struct CLIOptions *cli_options) {
 }
 
 /// We now write out the tables to the SYSTAB file.
-void print_tables(struct CLIOptions *cli_options, FILE *systab) {
-  int *check;
-  int *action;
+void print_tables_space(struct CLIOptions *cli_options, FILE *systab) {
   int la_state_offset;
   int k;
   int indx;
@@ -1124,8 +1120,8 @@ void print_tables(struct CLIOptions *cli_options, FILE *systab) {
   int rule_no;
   char *tok;
   long offset;
-  check = Allocate_int_array(table_size + 1);
-  action = Allocate_int_array(table_size + 1);
+  long *check = Allocate_long_array(table_size + 1);
+  long *action = Allocate_long_array(table_size + 1);
   // Prepare header card with proper information, and write it out.
   offset = error_act;
   if (cli_options->read_reduce_bit) {
@@ -1588,17 +1584,11 @@ void print_tables(struct CLIOptions *cli_options, FILE *systab) {
 void cmprspa(struct OutputFiles *output_files, struct CLIOptions *cli_options, FILE *systab) {
   state_index = Allocate_long_array(max_la_state + 1);
   ordered_state = Allocate_long_array(max_la_state + 1);
-  symbol_map = Allocate_int_array(num_symbols + 1);
+  symbol_map = Allocate_long_array(num_symbols + 1);
   state_list = Allocate_long_array(max_la_state + 1);
   shift_on_error_symbol = Allocate_boolean_array(max_la_state + 1);
-  new_state_element = (struct new_state_type *) calloc(max_la_state + 1, sizeof(struct new_state_type));
-  if (new_state_element == NULL) {
-    nospace(__FILE__, __LINE__);
-  }
-  new_state_element_reduce_nodes = (struct node **) calloc(max_la_state + 1, sizeof(struct node *));
-  if (new_state_element_reduce_nodes == NULL) {
-    nospace(__FILE__, __LINE__);
-  }
+  calloc0(new_state_element, max_la_state + 1, struct new_state_type);
+  calloc0(new_state_element_reduce_nodes, max_la_state + 1, struct node *);
   remap_non_terminals(cli_options);
   overlap_nt_rows(cli_options);
   merge_similar_t_rows(cli_options);
@@ -1608,6 +1598,6 @@ void cmprspa(struct OutputFiles *output_files, struct CLIOptions *cli_options, F
     init_parser_files(output_files, cli_options);
     print_space_parser(cli_options);
   } else {
-    print_tables(cli_options, systab);
+    print_tables_space(cli_options, systab);
   }
 }

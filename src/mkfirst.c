@@ -400,9 +400,8 @@ void nullables_computation(void) {
 void compute_first(const int nt) {
   int symbol;
   int rule_no;
-  const SET_PTR temp_set = calloc(1, term_set_size * sizeof(BOOLEAN_CELL));
-  if (temp_set == NULL)
-    nospace(__FILE__, __LINE__);
+  SET_PTR temp_set;
+  calloc0_set(temp_set, 1, term_set_size)
   stack[++top] = nt;
   const int indx = top;
   index_of[nt] = indx;
@@ -509,6 +508,9 @@ void s_first(const int root, const int tail, const int index) {
 
 /// For a given symbol, complete the computation of
 /// PRODUCES[symbol].
+///
+/// This procedure is used to compute the transitive closure of
+/// the PRODUCES, LEFT_PRODUCES and RIGHT_MOST_PRODUCES maps.
 void compute_produces(const int symbol) {
   int new_symbol;
   struct node *q;
@@ -546,9 +548,8 @@ void compute_produces(const int symbol) {
 /// recognized by the language.
 void compute_follow(const int nt) {
   int lhs_symbol;
-  const SET_PTR temp_set = calloc(1, term_set_size * sizeof(BOOLEAN_CELL));
-  if (temp_set == NULL)
-    nospace(__FILE__, __LINE__);
+  SET_PTR temp_set;
+  calloc0_set(temp_set, 1, term_set_size);
   // FOLLOW[NT] was initialized to 0 for all non-terminals.
   stack[++top] = nt;
   const int indx = top;
@@ -586,7 +587,7 @@ void print_unreachables(void) {
   //  1) to mark symbols that are reachable from the Accepting
   //        non-terminal.
   //  2) to construct lists of symbols that are not reachable.
-  int *symbol_list = Allocate_int_array(num_symbols + 1);
+  long *symbol_list = Allocate_long_array(num_symbols + 1);
   for ALL_SYMBOLS3(symbol) {
     symbol_list[symbol] = OMEGA;
   }
@@ -783,7 +784,7 @@ void print_follow_map(void) {
 
 /// MKFIRST constructs the FIRST and FOLLOW maps, the CLOSURE map,
 /// ADEQUATE_ITEM and ITEM_TABLE maps and all other basic maps.
-void mkbasic(struct CLIOptions* cli_options) {
+void mkbasic(const struct CLIOptions* cli_options) {
   int symbol;
   int rule_no;
   bool end_node;
@@ -800,21 +801,15 @@ void mkbasic(struct CLIOptions* cli_options) {
   // NT_FIRST is used to construct a mapping from non-terminals to the
   // set of terminals that may appear first in a string derived from
   // the non-terminal.
-  nt_first = (SET_PTR) calloc(num_non_terminals, term_set_size * sizeof(BOOLEAN_CELL));
-  if (nt_first == NULL)
-    nospace(__FILE__, __LINE__);
+  calloc0_set(nt_first, num_non_terminals, term_set_size);
   nt_first -= (num_terminals + 1) * term_set_size;
   next_item = Allocate_short_array(num_items + 1);
   nt_items = Allocate_short_array(num_non_terminals);
   nt_items -= num_terminals + 1;
   nt_list = Allocate_short_array(num_non_terminals);
   nt_list -= num_terminals + 1;
-  first_element = (struct f_element_type *) calloc(num_items + 1, sizeof(struct f_element_type));
-  if (first_element == NULL)
-    nospace(__FILE__, __LINE__);
-  item_table = (struct itemtab *) calloc(num_items + 1, sizeof(struct itemtab));
-  if (item_table == NULL)
-    nospace(__FILE__, __LINE__);
+  calloc0(first_element, num_items + 1, struct f_element_type);
+  calloc0(item_table, num_items + 1, struct itemtab);
   for ALL_NON_TERMINALS3(symbol) {
     lhs_rule[symbol] = NIL;
   }
@@ -822,9 +817,9 @@ void mkbasic(struct CLIOptions* cli_options) {
   // each non-terminal symbol into the set of rules it produces
   for ALL_RULES3(rule_no) {
     symbol = rules[rule_no].lhs;
-    if (lhs_rule[symbol] == NIL)
+    if (lhs_rule[symbol] == NIL) {
       next_rule[rule_no] = rule_no;
-    else {
+    } else {
       next_rule[rule_no] = next_rule[lhs_rule[symbol]];
       next_rule[lhs_rule[symbol]] = rule_no;
     }
@@ -834,10 +829,7 @@ void mkbasic(struct CLIOptions* cli_options) {
   // any rules.
   no_rules_produced();
   // Construct the CLOSURE map of non-terminals.
-  closure = (struct node **)
-      calloc(num_non_terminals, sizeof(struct node *));
-  if (closure == NULL)
-    nospace(__FILE__, __LINE__);
+  calloc0(closure, num_non_terminals, struct node *);
   closure -= num_terminals + 1;
   for ALL_NON_TERMINALS3(symbol) {
     index_of[symbol] = OMEGA;
@@ -879,8 +871,8 @@ void mkbasic(struct CLIOptions* cli_options) {
   check_non_terminals();
   // Construct the ITEM_TABLE, FIRST_ITEM_OF, and NT_ITEMS maps.
   first_table = Allocate_short_array(num_symbols + 1);
-  for ALL_SYMBOLS3(symbol) /* Initialize FIRST_TABLE to NIL */
-  {
+  /* Initialize FIRST_TABLE to NIL */
+  for ALL_SYMBOLS3(symbol) {
     first_table[symbol] = NIL;
   }
   top = 1;
@@ -937,16 +929,11 @@ void mkbasic(struct CLIOptions* cli_options) {
   // The first element in the FIRST table contains the first sets
   // for the empty sequence.
   num_first_sets = top;
-  for (end_node = (rule_no = lhs_rule[accept_image]) == NIL;
-       !end_node;
-       end_node = rule_no == lhs_rule[accept_image]) {
+  for (end_node = (rule_no = lhs_rule[accept_image]) == NIL; !end_node; end_node = rule_no == lhs_rule[accept_image]) {
     rule_no = next_rule[rule_no];
     num_first_sets++;
   }
-  first = (SET_PTR)
-      calloc(num_first_sets + 1, term_set_size * sizeof(BOOLEAN_CELL));
-  if (first == NULL)
-    nospace(__FILE__, __LINE__);
+  calloc0_set(first, num_first_sets + 1, term_set_size)
   for (int i = 1; i <= top; i++) {
     s_first(first_element[i].suffix_root,
             first_element[i].suffix_tail, i);
@@ -962,12 +949,10 @@ void mkbasic(struct CLIOptions* cli_options) {
   // If the READ/REDUCE option is on, we precalculate the kernel
   // of the final states which simply consists of the last item
   // in  the corresponding rule.  Rules with the ACCEPT
-  // non-terminal as their left-hand side are not considered so
-  // as to let the Accpet action remain as a Reduce action
+  // non-terminal as their left-hand side are not considered
+  // to let the Accept action remain as a Reduce action
   // instead of a Goto/Reduce action.
-  adequate_item = (struct node **) calloc(num_rules + 1, sizeof(struct node *));
-  if (adequate_item == NULL)
-    nospace(__FILE__, __LINE__);
+  calloc0(adequate_item, num_rules + 1, struct node *);
   if (cli_options->read_reduce_bit) {
     for ALL_RULES3(rule_no) {
       const int j = RHS_SIZE(rule_no);
@@ -983,10 +968,7 @@ void mkbasic(struct CLIOptions* cli_options) {
   }
   // Construct the CLITEMS map. Each element of CLITEMS points
   // to a circular linked list of items.
-  clitems = (struct node **)
-      calloc(num_non_terminals, sizeof(struct node *));
-  if (clitems == NULL)
-    nospace(__FILE__, __LINE__);
+  calloc0(clitems, num_non_terminals, struct node *);
   clitems -= num_terminals + 1;
   for ALL_NON_TERMINALS3(nt) {
     clitems[nt] = NULL;
@@ -1011,13 +993,9 @@ void mkbasic(struct CLIOptions* cli_options) {
   // must be constructed which identifies for each nonterminal
   // the set of nonterminals that it can right-most produce.
   if (cli_options->lalr_level > 1) {
-    produces = (SET_PTR) calloc(num_non_terminals, non_term_set_size * sizeof(BOOLEAN_CELL));
-    if (produces == NULL)
-      nospace(__FILE__, __LINE__);
+    calloc0_set(produces, num_non_terminals, non_term_set_size);
     produces -= (num_terminals + 1) * non_term_set_size;
-    direct_produces = (struct node **) calloc(num_non_terminals, sizeof(struct node *));
-    if (direct_produces == NULL)
-      nospace(__FILE__, __LINE__);
+    calloc0(direct_produces, num_non_terminals, struct node *);
     direct_produces -= num_terminals + 1;
     for ALL_NON_TERMINALS3(nt) {
       struct node *p;
@@ -1044,8 +1022,9 @@ void mkbasic(struct CLIOptions* cli_options) {
     }
     top = 0;
     for ALL_NON_TERMINALS3(nt) {
-      if (index_of[nt] == OMEGA)
+      if (index_of[nt] == OMEGA) {
         compute_produces(nt);
+      }
     }
     init_rmpself(produces);
     produces += (num_terminals + 1) * non_term_set_size;
@@ -1059,9 +1038,7 @@ void mkbasic(struct CLIOptions* cli_options) {
   //   3) Error-maps are requested
   //   4) There are more than one starting symbol.
   if (cli_options->follow_bit || error_maps_bit || next_rule[lhs_rule[accept_image]] != lhs_rule[accept_image]) {
-    follow = (SET_PTR) calloc(num_non_terminals, term_set_size * sizeof(BOOLEAN_CELL));
-    if (follow == NULL)
-      nospace(__FILE__, __LINE__);
+    calloc0_set(follow, num_non_terminals, term_set_size);
     follow -= (num_terminals + 1) * term_set_size;
     SET_BIT_IN(follow, accept_image, eoft_image);
     for ALL_NON_TERMINALS3(symbol) {

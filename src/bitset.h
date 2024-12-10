@@ -5,14 +5,15 @@
 
 /// These variables hold the number of BOOLEAN_CELLS required to form a
 /// set of terminals, non-terminals and states, respectively.
-extern int term_set_size;
-extern int non_term_set_size;
-extern int state_set_size;
+extern long term_set_size;
+extern long non_term_set_size;
+extern long state_set_size;
 
 typedef unsigned int BOOLEAN_CELL;
 
-/// Basic unit used to represent bit sets
-typedef BOOLEAN_CELL *SET_PTR;
+typedef BOOLEAN_CELL SET;
+
+typedef SET *SET_PTR;
 
 /// The following macros are used to define operations on sets that
 /// are represented as bit-strings.  BOOLEAN_CELL is a type that is

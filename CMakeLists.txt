@@ -23,7 +23,6 @@ add_executable(
         src/mkred.c
         src/mkstates.c
         src/partset.c
-        src/produce.c
         src/ptables.c
         src/remsp.c
         src/resolve.c

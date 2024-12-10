@@ -70,9 +70,8 @@ void partset(const SET_PTR collection, const long *element_size, const long *lis
   short *head = Allocate_short_array(collection_size + 1);
   short *next = Allocate_short_array(collection_size + 1);
   bool *is_a_base = Allocate_boolean_array(collection_size + 1);
-  const SET_PTR temp_set = calloc(1, bctype * sizeof(BOOLEAN_CELL));
-  if (temp_set == NULL)
-    nospace(__FILE__, __LINE__);
+  SET_PTR temp_set;
+  calloc0_set(temp_set, 1, bctype);
   // DOMAIN_TABLE is the base of a hash table used to compute the set
   // of unique subsets in COLLECTION. Collisions are resolved by links
   // which are implemented in DOMAIN_LINK.

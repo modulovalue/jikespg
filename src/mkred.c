@@ -126,11 +126,7 @@ void compute_read(struct CLIOptions *cli_options) {
   struct node *s;
   struct node *v;
   if (cli_options->lalr_level > 1 || cli_options->single_productions_bit) {
-    read_set = (SET_PTR)
-        calloc(num_states + 1,
-               sizeof(BOOLEAN_CELL) * term_set_size);
-    if (read_set == NULL)
-      nospace(__FILE__, __LINE__);
+    calloc0_set(read_set, num_states + 1, term_set_size);
   }
   //  We traverse all the states and for all complete items that requires
   // a look-ahead set, we retrace the state digraph (with the help of the
@@ -150,9 +146,7 @@ void compute_read(struct CLIOptions *cli_options) {
   // highest level of look-ahead allowed is 1, then only one such set is
   // allocated, and shared for all pairs (S, B) whose follow set is F.
   la_top = 0;
-  la_base = (int *) calloc(num_states + 1, sizeof(int));
-  if (la_base == NULL)
-    nospace(__FILE__, __LINE__);
+  calloc0(la_base, num_states + 1, int);
   for ALL_STATES3(state_no) {
     la_base[state_no] = OMEGA;
   }
@@ -233,10 +227,7 @@ void compute_read(struct CLIOptions *cli_options) {
     la_base[state_no] = OMEGA;
   }
   la_index = Allocate_short_array(la_top + 1);
-  la_set = (SET_PTR)
-      calloc(la_top + 1, term_set_size * sizeof(BOOLEAN_CELL));
-  if (la_set == NULL)
-    nospace(__FILE__, __LINE__);
+  calloc0_set(la_set, la_top + 1, term_set_size);
   for ALL_STATES3(state_no) {
     const struct goto_header_type go_to = statset[state_no].go_to;
     for (int i = 1; i <= go_to.size; i++) {
@@ -471,22 +462,15 @@ void mkrdcts(struct CLIOptions *cli_options) {
   // on that symbol in a given state.
   //
   // LOOK_AHEAD is used to compute lookahead sets.
-  in_stat = (struct node **)
-      calloc(num_states + 1, sizeof(struct node *));
-  if (in_stat == NULL)
-    nospace(__FILE__, __LINE__);
+  calloc0(in_stat, num_states + 1, struct node *);
   short *rule_count = Allocate_short_array(num_rules + 1);
   bool *no_shift_on_error_sym = Allocate_boolean_array(num_states + 1);
   short *symbol_list = Allocate_short_array(num_terminals + 1);
   single_complete_item = Allocate_boolean_array(num_states + 1);
-  struct node **action = calloc(num_terminals + 1, sizeof(struct node *));
-  if (action == NULL) {
-    nospace(__FILE__, __LINE__);
-  }
-  const SET_PTR look_ahead = calloc(1, term_set_size * sizeof(BOOLEAN_CELL));
-  if (look_ahead == NULL) {
-    nospace(__FILE__, __LINE__);
-  }
+  struct node **action;
+  calloc0(action, num_terminals + 1, struct node *);
+  SET_PTR look_ahead;
+  calloc0_set(look_ahead, 1, term_set_size);
   // If we will be removing single productions, we need to keep
   // track of all (state, symbol) pairs on which a conflict is
   // detected. The structure conflict_symbols is used as a base
@@ -494,9 +478,7 @@ void mkrdcts(struct CLIOptions *cli_options) {
   // NOTE that this allocation automatically initialized all
   // elements of the conflict_symbols array to NULL.
   if (cli_options->single_productions_bit) {
-    conflict_symbols = (struct node **) calloc(num_states + 1, sizeof(struct node *));
-    if (conflict_symbols == NULL)
-      nospace(__FILE__, __LINE__);
+    calloc0(conflict_symbols, num_states + 1, struct node *);
   }
   // First, construct the IN_STAT map. Next, iterate over the states to
   // construct two boolean vectors.  One indicates whether there is a
@@ -554,10 +536,7 @@ void mkrdcts(struct CLIOptions *cli_options) {
   // into its reduce map. We also initialize RULE_COUNT which
   // will be used to count the number of reduce actions on each
   // rule with in a given state.
-  reduce = (struct reduce_header_type *)
-      calloc(num_states + 1, sizeof(struct reduce_header_type));
-  if (reduce == NULL)
-    nospace(__FILE__, __LINE__);
+  calloc0(reduce, num_states + 1, struct reduce_header_type);
   for ALL_RULES3(i) {
     rule_count[i] = 0;
   }
