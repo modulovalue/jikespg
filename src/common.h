@@ -144,9 +144,10 @@ struct OutputFiles {
 
 struct CLIOptions {
   bool list_bit;
-  // TODO • remove support for SLR(1)?
+  // TODO • remove support for SLR(1) because it distracts us from the goals of jikespg.
   bool slr_bit;
   bool edit_bit;
+  // TODO • remove with an explicit comment what bits should be set to get verbose mode.
   bool verbose_bit;
   bool first_bit;
   bool follow_bit;
@@ -154,6 +155,7 @@ struct CLIOptions {
   bool xref_bit;
   bool nt_check_bit;
   bool conflicts_bit;
+  // TODO • have a union for c/cpp/java/unknown.
   bool c_bit;
   bool cpp_bit;
   bool java_bit;
