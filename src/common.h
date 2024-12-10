@@ -161,7 +161,6 @@ struct CLIOptions {
   bool shift_default_bit;
   bool byte_bit;
   bool debug_bit;
-  bool deferred_bit;
   bool single_productions_bit;
   int lalr_level;
   int default_opt;
@@ -194,7 +193,6 @@ static struct CLIOptions init_cli_options() {
     .shift_default_bit = false,
     .byte_bit = true,
     .debug_bit = false,
-    .deferred_bit = true,
     .single_productions_bit = false,
     .lalr_level = 1,
     .default_opt = 5,

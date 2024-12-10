@@ -208,8 +208,6 @@ void options(char *file_prefix, struct CLIOptions *cli_options) {
         cli_options->conflicts_bit = flag;
       } else if (memcmp("DEBUG", token, token_len) == 0) {
         cli_options->debug_bit = flag;
-      } else if (memcmp("DEFERRED", token, token_len) == 0) {
-        cli_options->deferred_bit = flag;
       } else if (memcmp("EDIT", token, token_len) == 0) {
         cli_options->edit_bit = flag;
       } else if (memcmp("ERRORMAPS", token, token_len) == 0) {
@@ -444,10 +442,6 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
   fprintf(syslis, "\n");
   strcpy(parm, old_parm);
   options(file_prefix, cli_options); /* Process new options passed directly to program */
-  // Deferred parsing without error maps is useless
-  if (!error_maps_bit) {
-    cli_options->deferred_bit = false;
-  }
   if (cli_options->act_file[0] == '\0') {
     sprintf(cli_options->act_file, "%sact.%s", file_prefix, cli_options->java_bit ? "java" : "h");
   }
@@ -484,11 +478,6 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
     strcpy(opt_string[++top], "DEBUG");
   } else {
     strcpy(opt_string[++top], "NODEBUG");
-  }
-  if (cli_options->deferred_bit) {
-    strcpy(opt_string[++top], "DEFERRED");
-  } else {
-    strcpy(opt_string[++top], "NODEFERRED");
   }
   if (cli_options->edit_bit) {
     strcpy(opt_string[++top], "EDIT");

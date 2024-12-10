@@ -216,7 +216,7 @@ void sortdes(long array[], long count[], const long low, const long high, const 
   ffree(list);
 }
 
-///   This procedure is invoked when the TABLE being used is not large
+/// This procedure is invoked when the TABLE being used is not large
 /// enough.  A new table is allocated, the information from the old table
 /// is copied, and the old space is released.
 void reallocate(struct CLIOptions *cli_options) {
@@ -1239,11 +1239,9 @@ void common(const bool byte_check_bit, struct CLIOptions *cli_options) {
     if (cli_options->c_bit || cli_options->cpp_bit) {
       fprintf(sysprs,
               "%s SCOPE_REPAIR\n"
-              "%s DEFERRED_RECOVERY\n"
               "%s FULL_DIAGNOSIS\n"
               "%s SPACE_TABLES\n\n",
               num_scopes > 0 ? "#define" : "#undef ",
-              cli_options->deferred_bit ? "#define" : "#undef ",
               error_maps_bit ? "#define" : "#undef ",
               cli_options->table_opt == OPTIMIZE_SPACE ? "#define" : "#undef ");
     }
