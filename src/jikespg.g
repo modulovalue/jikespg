@@ -1,6 +1,6 @@
 %Options NOGOTODEFAULT
 %Options ESC=$
-%Options ACTFILE=lpgact.c
+%Options ACTFILENAME=lpgact.c
 %Options FILEPREFIX=lpg
 %Options GENERATEPARSER=c
 %Options NODEFER
