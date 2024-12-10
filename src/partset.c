@@ -47,12 +47,8 @@ static char hostfile[] = __FILE__;
 ///    being constructed, remove it from the partition, and push it
 ///    into the stack. Repeat step 2 until the partition is empty.
 void partset(const SET_PTR collection, const long *element_size, const long *list, long *start, long *stack, long set_size, const long from_process_scopes) {
-  int base_set;
-  int size;
-  int bctype;
-  int index;
-  short domain_table[STATE_TABLE_SIZE];
   int collection_size = num_states;
+  int bctype;
   if (from_process_scopes) {
     bctype = num_states / SIZEOF_BC + (num_states % SIZEOF_BC ? 1 : 0);
     collection_size = set_size;
@@ -81,12 +77,13 @@ void partset(const SET_PTR collection, const long *element_size, const long *lis
   // subsets that are identical.  The elements of the list are placed
   // in the array NEXT.  When a state is at te root of a list, it is
   // used as a representative of that list.
+  short domain_table[STATE_TABLE_SIZE];
   for (int i = 0; i <= STATE_TABLE_UBOUND; i++) {
     domain_table[i] = NIL;
   }
   // We now iterate over the states and attempt to insert each
   // domain set into the hash table...
-  for (index = 1; index <= collection_size; index++) {
+  for (int index = 1; index <= collection_size; index++) {
     unsigned long hash_address = 0;
     for (int i = 0; i < bctype; i++) {
       hash_address += collection[index * bctype + i];
@@ -121,10 +118,10 @@ void partset(const SET_PTR collection, const long *element_size, const long *lis
   for (int i = 0; i <= set_size; i++) {
     partition[i] = NIL;
   }
-  for (index = 1; index <= collection_size; index++) {
-    if (head[index] != OMEGA) /* Subset representative */
-    {
-      size = element_size[index];
+  for (int index = 1; index <= collection_size; index++) {
+    if (head[index] != OMEGA) {
+      /* Subset representative */
+      int size = element_size[index];
       next[index] = partition[size];
       partition[size] = index;
     }
@@ -148,10 +145,9 @@ void partset(const SET_PTR collection, const long *element_size, const long *lis
   for (int i = 0; i <= collection_size; i++) {
     is_a_base[i] = false;
   }
-  for (size = size_root; size != NIL; size = size_list[size]) {
+  for (int size = size_root; size != NIL; size = size_list[size]) {
     // For biggest partition there is
-    for (base_set = partition[size];
-         base_set != NIL; base_set = next[base_set]) {
+    for (int base_set = partition[size]; base_set != NIL; base_set = next[base_set]) {
       // For each set in it...
       // Mark the state as a base state, and initialize
       // its stack.  The list representing the stack will
@@ -173,7 +169,7 @@ void partset(const SET_PTR collection, const long *element_size, const long *lis
         for (int subset = partition[next_size];
              subset != NIL;
              previous = subset, subset = next[subset]) {
-          index = stack[base_set];
+          int index = stack[base_set];
           B_ASSIGN_SET(temp_set, 0, collection, index, bctype);
           B_SET_UNION(temp_set, 0, collection, subset, bctype);
           // SUBSET is a subset of INDEX?
@@ -197,17 +193,17 @@ void partset(const SET_PTR collection, const long *element_size, const long *lis
   // base subset for the "fence" element.
   int offset = 1;
   for (int i = 1; i <= collection_size; i++) {
-    base_set = list[i];
+    int base_set = list[i];
     if (is_a_base[base_set]) {
       start[base_set] = offset;
       // Assign the same offset to each subset that is
       // identical to the BASE_SET subset in question. Also,
       // mark the fact that this is a copy by using the negative
       // value of the OFFSET.
-      for (index = head[base_set]; index != NIL; index = next[index]) {
+      for (int index = head[base_set]; index != NIL; index = next[index]) {
         start[index] = -start[base_set];
       }
-      size = element_size[base_set] + 1;
+      int size = element_size[base_set] + 1;
       offset += size;
       SHORT_CHECK(offset);
       // Now, assign offset values to each subset of the
@@ -217,8 +213,7 @@ void partset(const SET_PTR collection, const long *element_size, const long *lis
       // list.  Therefore, its end is reached when we go back
       // to the root... In this case, the root is already
       // processed, so we stop when we reach it.
-      for (index = stack[base_set];
-           index != base_set; index = stack[index]) {
+      for (int index = stack[base_set]; index != base_set; index = stack[index]) {
         size = element_size[index] + 1;
         start[index] = -(offset - size);
         // INDEX identifies a subset of BASE_SET. Assign the

@@ -147,7 +147,6 @@ bool strxeq(char *s1, char *s2) {
 void options(char *file_prefix, struct CLIOptions *cli_options) {
   char token[MAX_PARM_SIZE + 1];
   char temp[MAX_PARM_SIZE + 1];
-  char delim;
   char *c;
   // If we scan the comment sign, we stop processing the rest of the
   // parameter string.
@@ -180,6 +179,7 @@ void options(char *file_prefix, struct CLIOptions *cli_options) {
     while (parm[i] != '\0' && parm[i] == ' ') {
       i++;
     }
+    char delim;
     if (parm[i] != '\0') {
       delim = parm[i]; /* not end of parameter line */
     } else {
@@ -1071,18 +1071,17 @@ void free_line(struct line_elemt *p) {
 /// If the name is not found, then a message is printed, a new definition is
 /// entered to avoid more messages and NULL is returned.
 struct line_elemt *find_macro(char *name) {
-  register char *ptr;
   register struct line_elemt *root = NULL;
   char macro_name[MAX_LINE_SIZE + 1];
   register char *s = macro_name;
-  for (ptr = name; *ptr != '\0'; ptr++) {
+  for (register char *ptr = name; *ptr != '\0'; ptr++) {
     *s++ = isupper(*ptr) ? tolower(*ptr) : *ptr;
   }
   *s = '\0';
   const register int i = hash(macro_name);
   for (register int j = macro_table[i]; j != NIL; j = defelmt[j].next) {
     if (strcmp(macro_name, defelmt[j].name) == 0) {
-      ptr = defelmt[j].macro;
+      register char *ptr = defelmt[j].macro;
       if (ptr) /* undefined macro? */
       {
         while (*ptr != '\0') {
@@ -1429,9 +1428,6 @@ const char *EXTRACT_STRING(const int indx) {
 /// beginning at the proper offset, it is laid out on successive lines,
 /// beginning at the proper offset.
 void display_input(void) {
-  register int len;
-  register int offset;
-  register int symb;
   char line[PRINT_LINE_SIZE + 1];
   char temp[SYMBOL_SIZE + 1];
   // Print the Macro definitions, if any.
@@ -1450,6 +1446,7 @@ void display_input(void) {
       fprintf(syslis, "%s%s\n", blocke, line);
     }
   }
+  register int offset;
   //   Print the Aliases, if any.
   if (alias_root != NULL) {
     if (alias_root->link == NULL) {
@@ -1459,10 +1456,10 @@ void display_input(void) {
     }
     for (const struct hash_type *p = alias_root; p != NULL; p = p->link) {
       restore_symbol(temp, EXTRACT_STRING(p->st_ptr));
-      len = PRINT_LINE_SIZE - 5;
+      int len = PRINT_LINE_SIZE - 5;
       print_large_token(line, temp, "", len);
       strcat(line, " ::= ");
-      symb = -p->number;
+      int symb = -p->number;
       restore_symbol(temp, RETRIEVE_STRING(symb));
       if (strlen(line) + strlen(temp) > PRINT_LINE_SIZE) {
         fprintf(syslis, "%s\n", line);
@@ -1480,8 +1477,8 @@ void display_input(void) {
   // ERROR symbol.  See LPG GRAMMAR for more details.
   fprintf(syslis, "\nTerminals:\n\n");
   strcpy(line, "        "); /* 8 spaces */
-  len = PRINT_LINE_SIZE - 4;
-  for (symb = 2; symb <= num_terminals; symb++) {
+  int len = PRINT_LINE_SIZE - 4;
+  for (int symb = 2; symb <= num_terminals; symb++) {
     restore_symbol(temp, RETRIEVE_STRING(symb));
     if (strlen(line) + strlen(temp) > PRINT_LINE_SIZE) {
       fprintf(syslis, "\n%s", line);
@@ -1497,7 +1494,7 @@ void display_input(void) {
   //    Print the Rules
   fprintf(syslis, "\nRules:\n\n");
   for (register int rule_no = 0; rule_no <= num_rules; rule_no++) {
-    symb = rules[rule_no].lhs;
+    int symb = rules[rule_no].lhs;
     sprintf(line, "%-4d  ", rule_no);
     if (symb != OMEGA) {
       restore_symbol(temp, RETRIEVE_STRING(symb));

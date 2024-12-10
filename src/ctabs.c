@@ -173,8 +173,6 @@ void field(const long num, const int len) {
 /// value of the elements of count cannot exceed MAX and cannot be lower
 /// than zero, we can use a bucket sort technique.
 void sortdes(long array[], long count[], const long low, const long high, const long max) {
-  register long element;
-  register long k;
   // BUCKET is used to hold the roots of lists that contain the
   // elements of each bucket.  LIST is used to hold these lists.
   long *bucket = Allocate_long_array(max + 1);
@@ -190,17 +188,17 @@ void sortdes(long array[], long count[], const long low, const long high, const 
   //   NOTE that it is known that the values of the elements of ARRAY
   // also lie in the range LOW..HIGH.
   for (register long i = high; i >= low; i--) {
-    k = count[i];
-    element = array[i];
+    long k = count[i];
+    long element = array[i];
     list[element - low] = bucket[k];
     bucket[k] = element;
   }
   // Iterate over each bucket, and place elements in ARRAY and COUNT
   // in sorted order.  The iteration is done backward because we want
   // the arrays sorted in descending order.
-  k = low;
+  long k = low;
   for (register long i = max; i >= 0; i--) {
-    for (element = bucket[i]; element != NIL; element = list[element - low], k++) {
+    for (long element = bucket[i]; element != NIL; element = list[element - low], k++) {
       array[k] = element;
       count[k] = i;
     }
@@ -263,8 +261,6 @@ void reallocate(struct CLIOptions *cli_options) {
 /// is organized as a circular list where the smallest sets appear
 /// first in the list.
 void compute_action_symbols_range(const long *state_start, const long *state_stack, const long *state_list, long *action_symbols_range) {
-  int state;
-  int symbol;
   short *symbol_list = Allocate_short_array(num_symbols + 1);
   // We now write out the range elements of the ACTION_SYMBOLS map.
   // Recall that if STATE_START has a negative value, then the set in
@@ -282,11 +278,12 @@ void compute_action_symbols_range(const long *state_start, const long *state_sta
       // that has not yet been processed into the list.
       // Continue until stack is empty...
       // Recall that the stack is represented by a circular queue.
+      int state;
       for (bool end_node = (state = state_no__) == NIL; !end_node; end_node = state == state_no__) {
         state = state_stack[state];
         const struct shift_header_type sh = shift[statset[state].shift_number];
         for (int j = 1; j <= sh.size; j++) {
-          symbol = sh.map[j].symbol;
+          int symbol = sh.map[j].symbol;
           if (symbol_list[symbol] == OMEGA) {
             symbol_list[symbol] = symbol_root;
             symbol_root = symbol;
@@ -294,7 +291,7 @@ void compute_action_symbols_range(const long *state_start, const long *state_sta
         }
         const struct reduce_header_type red = reduce[state];
         for (int j = 1; j <= red.size; j++) {
-          symbol = red.map[j].symbol;
+          int symbol = red.map[j].symbol;
           if (symbol_list[symbol] == OMEGA) {
             symbol_list[symbol] = symbol_root;
             symbol_root = symbol;
@@ -302,7 +299,7 @@ void compute_action_symbols_range(const long *state_start, const long *state_sta
         }
       }
       // Write the list out.
-      for (symbol = symbol_root; symbol != NIL; symbol = symbol_root) {
+      for (int symbol = symbol_root; symbol != NIL; symbol = symbol_root) {
         symbol_root = symbol_list[symbol];
         symbol_list[symbol] = OMEGA;
         action_symbols_range[k++] = symbol;
@@ -315,8 +312,6 @@ void compute_action_symbols_range(const long *state_start, const long *state_sta
 /// This procedure computes the range of the NACTION_SYMBOLS map. It
 /// organization is analoguous to COMPUTE_ACTION_SYMBOLS_RANGE.
 void compute_naction_symbols_range(const long *state_start, const long *state_stack, const long *state_list, long *naction_symbols_range) {
-  int state;
-  int symbol;
   short *symbol_list = Allocate_short_array(num_symbols + 1);
   // We now write out the range elements of the NACTION_SYMBOLS map.
   // Recall that if STATE_START has a negative value, then the set in
@@ -334,12 +329,11 @@ void compute_naction_symbols_range(const long *state_start, const long *state_st
       // that has not yet been processed into the list.
       // Continue until stack is empty...
       // Recall that the stack is represented by a circular queue.
-      for (bool end_node = (state = state_no__) == NIL;
-           !end_node; end_node = state == state_no__) {
+      int state;
+      for (bool end_node = (state = state_no__) == NIL; !end_node; end_node = state == state_no__) {
         state = state_stack[state];
-        for (int j = gd_index[state];
-             j <= gd_index[state + 1] - 1; j++) {
-          symbol = gd_range[j];
+        for (int j = gd_index[state]; j <= gd_index[state + 1] - 1; j++) {
+          int symbol = gd_range[j];
           if (symbol_list[symbol] == OMEGA) {
             symbol_list[symbol] = symbol_root;
             symbol_root = symbol;
@@ -347,7 +341,7 @@ void compute_naction_symbols_range(const long *state_start, const long *state_st
         }
       }
       // Write the list out.
-      for (symbol = symbol_root; symbol != NIL; symbol = symbol_root) {
+      for (int symbol = symbol_root; symbol != NIL; symbol = symbol_root) {
         symbol_root = symbol_list[symbol];
         symbol_list[symbol] = OMEGA;
         naction_symbols_range[k++] = symbol;
@@ -388,25 +382,14 @@ void exit_file(FILE **file, char *file_tag, struct CLIOptions *cli_options) {
 }
 
 void print_error_maps(struct CLIOptions *cli_options) {
-  long *state_start;
-  long *state_stack;
-  long *temp;
-  long *original;
-  long *as_size;
-  long *action_symbols_base;
-  long *action_symbols_range;
-  long *naction_symbols_base;
-  long *naction_symbols_range;
-  int k;
-  int offset;
-  long num_bytes;
-  state_start = Allocate_long_array(num_states + 2);
-  state_stack = Allocate_long_array(num_states + 1);
+  long *state_start = Allocate_long_array(num_states + 2);
+  long *state_stack = Allocate_long_array(num_states + 1);
   PRNT("\nError maps storage:");
   // We now construct a bit map for the set of terminal symbols that
   // may appear in each state. Then, we invoke PARTSET to apply the
   // Partition Heuristic and print it.
-  as_size = Allocate_long_array(num_states + 1);
+  long *as_size = Allocate_long_array(num_states + 1);
+  long *original;
   if (cli_options->table_opt == OPTIMIZE_TIME) {
     original = Allocate_long_array(num_symbols + 1);
     // In a compressed TIME table, the terminal and non-terminal
@@ -450,7 +433,7 @@ void print_error_maps(struct CLIOptions *cli_options) {
   partset(action_symbols, as_size, state_list, state_start, state_stack, num_terminals, 0);
   ffree(action_symbols);
   // Compute and write out the base of the ACTION_SYMBOLS map.
-  action_symbols_base = Allocate_long_array(num_states + 1);
+  long *action_symbols_base = Allocate_long_array(num_states + 1);
   for ALL_STATES3(state_no) {
     action_symbols_base[state_list[state_no]] = ABS(state_start[state_list[state_no]]);
   }
@@ -461,8 +444,8 @@ void print_error_maps(struct CLIOptions *cli_options) {
   }
   ffree(action_symbols_base);
   // Compute and write out the range of the ACTION_SYMBOLS map.
-  offset = state_start[num_states + 1];
-  action_symbols_range = Allocate_long_array(offset);
+  int offset = state_start[num_states + 1];
+  long *action_symbols_range = Allocate_long_array(offset);
   compute_action_symbols_range(state_start, state_stack, state_list, action_symbols_range);
   for (int i = 0; i < offset - 1; i++) {
     if (action_symbols_range[i] > (cli_options->java_bit ? 127 : 255)) {
@@ -483,7 +466,7 @@ void print_error_maps(struct CLIOptions *cli_options) {
       prnt_longs("\nconst unsigned short CLASS_HEADER asr[] = {0,\n", 0, offset - 2, 10, action_symbols_range, cli_options);
     }
   }
-  num_bytes = 2 * num_states;
+  long num_bytes = 2 * num_states;
   PRNT3("    Storage required for ACTION_SYMBOLS_BASE map: %ld Bytes", num_bytes);
   if (cli_options->table_opt == OPTIMIZE_TIME && last_terminal <= (cli_options->java_bit ? 127 : 255)) {
     num_bytes = offset - 1;
@@ -514,7 +497,7 @@ void print_error_maps(struct CLIOptions *cli_options) {
     }
   }
   // Compute and write out the base of the NACTION_SYMBOLS map.
-  naction_symbols_base = Allocate_long_array(num_states + 1);
+  long *naction_symbols_base = Allocate_long_array(num_states + 1);
   for ALL_STATES3(state_no) {
     naction_symbols_base[state_list[state_no]] = ABS(state_start[state_list[state_no]]);
   }
@@ -526,7 +509,7 @@ void print_error_maps(struct CLIOptions *cli_options) {
   ffree(naction_symbols_base);
   // Compute and write out the range of the NACTION_SYMBOLS map.
   offset = state_start[num_states + 1];
-  naction_symbols_range = Allocate_long_array(offset);
+  long *naction_symbols_range = Allocate_long_array(offset);
   compute_naction_symbols_range(state_start, state_stack, state_list, naction_symbols_range);
   if (cli_options->java_bit) {
     prnt_longs("\n    public final static char nasr[] = {0,\n", 0, offset - 2, 10, naction_symbols_range, cli_options);
@@ -540,7 +523,7 @@ void print_error_maps(struct CLIOptions *cli_options) {
   // is used to remap the NAME_INDEX values based on the new symbol
   // numberings. If time tables are requested, the terminals and non-
   // terminals are mixed together.
-  temp = Allocate_long_array(num_symbols + 1);
+  long *temp = Allocate_long_array(num_symbols + 1);
   if (cli_options->table_opt == OPTIMIZE_SPACE) {
     for ALL_TERMINALS3(symbol) {
       temp[symbol_map[symbol]] = symno[symbol].name_index;
@@ -644,7 +627,7 @@ void print_error_maps(struct CLIOptions *cli_options) {
     }
     for (; root != 0; root = list[root]) {
       for (int j = root; scope_right_side[j] != 0; j++) {
-        k = scope_right_side[j];
+        int k = scope_right_side[j];
         scope_right_side[j] = temp[k];
       }
     }
@@ -798,7 +781,7 @@ void print_error_maps(struct CLIOptions *cli_options) {
       }
     }
     padline();
-    k = 0;
+    int k = 0;
     for (int i = 1; i <= num_scopes; i++) {
       itoc(scope[i].prefix);
       *output_ptr++ = COMMA;
@@ -1866,35 +1849,15 @@ void common(const bool byte_check_bit, struct CLIOptions *cli_options) {
 ///      possibly be reached after a transition on the symbol in
 ///      question: TRANSITION_STATES
 void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
-  long *state_start;
-  long *state_stack;
   long *original = NULL;
-  long *symbol_root;
-  long *symbol_count;
-  long *term_list;
-  long *as_size;
-  long *action_symbols_range;
-  long *naction_symbols_range;
-  int offset;
-  int item_no;
-  int lhs_symbol;
-  int max_len;
-  int k;
-  int terminal_ubound;
-  int non_terminal_ubound;
-  long num_bytes;
   char tok[SYMBOL_SIZE + 1];
-  terminal_ubound = cli_options->table_opt == OPTIMIZE_TIME
-                      ? num_symbols
-                      : num_terminals;
-  non_terminal_ubound = cli_options->table_opt == OPTIMIZE_TIME
-                          ? num_symbols
-                          : num_non_terminals;
-  symbol_root = Allocate_long_array(num_symbols + 1);
-  symbol_count = Allocate_long_array(num_symbols + 1);
-  state_start = Allocate_long_array(num_states + 2);
-  state_stack = Allocate_long_array(num_states + 1);
-  term_list = Allocate_long_array(num_symbols + 1);
+  int terminal_ubound = cli_options->table_opt == OPTIMIZE_TIME ? num_symbols : num_terminals;
+  int non_terminal_ubound = cli_options->table_opt == OPTIMIZE_TIME ? num_symbols : num_non_terminals;
+  long *symbol_root = Allocate_long_array(num_symbols + 1);
+  long *symbol_count = Allocate_long_array(num_symbols + 1);
+  long *state_start = Allocate_long_array(num_states + 2);
+  long *state_stack = Allocate_long_array(num_states + 1);
+  long *term_list = Allocate_long_array(num_symbols + 1);
   PRNT("\nError maps storage:");
   // The FOLLOW map is written out as two vectors where the first
   // vector indexed by a Symbol gives the starting location in the
@@ -1926,8 +1889,8 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
       }
     }
   }
-  offset = 1;
-  k = 1;
+  int offset = 1;
+  int k = 1;
   field(offset, 6); /* Offset of the first state */
   for (int symbol = 1; symbol <= non_terminal_ubound; symbol++) {
     offset += symbol_count[symbol];
@@ -1946,7 +1909,7 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
   //  We now write the elements in the range of the FOLLOW map.
   k = 0;
   for (int symbol = 1; symbol <= non_terminal_ubound; symbol++) {
-    lhs_symbol = symbol_root[symbol];
+    int lhs_symbol = symbol_root[symbol];
     if (lhs_symbol != OMEGA) {
       for ALL_TERMINALS3(symbol) {
         if (IS_IN_SET(follow, lhs_symbol + 1, symbol + 1)) {
@@ -1965,6 +1928,7 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
     *output_ptr++ = '\n';
     BUFFER_CHECK(systab);
   }
+  long num_bytes;
   // Compute and list amount of space required for the Follow map.
   if (cli_options->table_opt == OPTIMIZE_TIME) {
     num_bytes = 2 * (num_symbols + offset);
@@ -2018,7 +1982,7 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
   // We now construct a bit map for the set of terminal symbols that
   // may appear in each state. Then, we invoke PARTSET to apply the
   // Partition Heuristic and print it.
-  as_size = Allocate_long_array(num_states + 1);
+  long *as_size = Allocate_long_array(num_states + 1);
   if (cli_options->table_opt == OPTIMIZE_TIME) {
     original = Allocate_long_array(num_symbols + 1);
     // In a compressed TIME table, the terminal and non-terminal
@@ -2083,7 +2047,7 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
   *output_ptr++ = '\n';
   BUFFER_CHECK(systab);
   // Compute and write out the range of the ACTION_SYMBOLS map.
-  action_symbols_range = Allocate_long_array(offset);
+  long *action_symbols_range = Allocate_long_array(offset);
   compute_action_symbols_range(state_start, state_stack, state_list, action_symbols_range);
   k = 0;
   for (int state_no = 0; state_no < offset - 1; state_no++) {
@@ -2149,7 +2113,7 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
   *output_ptr++ = '\n';
   BUFFER_CHECK(systab);
   // Compute and write out the range of the NACTION_SYMBOLS map.
-  naction_symbols_range = Allocate_long_array(offset);
+  long *naction_symbols_range = Allocate_long_array(offset);
   compute_naction_symbols_range(state_start, state_stack,
                                 state_list, naction_symbols_range);
   k = 0;
@@ -2202,7 +2166,7 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
       // is the state a single production state?
       q = statset[state_no].complete_items; /* pick arbitrary item */
     }
-    item_no = q->value - 1;
+    int item_no = q->value - 1;
     state_no = item_table[item_no].symbol;
     int symbol = symbol_map[state_no];
     state_stack[state_no] = symbol_root[symbol];
@@ -2316,7 +2280,7 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
   BUFFER_CHECK(systab);
   // We write out the names map.
   num_bytes = 0;
-  max_len = 0;
+  int max_len = 0;
   for (int state_no = 1; state_no <= num_names; state_no++) {
     int name_len;
     strcpy(tok, RETRIEVE_NAME(state_no));
@@ -2593,10 +2557,6 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
 
 void print_space_parser(struct CLIOptions *cli_options) {
   bool byte_check_bit = true; {
-    long la_state_offset;
-    int k;
-    int indx;
-    long result_act;
     int default_count = 0;
     int goto_count = 0;
     int goto_reduce_count = 0;
@@ -2604,13 +2564,12 @@ void print_space_parser(struct CLIOptions *cli_options) {
     int la_shift_count = 0;
     int shift_count = 0;
     int shift_reduce_count = 0;
-    int rule_no;
-    long offset;
     long *check = Allocate_long_array(table_size + 1);
     long *action = Allocate_long_array(table_size + 1);
     output_ptr = &output_buffer[0];
     // Prepare header card with proper information, and write it out.
-    offset = error_act;
+    long offset = error_act;
+    long la_state_offset;
     if (cli_options->lalr_level > 1) {
       if (cli_options->read_reduce_bit) {
         offset += num_rules;
@@ -2632,7 +2591,7 @@ void print_space_parser(struct CLIOptions *cli_options) {
     //    Update the default non-terminal action of each state with the
     // appropriate corresponding terminal state starting index.
     for (int i = 1; i <= num_terminal_states; i++) {
-      indx = term_state_index[i];
+      int indx = term_state_index[i];
       int state_no = new_state_element[i].image;
       // Update the action link between the non-terminal and terminal
       // tables. If error-maps are requested, an indirect linking is made
@@ -2654,7 +2613,7 @@ void print_space_parser(struct CLIOptions *cli_options) {
     //  Now update the non-terminal tables with the non-terminal actions.
     for ALL_STATES3(state_no) {
       struct goto_header_type go_to;
-      indx = state_index[state_no];
+      int indx = state_index[state_no];
       go_to = statset[state_no].go_to;
       for (int j = 1; j <= go_to.size; j++) {
         int symbol = go_to.map[j].symbol;
@@ -2708,7 +2667,7 @@ void print_space_parser(struct CLIOptions *cli_options) {
       mystrcpy("const unsigned char  CLASS_HEADER rhs[] = {0,\n");
     }
     padline();
-    k = 0;
+    int k = 0;
     for (int i = 1; i <= num_rules; i++) {
       k++;
       if (k > 15) {
@@ -2859,7 +2818,7 @@ void print_space_parser(struct CLIOptions *cli_options) {
     for (int state_no = 1; state_no <= num_terminal_states; state_no++) {
       struct shift_header_type sh;
       struct reduce_header_type red;
-      indx = term_state_index[state_no];
+      int indx = term_state_index[state_no];
       sh = shift[new_state_element[state_no].shift_number];
       for (int j = 1; j <= sh.size; j++) {
         int symbol = sh.map[j].symbol;
@@ -2867,6 +2826,7 @@ void print_space_parser(struct CLIOptions *cli_options) {
         if (!cli_options->shift_default_bit || act != shiftdf[symbol]) {
           int i = indx + symbol;
           check[i] = symbol;
+          long result_act;
           if (act > num_states) {
             result_act = state_index[act];
             la_shift_count++;
@@ -2887,13 +2847,13 @@ void print_space_parser(struct CLIOptions *cli_options) {
       red = new_state_element[state_no].reduce;
       for (int j = 1; j <= red.size; j++) {
         int symbol = red.map[j].symbol;
-        rule_no = red.map[j].rule_number;
+        int rule_no = red.map[j].rule_number;
         int i = indx + symbol;
         check[i] = symbol;
         action[i] = rule_no;
         reduce_count++;
       }
-      rule_no = red.map[0].rule_number;
+      int rule_no = red.map[0].rule_number;
       if (rule_no != error_act) {
         default_count++;
       }
@@ -2945,6 +2905,7 @@ void print_space_parser(struct CLIOptions *cli_options) {
       k = 0;
       for ALL_NON_TERMINALS3(symbol) {
         int act = gotodef[symbol];
+        long result_act;
         if (act < 0) {
           result_act = -act;
         } else if (act == 0) {
@@ -3034,7 +2995,7 @@ void print_space_parser(struct CLIOptions *cli_options) {
       }
       for (int i = 1; i <= shift_domain_count; i++) {
         struct shift_header_type sh;
-        indx = shift_check_index[i];
+        int indx = shift_check_index[i];
         sh = shift[real_shift_number[i]];
         for (int j = 1; j <= sh.size; j++) {
           int symbol = sh.map[j].symbol;
@@ -3086,6 +3047,7 @@ void print_space_parser(struct CLIOptions *cli_options) {
       k = 0;
       for ALL_TERMINALS3(symbol) {
         int act = shiftdf[symbol];
+        long result_act;
         if (act < 0) {
           result_act = -act + error_act;
         } else if (act == 0) {
@@ -3127,8 +3089,6 @@ void print_space_parser(struct CLIOptions *cli_options) {
 
 void print_time_parser(struct CLIOptions *cli_options) {
   bool byte_check_bit = true; {
-    long *action;
-    long *check;
     int la_shift_count = 0;
     int shift_count = 0;
     int goto_count = 0;
@@ -3138,8 +3098,8 @@ void print_time_parser(struct CLIOptions *cli_options) {
     int goto_reduce_count = 0;
     state_list = Allocate_long_array(max_la_state + 1);
     output_ptr = &output_buffer[0];
-    check = next;
-    action = previous;
+    long *check = next;
+    long *action = previous;
     long offset = error_act;
     int la_state_offset;
     if (cli_options->lalr_level > 1) {
@@ -3494,36 +3454,31 @@ void init_parser_files(struct OutputFiles *output_files, struct CLIOptions *cli_
 
 /// PT_STATS prints all the states of the parser.
 void ptstats(struct CLIOptions *cli_options) {
-  int max_size;
-  int symbol;
-  int number;
-  struct shift_header_type sh;
-  struct reduce_header_type red;
   char temp[SYMBOL_SIZE + 1];
   char line[MAX_LINE_SIZE + 1];
   fprintf(syslis, "Shift STATES: ");
   // iterate over the states
   for ALL_STATES3(state_no) {
     print_state(state_no);
-    max_size = 0;
+    int max_size = 0;
     // Compute the size of the largest symbol.  The MAX_SIZE cannot
     // be larger than PRINT_LINE_SIZE - 17 to allow for printing of
     // headers for actions to be taken on the symbols.
-    sh = shift[statset[state_no].shift_number];
+    struct shift_header_type sh = shift[statset[state_no].shift_number];
     for (int i = 1; i <= sh.size; i++) {
-      symbol = sh.map[i].symbol;
+      int symbol = sh.map[i].symbol;
       restore_symbol(temp, RETRIEVE_STRING(symbol));
       max_size = MAX(max_size, strlen(temp));
     }
     const struct goto_header_type go_to = statset[state_no].go_to;
     for (int i = 1; i <= go_to.size; i++) {
-      symbol = go_to.map[i].symbol;
+      int symbol = go_to.map[i].symbol;
       restore_symbol(temp, RETRIEVE_STRING(symbol));
       max_size = MAX(max_size, strlen(temp));
     }
-    red = reduce[state_no];
+    struct reduce_header_type red = reduce[state_no];
     for (int i = 1; i <= red.size; i++) {
-      symbol = red.map[i].symbol;
+      int symbol = red.map[i].symbol;
       restore_symbol(temp, RETRIEVE_STRING(symbol));
       max_size = MAX(max_size, strlen(temp));
     }
@@ -3535,10 +3490,10 @@ void ptstats(struct CLIOptions *cli_options) {
     if (sh.size > 0) {
       fprintf(syslis, "\n");
       for (int i = 1; i <= sh.size; i++) {
-        symbol = sh.map[i].symbol;
+        int symbol = sh.map[i].symbol;
         restore_symbol(temp, RETRIEVE_STRING(symbol));
         print_large_token(line, temp, "", max_size);
-        number = ABS(sh.map[i].action);
+        int number = ABS(sh.map[i].action);
         if (sh.map[i].action > (short) num_states) {
           fprintf(syslis, "\n%-*s    La/Sh  %d", max_size, line, number);
         } else if (sh.map[i].action > 0) {
@@ -3551,10 +3506,10 @@ void ptstats(struct CLIOptions *cli_options) {
     if (go_to.size > 0) {
       fprintf(syslis, "\n");
       for (int i = 1; i <= go_to.size; i++) {
-        symbol = go_to.map[i].symbol;
+        int symbol = go_to.map[i].symbol;
         restore_symbol(temp, RETRIEVE_STRING(symbol));
         print_large_token(line, temp, "", max_size);
-        number = ABS(go_to.map[i].action);
+        int number = ABS(go_to.map[i].action);
         if (go_to.map[i].action > 0) {
           fprintf(syslis, "\n%-*s    Goto   %d", max_size, line, number);
         } else {
@@ -3565,10 +3520,10 @@ void ptstats(struct CLIOptions *cli_options) {
     if (red.size != 0) {
       fprintf(syslis, "\n");
       for (int i = 1; i <= red.size; i++) {
-        symbol = red.map[i].symbol;
+        int symbol = red.map[i].symbol;
         restore_symbol(temp, RETRIEVE_STRING(symbol));
         print_large_token(line, temp, "", max_size);
-        number = red.map[i].rule_number;
+        int number = red.map[i].rule_number;
         if (rules[number].lhs != accept_image) {
           fprintf(syslis, "\n%-*s    Reduce %d", max_size, line, number);
         } else {
@@ -3594,20 +3549,20 @@ void ptstats(struct CLIOptions *cli_options) {
       fprintf(syslis, "\n(Unreachable State)\n");
     } else {
       fprintf(syslis, "\n(%d)\n", lastats[state_no].in_state);
-      max_size = 0;
+      int max_size = 0;
       // Compute the size of the largest symbol.  The MAX_SIZE
       // cannot be larger than PRINT_LINE_SIZE - 17 to allow
       // for printing of headers for actions to be taken on
       // the symbols.
-      sh = shift[lastats[state_no].shift_number];
+      struct shift_header_type sh = shift[lastats[state_no].shift_number];
       for (ii = 1; ii <= sh.size; ii++) {
-        symbol = sh.map[ii].symbol;
+        int symbol = sh.map[ii].symbol;
         restore_symbol(temp, RETRIEVE_STRING(symbol));
         max_size = MAX(max_size, strlen(temp));
       }
-      red = lastats[state_no].reduce;
+      struct reduce_header_type red = lastats[state_no].reduce;
       for (ii = 1; ii <= red.size; ii++) {
-        symbol = red.map[ii].symbol;
+        int symbol = red.map[ii].symbol;
         restore_symbol(temp, RETRIEVE_STRING(symbol));
         max_size = MAX(max_size, strlen(temp));
       }
@@ -3618,10 +3573,10 @@ void ptstats(struct CLIOptions *cli_options) {
       // 4) If there is a default then print it.
       fprintf(syslis, "\n");
       for (ii = 1; ii <= sh.size; ii++) {
-        symbol = sh.map[ii].symbol;
+        int symbol = sh.map[ii].symbol;
         restore_symbol(temp, RETRIEVE_STRING(symbol));
         print_large_token(line, temp, "", max_size);
-        number = ABS(sh.map[ii].action);
+        int number = ABS(sh.map[ii].action);
         if (sh.map[ii].action > (short) num_states) {
           fprintf(syslis, "\n%-*s    La/Sh  %d", max_size, line, number);
         } else if (sh.map[ii].action > 0) {
@@ -3632,10 +3587,10 @@ void ptstats(struct CLIOptions *cli_options) {
       }
       fprintf(syslis, "\n");
       for (ii = 1; ii <= red.size; ii++) {
-        symbol = red.map[ii].symbol;
+        int symbol = red.map[ii].symbol;
         restore_symbol(temp, RETRIEVE_STRING(symbol));
         print_large_token(line, temp, "", max_size);
-        number = red.map[ii].rule_number;
+        int number = red.map[ii].rule_number;
         fprintf(syslis, "\n%-*s    Reduce %d", max_size, line, number);
       }
       if (cli_options->default_opt > 0 && red.map[0].rule_number != OMEGA) {

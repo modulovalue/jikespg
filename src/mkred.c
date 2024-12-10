@@ -17,8 +17,6 @@ int *la_base;
 /// Given a STATE_NO and an ITEM_NO, ACCESS computes the set of states where
 /// the rule from which ITEM_NO is derived was introduced through closure.
 struct node *lpgaccess(const int state_no, const int item_no) {
-  struct node *tail;
-  struct node *s;
   // Build a list pointed to by ACCESS_ROOT originally consisting
   // only of STATE_NO.
   struct node *access_root = Allocate_node();
@@ -28,11 +26,11 @@ struct node *lpgaccess(const int state_no, const int item_no) {
   {
     struct node *head = access_root; /* Save old ACCESS_ROOT */
     access_root = NULL; /* Initialize ACCESS_ROOT for new list */
+    struct node *tail;
     for (struct node *p = head; p != NULL; tail = p, p = p->next) {
       // Compute set of states with transition into p->value.
-      for (bool end_node = (s = in_stat[p->value]) == NULL;
-           !end_node;
-           end_node = s == in_stat[p->value]) {
+      struct node *s;
+      for (bool end_node = (s = in_stat[p->value]) == NULL; !end_node; end_node = s == in_stat[p->value]) {
         s = s->next;
         struct node *q = Allocate_node();
         q->value = s->value;
@@ -52,8 +50,6 @@ struct node *lpgaccess(const int state_no, const int item_no) {
 /// and B is a non-terminal, involved in the paths. GOTO_INDX points to the
 /// GOTO_ELEMENT of (STATE_NO, A).
 void trace_lalr_path(const int state_no, const int goto_indx, struct CLIOptions *cli_options) {
-  struct node *p;
-  struct node *r;
   //  If STATE is a state number we first check to see if its base
   // look-ahead set is a special one that does not contain EMPTY and
   // has already been assigned a slot that can be reused.
@@ -65,6 +61,7 @@ void trace_lalr_path(const int state_no, const int goto_indx, struct CLIOptions 
   // state, and A is a non-terminal) in the automaton.
   const struct goto_header_type go_to = statset[state_no].go_to;
   const int state = go_to.map[goto_indx].action;
+  struct node *r;
   if (state > 0) {
     if (la_base[state] != OMEGA && cli_options->lalr_level == 1 && !cli_options->single_productions_bit) {
       go_to.map[goto_indx].laptr = la_base[state];
@@ -89,6 +86,7 @@ void trace_lalr_path(const int state_no, const int goto_indx, struct CLIOptions 
       contains_empty = true;
       const int symbol = rules[item_table[item].rule_number].lhs;
       struct node *w = lpgaccess(state_no, item);
+      struct node *p;
       for (struct node *t = w; t != NULL; p = t, t = t->next) {
         const struct goto_header_type go_to_inner = statset[t->value].go_to;
         int ii;
@@ -119,12 +117,6 @@ void trace_lalr_path(const int state_no, const int goto_indx, struct CLIOptions 
 ///  These sets are initialized to the set of terminals that can immediately
 /// follow the non-terminal in the state to which it can shift (READ set).
 void compute_read(struct CLIOptions *cli_options) {
-  int item_no;
-  int rule_no;
-  int lhs_symbol;
-  struct node *q;
-  struct node *s;
-  struct node *v;
   if (cli_options->lalr_level > 1 || cli_options->single_productions_bit) {
     calloc0_set(read_set, num_states + 1, term_set_size);
   }
@@ -151,16 +143,14 @@ void compute_read(struct CLIOptions *cli_options) {
     la_base[state_no] = OMEGA;
   }
   for ALL_STATES3(state_no) {
-    for (const struct node *p = cli_options->lalr_level <= 1 && single_complete_item[state_no]
-                                  ? NULL
-                                  : statset[state_no].complete_items;
-         p != NULL; p = p->next) {
-      item_no = p->value;
-      rule_no = item_table[item_no].rule_number;
-      lhs_symbol = rules[rule_no].lhs;
+    for (const struct node *p = cli_options->lalr_level <= 1 && single_complete_item[state_no] ? NULL : statset[state_no].complete_items; p != NULL; p = p->next) {
+      int item_no = p->value;
+      int rule_no = item_table[item_no].rule_number;
+      int lhs_symbol = rules[rule_no].lhs;
       if (lhs_symbol != accept_image) {
-        v = lpgaccess(state_no, item_no);
-        for (s = v; s != NULL; q = s, s = s->next) {
+        struct node *v = lpgaccess(state_no, item_no);
+        struct node *q;
+        for (struct node *s = v; s != NULL; q = s, s = s->next) {
           const struct goto_header_type go_to = statset[s->value].go_to;
           int ii;
           for (ii = 1; go_to.map[ii].symbol != lhs_symbol; ii++) {
@@ -187,11 +177,12 @@ void compute_read(struct CLIOptions *cli_options) {
       const struct shift_header_type sh = shift[statset[state_no].shift_number];
       for (int j = 1; j <= sh.size; j++) {
         if (sh.map[j].action < 0) {
-          rule_no = -sh.map[j].action;
-          lhs_symbol = rules[rule_no].lhs;
-          item_no = adequate_item[rule_no]->value - 1;
-          v = lpgaccess(state_no, item_no);
-          for (s = v; s != NULL; q = s, s = s->next) {
+          int rule_no = -sh.map[j].action;
+          int lhs_symbol = rules[rule_no].lhs;
+          int item_no = adequate_item[rule_no]->value - 1;
+          struct node *v = lpgaccess(state_no, item_no);
+          struct node *q;
+          for (struct node *s = v; s != NULL; q = s, s = s->next) {
             const struct goto_header_type go_to = statset[s->value].go_to;
             int ii;
             for (ii = 1; go_to.map[ii].symbol != lhs_symbol; ii++) {
@@ -206,8 +197,8 @@ void compute_read(struct CLIOptions *cli_options) {
       // We also need to compute the set of terminal symbols that can be
       // read in a state entered via a terminal transition.
       if (cli_options->lalr_level > 1 && state_no != 1) {
-        q = statset[state_no].kernel_items;
-        item_no = q->value - 1;
+        struct node *q = statset[state_no].kernel_items;
+        int item_no = q->value - 1;
         if (IS_A_TERMINAL(item_table[item_no].symbol)) {
           ASSIGN_SET(read_set, state_no, first, item_table[item_no].suffix_index);
           for (q = q->next; q != NULL; q = q->next) {
@@ -235,9 +226,10 @@ void compute_read(struct CLIOptions *cli_options) {
       if (la_ptr != OMEGA) /* Follow Look-ahead needed */
       {
         const int state = go_to.map[i].action;
+        struct node *q;
         if (state > 0) {
-          if (la_base[state] != OMEGA) /* already computed */
-          {
+          /* already computed */
+          if (la_base[state] != OMEGA) {
             la_index[la_ptr] = la_index[la_base[state]];
             ASSIGN_SET(la_set, la_ptr,
                        la_set, la_base[state]);
@@ -250,7 +242,7 @@ void compute_read(struct CLIOptions *cli_options) {
           q = adequate_item[-state];
         }
         if (q != NULL) {
-          item_no = q->value - 1;
+          int item_no = q->value - 1;
           // initialize with first item
           ASSIGN_SET(la_set, la_ptr, first, item_table[item_no].suffix_index);
           for (q = q->next; q != NULL; q = q->next) {
@@ -285,7 +277,6 @@ void compute_read(struct CLIOptions *cli_options) {
 ///
 /// The same digraph algorithm used in MKFIRST is used for this computation.
 void la_traverse(const int state_no, const int goto_indx, int *stack_top) {
-  struct node *r;
   const struct goto_header_type go_to = statset[state_no].go_to;
   const int la_ptr = go_to.map[goto_indx].laptr;
   struct node *s = Allocate_node(); /* Push LA_PTR down the stack */
@@ -298,8 +289,9 @@ void la_traverse(const int state_no, const int goto_indx, int *stack_top) {
   // STATE is positive, it denotes a state to which to shift. If it is
   // negative, it is a rule on which to perform a Goto-Reduce.
   const int state = go_to.map[goto_indx].action;
-  if (state > 0) /* Not a Goto-Reduce action */
-  {
+  struct node *r;
+  /* Not a Goto-Reduce action */
+  if (state > 0) {
     r = statset[state].kernel_items;
   } else {
     r = adequate_item[-state];
@@ -350,7 +342,6 @@ void la_traverse(const int state_no, const int goto_indx, int *stack_top) {
 /// terminals for the given item in the given state and places the answer in
 /// the set LOOK_AHEAD.
 void compute_la(const int state_no, const int item_no, const SET_PTR look_ahead) {
-  struct node *r;
   stack_root = NULL;
   const int lhs_symbol = rules[item_table[item_no].rule_number].lhs;
   if (lhs_symbol == accept_image) {
@@ -360,6 +351,7 @@ void compute_la(const int state_no, const int item_no, const SET_PTR look_ahead)
   }
   INIT_SET(look_ahead); /* initialize set */
   struct node *v = lpgaccess(state_no, item_no);
+  struct node *r;
   for (struct node *s = v; s != NULL; r = s, s = s->next) {
     // Search for GOTO action in Access-State after reducing rule to
     // its left hand side(LHS_SYMBOL). Q points to the state.
@@ -385,7 +377,6 @@ void compute_la(const int state_no, const int item_no, const SET_PTR look_ahead)
 /// by the states to a circular list of integers representing other
 /// states that contain transitions to the state in question.
 void build_in_stat(void) {
-  struct node *q;
   for ALL_STATES3(state_no) {
     int n = statset[state_no].shift_number;
     const struct shift_header_type sh = shift[n];
@@ -393,7 +384,7 @@ void build_in_stat(void) {
       n = sh.map[i].action;
       if (n > 0 && n <= num_states) {
         /* A shift action? */
-        q = Allocate_node();
+        struct node *q = Allocate_node();
         q->value = state_no;
         if (in_stat[n] == NULL) {
           q->next = q;
@@ -409,7 +400,7 @@ void build_in_stat(void) {
       n = go_to.map[i].action;
       // A goto action
       if (n > 0) {
-        q = Allocate_node();
+        struct node *q = Allocate_node();
         q->value = state_no;
         if (in_stat[n] == NULL) {
           q->next = q;
@@ -432,8 +423,6 @@ void build_in_stat(void) {
 /// For a complete description of the lookahead algorithm used in this
 /// program, see Charles, PhD thesis, NYU 1991.
 void mkrdcts(struct CLIOptions *cli_options) {
-  struct node *q;
-  struct node *item_ptr;
   // Set up a pool of temporary space. If LALR(k), k > 1 is requested,
   // INIT_LALRK_PROCESS sets up the necessary environment for the
   // computation of multiple lookahead.
@@ -505,7 +494,7 @@ void mkrdcts(struct CLIOptions *cli_options) {
     // state. Note that if the READ-REDUCE option is used, the automaton
     // will not contain such states. Also, states are marked only when
     // default actions are requested.
-    item_ptr = statset[state_no].kernel_items;
+    struct node *item_ptr = statset[state_no].kernel_items;
     int item_no = item_ptr->value;
     single_complete_item[state_no] =
         !cli_options->read_reduce_bit &&
@@ -552,7 +541,7 @@ void mkrdcts(struct CLIOptions *cli_options) {
   for ALL_STATES3(state_no) {
     int default_rule = OMEGA;
     int symbol_root = NIL;
-    item_ptr = statset[state_no].complete_items;
+    struct node *item_ptr = statset[state_no].complete_items;
     if (item_ptr != NULL) {
       // Check if it is possible to take default reduction. The DEFAULT_OPT
       // parameter indicates what kind of default options are requested.
@@ -653,7 +642,7 @@ void mkrdcts(struct CLIOptions *cli_options) {
       // DEFAULT_RULE: the rule with the highest number of reductions
       // to it.
       int n = 0;
-      for (q = statset[state_no].complete_items; q != NULL; q = q->next) {
+      for (struct node *q = statset[state_no].complete_items; q != NULL; q = q->next) {
         const int item_no = q->value;
         const int rule_no = item_table[item_no].rule_number;
         const int symbol = rules[rule_no].lhs;
@@ -675,7 +664,7 @@ void mkrdcts(struct CLIOptions *cli_options) {
       } else if (cli_options->table_opt != OPTIMIZE_TIME &&
                  cli_options->table_opt != OPTIMIZE_SPACE &&
                  !cli_options->single_productions_bit) {
-        q = statset[state_no].complete_items;
+        struct node *q = statset[state_no].complete_items;
         if (q->next == NULL) {
           const int item_no = q->value;
           const int rule_no = item_table[item_no].rule_number;
@@ -714,7 +703,7 @@ void mkrdcts(struct CLIOptions *cli_options) {
       }
     }
     // Reset RULE_COUNT elements used in this state.
-    for (q = statset[state_no].complete_items; q != NULL; q = q->next) {
+    for (struct node *q = statset[state_no].complete_items; q != NULL; q = q->next) {
       const int rule_no = item_table[q->value].rule_number;
       rule_count[rule_no] = 0;
     }
@@ -745,7 +734,7 @@ void mkrdcts(struct CLIOptions *cli_options) {
     for ALL_STATES3(state_no) {
       // First, clear out the previous map
       if (in_stat[state_no] != NULL) {
-        q = in_stat[state_no]->next; /* point to root */
+        struct node *q = in_stat[state_no]->next; /* point to root */
         free_nodes(q, in_stat[state_no]);
         in_stat[state_no] = NULL;
       }

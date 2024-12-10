@@ -359,8 +359,6 @@ void print_item(const int item_no) {
 /// be retrieved, since transitions in a given state are reconstructed from
 /// the KERNEL and ADEQUATE items of the actions in the GOTO and SHIFT maps.
 void print_state(const int state_no) {
-  int item_no;
-  struct node *q;
   char buffer[PRINT_LINE_SIZE + 1];
   char line[PRINT_LINE_SIZE + 1];
   // ITEM_SEEN is used to construct sets of items, to help avoid
@@ -386,6 +384,7 @@ void print_state(const int state_no) {
   // Print the set of states that have transitions to STATE_NO.
   int n = 0;
   strcpy(line, "( ");
+  struct node *q;
   for (bool end_node = (q = in_stat[state_no]) == NULL;
        !end_node;
        end_node = q == in_stat[state_no]) {
@@ -409,14 +408,14 @@ void print_state(const int state_no) {
   // items seen to avoid duplicates.
   for (q = statset[state_no].kernel_items; q != NULL; q = q->next) {
     kernel_size++;
-    item_no = q->value;
+    int item_no = q->value;
     item_list[kernel_size] = item_no; /* add to array */
     item_seen[item_no] = true; /* Mark as "seen" */
   }
   // Add the Complete Items to the array ITEM_LIST, and mark used.
   n = kernel_size;
   for (q = statset[state_no].complete_items; q != NULL; q = q->next) {
-    item_no = q->value;
+    int item_no = q->value;
     if (!item_seen[item_no]) {
       item_seen[item_no] = true; /* Mark as "seen" */
       item_list[++n] = item_no;
@@ -452,7 +451,7 @@ void print_state(const int state_no) {
         q = statset[next_state].complete_items;
     }
     for (; q != NULL; q = q->next) {
-      item_no = q->value - 1;
+      int item_no = q->value - 1;
       if (!item_seen[item_no]) {
         item_seen[item_no] = true;
         item_list[++n] = item_no;
@@ -470,7 +469,7 @@ void print_state(const int state_no) {
       q = adequate_item[-go_to.map[i].action];
     }
     for (; q != NULL; q = q->next) {
-      item_no = q->value - 1;
+      int item_no = q->value - 1;
       if (!item_seen[item_no]) {
         item_seen[item_no] = true;
         item_list[++n] = item_no;
@@ -480,13 +479,13 @@ void print_state(const int state_no) {
   // Print the Kernel items.  If there are any closure items, skip a
   // line, sort then, then print them.  The kernel items are in sorted
   // order.
-  for (item_no = 1; item_no <= kernel_size; item_no++) {
+  for (int item_no = 1; item_no <= kernel_size; item_no++) {
     print_item(item_list[item_no]);
   }
   if (kernel_size < n) {
     fprintf(syslis, "\n");
     qcksrt(item_list, kernel_size + 1, n);
-    for (item_no = kernel_size + 1; item_no <= n; item_no++) {
+    for (int item_no = kernel_size + 1; item_no <= n; item_no++) {
       print_item(item_list[item_no]);
     }
   }

@@ -39,20 +39,17 @@ struct shift_header_type no_shifts_ptr;
 /// the KERNEL is returned.
 struct state_element *lr0_state_map(struct node *kernel) {
   unsigned long hash_address = 0;
+  //Compute the hash address.
   struct node *p;
-  //       Compute the hash address.
   for (p = kernel; p != NULL; p = p->next) {
     hash_address += p->value;
   }
   hash_address %= STATE_TABLE_SIZE;
   // Check whether a state is already defined by the KERNEL set.
-  for (struct state_element *state_ptr = state_table[hash_address];
-       state_ptr != NULL; state_ptr = state_ptr->link) {
+  for (struct state_element *state_ptr = state_table[hash_address];state_ptr != NULL; state_ptr = state_ptr->link) {
     struct node *q;
     struct node *r;
-    for (p = state_ptr->kernel_items, q = kernel;
-         p != NULL && q != NULL;
-         p = p->next, r = q, q = q->next) {
+    for (p = state_ptr->kernel_items, q = kernel; p != NULL && q != NULL; p = p->next, r = q, q = q->next) {
       if (p->value != q->value)
         break;
     }
@@ -98,51 +95,26 @@ void mklr0(struct CLIOptions *cli_options) {
   // for that partitioning. LIST and ROOT are used to construct
   // temporary lists of symbols in a state on which Shift or Goto
   // actions are defined.
-  //   NT_LIST and NT_ROOT are used to build temporary lists of
-  // non-terminals.
-  struct node *p;
-  struct node *q;
-  struct node *r;
-  struct node *new_item;
-  struct node *tail;
-  struct node *item_ptr;
-  struct node **partition;
-  struct node *closure_root;
-  struct node *closure_tail;
-  struct state_element *state;
-  struct state_element *new_state;
-  bool end_node;
-  int goto_size;
-  int shift_size;
-  int next_item_no;
-  int item_no;
-  int symbol;
-  int rule_no;
-  int shift_root;
-  int nt_root;
-  int root;
-  struct goto_header_type go_to;
-  short *shift_list;
-  short *nt_list;
-  short *list;
-  // Set up a a pool of temporary space.
+  // NT_LIST and NT_ROOT are used to build temporary lists of non-terminals.
+  // Set up a pool of temporary space.
   reset_temporary_space();
-  list = Allocate_short_array(num_symbols + 1);
+  short *list = Allocate_short_array(num_symbols + 1);
   shift_action = Allocate_short_array(num_terminals + 1);
-  shift_list = Allocate_short_array(num_terminals + 1);
-  nt_list = Allocate_short_array(num_non_terminals);
+  short *shift_list = Allocate_short_array(num_terminals + 1);
+  short *nt_list = Allocate_short_array(num_non_terminals);
   nt_list -= num_terminals + 1;
+  struct node **partition;
   calloc0(partition, num_symbols + 1, struct node *);
   calloc0(state_table, STATE_TABLE_SIZE, struct state_element *);
   calloc0(shift_table, SHIFT_TABLE_SIZE, struct state_element *);
   // INITIALIZATION -----------------------------------------------------------
-  goto_size = 0;
-  shift_size = 0;
+  int goto_size = 0;
+  int shift_size = 0;
   state_root = NULL;
   for (int i = 0; i <= num_terminals; i++) {
     shift_action[i] = OMEGA;
   }
-  nt_root = NIL;
+  int nt_root = NIL;
   for ALL_NON_TERMINALS3(i) {
     nt_list[i] = OMEGA;
   }
@@ -152,38 +124,31 @@ void mklr0(struct CLIOptions *cli_options) {
   //
   // Kernel of the first state consists of the first items in each
   // rule produced by Accept non-terminal.
-  q = NULL;
-  for (end_node = (p = clitems[accept_image]) == NULL;
-       !end_node; /* Loop over circular list */
-       end_node = p == clitems[accept_image]) {
+  struct node *q = NULL;
+  struct node *p;
+  for (bool end_node = (p = clitems[accept_image]) == NULL; !end_node; /* Loop over circular list */ end_node = p == clitems[accept_image]) {
     p = p->next;
-    new_item = Allocate_node();
+    struct node *new_item = Allocate_node();
     new_item->value = p->value;
     new_item->next = q;
     q = new_item;
   }
   // Insert first state in STATE_TABLE and keep constructing states
   // until we no longer can.
-  for (state = lr0_state_map(q); /* insert initial state */
-       state != NULL; /* and process next state until no more */
-       state = state->queue) {
+  for (struct state_element *state = lr0_state_map(q); /* insert initial state */ state != NULL; /* and process next state until no more */ state = state->queue) {
     // Now we construct a list of all non-terminals that can be
     // introduced in this state through closure.  The CLOSURE of each
     // non-terminal has been previously computed in MKFIRST.
-    for (q = state->kernel_items;
-         q != NULL; /* iterate over kernel set of items */
-         q = q->next) {
-      item_no = q->value;
-      symbol = item_table[item_no].symbol; /* symbol after dot */
+    for (q = state->kernel_items; q != NULL; /* iterate over kernel set of items */ q = q->next) {
+      int item_no = q->value;
+      int symbol = item_table[item_no].symbol; /* symbol after dot */
       if (IS_A_NON_TERMINAL(symbol)) /* Dot symbol */
       {
         if (nt_list[symbol] == OMEGA) /* not yet seen */
         {
           nt_list[symbol] = nt_root;
           nt_root = symbol;
-          for (end_node = (p = closure[symbol]) == NULL;
-               !end_node; /* Loop over circular list */
-               end_node = p == closure[symbol]) {
+          for (bool end_node = (p = closure[symbol]) == NULL; !end_node; /* Loop over circular list */ end_node = p == closure[symbol]) {
             // add its closure to list
             p = p->next;
             if (nt_list[p->value] == OMEGA) {
@@ -199,16 +164,14 @@ void mklr0(struct CLIOptions *cli_options) {
     // start items has previously been computed in MKFIRST. (CLITEMS)
     // Empty items are placed directly in the state, whereas non_empty
     // items are placed in a temporary list rooted at CLOSURE_ROOT.
-    closure_root = NULL; /* used to construct list of closure items */
-    for (symbol = nt_root; symbol != NIL;
-         nt_list[symbol] = OMEGA, symbol = nt_root) {
+    struct node *closure_root = NULL; /* used to construct list of closure items */
+    struct node *closure_tail;
+    for (int symbol = nt_root; symbol != NIL; nt_list[symbol] = OMEGA, symbol = nt_root) {
       nt_root = nt_list[symbol];
-      for (end_node = (p = clitems[symbol]) == NULL;
-           !end_node; /* Loop over circular list */
-           end_node = p == clitems[symbol]) {
+      for (bool end_node = (p = clitems[symbol]) == NULL; !end_node; /* Loop over circular list */ end_node = p == clitems[symbol]) {
         p = p->next;
-        item_no = p->value;
-        new_item = Allocate_node();
+        int item_no = p->value;
+        struct node *new_item = Allocate_node();
         new_item->value = item_no;
         if (item_table[item_no].symbol == empty) /* complete item */
         {
@@ -226,8 +189,9 @@ void mklr0(struct CLIOptions *cli_options) {
         }
       }
     }
-    if (closure_root != NULL) /* any non-complete closure items? */
-    {
+    struct node *item_ptr;
+    /* any non-complete closure items? */
+    if (closure_root != NULL) {
       // construct list of them and kernel items
       closure_tail->next = state->kernel_items;
       item_ptr = closure_root;
@@ -240,13 +204,13 @@ void mklr0(struct CLIOptions *cli_options) {
     // the state, plus all the kernel items.  We note that the kernel
     // items may still contain complete-items, and if any is found, the
     // COMPLETE_ITEMS list is updated.
-    root = NIL;
+    int root = NIL;
     for (; item_ptr != NULL; item_ptr = item_ptr->next) {
-      item_no = item_ptr->value;
-      symbol = item_table[item_no].symbol;
-      if (symbol != empty) /* incomplete item */
-      {
-        next_item_no = item_no + 1;
+      int item_no = item_ptr->value;
+      int symbol = item_table[item_no].symbol;
+      /* incomplete item */
+      if (symbol != empty) {
+        int next_item_no = item_no + 1;
         if (partition[symbol] == NULL) {
           // PARTITION not defined on symbol
           list[symbol] = root; /* add to list */
@@ -258,6 +222,7 @@ void mklr0(struct CLIOptions *cli_options) {
             goto_size++;
           }
         }
+        struct node *tail;
         for (p = partition[symbol];
              p != NULL;
              tail = p, p = p->next) {
@@ -265,7 +230,7 @@ void mklr0(struct CLIOptions *cli_options) {
             break;
           }
         }
-        r = Allocate_node();
+        struct node *r = Allocate_node();
         r->value = next_item_no;
         r->next = p;
         if (p == partition[symbol]) /* Insert at beginning */
@@ -288,16 +253,15 @@ void mklr0(struct CLIOptions *cli_options) {
     // We now iterate over the set of partitions and update the state
     // automaton and the transition maps: SHIFT and GOTO. Each
     // partition represents the kernel of a state.
+    struct goto_header_type go_to;
     if (goto_size > 0) {
       go_to = Allocate_goto_map(goto_size);
       state->lr0_goto = go_to;
     } else {
       state->lr0_goto = no_gotos_ptr;
     }
-    shift_root = NIL;
-    for (symbol = root;
-         symbol != NIL; /* symbols on which transition is defined */
-         symbol = list[symbol]) {
+    int shift_root = NIL;
+    for (int symbol = root; symbol != NIL; /* symbols on which transition is defined */ symbol = list[symbol]) {
       short action = OMEGA;
       // If the partition contains only one item, and it is adequate
       // (i.e. the dot immediately follows the last symbol), and
@@ -307,18 +271,18 @@ void mklr0(struct CLIOptions *cli_options) {
       // it.
       q = partition[symbol]; /* kernel of a new state */
       if (cli_options->read_reduce_bit && q->next == NULL) {
-        item_no = q->value;
+        int item_no = q->value;
         if (item_table[item_no].symbol == empty) {
-          rule_no = item_table[item_no].rule_number;
+          int rule_no = item_table[item_no].rule_number;
           if (rules[rule_no].lhs != accept_image) {
             action = -rule_no;
             free_nodes(q, q);
           }
         }
       }
-      if (action == OMEGA) /* Not a Read-Reduce action */
-      {
-        new_state = lr0_state_map(q);
+      /* Not a Read-Reduce action */
+      if (action == OMEGA) {
+        struct state_element *new_state = lr0_state_map(q);
         action = new_state->state_number;
       }
       // At this stage, the partition list has been freed (for an old
@@ -384,8 +348,7 @@ void mklr0(struct CLIOptions *cli_options) {
       struct shift_header_type sh;
       struct state_element *p_inner;
       hash_address = shift_size;
-      for (symbol = shift_root;
-           symbol != NIL; symbol = shift_list[symbol]) {
+      for (int symbol = shift_root; symbol != NIL; symbol = shift_list[symbol]) {
         hash_address += ABS(shift_action[symbol]);
       }
       hash_address %= SHIFT_TABLE_SIZE;
@@ -405,8 +368,7 @@ void mklr0(struct CLIOptions *cli_options) {
           if (ii > shift_size) {
             state->lr0_shift = sh;
             state->shift_number = p_inner->shift_number;
-            for (symbol = shift_root;
-                 symbol != NIL; symbol = shift_list[symbol]) {
+            for (int symbol = shift_root; symbol != NIL; symbol = shift_list[symbol]) {
               // Clear SHIFT_ACTION
               shift_action[symbol] = OMEGA;
             }
@@ -426,7 +388,7 @@ void mklr0(struct CLIOptions *cli_options) {
       state->lr0_shift = sh;
       state->next_shift = shift_table[hash_address];
       shift_table[hash_address] = state;
-      for (symbol = shift_root; symbol != NIL; symbol = shift_list[symbol]) {
+      for (int symbol = shift_root; symbol != NIL; symbol = shift_list[symbol]) {
         sh.map[shift_size].symbol = symbol;
         sh.map[shift_size].action = shift_action[symbol];
         shift_action[symbol] = OMEGA;
@@ -469,6 +431,8 @@ void mklr0(struct CLIOptions *cli_options) {
   ffree(state_table);
   ffree(shift_table);
 }
+
+// === Produce Start ===
 
 short *stack;
 short *index_of;
@@ -799,8 +763,7 @@ int get_shift_symbol(const int lhs_symbol) {
   if (!symbol_seen[lhs_symbol]) {
     struct node *p;
     symbol_seen[lhs_symbol] = true;
-    for (bool end_node = (p = clitems[lhs_symbol]) == NULL;
-         !end_node; end_node = p == clitems[lhs_symbol]) {
+    for (bool end_node = (p = clitems[lhs_symbol]) == NULL; !end_node; end_node = p == clitems[lhs_symbol]) {
       p = p->next;
       const int item_no = p->value;
       const int rule_no = item_table[item_no].rule_number;
@@ -843,11 +806,6 @@ void produce(struct CLIOptions *cli_options) {
   // NOTE: This is really a reverse right-most produces mapping,
   //       since given the above rule, we say that
   //       C right-most produces A.
-  //
-  int item_no;
-  int rule_no;
-  struct node *p;
-  struct node *q;
   stack = Allocate_short_array(num_symbols + 1);
   index_of = Allocate_short_array(num_symbols + 1);
   short *names_map = Allocate_short_array(num_names + 1);
@@ -873,23 +831,23 @@ void produce(struct CLIOptions *cli_options) {
   // in the right format.
   int item_root = NIL;
   for ALL_NON_TERMINALS3(nt) {
-    for (bool end_node = (p = clitems[nt]) == NULL;
-         !end_node; end_node = p == clitems[nt]) {
+    struct node *p;
+    for (bool end_node = (p = clitems[nt]) == NULL; !end_node; end_node = p == clitems[nt]) {
       p = p->next;
-      item_no = p->value;
+      int item_no = p->value;
       int symbol = item_table[item_no].symbol;
       if (IS_A_NON_TERMINAL(symbol)) {
         const int i = item_table[item_no].suffix_index;
         if (IS_IN_SET(first, i, empty) &&
             !IS_IN_NTSET(produces, symbol, nt - num_terminals)) {
           NTSET_BIT_IN(produces, symbol, nt - num_terminals);
-          q = Allocate_node();
+          struct node *q = Allocate_node();
           q->value = nt;
           q->next = direct_produces[symbol];
           direct_produces[symbol] = q;
         }
       }
-      rule_no = item_table[item_no].rule_number;
+      int rule_no = item_table[item_no].rule_number;
       int ii;
       for (ii = 0; ii < RHS_SIZE(rule_no); ii++) {
         if (item_table[item_no + ii].symbol == error_image) {
@@ -920,7 +878,7 @@ void produce(struct CLIOptions *cli_options) {
     } else {
       fprintf(syslis, "*** These error rules are not in manual format:\n\n");
     }
-    for (item_no = item_root; item_no != NIL; item_no = item_list[item_no]) {
+    for (int item_no = item_root; item_no != NIL; item_no = item_list[item_no]) {
       print_item(item_no);
     }
   }
@@ -965,11 +923,12 @@ void produce(struct CLIOptions *cli_options) {
     for (int i = 1; i <= go_to.size; i++) {
       const int symbol = go_to.map[i].symbol;
       const int state = go_to.map[i].action;
+      int rule_no;
       if (state < 0) {
         rule_no = -state;
       } else {
-        q = statset[state].kernel_items;
-        item_no = q->value;
+        struct node *q = statset[state].kernel_items;
+        int item_no = q->value;
         if (q->next != NULL) {
           rule_no = 0;
         } else {
@@ -985,7 +944,7 @@ void produce(struct CLIOptions *cli_options) {
     goto_domain[state_no] = NULL;
     for (int symbol = nt_root; symbol != NIL; symbol = nt_list[symbol]) {
       if (!IS_ELEMENT(set, symbol - num_terminals)) {
-        q = Allocate_node();
+        struct node *q = Allocate_node();
         q->value = symbol;
         q->next = goto_domain[state_no];
         goto_domain[state_no] = q;
@@ -1000,6 +959,8 @@ void produce(struct CLIOptions *cli_options) {
   gd_range = Allocate_short_array(gotodom_size + 1);
   for ALL_STATES3(state_no) {
     gd_index[state_no] = n + 1;
+    struct node *p;
+    struct node *q;
     for (p = goto_domain[state_no]; p != NULL; q = p, p = p->next) {
       gd_range[++n] = p->value;
     }
@@ -1507,6 +1468,8 @@ void produce(struct CLIOptions *cli_options) {
   ffree(direct_produces);
   ffree(goto_domain);
 }
+
+// === Produce End ===
 
 /// In this procedure, we first construct the LR(0) automaton.
 void mkstats(struct CLIOptions *cli_options) {

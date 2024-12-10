@@ -53,7 +53,6 @@ bool *is_conflict_symbol;
 SET_PTR look_ahead;
 
 int top;
-int symbol_root;
 int rule_root;
 
 /// This function first tries to recycle an action_element node from a
@@ -86,14 +85,13 @@ void free_action_elements(struct action_element *head, struct action_element *ta
 ///   2) As a side effect, it uses the ordering above to order all
 ///      the SP rules.
 void compute_sp_map(const int symbol) {
-  int rule_no;
   stack[++top] = symbol;
   const int indx = top;
   index_of[symbol] = indx;
   // In this instantiation of the digraph algorithm, two symbols (A, B)
   // are related if  A -> B is an SP and A is the right-hand side of
   // some other SP rule.
-  for (rule_no = sp_rules[symbol]; rule_no != NIL; rule_no = next_rule[rule_no]) {
+  for (int rule_no = sp_rules[symbol]; rule_no != NIL; rule_no = next_rule[rule_no]) {
     const int lhs_symbol = rules[rule_no].lhs;
     if (IS_SP_RHS(lhs_symbol)) {
       if (index_of[lhs_symbol] == OMEGA) {
@@ -114,7 +112,7 @@ void compute_sp_map(const int symbol) {
     // productions associated with the symbol being processed
     // are added to the list of SP rules here...
     if (stack[top] == symbol) {
-      for (rule_no = sp_rules[symbol]; rule_no != NIL; rule_no = next_rule[rule_no]) {
+      for (int rule_no = sp_rules[symbol]; rule_no != NIL; rule_no = next_rule[rule_no]) {
         if (rule_root == NIL) {
           rule_list[rule_no] = rule_no;
         } else {
@@ -144,9 +142,6 @@ void compute_sp_map(const int symbol) {
 /// parser requires extra lookahead on a particular symbol, the set of
 /// reduce actions for that symbol is calculated as the empty set.
 void compute_sp_action(const short state_no, const short symbol, const short action) {
-  int rule_no;
-  int lhs_symbol;
-  int k;
   const struct goto_header_type go_to = statset[state_no].go_to;
   if (sp_action[symbol] == NULL) {
     sp_action[symbol] = Allocate_short_array(num_terminals + 1);
@@ -166,11 +161,11 @@ void compute_sp_action(const short state_no, const short symbol, const short act
     struct node *p;
     for (const struct node *item_ptr = statset[action].complete_items; item_ptr != NULL; item_ptr = item_ptr->next) {
       const int item_no = item_ptr->value;
-      rule_no = item_table[item_no].rule_number;
-      lhs_symbol = rules[rule_no].lhs;
+      int rule_no = item_table[item_no].rule_number;
+      int lhs_symbol = rules[rule_no].lhs;
       if (RHS_SIZE(rule_no) == 1 && lhs_symbol != accept_image) {
         i = index_of[lhs_symbol];
-        k = go_to.map[i].laptr;
+        int k = go_to.map[i].laptr;
         if (la_index[k] == OMEGA) {
           int stack_top = 0;
           la_traverse(state_no, i, &stack_top);
@@ -192,11 +187,11 @@ void compute_sp_action(const short state_no, const short symbol, const short act
     }
   } else {
     // read-reduce action
-    rule_no = -action;
+    int rule_no = -action;
     if (RHS_SIZE(rule_no) == 1) {
-      lhs_symbol = rules[rule_no].lhs;
+      int lhs_symbol = rules[rule_no].lhs;
       i = index_of[lhs_symbol];
-      k = go_to.map[i].laptr;
+      int k = go_to.map[i].laptr;
       if (la_index[k] == OMEGA) {
         int stack_top = 0;
         la_traverse(state_no, i, &stack_top);
@@ -316,7 +311,6 @@ int greatest_common_ancestor(const short base_rule, const short la_symbol, const
 /// sp_action[SYMBOL] yields a set of update reduce actions that may
 /// follow the transition on SYMBOL into STATE_NO.
 void compute_update_actions(const short source_state, const short state_no, const short symbol) {
-  struct update_action_element *p;
   const struct reduce_header_type red = reduce[state_no];
   for (int i = 1; i <= red.size; i++) {
     if (IS_SP_RULE(red.map[i].rule_number)) {
@@ -326,6 +320,7 @@ void compute_update_actions(const short source_state, const short state_no, cons
       }
       // Lookup the update map to see if a previous update was made
       // in STATE_NO on SYMBOL...
+      struct update_action_element *p;
       for (p = update_action[state_no]; p != NULL; p = p->next) {
         if (p->symbol == red.map[i].symbol) {
           break;
@@ -365,14 +360,11 @@ void compute_update_actions(const short source_state, const short state_no, cons
 /// rules in the list. The value SP_ACTION_COUNT is the number of
 /// actions in the map sp_symbol[SYMBOL].
 short sp_state_map(const int rule_head, const int item_no, const int sp_rule_count, const int sp_action_count, const int symbol) {
-  struct sp_state_element *state;
-  struct node *p;
-  int rule_no;
   // These new SP states are defined by their reduce maps. Hash the
   // reduce map based on the set of rules in its range - simply add
   // them up and reduce modulo STATE_TABLE_SIZE.
   unsigned long hash_address = 0;
-  for (rule_no = rule_head; rule_no != NIL; rule_no = next_rule[rule_no]) {
+  for (int rule_no = rule_head; rule_no != NIL; rule_no = next_rule[rule_no]) {
     hash_address += rule_no;
   }
   hash_address %= STATE_TABLE_SIZE;
@@ -383,9 +375,11 @@ short sp_state_map(const int rule_head, const int item_no, const int sp_rule_cou
   //            reduce[S1][t] == reduce[S2][t] or
   //            reduce[S1][t] == OMEGA         or
   //            reduce[S2][t] == OMEGA
+  struct sp_state_element *state;
   for (state = sp_table[hash_address]; state != NULL; state = state->link) {
     if (state->rule_count == sp_rule_count) {
       // same # of rules?
+      struct node *p;
       for (p = state->rule_root; p != NULL; p = p->next) {
         if (next_rule[p->value] == OMEGA) {
           // not in list?
@@ -455,12 +449,12 @@ short sp_state_map(const int rule_head, const int item_no, const int sp_rule_cou
     max_sp_state++;
     state->state_number = max_sp_state;
     state->rule_count = sp_rule_count;
-    p = Allocate_node();
+    struct node *p = Allocate_node();
     p->value = item_no;
     p->next = NULL;
     state->complete_items = p;
     state->rule_root = NULL;
-    for (rule_no = rule_head; rule_no != NIL; rule_no = next_rule[rule_no]) {
+    for (int rule_no = rule_head; rule_no != NIL; rule_no = next_rule[rule_no]) {
       p = Allocate_node();
       p->value = rule_no;
       p->next = state->rule_root;
@@ -486,24 +480,6 @@ short sp_state_map(const int rule_head, const int item_no, const int sp_rule_cou
 /// This program is invoked to remove as many single production actions as
 /// possible for a conflict-free automaton.
 void remove_single_productions() {
-  struct goto_header_type go_to;
-  struct shift_header_type sh;
-  struct reduce_header_type red;
-  struct sp_state_element *state;
-  struct node *p;
-  struct node *rule_tail;
-  int rule_head;
-  int sp_rule_count;
-  int sp_action_count;
-  int symbol;
-  int lhs_symbol;
-  int action;
-  int item_no;
-  bool end_node;
-  short *symbol_list;
-  short *shift_transition;
-  short *rule_count;
-  short shift_table[SHIFT_TABLE_SIZE];
   // Set up a pool of temporary space.
   reset_temporary_space();
   // Allocate all other necessary temporary objects.
@@ -512,9 +488,9 @@ void remove_single_productions() {
   index_of = Allocate_short_array(num_symbols + 1);
   next_rule = Allocate_short_array(num_rules + 1);
   rule_list = Allocate_short_array(num_rules + 1);
-  symbol_list = Allocate_short_array(num_symbols + 1);
-  shift_transition = Allocate_short_array(num_symbols + 1);
-  rule_count = Allocate_short_array(num_rules + 1);
+  short *symbol_list = Allocate_short_array(num_symbols + 1);
+  short *shift_transition = Allocate_short_array(num_symbols + 1);
+  short *rule_count = Allocate_short_array(num_rules + 1);
   struct new_shift_element {
     short link;
     short shift_number;
@@ -528,7 +504,7 @@ void remove_single_productions() {
   calloc0(update_action, num_states + 1, struct update_action_element *);
   // Initialize all relevant sets and maps to the empty set.
   rule_root = NIL;
-  symbol_root = NIL;
+  int symbol_root = NIL;
   for ALL_RULES3(rule_no) {
     rule_list[rule_no] = OMEGA;
   }
@@ -619,8 +595,8 @@ void remove_single_productions() {
   // Traverse all regular states and process the relevant ones.
   for ALL_STATES3(state_no) {
     new_action[state_no] = NULL;
-    go_to = statset[state_no].go_to;
-    sh = shift[statset[state_no].shift_number];
+    struct goto_header_type go_to = statset[state_no].go_to;
+    struct shift_header_type sh = shift[statset[state_no].shift_number];
     // If the state has no goto actions, it is not considered, as
     // no single productions could have been introduced in it.
     // Otherwise, we initialize index_of to the empty map and
@@ -633,7 +609,8 @@ void remove_single_productions() {
       for ALL_TERMINALS3(symbol) {
         is_conflict_symbol[symbol] = false;
       }
-      for (end_node = (p = conflict_symbols[state_no]) == NULL; !end_node; end_node = p == conflict_symbols[state_no]) {
+      struct node *p;
+      for (bool end_node = (p = conflict_symbols[state_no]) == NULL; !end_node; end_node = p == conflict_symbols[state_no]) {
         p = p->next;
         is_conflict_symbol[p->value] = true;
       }
@@ -653,7 +630,7 @@ void remove_single_productions() {
       // lookahead set that can follow this transition and add
       // the symbol to the set of candidates (in symbol_list).
       for (int i = 1; i <= go_to.size; i++) {
-        symbol = go_to.map[i].symbol;
+        int symbol = go_to.map[i].symbol;
         if (IS_SP_RHS(symbol)) {
           compute_sp_action(state_no, symbol, go_to.map[i].action);
           symbol_list[symbol] = symbol_root;
@@ -661,7 +638,7 @@ void remove_single_productions() {
         }
       }
       for (int i = 1; i <= sh.size; i++) {
-        symbol = sh.map[i].symbol;
+        int symbol = sh.map[i].symbol;
         index_of[symbol] = i;
         if (IS_SP_RHS(symbol)) {
           compute_sp_action(state_no, symbol, sh.map[i].action);
@@ -674,9 +651,9 @@ void remove_single_productions() {
       // in the state (there is an action on both the left and
       // right-hand side)...
       for (int rule_no = rule_root; rule_no != NIL; rule_no = rule_list[rule_no]) {
-        symbol = rhs_sym[rules[rule_no].rhs];
+        int symbol = rhs_sym[rules[rule_no].rhs];
         if (symbol_list[symbol] != OMEGA) {
-          lhs_symbol = rules[rule_no].lhs;
+          int lhs_symbol = rules[rule_no].lhs;
           if (index_of[lhs_symbol] != OMEGA) {
             if (symbol_list[lhs_symbol] == OMEGA) {
               compute_sp_action(state_no, lhs_symbol, go_to.map[index_of[lhs_symbol]].action);
@@ -715,9 +692,10 @@ void remove_single_productions() {
       // When execution of this loop is terminated the set
       // symbol_root/symbol_list is reinitialize to the empty
       // set.
-      for (symbol = symbol_root; symbol != NIL; symbol_list[symbol] = OMEGA, symbol = symbol_root) {
+      for (int symbol = symbol_root; symbol != NIL; symbol_list[symbol] = OMEGA, symbol = symbol_root) {
         symbol_root = symbol_list[symbol];
         if (IS_SP_RHS(symbol)) {
+          int action;
           if (IS_A_TERMINAL(symbol)) {
             action = sh.map[index_of[symbol]].action;
           } else {
@@ -732,6 +710,7 @@ void remove_single_productions() {
           // not, we invoke compute_update_actions to update
           // the relevant actions.
           int rule_no;
+          int item_no;
           if (action > num_states) {
             // lookahead shift
             rule_no = OMEGA;
@@ -764,9 +743,9 @@ void remove_single_productions() {
           if (rule_no != OMEGA) {
             if (IS_SP_RULE(rule_no)) {
               struct action_element *p_inner;
-              sp_rule_count = 0;
-              sp_action_count = 0;
-              rule_head = NIL;
+              int sp_rule_count = 0;
+              int sp_action_count = 0;
+              int rule_head = NIL;
               for ALL_RULES3(rule_no) {
                 next_rule[rule_no] = OMEGA;
               }
@@ -782,7 +761,7 @@ void remove_single_productions() {
                 }
               }
               if (sp_rule_count == 1 && IS_SP_RULE(rule_head)) {
-                lhs_symbol = rules[rule_head].lhs;
+                int lhs_symbol = rules[rule_head].lhs;
                 action = go_to.map[index_of[lhs_symbol]].action;
               } else {
                 action = sp_state_map(rule_head, item_no, sp_rule_count, sp_action_count, symbol);
@@ -823,7 +802,7 @@ void remove_single_productions() {
   // offset the number associated with each lookahead state by the
   // number of new SP states that were added.
   for (int j = 1; j <= num_shift_maps; j++) {
-    sh = shift[j];
+    struct shift_header_type sh = shift[j];
     for (int i = 1; i <= sh.size; i++) {
       if (sh.map[i].action > num_states) {
         sh.map[i].action += max_sp_state - num_states;
@@ -839,7 +818,7 @@ void remove_single_productions() {
   max_la_state += max_sp_state - num_states;
   SHORT_CHECK(max_la_state);
   // We now permanently construct all the new SP states.
-  for (state = sp_state_root; state != NULL; state = state->next) {
+  for (struct sp_state_element *state = sp_state_root; state != NULL; state = state->next) {
     struct action_element *actionp;
     int default_rule;
     int reduce_size;
@@ -854,7 +833,7 @@ void remove_single_productions() {
     statset[state_no].shift_number = 0;
     // Count the number of actions defined on each rule in the
     // range of the reduce map.
-    for (p = state->rule_root; p != NULL; p = p->next) {
+    for (struct node *p = state->rule_root; p != NULL; p = p->next) {
       rule_count[p->value] = 0;
     }
     for (actionp = state->action_root; actionp != NULL; actionp = actionp->next) {
@@ -863,8 +842,9 @@ void remove_single_productions() {
     // Count the total number of reduce actions in the reduce map
     // and calculate the default.
     reduce_size = 0;
-    sp_rule_count = 0;
-    for (p = state->rule_root; p != NULL; rule_tail = p, p = p->next) {
+    int sp_rule_count = 0;
+    struct node *rule_tail;
+    for (struct node *p = state->rule_root; p != NULL; rule_tail = p, p = p->next) {
       reduce_size += rule_count[p->value];
       if (rule_count[p->value] > sp_rule_count) {
         sp_rule_count = rule_count[p->value];
@@ -874,7 +854,7 @@ void remove_single_productions() {
     free_nodes(state->rule_root, rule_tail);
     // Construct a permanent reduce map for this SP state.
     num_reductions += reduce_size;
-    red = Allocate_reduce_map(reduce_size);
+    struct reduce_header_type red = Allocate_reduce_map(reduce_size);
     reduce[state_no] = red;
     red.map[0].symbol = DEFAULT_SYMBOL;
     red.map[0].rule_number = default_rule;
@@ -891,6 +871,7 @@ void remove_single_productions() {
   // of shift_table to NIL. Shift_table will be used as the base of
   // a hash table for the new shift maps.
   top = 0;
+  short shift_table[SHIFT_TABLE_SIZE];
   for (int i = 0; i <= SHIFT_TABLE_UBOUND; i++) {
     shift_table[i] = NIL;
   }
@@ -905,7 +886,7 @@ void remove_single_productions() {
     // that are in non-final states.
     if (update_action[state_no] != NULL) {
       struct update_action_element *p_inner;
-      red = reduce[state_no];
+      struct reduce_header_type red = reduce[state_no];
       for (int i = 1; i <= red.size; i++) {
         index_of[red.map[i].symbol] = i;
       }
@@ -920,11 +901,11 @@ void remove_single_productions() {
       // Mark the index of each symbol on which there is a
       // transition and copy the shift map into the vector
       // shift_transition.
-      go_to = statset[state_no].go_to;
+      struct goto_header_type go_to = statset[state_no].go_to;
       for (int i = 1; i <= go_to.size; i++) {
         index_of[go_to.map[i].symbol] = i;
       }
-      sh = shift[statset[state_no].shift_number];
+      struct shift_header_type sh = shift[statset[state_no].shift_number];
       for (int i = 1; i <= sh.size; i++) {
         index_of[sh.map[i].symbol] = i;
         shift_transition[sh.map[i].symbol] = sh.map[i].action;
@@ -989,7 +970,7 @@ void remove_single_productions() {
         if (jj == NIL) {
           sh2 = Allocate_shift_map(sh.size);
           for (int i = 1; i <= sh.size; i++) {
-            symbol = sh.map[i].symbol;
+            int symbol = sh.map[i].symbol;
             sh2.map[i].symbol = symbol;
             sh2.map[i].action = shift_transition[symbol];
           }
@@ -1011,7 +992,7 @@ void remove_single_productions() {
   // the base value of num_states.
   for ALL_STATES3(state_no) {
     if (conflict_symbols[state_no] != NULL) {
-      p = conflict_symbols[state_no]->next;
+      struct node *p = conflict_symbols[state_no]->next;
       free_nodes(p, conflict_symbols[state_no]);
     }
   }

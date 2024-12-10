@@ -16,11 +16,11 @@ struct action_element {
 /// This procedure is invoked with a specific shift map which it processes
 /// and updates the ACTION_COUNT map accordingly.
 void process_shift_actions(struct action_element **action_count, const int shift_no) {
-  struct action_element *q;
   const struct shift_header_type sh = shift[shift_no];
   for (int i = 1; i <= sh.size; i++) {
     const int symbol = sh.map[i].symbol;
     const int act = sh.map[i].action;
+    struct action_element *q;
     for (q = action_count[symbol]; q != NULL; q = q->next) {
       if (q->action == act)
         break;
@@ -40,10 +40,10 @@ void process_shift_actions(struct action_element **action_count, const int shift
 /// the grammar. Its task is to assign to each element of SHIFTDF, the action
 /// most frequently defined on the symbol in question.
 void compute_shift_default(void) {
-  int shift_count = 0;
-  int shift_reduce_count = 0;
   // Set up a pool of temporary space.
   reset_temporary_space();
+  int shift_count = 0;
+  int shift_reduce_count = 0;
   shiftdf = Allocate_short_array(num_terminals + 1);
   struct action_element **action_count;
   calloc0(action_count, num_terminals + 1, struct action_element *);
@@ -88,12 +88,10 @@ void compute_shift_default(void) {
 /// of the array the Action which is most frequently defined on the symbol in
 /// question, and remove all such actions from the state automaton.
 void compute_goto_default(void) {
-  struct goto_header_type go_to;
-  struct action_element *q;
-  int goto_count = 0;
-  int goto_reduce_count = 0;
   // Set up a pool of temporary space.
   reset_temporary_space();
+  int goto_count = 0;
+  int goto_reduce_count = 0;
   gotodef = Allocate_short_array(num_non_terminals);
   gotodef -= num_terminals + 1;
   struct action_element **action_count;
@@ -108,10 +106,11 @@ void compute_goto_default(void) {
   // is also kept.
   // This loop is analoguous to the loop in PROCESS_SHIFT_ACTIONS.
   for ALL_STATES3(state_no) {
-    go_to = statset[state_no].go_to;
+    struct goto_header_type go_to = statset[state_no].go_to;
     for (int i = 1; i <= go_to.size; i++) {
       const int symbol = go_to.map[i].symbol;
       const int act = go_to.map[i].action;
+      struct action_element *q;
       for (q = action_count[symbol]; q != NULL; q = q->next) {
         if (q->action == act) {
           break;
@@ -135,6 +134,7 @@ void compute_goto_default(void) {
   for ALL_NON_TERMINALS3(symbol) {
     int max_count = 0;
     int default_action = 0;
+    struct action_element *q;
     for (q = action_count[symbol]; q != NULL; q = q->next) {
       if (q->count > max_count) {
         max_count = q->count;
@@ -153,7 +153,7 @@ void compute_goto_default(void) {
   // for which there is a DEFAULT.
   for ALL_STATES3(state_no) {
     int k = 0;
-    go_to = statset[state_no].go_to;
+    struct goto_header_type go_to = statset[state_no].go_to;
     for (int i = 1; i <= go_to.size; i++) {
       if (gotodef[go_to.map[i].symbol] != go_to.map[i].action) {
         k++;
@@ -175,7 +175,6 @@ void compute_goto_default(void) {
 /// Remap symbols, apply transition default actions  and call
 /// appropriate table compression routine.
 void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options) {
-  struct reduce_header_type red;
   //        First, we decrease by 1 the constants NUM_SYMBOLS
   // and NUM_TERMINALS, remove the EMPTY symbol(1) and remap the
   // other symbols beginning at 1.  If default reduction is
@@ -197,13 +196,13 @@ void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLI
     for (int i = 1; i <= go_to.size; i++) {
       go_to.map[i].symbol--;
     }
-    red = reduce[state_no];
+    struct reduce_header_type red = reduce[state_no];
     for (int i = 1; i <= red.size; i++) {
       red.map[i].symbol--;
     }
   }
   for ALL_LA_STATES3(state_no) {
-    red = lastats[state_no].reduce;
+    struct reduce_header_type red = lastats[state_no].reduce;
     for (int i = 1; i <= red.size; i++)
       red.map[i].symbol--;
   }
