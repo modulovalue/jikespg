@@ -232,8 +232,6 @@ void options(char *file_prefix, struct CLIOptions *cli_options) {
         cli_options->single_productions_bit = flag;
       } else if (memcmp("STATES", token, token_len) == 0) {
         cli_options->states_bit = flag;
-      } else if (memcmp("XREF", token, token_len) == 0) {
-        cli_options->xref_bit = flag;
       } else {
         PRNTERR2("\"%s\" is an invalid option", temp);
       }
@@ -576,11 +574,6 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
     strcpy(opt_string[++top], "TRACE=CONFLICTS");
   } else {
     strcpy(opt_string[++top], "TRACE=FULL");
-  }
-  if (cli_options->xref_bit) {
-    strcpy(opt_string[++top], "XREF");
-  } else {
-    strcpy(opt_string[++top], "NOXREF");
   }
   PRNT("Options in effect:");
   strcpy(output_line, "    ");

@@ -66,7 +66,6 @@ int main(const int argc, char *argv[]) {
         "-states                                   \n"
         "-table=<space|time>                       \n"
         "-trace=<CONFLICTS|FULL|NO>                \n"
-        "-xref                                     \n"
         "                                          \n"
         "The following options are valid only if   \n"
         "GENERATEPARSER and TABLE are activated:  \n"

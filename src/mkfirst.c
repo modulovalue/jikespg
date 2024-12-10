@@ -731,93 +731,6 @@ void quick_sym(short array[], const int h) {
   }
 }
 
-/// PRINT_XREF prints out the Cross-reference map. We build a map from each
-/// terminal into the set of items whose Dot-symbol (symbol immediately
-/// following the dot) is the terminal in question.  Note that we iterate
-/// backwards over the rules to keep the rules associated with the items
-/// sorted, since they are inserted in STACK fashion in the lists:  Last-in,
-/// First out.
-void print_xref(void) {
-  int item_no;
-  // SORT_SYM is used to sort the symbols for cross_reference listing.
-  short *sort_sym = Allocate_short_array(num_symbols + 1);
-  short *t_items = Allocate_short_array(num_terminals + 1);
-  for ALL_TERMINALS3(symbol) {
-    t_items[symbol] = NIL;
-  }
-  for ALL_RULES_BACKWARDS3(rule_no) {
-    item_no = first_item_of[rule_no];
-    for ENTIRE_RHS3(symbol, rule_no) {
-      symbol = rhs_sym[symbol];
-      if (IS_A_TERMINAL(symbol)) {
-        next_item[item_no] = t_items[symbol];
-        t_items[symbol] = item_no;
-      }
-      item_no++;
-    }
-  }
-  for ALL_SYMBOLS3(symbol) {
-    sort_sym[symbol] = symbol;
-  }
-  quick_sym(sort_sym, num_symbols);
-  fprintf(syslis, "\n\nCross-reference table:\n");
-  for ALL_SYMBOLS3(symbol) {
-    symbol = sort_sym[symbol];
-    if (symbol != accept_image && symbol != eoft_image
-        && symbol != empty) {
-      char line[PRINT_LINE_SIZE + 1];
-      char tok[SYMBOL_SIZE + 1];
-      fprintf(syslis, "\n");
-      restore_symbol(tok, RETRIEVE_STRING(symbol));
-      print_large_token(line, tok, "", PRINT_LINE_SIZE - 7);
-      strcat(line, "  ==>> ");
-      const int offset = strlen(line) - 1;
-      if (IS_A_NON_TERMINAL(symbol)) {
-        int rule_no;
-        for (bool end_node = (rule_no = lhs_rule[symbol]) == NIL;
-             !end_node;
-             end_node = rule_no == lhs_rule[symbol]) {
-          rule_no = next_rule[rule_no];
-          snprintf(tok, sizeof(tok), "%d", rule_no);
-          if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE) {
-            fprintf(syslis, "\n%s", line);
-            strcpy(line, " ");
-            for (int j = 1; j <= offset; j++) {
-              strcat(line, " ");
-            }
-          }
-          strcat(line, tok);
-          if (strlen(line) < PRINT_LINE_SIZE)
-            strcat(line, " ");
-        }
-        fprintf(syslis, "\n%s", line);
-        item_no = nt_items[symbol];
-      } else {
-        for (item_no = t_items[symbol];
-             item_no != NIL; item_no = next_item[item_no]) {
-          const int rule_no = item_table[item_no].rule_number;
-          snprintf(tok, sizeof(tok),  "%d", rule_no);
-          if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE) {
-            fprintf(syslis, "\n%s", line);
-            strcpy(line, " ");
-            for (int j = 1; j <= offset; j++) {
-              strcat(line, " ");
-            }
-          }
-          strcat(line, tok);
-          if (strlen(line) < PRINT_LINE_SIZE) {
-            strcat(line, " ");
-          }
-        }
-        fprintf(syslis, "\n%s", line);
-      }
-    }
-  }
-  fprintf(syslis, "\n\n");
-  ffree(t_items);
-  ffree(sort_sym);
-}
-
 /// PRINT_NT_FIRST prints the first set for each non-terminal.
 void print_nt_first(void) {
   fprintf(syslis, "\nFirst map for non-terminals:\n\n");
@@ -1181,10 +1094,6 @@ void mkbasic(struct CLIOptions* cli_options) {
   }
   // The unreachable symbols in the grammar are printed.
   print_unreachables();
-  // If a Cross_Reference listing is requested, it is generated here.
-  if (cli_options->xref_bit) {
-    print_xref();
-  }
   // If a listing of the FIRST map is requested, it is generated here.
   if (cli_options->first_bit) {
     print_nt_first();

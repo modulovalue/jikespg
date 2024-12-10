@@ -147,7 +147,6 @@ struct CLIOptions {
   bool first_bit;
   bool follow_bit;
   bool states_bit;
-  bool xref_bit;
   bool nt_check_bit;
   bool conflicts_bit;
   // TODO • have a union for c/cpp/java/unknown.
@@ -179,7 +178,6 @@ static struct CLIOptions init_cli_options() {
     .first_bit = false,
     .follow_bit = false,
     .states_bit = false,
-    .xref_bit = false,
     .nt_check_bit = false,
     .conflicts_bit = true,
     .c_bit = false,
