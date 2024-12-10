@@ -113,17 +113,20 @@ void compute_goto_default(void) {
       const int symbol = go_to.map[i].symbol;
       const int act = go_to.map[i].action;
       for (q = action_count[symbol]; q != NULL; q = q->next) {
-        if (q->action == act)
+        if (q->action == act) {
           break;
+        }
       }
-      if (q == NULL) /* new action not yet seen */
-      {
+      if (q == NULL) {
+        /* new action not yet seen */
         talloc0(q, struct action_element);
         q->action = act;
         q->count = 1;
         q->next = action_count[symbol];
         action_count[symbol] = q;
-      } else q->count++;
+      } else {
+        q->count++;
+      }
     }
   }
   // We now iterate over the mapping created above and for each
@@ -139,8 +142,8 @@ void compute_goto_default(void) {
       }
     }
     gotodef[symbol] = default_action;
-    if (default_action > 0) /* A state number? */
-    {
+    if (default_action > 0) {
+      /* A state number? */
       goto_count += max_count;
     } else {
       goto_reduce_count += max_count;

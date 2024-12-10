@@ -39,9 +39,6 @@ char blocke[MAX_PARM_SIZE] = {'.', '/'};
 char hblockb[MAX_PARM_SIZE] = {'/', ':'};
 char hblocke[MAX_PARM_SIZE] = {':', '/'};
 
-// TODO • make this a local?
-FILE *sysgrm;
-
 const int SPACE_CODE = 1;
 const int DIGIT_CODE = 2;
 const int ALPHA_CODE = 3;
@@ -80,8 +77,19 @@ short ct_length = 0;
 long ct_start_line = 0;
 long ct_end_line = 0;
 
+const int OUTPUT_PARM_SIZE = MAX_PARM_SIZE + 7;
+const int MAXIMUM_LA_LEVEL = 100;
+const int STRING_BUFFER_SIZE = 8192;
+
+int blockb_len;
+int blocke_len;
+int hblockb_len;
+int hblocke_len;
+
+short *macro_table;
+
 /// READ_INPUT fills the buffer from p1 to the end.
-void read_input(char *grm_file) {
+void read_input(char *grm_file, FILE *sysgrm) {
   long num_read = input_buffer + IOBUFFER_SIZE - bufend;
   if ((num_read = fread(bufend, 1, num_read, sysgrm)) == 0) {
     if (ferror(sysgrm) != 0) {
@@ -128,10 +136,6 @@ bool strxeq(char *s1, char *s2) {
   }
   return true;
 }
-
-const int OUTPUT_PARM_SIZE = MAX_PARM_SIZE + 7;
-const int MAXIMUM_LA_LEVEL = 100;
-const int STRING_BUFFER_SIZE = 8192;
 
 /// OPTION handles the decoding of options passed by the user and resets
 /// them appropriately. "options" may be called twice: when a parameter line
@@ -379,7 +383,7 @@ void options(char *file_prefix, struct CLIOptions *cli_options) {
 /// if they are (it is an) "options" line(s).  If so, the options are
 /// processed.  Then, we process user-supplied options if there are any.  In
 /// any case, the options in effect are printed.
-void process_options_lines(char *grm_file, struct OutputFiles *output_files, char *file_prefix, struct CLIOptions *cli_options) {
+void process_options_lines(char *grm_file, struct OutputFiles *output_files, char *file_prefix, struct CLIOptions *cli_options, FILE *sysgrm) {
   char old_parm[MAX_LINE_SIZE + 1];
   char output_line[PRINT_LINE_SIZE + 1];
   char opt_string[60][OUTPUT_PARM_SIZE + 1];
@@ -427,7 +431,7 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
       if (i < MAX_LINE_SIZE) {
         strcpy(input_buffer, p1);
         bufend = &input_buffer[i];
-        read_input(grm_file);
+        read_input(grm_file, sysgrm);
         p1 = &input_buffer[0];
       }
     }
@@ -671,7 +675,7 @@ void assign_symbol_no(const char *string_ptr, const int image) {
 /// table for stringptr and if it finds it, it turns it into an alias of the
 /// symbol whose number is IMAGE. Otherwise, it invokes PROCESS_SYMBOL and
 /// ASSIGN SYMBOL_NO to enter stringptr into the table and then we alias it.
-static void alias_map(const char *stringptr, const int image) {
+void alias_map(const char *stringptr, const int image) {
   for (register struct hash_type *q = hash_table[hash(stringptr)]; q != NULL; q = q->link) {
     if (EQUAL_STRING(stringptr, q)) {
       q->number = -image; /* Mark alias of image */
@@ -720,16 +724,8 @@ static int name_map(const char *symb) {
   return num_names;
 }
 
-int blockb_len;
-int blocke_len;
-int hblockb_len;
-int hblocke_len;
-
-#define min(x, y) ((x) < (y) ? (x) : (y))
-
 /// SCANNER scans the input stream and returns the next input token.
-void scanner(char *grm_file) {
-  register int i;
+void scanner(char *grm_file, FILE *sysgrm) {
   char tok_string[SYMBOL_SIZE + 1];
 scan_token:
   // Skip "blank" spaces.
@@ -737,11 +733,11 @@ scan_token:
   while (IsSpace(*p1)) {
     if (*p1++ == '\n') {
       if (bufend == input_buffer + IOBUFFER_SIZE) {
-        i = bufend - p1;
+        int i = bufend - p1;
         if (i < MAX_LINE_SIZE) {
           strcpy(input_buffer, p1);
           bufend = &input_buffer[i];
-          read_input(grm_file);
+          read_input(grm_file, sysgrm);
           p1 = &input_buffer[0];
         }
       }
@@ -771,11 +767,11 @@ scan_token:
       }
       if (*p1++ == '\n') {
         if (bufend == input_buffer + IOBUFFER_SIZE) {
-          i = bufend - p1;
+          int i = bufend - p1;
           if (i < MAX_LINE_SIZE) {
             strcpy(input_buffer, p1);
             bufend = &input_buffer[i];
-            read_input(grm_file);
+            read_input(grm_file, sysgrm);
             p1 = &input_buffer[0];
           }
         }
@@ -812,11 +808,11 @@ scan_token:
       }
       if (*p1++ == '\n') {
         if (bufend == input_buffer + IOBUFFER_SIZE) {
-          i = bufend - p1;
+          int i = bufend - p1;
           if (i < MAX_LINE_SIZE) {
             strcpy(input_buffer, p1);
             bufend = &input_buffer[i];
-            read_input(grm_file);
+            read_input(grm_file, sysgrm);
             p1 = &input_buffer[0];
           }
         }
@@ -848,7 +844,7 @@ scan_token:
             goto check_symbol_length;
           }
         }
-        i = min(SYMBOL_SIZE, p2 - p1);
+        int i = SYMBOL_SIZE < p2 - p1 ? SYMBOL_SIZE : p2 - p1;
         memcpy(tok_string, p1, i);
         tok_string[i] = '\0';
         PRNTERR2("Symbol \"%s\" has been referenced in line %ld without the closing \">\"", tok_string, ct_start_line);
@@ -878,7 +874,7 @@ scan_token:
       if (ct_length == 0) /* Empty symbol? disregard it */
         goto scan_token;
 
-      i = 0;
+      int i = 0;
       p1 = ct_ptr;
       do {
         *p1++ = ct_ptr[i++];
@@ -1068,8 +1064,6 @@ void free_line(struct line_elemt *p) {
   p->link = line_pool_root;
   line_pool_root = p;
 }
-
-short *macro_table;
 
 /// FIND_MACRO takes as argument a pointer to a macro name. It searches for
 /// the macro name in the hash table based on MACRO_TABLE. If the macro name
@@ -1564,8 +1558,6 @@ void display_input(void) {
 
 ///     Process all semantic actions and generate action file.
 void process_actions(char *grm_file, struct CLIOptions *cli_options) {
-  register int k;
-  register int len;
   register char *p;
   char line[MAX_LINE_SIZE + 1];
   FILE *sysact = fopen(cli_options->act_file, "w");
@@ -1578,6 +1570,8 @@ void process_actions(char *grm_file, struct CLIOptions *cli_options) {
     fprintf(stderr, "***ERROR: Header Action file \"%s\" cannot be opened.\n", cli_options->hact_file);
     exit(12);
   }
+  // TODO • make this a local?
+  FILE *sysgrm;
   if ((sysgrm = fopen(grm_file, "r")) == (FILE *) NULL) {
     fprintf(stderr, "***ERROR: Input file %s containing grammar is empty, undefined, or invalid\n", grm_file);
     exit(12);
@@ -1587,7 +1581,7 @@ void process_actions(char *grm_file, struct CLIOptions *cli_options) {
     macro_table[i] = NIL;
   }
   bufend = &input_buffer[0];
-  read_input(grm_file);
+  read_input(grm_file, sysgrm);
   p2 = &input_buffer[0];
   linestart = p2 - 1;
   p1 = p2;
@@ -1601,11 +1595,11 @@ void process_actions(char *grm_file, struct CLIOptions *cli_options) {
       }
       p1++;
       if (bufend == input_buffer + IOBUFFER_SIZE) {
-        k = bufend - p1;
+        int k = bufend - p1;
         if (k < MAX_LINE_SIZE) {
           strcpy(input_buffer, p1);
           bufend = &input_buffer[k];
-          read_input(grm_file);
+          read_input(grm_file, sysgrm);
           p1 = &input_buffer[0];
         }
       }
@@ -1616,11 +1610,11 @@ void process_actions(char *grm_file, struct CLIOptions *cli_options) {
       defelmt[i].macro[j] = *p1;
       if (*(p1++) == '\n') {
         if (bufend == input_buffer + IOBUFFER_SIZE) {
-          k = bufend - p1;
+          int k = bufend - p1;
           if (k < MAX_LINE_SIZE) {
             strcpy(input_buffer, p1);
             bufend = &input_buffer[k];
-            read_input(grm_file);
+            read_input(grm_file, sysgrm);
             p1 = &input_buffer[0];
           }
         }
@@ -1647,18 +1641,18 @@ void process_actions(char *grm_file, struct CLIOptions *cli_options) {
       }
       p1++;
       if (bufend == input_buffer + IOBUFFER_SIZE) {
-        k = bufend - p1;
+        int k = bufend - p1;
         if (k < MAX_LINE_SIZE) {
           strcpy(input_buffer, p1);
           bufend = &input_buffer[k];
-          read_input(grm_file);
+          read_input(grm_file, sysgrm);
           p1 = &input_buffer[0];
         }
       }
       linestart = p1 - 1;
     }
     if (actelmt[i].start_line == actelmt[i].end_line) {
-      len = actelmt[i].end_column - actelmt[i].start_column + 1;
+      int len = actelmt[i].end_column - actelmt[i].start_column + 1;
       memcpy(line, linestart + actelmt[i].start_column, len);
       line[len] = '\0';
       while (*p1 != '\n') {
@@ -1681,11 +1675,11 @@ void process_actions(char *grm_file, struct CLIOptions *cli_options) {
       while (line_no < actelmt[i].end_line) {
         p1++;
         if (bufend == input_buffer + IOBUFFER_SIZE) {
-          k = bufend - p1;
+          int k = bufend - p1;
           if (k < MAX_LINE_SIZE) {
             strcpy(input_buffer, p1);
             bufend = &input_buffer[k];
-            read_input(grm_file);
+            read_input(grm_file, sysgrm);
             p1 = &input_buffer[0];
           }
         }
@@ -1705,7 +1699,7 @@ void process_actions(char *grm_file, struct CLIOptions *cli_options) {
         }
       }
       if (actelmt[i].end_column != 0) {
-        len = actelmt[i].end_column;
+        int len = actelmt[i].end_column;
         memcpy(line, p1, len);
         line[len] = '\0';
         if (actelmt[i].header_block) {
@@ -1727,7 +1721,7 @@ void process_actions(char *grm_file, struct CLIOptions *cli_options) {
 }
 
 ///          Actions to be taken if grammar is successfully parsed.
-void accept_action(char *grm_file, struct CLIOptions *cli_options) {
+void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *sysgrm) {
   if (rulehdr == NULL) {
     printf("Informative: Empty grammar read in. Processing stopped.\n");
     fprintf(syslis, "***Informative: Empty grammar read in. Processing stopped.\n");
@@ -1858,26 +1852,6 @@ void accept_action(char *grm_file, struct CLIOptions *cli_options) {
   }
 }
 
-// TODO • move into jikespg.g?
-/// BUILD_SYMNO constructs the SYMNO table which is a mapping from each
-/// symbol number into that symbol.
-static void build_symno(void) {
-  const long symno_size = num_symbols + 1;
-  calloc0(symno, symno_size, struct symno_type);
-  // Go through entire hash table. For each non_empty bucket, go through
-  // linked list in that bucket.
-  for (register int i = 0; i < HT_SIZE; ++i) {
-    for (const register struct hash_type *p = hash_table[i]; p != NULL; p = p->link) {
-      const register int symbol = p->number;
-      // Not an alias
-      if (symbol >= 0) {
-        symno[symbol].name_index = OMEGA;
-        symno[symbol].ptr = p->st_ptr;
-      }
-    }
-  }
-}
-
 /// This procedure opens all relevant files and processes the input grammar.
 void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_files, const int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options) {
   // Parse args.
@@ -1898,6 +1872,7 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
     }
   }
 
+  FILE *sysgrm;
   // Prepare.
   {
     // Open input grammar file. If the file cannot be opened and that file name
@@ -1968,7 +1943,7 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
     // input file that are options line.
     calloc0(input_buffer, IOBUFFER_SIZE + 1 + MAX_LINE_SIZE, char);
     bufend = &input_buffer[0];
-    read_input(grm_file);
+    read_input(grm_file, sysgrm);
     p2 = &input_buffer[0];
     linestart = p2 - 1;
     p1 = p2;
@@ -1977,7 +1952,7 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
       fprintf(stderr, "Input file \"%s\" containing grammar is empty, undefined, or invalid\n", grm_file);
       exit(12);
     }
-    process_options_lines(grm_file, output_files, file_prefix, cli_options);
+    process_options_lines(grm_file, output_files, file_prefix, cli_options, sysgrm);
     eolt_image = OMEGA;
     blockb_len = strlen(blockb);
     blocke_len = strlen(blocke);
@@ -2011,7 +1986,7 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
     // LALR(1) parser table generated by LPG to recognize the grammar which it
     // places in the rulehdr structure.
     short state_stack[STACK_SIZE];
-    scanner(grm_file); /* Get first token */
+    scanner(grm_file, sysgrm); /* Get first token */
     register int act = START_STATE;
   process_terminal:
     // Note that this driver assumes that the tables are LPG SPACE
@@ -2046,13 +2021,13 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
           }
         }
       }
-      scanner(grm_file);
+      scanner(grm_file, sysgrm);
       if (act < ACCEPT_ACTION) {
         goto process_terminal;
       }
       act -= ERROR_ACTION;
     } else if (act == ACCEPT_ACTION) {
-      accept_action(grm_file, cli_options);
+      accept_action(grm_file, cli_options, sysgrm);
       goto end;
     } else {
       // error_action

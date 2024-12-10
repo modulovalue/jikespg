@@ -14,10 +14,6 @@ bool *is_terminal;
 /// We now remap the symbols in the unified Table based on frequency.
 /// We also remap the states based on frequency.
 void remap_symbols(void) {
-  struct goto_header_type go_to;
-  struct shift_header_type sh;
-  struct reduce_header_type red;
-  long symbol;
   ordered_state = Allocate_long_array(max_la_state + 1);
   symbol_map = Allocate_long_array(num_symbols + 1);
   is_terminal = Allocate_boolean_array(num_symbols + 1);
@@ -38,24 +34,24 @@ void remap_symbols(void) {
   for ALL_STATES3(state_no) {
     ordered_state[state_no] = state_no;
     row_size[state_no] = 0;
-    sh = shift[statset[state_no].shift_number];
+    struct shift_header_type sh = shift[statset[state_no].shift_number];
     for (int i = 1; i <= sh.size; i++) {
       row_size[state_no]++;
-      symbol = sh.map[i].symbol;
+      long symbol = sh.map[i].symbol;
       frequency_count[symbol]++;
     }
-    go_to = statset[state_no].go_to;
+    struct goto_header_type go_to = statset[state_no].go_to;
     for (int i = 1; i <= go_to.size; i++) {
       row_size[state_no]++;
-      symbol = go_to.map[i].symbol;
+      long symbol = go_to.map[i].symbol;
       frequency_count[symbol]++;
     }
-    red = reduce[state_no];
+    struct reduce_header_type red = reduce[state_no];
     default_rule = red.map[0].rule_number;
     for (int i = 1; i <= red.size; i++) {
       if (red.map[i].rule_number != default_rule) {
         row_size[state_no]++;
-        symbol = red.map[i].symbol;
+        long symbol = red.map[i].symbol;
         frequency_count[symbol]++;
       } else {
         default_saves++;
@@ -66,18 +62,18 @@ void remap_symbols(void) {
   for ALL_LA_STATES3(state_no) {
     ordered_state[state_no] = state_no;
     row_size[state_no] = 0;
-    sh = shift[lastats[state_no].shift_number];
+    struct shift_header_type sh = shift[lastats[state_no].shift_number];
     for (int i = 1; i <= sh.size; i++) {
       row_size[state_no]++;
-      symbol = sh.map[i].symbol;
+      long symbol = sh.map[i].symbol;
       frequency_count[symbol]++;
     }
-    red = lastats[state_no].reduce;
+    struct reduce_header_type red = lastats[state_no].reduce;
     default_rule = red.map[0].rule_number;
     for (int i = 1; i <= red.size; i++) {
       if (red.map[i].rule_number != default_rule) {
         row_size[state_no]++;
-        symbol = red.map[i].symbol;
+        long symbol = red.map[i].symbol;
         frequency_count[symbol]++;
       } else {
         default_saves++;
@@ -105,9 +101,9 @@ void remap_symbols(void) {
   // mapping for the symbols in SYMBOL_MAP.
   int j = num_terminals + 1;
   int k = 0;
-  int i = 1;
-  while (i <= num_terminals) {
+  for (int i = 1; i <= num_terminals;) {
     k++;
+    long symbol;
     if (frequency_count[i] >= frequency_count[j]) {
       symbol = frequency_symbol[i];
       is_terminal[k] = true;
@@ -123,7 +119,7 @@ void remap_symbols(void) {
   // Process the remaining non-terminal and useless terminal symbols.
   for (; j <= num_symbols; j++) {
     k++;
-    symbol = frequency_symbol[j];
+    long symbol = frequency_symbol[j];
     is_terminal[k] = false;
     symbol_map[symbol] = k;
   }
@@ -137,24 +133,24 @@ void remap_symbols(void) {
   // The states are sorted in descending order based on the number of
   // actions defined on them.
   for ALL_STATES3(state_no) {
-    go_to = statset[state_no].go_to;
+    struct goto_header_type go_to = statset[state_no].go_to;
     // Remap Goto map
     for (int i = 1; i <= go_to.size; i++) {
       go_to.map[i].symbol = symbol_map[go_to.map[i].symbol];
     }
-    red = reduce[state_no];
+    struct reduce_header_type red = reduce[state_no];
     for (int i = 1; i <= red.size; i++) {
       red.map[i].symbol = symbol_map[red.map[i].symbol];
     }
   }
   for ALL_LA_STATES3(state_no) {
-    red = lastats[state_no].reduce;
+    struct reduce_header_type red = lastats[state_no].reduce;
     for (int i = 1; i <= red.size; i++) {
       red.map[i].symbol = symbol_map[red.map[i].symbol];
     }
   }
   for (int i = 1; i <= num_shift_maps; i++) {
-    sh = shift[i];
+    struct shift_header_type sh = shift[i];
     for (int j = 1; j <= sh.size; j++) {
       sh.map[j].symbol = symbol_map[sh.map[j].symbol];
     }
@@ -170,11 +166,6 @@ void remap_symbols(void) {
 /// may be placed without clobbering elements in another row.
 /// The starting positions are stored in the vector STATE_INDEX.
 void overlap_tables(struct CLIOptions *cli_options) {
-  struct shift_header_type sh;
-  struct reduce_header_type red;
-  int symbol;
-  long indx;
-  long num_bytes;
   state_index = Allocate_long_array(max_la_state + 1);
   long *symbol_list = Allocate_long_array(num_symbols + 1);
   num_entries -= default_saves;
@@ -191,7 +182,7 @@ void overlap_tables(struct CLIOptions *cli_options) {
   first_index = 1;
   next[first_index] = first_index + 1; /* Should be constant-folded */
   previous[first_index] = NIL;
-  for (indx = 2; indx < (int) table_size; indx++) {
+  for (long indx = 2; indx < (int) table_size; indx++) {
     next[indx] = indx + 1;
     previous[indx] = indx - 1;
   }
@@ -207,13 +198,15 @@ void overlap_tables(struct CLIOptions *cli_options) {
     // First, we iterate over all actions defined in STATE_NO, and
     // create a set with all the symbols involved.
     int root_symbol = NIL;
+    struct shift_header_type sh;
+    struct reduce_header_type red;
     if (state_no > num_states) {
       sh = shift[lastats[state_no].shift_number];
       red = lastats[state_no].reduce;
     } else {
       const struct goto_header_type go_to = statset[state_no].go_to;
       for (int i = 1; i <= go_to.size; i++) {
-        symbol = go_to.map[i].symbol;
+        int symbol = go_to.map[i].symbol;
         symbol_list[symbol] = root_symbol;
         root_symbol = symbol;
       }
@@ -221,7 +214,7 @@ void overlap_tables(struct CLIOptions *cli_options) {
       red = reduce[state_no];
     }
     for (int i = 1; i <= sh.size; i++) {
-      symbol = sh.map[i].symbol;
+      int symbol = sh.map[i].symbol;
       symbol_list[symbol] = root_symbol;
       root_symbol = symbol;
     }
@@ -230,7 +223,7 @@ void overlap_tables(struct CLIOptions *cli_options) {
     default_rule = red.map[0].rule_number;
     for (int i = 1; i <= red.size; i++) {
       if (red.map[i].rule_number != default_rule) {
-        symbol = red.map[i].symbol;
+        int symbol = red.map[i].symbol;
         symbol_list[symbol] = root_symbol;
         root_symbol = symbol;
       }
@@ -239,7 +232,7 @@ void overlap_tables(struct CLIOptions *cli_options) {
     // we try to determine if it might be a valid starting position. If
     // not, INDX is moved to the next element, and we repeat the process
     // until a valid position is found.
-    indx = first_index;
+    long indx = first_index;
   look_for_match_in_table:
     if (indx == NIL) {
       indx = table_size + 1;
@@ -247,7 +240,7 @@ void overlap_tables(struct CLIOptions *cli_options) {
     if (indx + num_symbols > (int) table_size) {
       reallocate(cli_options);
     }
-    for (symbol = root_symbol; symbol != NIL; symbol = symbol_list[symbol]) {
+    for (int symbol = root_symbol; symbol != NIL; symbol = symbol_list[symbol]) {
       if (next[indx + symbol] == OMEGA) {
         indx = next[indx];
         goto look_for_match_in_table;
@@ -262,7 +255,7 @@ void overlap_tables(struct CLIOptions *cli_options) {
       max_indx = indx;
     }
     state_index[state_no] = indx;
-    for (symbol = root_symbol; symbol != NIL; symbol = symbol_list[symbol]) {
+    for (int symbol = root_symbol; symbol != NIL; symbol = symbol_list[symbol]) {
       const long i = indx + symbol;
       if (first_index == last_index)
         first_index = NIL;
@@ -295,6 +288,7 @@ void overlap_tables(struct CLIOptions *cli_options) {
   PRNT3("Number of entries in Action Table: %ld", num_entries);
   const long percentage = (action_size - num_entries) * 1000 / num_entries;
   PRNT3("Percentage of increase: %ld.%ld%%", percentage / 10, percentage % 10);
+  long num_bytes;
   if (cli_options->byte_bit) {
     num_bytes = 2 * action_size + table_size;
     if (!cli_options->goto_default_bit && !cli_options->nt_check_bit) {
@@ -325,11 +319,6 @@ void overlap_tables(struct CLIOptions *cli_options) {
 
 /// We now write out the tables to the SYSTAB file.
 void print_tables_time(struct CLIOptions *cli_options, FILE *systab) {
-  long *action;
-  long *check;
-  struct goto_header_type go_to;
-  struct shift_header_type sh;
-  struct reduce_header_type red;
   int la_shift_count = 0;
   int shift_count = 0;
   int goto_count = 0;
@@ -337,28 +326,20 @@ void print_tables_time(struct CLIOptions *cli_options, FILE *systab) {
   int reduce_count = 0;
   int shift_reduce_count = 0;
   int goto_reduce_count = 0;
-  long indx;
-  long la_state_offset;
-  int act;
-  long result_act;
-  int k;
-  int symbol;
-  char *tok;
-  long offset;
   state_list = Allocate_long_array(max_la_state + 1);
-  check = next;
-  action = previous;
-  offset = error_act;
+  long *check = next;
+  long *action = previous;
+  long offset = error_act;
   if (cli_options->read_reduce_bit) {
     offset += num_rules;
   }
-  la_state_offset = offset;
+  long la_state_offset = offset;
   if (offset > MAX_TABLE_SIZE + 1) {
     PRNTERR2("Table contains entries that are > %ld; Processing stopped.", MAX_TABLE_SIZE + 1);
     exit(12);
   }
   // Initialize all unfilled slots with default values.
-  indx = first_index;
+  int indx = first_index;
   for (long i = indx; i != NIL && i <= (int) action_size; i = indx) {
     indx = next[i];
     check[i] = DEFAULT_SYMBOL;
@@ -370,20 +351,22 @@ void print_tables_time(struct CLIOptions *cli_options, FILE *systab) {
   // We set the rest of the table with the proper table entries.
   for (long state_no = 1; state_no <= max_la_state; state_no++) {
     indx = state_index[state_no];
+    struct shift_header_type sh;
+    struct reduce_header_type red;
     if (state_no > num_states) {
       sh = shift[lastats[state_no].shift_number];
       red = lastats[state_no].reduce;
     } else {
-      go_to = statset[state_no].go_to;
+      struct goto_header_type go_to = statset[state_no].go_to;
       for (int j = 1; j <= go_to.size; j++) {
-        symbol = go_to.map[j].symbol;
+        int symbol = go_to.map[j].symbol;
         long i = indx + symbol;
         if (cli_options->goto_default_bit || cli_options->nt_check_bit) {
           check[i] = symbol;
         } else {
           check[i] = DEFAULT_SYMBOL;
         }
-        act = go_to.map[j].action;
+        int act = go_to.map[j].action;
         if (act > 0) {
           action[i] = state_index[act] + num_rules;
           goto_count++;
@@ -396,10 +379,11 @@ void print_tables_time(struct CLIOptions *cli_options, FILE *systab) {
       red = reduce[state_no];
     }
     for (int j = 1; j <= sh.size; j++) {
-      symbol = sh.map[j].symbol;
+      int symbol = sh.map[j].symbol;
       long i = indx + symbol;
       check[i] = symbol;
-      act = sh.map[j].action;
+      int act = sh.map[j].action;
+      long result_act;
       if (act > num_states) {
         result_act = la_state_offset + state_index[act];
         la_shift_count++;
@@ -421,10 +405,10 @@ void print_tables_time(struct CLIOptions *cli_options, FILE *systab) {
     default_rule = red.map[0].rule_number;
     for (int j = 1; j <= red.size; j++) {
       if (red.map[j].rule_number != default_rule) {
-        symbol = red.map[j].symbol;
+        int symbol = red.map[j].symbol;
         long i = indx + symbol;
         check[i] = symbol;
-        act = red.map[j].rule_number;
+        int act = red.map[j].rule_number;
         if (rules[act].lhs == accept_image) {
           action[i] = accept_act;
         } else {
@@ -440,7 +424,7 @@ void print_tables_time(struct CLIOptions *cli_options, FILE *systab) {
     // Otherwise it is initialized to the rule number in question.
     long i = indx + DEFAULT_SYMBOL;
     check[i] = DEFAULT_SYMBOL;
-    act = red.map[0].rule_number;
+    int act = red.map[0].rule_number;
     if (act == OMEGA) {
       action[i] = error_act;
     } else {
@@ -496,12 +480,12 @@ void print_tables_time(struct CLIOptions *cli_options, FILE *systab) {
   field(cli_options->lalr_level, 5);
   *output_ptr++ = '\n';
   // We write the terminal symbols map.
-  for (symbol = 1; symbol <= num_symbols; symbol++) {
+  for (int symbol = 1; symbol <= num_symbols; symbol++) {
     if (is_terminal[symbol_map[symbol]]) {
       if (last_terminal < symbol_map[symbol]) {
         last_terminal = symbol_map[symbol];
       }
-      tok = RETRIEVE_STRING(symbol);
+      char *tok = RETRIEVE_STRING(symbol);
       // We're dealing with special symbol?
       if (tok[0] == '\n') {
         tok[0] = escape; /* replace initial marker with escape. */
@@ -533,12 +517,12 @@ void print_tables_time(struct CLIOptions *cli_options, FILE *systab) {
     }
   }
   // We write the non-terminal symbols map.
-  for (symbol = 1; symbol <= num_symbols; symbol++) {
+  for (int symbol = 1; symbol <= num_symbols; symbol++) {
     if (!is_terminal[symbol_map[symbol]]) {
       if (last_non_terminal < symbol_map[symbol]) {
         last_non_terminal = symbol_map[symbol];
       }
-      tok = RETRIEVE_STRING(symbol);
+      char *tok = RETRIEVE_STRING(symbol);
       // we're dealing with special symbol?
       if (tok[0] == '\n') {
         tok[0] = escape; /* replace initial marker with escape. */
@@ -569,7 +553,7 @@ void print_tables_time(struct CLIOptions *cli_options, FILE *systab) {
     }
   }
   // Write size of right hand side of rules followed by CHECK table.
-  k = 0;
+  int k = 0;
   for (int i = 1; i <= num_rules; i++) {
     field(RHS_SIZE(i), 4);
     k++;
@@ -625,7 +609,8 @@ void print_tables_time(struct CLIOptions *cli_options, FILE *systab) {
       default_map[i] = error_act;
     }
     for ALL_NON_TERMINALS3(symbol) {
-      act = gotodef[symbol];
+      int act = gotodef[symbol];
+      long result_act;
       if (act < 0) {
         result_act = -act;
       } else if (act > 0) {
@@ -636,7 +621,7 @@ void print_tables_time(struct CLIOptions *cli_options, FILE *systab) {
       default_map[symbol_map[symbol]] = result_act;
     }
     k = 0;
-    for (symbol = 1; symbol <= num_symbols; symbol++) {
+    for (int symbol = 1; symbol <= num_symbols; symbol++) {
       k++;
       field(default_map[symbol], 6);
       if (k == 12) {

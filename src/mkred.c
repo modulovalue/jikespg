@@ -391,8 +391,8 @@ void build_in_stat(void) {
     const struct shift_header_type sh = shift[n];
     for (int i = 1; i <= sh.size; ++i) {
       n = sh.map[i].action;
-      if (n > 0 && n <= num_states) /* A shift action? */
-      {
+      if (n > 0 && n <= num_states) {
+        /* A shift action? */
         q = Allocate_node();
         q->value = state_no;
         if (in_stat[n] == NULL) {

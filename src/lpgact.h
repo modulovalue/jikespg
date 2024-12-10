@@ -1,4 +1,24 @@
 #pragma once
+
+/// BUILD_SYMNO constructs the SYMNO table which is a mapping from each
+/// symbol number into that symbol.
+void build_symno(void) {
+  const long symno_size = num_symbols + 1;
+  calloc0(symno, symno_size, struct symno_type);
+  // Go through entire hash table. For each non_empty bucket, go through
+  // linked list in that bucket.
+  for (register int i = 0; i < HT_SIZE; ++i) {
+    for (const register struct hash_type *p = hash_table[i]; p != NULL; p = p->link) {
+      const register int symbol = p->number;
+      // Not an alias
+      if (symbol >= 0) {
+        symno[symbol].name_index = OMEGA;
+        symno[symbol].ptr = p->st_ptr;
+      }
+    }
+  }
+}
+
 static void (*rule_action[]) (void) = {NULL,
      null_action, /* 1 */
      null_action, /* 2 */
