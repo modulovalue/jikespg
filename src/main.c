@@ -152,13 +152,13 @@ int main(const int argc, char *argv[]) {
       if (cli_options.edit_bit) {
         // Edit.
         {
-          PRNT2(msg_line, "\nNumber of Terminals: %ld", num_terminals - 1); /*-1 for %empty */
-          PRNT2(msg_line, "Number of Nonterminals: %ld", num_non_terminals - 1); /* -1 for %ACC */
-          PRNT2(msg_line, "Number of Productions: %ld", num_rules + 1);
+          PRNT3("\nNumber of Terminals: %ld", num_terminals - 1); /*-1 for %empty */
+          PRNT3("Number of Nonterminals: %ld", num_non_terminals - 1); /* -1 for %ACC */
+          PRNT3("Number of Productions: %ld", num_rules + 1);
           if (cli_options.single_productions_bit) {
-            PRNT2(msg_line, "Number of Single Productions: %ld", num_single_productions);
+            PRNT3("Number of Single Productions: %ld", num_single_productions);
           }
-          PRNT2(msg_line, "Number of Items: %ld", num_items);
+          PRNT3("Number of Items: %ld", num_items);
           fclose(syslis); /* close listing file */
           return 0;
         }
@@ -169,29 +169,29 @@ int main(const int argc, char *argv[]) {
 
         // Basic statistics.
         {
-          PRNT2(msg_line, "\nNumber of Terminals: %ld", num_terminals - 1);
-          PRNT2(msg_line, "Number of Nonterminals: %ld", num_non_terminals - 1);
-          PRNT2(msg_line, "Number of Productions: %ld", num_rules + 1);
+          PRNT3("\nNumber of Terminals: %ld", num_terminals - 1);
+          PRNT3("Number of Nonterminals: %ld", num_non_terminals - 1);
+          PRNT3("Number of Productions: %ld", num_rules + 1);
           if (cli_options.single_productions_bit) {
-            PRNT2(msg_line, "Number of Single Productions: %ld", num_single_productions);
+            PRNT3("Number of Single Productions: %ld", num_single_productions);
           }
-          PRNT2(msg_line, "Number of Items: %ld", num_items);
+          PRNT3("Number of Items: %ld", num_items);
           if (cli_options.scopes_bit) {
-            PRNT2(msg_line, "Number of Scopes: %ld", num_scopes);
+            PRNT3("Number of Scopes: %ld", num_scopes);
           }
-          PRNT2(msg_line, "Number of States: %ld", num_states);
+          PRNT3("Number of States: %ld", num_states);
           if (max_la_state > num_states) {
-            PRNT2(msg_line, "Number of look-ahead states: %ld", max_la_state - num_states);
+            PRNT3("Number of look-ahead states: %ld", max_la_state - num_states);
           }
-          PRNT2(msg_line, "Number of Shift actions: %ld", num_shifts);
-          PRNT2(msg_line, "Number of Goto actions: %ld", num_gotos);
+          PRNT3("Number of Shift actions: %ld", num_shifts);
+          PRNT3("Number of Goto actions: %ld", num_gotos);
           if (cli_options.read_reduce_bit) {
-            PRNT2(msg_line, "Number of Shift/Reduce actions: %ld", num_shift_reduces);
-            PRNT2(msg_line, "Number of Goto/Reduce actions: %ld", num_goto_reduces);
+            PRNT3("Number of Shift/Reduce actions: %ld", num_shift_reduces);
+            PRNT3("Number of Goto/Reduce actions: %ld", num_goto_reduces);
           }
-          PRNT2(msg_line, "Number of Reduce actions: %ld", num_reductions);
-          PRNT2(msg_line, "Number of Shift-Reduce conflicts: %ld", num_sr_conflicts);
-          PRNT2(msg_line, "Number of Reduce-Reduce conflicts: %ld", num_rr_conflicts);
+          PRNT3("Number of Reduce actions: %ld", num_reductions);
+          PRNT3("Number of Shift-Reduce conflicts: %ld", num_sr_conflicts);
+          PRNT3("Number of Reduce-Reduce conflicts: %ld", num_rr_conflicts);
         }
 
         if (cli_options.states_bit) {

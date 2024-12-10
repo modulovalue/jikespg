@@ -221,16 +221,16 @@ void sortdes(long array[], long count[], const long low, const long high, const 
 /// is copied, and the old space is released.
 void reallocate(struct CLIOptions *cli_options) {
   if (table_size == MAX_TABLE_SIZE) {
-    PRNTERR2(msg_line, "Table has exceeded maximum limit of %ld", MAX_TABLE_SIZE);
+    PRNTERR2("Table has exceeded maximum limit of %ld", MAX_TABLE_SIZE);
     exit(12);
   }
   const register int old_size = table_size;
   table_size = MIN(table_size + increment_size, MAX_TABLE_SIZE);
   if (cli_options->verbose_bit) {
     if (cli_options->table_opt == OPTIMIZE_TIME) {
-      PRNT2(msg_line, "Reallocating storage for TIME table, adding %ld entries", table_size - old_size);
+      PRNT3("Reallocating storage for TIME table, adding %ld entries", table_size - old_size);
     } else {
-      PRNT2(msg_line, "Reallocating storage for SPACE table, adding %ld entries", table_size - old_size);
+      PRNT3("Reallocating storage for SPACE table, adding %ld entries", table_size - old_size);
     }
   }
   long *n = Allocate_long_array(table_size + 1);
@@ -493,7 +493,7 @@ void print_error_maps(struct CLIOptions *cli_options) {
     }
   }
   num_bytes = 2 * num_states;
-  PRNT2(msg_line, "    Storage required for ACTION_SYMBOLS_BASE map: %ld Bytes", num_bytes);
+  PRNT3("    Storage required for ACTION_SYMBOLS_BASE map: %ld Bytes", num_bytes);
   if (cli_options->table_opt == OPTIMIZE_TIME && last_terminal <= (cli_options->java_bit ? 127 : 255)) {
     num_bytes = offset - 1;
   } else if (cli_options->table_opt != OPTIMIZE_TIME && num_terminals <= (cli_options->java_bit ? 127 : 255)) {
@@ -501,7 +501,7 @@ void print_error_maps(struct CLIOptions *cli_options) {
   } else {
     num_bytes = 2 * (offset - 1);
   }
-  PRNT2(msg_line, "    Storage required for ACTION_SYMBOLS_RANGE map: %ld Bytes", num_bytes);
+  PRNT3("    Storage required for ACTION_SYMBOLS_RANGE map: %ld Bytes", num_bytes);
   ffree(action_symbols_range);
   // We now repeat the same process for the domain of the GOTO table.
   for ALL_STATES3(state_no) {
@@ -542,8 +542,8 @@ void print_error_maps(struct CLIOptions *cli_options) {
   } else {
     prnt_shorts("\nconst unsigned short CLASS_HEADER nasr[] = {0,\n", 0, offset - 2, 10, naction_symbols_range, cli_options);
   }
-  PRNT2(msg_line, "    Storage required for NACTION_SYMBOLS_BASE map: %ld Bytes", 2 * num_states);
-  PRNT2(msg_line, "    Storage required for NACTION_SYMBOLS_RANGE map: %d Bytes", 2 * (offset - 1));
+  PRNT3("    Storage required for NACTION_SYMBOLS_BASE map: %ld Bytes", 2 * num_states);
+  PRNT3("    Storage required for NACTION_SYMBOLS_RANGE map: %d Bytes", 2 * (offset - 1));
   ffree(naction_symbols_range);
   // We write the name_index of each terminal symbol.  The array TEMP
   // is used to remap the NAME_INDEX values based on the new symbol
@@ -570,7 +570,7 @@ void print_error_maps(struct CLIOptions *cli_options) {
       num_bytes = 2 * num_terminals;
     }
     // Compute and list space required for TERMINAL_INDEX map.
-    PRNT2(msg_line, "    Storage required for TERMINAL_INDEX map: %ld Bytes", num_bytes);
+    PRNT3("    Storage required for TERMINAL_INDEX map: %ld Bytes", num_bytes);
     // We write the name_index of each non_terminal symbol. The array
     // TEMP is used to remap the NAME_INDEX values based on the new
     // symbol numberings.
@@ -593,7 +593,7 @@ void print_error_maps(struct CLIOptions *cli_options) {
       num_bytes = 2 * num_non_terminals;
     }
     // Compute and list space required for NON_TERMINAL_INDEX map.
-    PRNT2(msg_line, "    Storage required for NON_TERMINAL_INDEX map: %ld Bytes", num_bytes);
+    PRNT3("    Storage required for NON_TERMINAL_INDEX map: %ld Bytes", num_bytes);
   } else {
     for ALL_SYMBOLS3(symbol) {
       temp[symbol_map[symbol]] = symno[symbol].name_index;
@@ -622,7 +622,7 @@ void print_error_maps(struct CLIOptions *cli_options) {
       num_bytes = 2 * num_symbols;
     }
     // Compute and list space required for SYMBOL_INDEX map.
-    PRNT2(msg_line, "    Storage required for SYMBOL_INDEX map: %ld Bytes", num_bytes);
+    PRNT3("    Storage required for SYMBOL_INDEX map: %ld Bytes", num_bytes);
   }
   if (num_scopes > 0) {
     short root = 0;
@@ -709,7 +709,7 @@ void print_error_maps(struct CLIOptions *cli_options) {
       mystrcpy("                          };\n");
     }
     // Compute and list space required for STRING_BUFFER map.
-    PRNT2(msg_line, "    Storage required for STRING_BUFFER map: %ld Bytes", num_bytes);
+    PRNT3("    Storage required for STRING_BUFFER map: %ld Bytes", num_bytes);
   } else {
     // Print C names.
     long *name_len = Allocate_long_array(num_names + 1);
@@ -757,7 +757,7 @@ void print_error_maps(struct CLIOptions *cli_options) {
       mystrcpy("                          };\n");
     }
     // Compute and list space required for STRING_BUFFER map.
-    PRNT2(msg_line, "    Storage required for STRING_BUFFER map: %ld Bytes", num_bytes);
+    PRNT3("    Storage required for STRING_BUFFER map: %ld Bytes", num_bytes);
     // Write out NAME_START array
     mystrcpy("\nconst unsigned short CLASS_HEADER name_start[] = {0,\n");
     padline();
@@ -785,11 +785,11 @@ void print_error_maps(struct CLIOptions *cli_options) {
       mystrcpy("                          };\n");
     }
     // Compute and list space required for NAME_START map.
-    PRNT2(msg_line, "    Storage required for NAME_START map: %ld Bytes", 2 * num_names);
+    PRNT3("    Storage required for NAME_START map: %ld Bytes", 2 * num_names);
     // Write out NAME_LENGTH array
     prnt_shorts("\nconst unsigned char  CLASS_HEADER name_length[] = {0,\n", 1, num_names, 10, name_len, cli_options);
     // Compute and list space required for NAME_LENGTH map.
-    PRNT2(msg_line, "    Storage required for NAME_LENGTH map: %ld Bytes", num_names);
+    PRNT3("    Storage required for NAME_LENGTH map: %ld Bytes", num_names);
     ffree(name_len);
   }
   if (num_scopes > 0) {
@@ -1091,9 +1091,10 @@ void common(const bool byte_check_bit, struct CLIOptions *cli_options) {
 
   // Print symbols.
   {
-    char line[SYMBOL_SIZE + /* max length of a token symbol  */
+    int line_size = SYMBOL_SIZE + /* max length of a token symbol  */
               2 * MAX_PARM_SIZE + /* max length of prefix + suffix */
-              64]; /* +64 for error messages lines  */
+              64;
+    char line[line_size]; /* +64 for error messages lines  */
     // or other fillers(blank, =,...)
     if (cli_options->java_bit) {
       strcpy(line, "interface ");
@@ -1108,11 +1109,11 @@ void common(const bool byte_check_bit, struct CLIOptions *cli_options) {
       fprintf(syssym, "%s", line);
       if (tok[0] == '\n' || tok[0] == escape) {
         tok[0] = escape;
-        PRNT2(line, "Escaped symbol %s is an invalid C variable.\n", tok);
+        PRNT4(line, line_size, "Escaped symbol %s is an invalid C variable.\n", tok);
       } else if (strpbrk(tok, "!%^&*()-+={}[];:\"`~|\\,.<>/?\'") != NULL) {
-        PRNT2(line, "%s may be an invalid variable name.\n", tok);
+        PRNT4(line, line_size, "%s may be an invalid variable name.\n", tok);
       }
-      sprintf(line, "      %s%s%s = %i,\n", prefix, tok, suffix, symbol_map[symbol]);
+      snprintf(line, sizeof(line), "      %s%s%s = %i,\n", prefix, tok, suffix, symbol_map[symbol]);
       if (cli_options->c_bit || cli_options->cpp_bit) {
         while (strlen(line) > PARSER_LINE_SIZE) {
           fwrite(line, sizeof(char), PARSER_LINE_SIZE - 2, syssym);
@@ -1988,7 +1989,7 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
       num_bytes = num_bytes - offset + 1;
     }
   }
-  PRNT2(msg_line, "    Storage required for FOLLOW map: %ld Bytes", num_bytes);
+  PRNT3("    Storage required for FOLLOW map: %ld Bytes", num_bytes);
   // We now write out the states in sorted order: SORTED_STATE.
   k = 0;
   for ALL_STATES3(state_no) {
@@ -2006,7 +2007,7 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
   }
   // Compute and list space required for SORTED_STATE map.
   num_bytes = 2 * num_states;
-  PRNT2(msg_line, "    Storage required for SORTED_STATE map: %ld Bytes", num_bytes);
+  PRNT3("    Storage required for SORTED_STATE map: %ld Bytes", num_bytes);
   // We now write a vector parallel to SORTED_STATE that gives us the
   // original number associated with the state: ORIGINAL_STATE.
   k = 0;
@@ -2025,7 +2026,7 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
   }
   // Compute and list space required for ORIGINAL_STATE map.
   num_bytes = 2 * num_states;
-  PRNT2(msg_line, "    Storage required for ORIGINAL_STATE map: %ld Bytes", num_bytes);
+  PRNT3("    Storage required for ORIGINAL_STATE map: %ld Bytes", num_bytes);
   // We now construct a bit map for the set of terminal symbols that
   // may appear in each state. Then, we invoke PARTSET to apply the
   // Partition Heuristic and print it.
@@ -2120,7 +2121,7 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
       num_bytes -= offset - 1;
     }
   }
-  PRNT2(msg_line, "    Storage required for ACTION_SYMBOLS map: %ld Bytes", num_bytes);
+  PRNT3("    Storage required for ACTION_SYMBOLS map: %ld Bytes", num_bytes);
   ffree(action_symbols_range);
   // We now repeat the same process for the domain of the GOTO table.
   for ALL_STATES3(state_no) {
@@ -2188,7 +2189,7 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
       num_bytes -= offset - 1;
     }
   }
-  PRNT2(msg_line, "    Storage required for NACTION_SYMBOLS map: %ld Bytes", num_bytes);
+  PRNT3("    Storage required for NACTION_SYMBOLS map: %ld Bytes", num_bytes);
   ffree(naction_symbols_range);
   // Compute map from each symbol to state into which that symbol can
   // cause a transition: TRANSITION_STATES
@@ -2265,10 +2266,10 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
   // OFFSET - 1 elements.
   if (cli_options->table_opt == OPTIMIZE_TIME) {
     num_bytes = 2 * (num_symbols + offset);
-    PRNT2(msg_line, "    Storage required for TRANSITION_STATES map: %ld Bytes", num_bytes);
+    PRNT3("    Storage required for TRANSITION_STATES map: %ld Bytes", num_bytes);
   } else {
     num_bytes = 2 * (num_terminals + offset);
-    PRNT2(msg_line, "    Storage required for SHIFT_STATES map: %ld Bytes", num_bytes);
+    PRNT3("    Storage required for SHIFT_STATES map: %ld Bytes", num_bytes);
     // We now compute and write the starting location for each
     // non-terminal symbol...
     offset = 1;
@@ -2311,7 +2312,7 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
     // base vector contains NUM_NON_TERMINALS+ 1 elements, and the vector
     // containing the range elements has size OFFSET - 1
     num_bytes = 2 * (num_non_terminals + offset);
-    PRNT2(msg_line, "    Storage required for GOTO_STATES map: %ld Bytes", num_bytes);
+    PRNT3("    Storage required for GOTO_STATES map: %ld Bytes", num_bytes);
   }
   // Write the number associated with the ERROR symbol.
   field(error_image, 4);
@@ -2433,7 +2434,7 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
   } else {
     offset += num_symbols;
   }
-  PRNT2(msg_line, "    Storage required for direct NAME map: %ld Bytes", num_bytes + offset);
+  PRNT3("    Storage required for direct NAME map: %ld Bytes", num_bytes + offset);
   if (max_len > 255) {
     offset = 2 * num_names;
   } else {
@@ -2449,7 +2450,7 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
   } else {
     offset += num_symbols;
   }
-  PRNT2(msg_line, "    Storage required for indirect NAME map: %ld Bytes", num_bytes + offset);
+  PRNT3("    Storage required for indirect NAME map: %ld Bytes", num_bytes + offset);
   if (cli_options->scopes_bit) {
     for (int i = 1; i <= scope_rhs_size; i++) {
       if (scope_right_side[i] != 0) {
@@ -2589,7 +2590,7 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
     if (scope_state_size > 255) {
       num_bytes += num_scopes;
     }
-    PRNT2(msg_line, "    Storage required for SCOPE map: %ld Bytes", num_bytes);
+    PRNT3("    Storage required for SCOPE map: %ld Bytes", num_bytes);
   }
   if (original != NULL) {
     ffree(original);
@@ -2633,7 +2634,7 @@ void print_space_parser(struct CLIOptions *cli_options) {
       la_state_offset = error_act;
     }
     if (offset > MAX_TABLE_SIZE + 1) {
-      PRNTERR2(msg_line, "Table contains entries that are > %ld; Processing stopped.", MAX_TABLE_SIZE + 1);
+      PRNTERR2("Table contains entries that are > %ld; Processing stopped.", MAX_TABLE_SIZE + 1);
       exit(12);
     }
     for (int i = 1; i <= check_size; i++) {
@@ -2891,7 +2892,7 @@ void print_space_parser(struct CLIOptions *cli_options) {
             shift_reduce_count++;
           }
           if (result_act > MAX_TABLE_SIZE + 1) {
-            PRNTERR2(msg_line, "Table contains look-ahead shift entry that is >%ld; Processing stopped.", MAX_TABLE_SIZE + 1);
+            PRNTERR2("Table contains look-ahead shift entry that is >%ld; Processing stopped.", MAX_TABLE_SIZE + 1);
             return;
           }
           action[i] = result_act;
@@ -2918,15 +2919,15 @@ void print_space_parser(struct CLIOptions *cli_options) {
       }
     }
     PRNT("\n\nActions in Compressed Tables:");
-    PRNT2(msg_line, "     Number of Shifts: %d", shift_count);
-    PRNT2(msg_line, "     Number of Shift/Reduces: %d", shift_reduce_count);
+    PRNT3("     Number of Shifts: %d", shift_count);
+    PRNT3("     Number of Shift/Reduces: %d", shift_reduce_count);
     if (max_la_state > num_states) {
-      PRNT2(msg_line, "     Number of Look-Ahead Shifts: %d", la_shift_count);
+      PRNT3("     Number of Look-Ahead Shifts: %d", la_shift_count);
     }
-    PRNT2(msg_line, "     Number of Gotos: %d", goto_count);
-    PRNT2(msg_line, "     Number of Goto/Reduces: %d", goto_reduce_count);
-    PRNT2(msg_line, "     Number of Reduces: %d", reduce_count);
-    PRNT2(msg_line, "     Number of Defaults: %d", default_count);
+    PRNT3("     Number of Gotos: %d", goto_count);
+    PRNT3("     Number of Goto/Reduces: %d", goto_reduce_count);
+    PRNT3("     Number of Reduces: %d", reduce_count);
+    PRNT3("     Number of Defaults: %d", default_count);
     // Write Terminal Check Table.
     if (num_terminals <= (cli_options->java_bit ? 127 : 255)) {
       if (cli_options->java_bit) {
@@ -3109,7 +3110,7 @@ void print_space_parser(struct CLIOptions *cli_options) {
           result_act = state_index[act] + num_rules;
         }
         if (result_act > MAX_TABLE_SIZE + 1) {
-          PRNTERR2(msg_line, "Table contains look-ahead shift entry that is >%ld; Processing stopped.", MAX_TABLE_SIZE + 1);
+          PRNTERR2("Table contains look-ahead shift entry that is >%ld; Processing stopped.", MAX_TABLE_SIZE + 1);
           return;
         }
         itoc(result_act);
@@ -3226,7 +3227,7 @@ void print_time_parser(struct CLIOptions *cli_options) {
           shift_reduce_count++;
         }
         if (result_act > MAX_TABLE_SIZE + 1) {
-          PRNTERR2(msg_line, "Table contains look-ahead shift entry that is >%ld; Processing stopped.", MAX_TABLE_SIZE + 1);
+          PRNTERR2("Table contains look-ahead shift entry that is >%ld; Processing stopped.", MAX_TABLE_SIZE + 1);
           return;
         }
         action[i] = result_act;
@@ -3264,16 +3265,16 @@ void print_time_parser(struct CLIOptions *cli_options) {
       }
     }
     PRNT("\n\nActions in Compressed Tables:");
-    PRNT2(msg_line, "     Number of Shifts: %d", shift_count);
-    PRNT2(msg_line, "     Number of Shift/Reduces: %d", shift_reduce_count);
+    PRNT3("     Number of Shifts: %d", shift_count);
+    PRNT3("     Number of Shift/Reduces: %d", shift_reduce_count);
     if (max_la_state > num_states) {
-      sprintf(msg_line, "     Number of Look-Ahead Shifts: %d", la_shift_count);
+      snprintf(msg_line, sizeof(msg_line), "     Number of Look-Ahead Shifts: %d", la_shift_count);
       PRNT(msg_line);
     }
-    PRNT2(msg_line, "     Number of Gotos: %d", goto_count);
-    PRNT2(msg_line, "     Number of Goto/Reduces: %d", goto_reduce_count);
-    PRNT2(msg_line, "     Number of Reduces: %d", reduce_count);
-    PRNT2(msg_line, "     Number of Defaults: %d", default_count);
+    PRNT3("     Number of Gotos: %d", goto_count);
+    PRNT3("     Number of Goto/Reduces: %d", goto_reduce_count);
+    PRNT3("     Number of Reduces: %d", reduce_count);
+    PRNT3("     Number of Defaults: %d", default_count);
     if (error_maps_bit || cli_options->debug_bit) {
       for ALL_STATES3(state_no) {
         check[state_index[state_no]] = -state_no;

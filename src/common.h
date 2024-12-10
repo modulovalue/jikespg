@@ -606,8 +606,12 @@ static void PRNT(char *msg) {
   fprintf(syslis, "%s\n", msg);
 }
 
-#define PRNT2(msg, ...) \
-  sprintf(msg, __VA_ARGS__); \
+#define PRNT3(...) \
+  snprintf(msg_line, MAX_MSG_SIZE, __VA_ARGS__); \
+  PRNT(msg_line);
+
+#define PRNT4(msg, size, ...) \
+  snprintf(msg, size, __VA_ARGS__); \
   PRNT(msg);
 
 static void PRNTWNG(char *msg) {
@@ -615,18 +619,18 @@ static void PRNTWNG(char *msg) {
   fprintf(syslis, "***WARNING: %s\n", msg);
 }
 
-#define PRNTWNG2(msg, ...) \
-  sprintf(msg, __VA_ARGS__); \
-  PRNTWNG(msg);
+#define PRNTWNG2(...) \
+  snprintf(msg_line, MAX_MSG_SIZE, __VA_ARGS__); \
+  PRNTWNG(msg_line);
 
 static void PRNTERR(char *msg) {
   printf("***ERROR: %s\n", msg);
   fprintf(syslis, "***ERROR: %s\n", msg);
 }
 
-#define PRNTERR2(msg, ...) \
-  sprintf(msg, __VA_ARGS__); \
-  PRNTERR(msg);
+#define PRNTERR2(...) \
+  snprintf(msg_line, MAX_MSG_SIZE, __VA_ARGS__); \
+  PRNTERR(msg_line);
 
 /// The following two macros check whether the value of an
 /// integer variable exceeds the maximum limit for a short or a long

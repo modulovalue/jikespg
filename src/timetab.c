@@ -62,7 +62,7 @@ static void remap_symbols(void) {
       }
     }
   }
-  PRNT2(msg_line, "Number of Reductions saved by default: %d", default_saves);
+  PRNT3("Number of Reductions saved by default: %d", default_saves);
   for ALL_LA_STATES3(state_no) {
     ordered_state[state_no] = state_no;
     row_size[state_no] = 0;
@@ -290,18 +290,18 @@ static void overlap_tables(struct CLIOptions *cli_options) {
     }
   }
   printf("\n");
-  PRNT2(msg_line, "Length of Check table: %ld", table_size);
-  PRNT2(msg_line, "Length of Action table: %ld", action_size);
-  PRNT2(msg_line, "Number of entries in Action Table: %ld", num_entries);
+  PRNT3("Length of Check table: %ld", table_size);
+  PRNT3("Length of Action table: %ld", action_size);
+  PRNT3("Number of entries in Action Table: %ld", num_entries);
   const long percentage = (action_size - num_entries) * 1000 / num_entries;
-  PRNT2(msg_line, "Percentage of increase: %ld.%ld%%", percentage / 10, percentage % 10);
+  PRNT3("Percentage of increase: %ld.%ld%%", percentage / 10, percentage % 10);
   if (cli_options->byte_bit) {
     num_bytes = 2 * action_size + table_size;
     if (!cli_options->goto_default_bit && !cli_options->nt_check_bit) {
       for (; last_symbol >= 1 && !is_terminal[last_symbol]; last_symbol--) {
       }
     }
-    PRNT2(msg_line, "Highest symbol in Check Table: %ld", last_symbol);
+    PRNT3("Highest symbol in Check Table: %ld", last_symbol);
     if (last_symbol > 255) {
       num_bytes += table_size;
     }
@@ -312,7 +312,7 @@ static void overlap_tables(struct CLIOptions *cli_options) {
     num_bytes += (long) 2 * num_symbols;
   }
   const long k_bytes = num_bytes / 1024 + 1;
-  PRNT2(msg_line, "Storage Required for Tables: %ld Bytes, %ldK", num_bytes, k_bytes);
+  PRNT3("Storage Required for Tables: %ld Bytes, %ldK", num_bytes, k_bytes);
   num_bytes = (long) 4 * num_rules;
   if (cli_options->byte_bit) {
     num_bytes -= num_rules;
@@ -320,7 +320,7 @@ static void overlap_tables(struct CLIOptions *cli_options) {
       num_bytes -= num_rules;
     }
   }
-  PRNT2(msg_line, "Storage Required for Rules: %ld Bytes", num_bytes);
+  PRNT3("Storage Required for Rules: %ld Bytes", num_bytes);
 }
 
 /// We now write out the tables to the SYSTAB file.
@@ -354,7 +354,7 @@ static void print_tables(struct CLIOptions *cli_options, FILE *systab) {
   }
   la_state_offset = offset;
   if (offset > MAX_TABLE_SIZE + 1) {
-    PRNTERR2(msg_line, "Table contains entries that are > %ld; Processing stopped.", MAX_TABLE_SIZE + 1);
+    PRNTERR2("Table contains entries that are > %ld; Processing stopped.", MAX_TABLE_SIZE + 1);
     exit(12);
   }
   // Initialize all unfilled slots with default values.
@@ -411,7 +411,7 @@ static void print_tables(struct CLIOptions *cli_options, FILE *systab) {
         shift_reduce_count++;
       }
       if (result_act > MAX_TABLE_SIZE + 1) {
-        PRNTERR2(msg_line, "Table contains look-ahead shift entry that is >%ld; Processing stopped.", MAX_TABLE_SIZE + 1);
+        PRNTERR2("Table contains look-ahead shift entry that is >%ld; Processing stopped.", MAX_TABLE_SIZE + 1);
         return;
       }
       action[i] = result_act;
@@ -449,15 +449,15 @@ static void print_tables(struct CLIOptions *cli_options, FILE *systab) {
     }
   }
   PRNT("\n\nActions in Compressed Tables:");
-  PRNT2(msg_line, "     Number of Shifts: %d", shift_count);
-  PRNT2(msg_line, "     Number of Shift/Reduces: %d", shift_reduce_count);
+  PRNT3("     Number of Shifts: %d", shift_count);
+  PRNT3("     Number of Shift/Reduces: %d", shift_reduce_count);
   if (max_la_state > num_states) {
-    PRNT2(msg_line, "     Number of Look-Ahead Shifts: %d", la_shift_count);
+    PRNT3("     Number of Look-Ahead Shifts: %d", la_shift_count);
   }
-  PRNT2(msg_line, "     Number of Gotos: %d", goto_count);
-  PRNT2(msg_line, "     Number of Goto/Reduces: %d", goto_reduce_count);
-  PRNT2(msg_line, "     Number of Reduces: %d", reduce_count);
-  PRNT2(msg_line, "     Number of Defaults: %d", default_count);
+  PRNT3("     Number of Gotos: %d", goto_count);
+  PRNT3("     Number of Goto/Reduces: %d", goto_reduce_count);
+  PRNT3("     Number of Reduces: %d", reduce_count);
+  PRNT3("     Number of Defaults: %d", default_count);
   // Prepare Header with proper information, and write it out.
   output_buffer[0] = 'T';
   output_buffer[1] = cli_options->goto_default_bit ? '1' : '0';

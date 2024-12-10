@@ -1,4 +1,7 @@
-CC = gcc $(CPPFLAGS) $(CFLAGS)
+CC = gcc$(CPPFLAGS) $(CFLAGS)
+
+# CFLAGS += -fsanitize=address -g -O1
+# LDFLAGS += -fsanitize=address
 
 jikespg:                        ctabs.o globals.o lpgparse.o lpgutil.o main.o mkfirst.o mkred.o mkstates.o partset.o produce.o ptables.o remsp.o resolve.o spacetab.o timetab.o
 	$(CC) $(LDFLAGS) -o jikespg ctabs.o globals.o lpgparse.o lpgutil.o main.o mkfirst.o mkred.o mkstates.o partset.o produce.o ptables.o remsp.o resolve.o spacetab.o timetab.o

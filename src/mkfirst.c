@@ -778,7 +778,7 @@ void print_xref(void) {
              !end_node;
              end_node = rule_no == lhs_rule[symbol]) {
           rule_no = next_rule[rule_no];
-          sprintf(tok, "%d", rule_no);
+          snprintf(tok, sizeof(tok), "%d", rule_no);
           if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE) {
             fprintf(syslis, "\n%s", line);
             strcpy(line, " ");
@@ -796,7 +796,7 @@ void print_xref(void) {
         for (item_no = t_items[symbol];
              item_no != NIL; item_no = next_item[item_no]) {
           const int rule_no = item_table[item_no].rule_number;
-          sprintf(tok, "%d", rule_no);
+          snprintf(tok, sizeof(tok),  "%d", rule_no);
           if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE) {
             fprintf(syslis, "\n%s", line);
             strcpy(line, " ");

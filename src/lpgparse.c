@@ -246,14 +246,14 @@ void options(char *file_prefix, struct CLIOptions *cli_options) {
       } else if (memcmp("XREF", token, token_len) == 0) {
         cli_options->xref_bit = flag;
       } else {
-        PRNTERR2(msg_line, "\"%s\" is an invalid option", temp);
+        PRNTERR2("\"%s\" is an invalid option", temp);
       }
     } else {
       // We now process the valued-parameter. Pick value after "=" and process
       i++;
       if (IsSpace(parm[i]) || parm[i] == '\0') {
         // no value specified
-        PRNTERR2(msg_line, "Null string or blank is invalid for parameter %s", token);
+        PRNTERR2("Null string or blank is invalid for parameter %s", token);
         continue;
       }
       int j = i;
@@ -272,7 +272,7 @@ void options(char *file_prefix, struct CLIOptions *cli_options) {
         if (verify_is_digit(temp)) {
           cli_options->default_opt = MIN(atoi(temp), 5);
         } else {
-          PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
+          PRNTERR2("\"%s\" is an invalid value for %s", temp, token);
         }
       } else if (memcmp(token, "ESCAPE", token_len) == 0) {
         escape = temp[0];
@@ -293,7 +293,7 @@ void options(char *file_prefix, struct CLIOptions *cli_options) {
           cli_options->cpp_bit = false;
           cli_options->java_bit = true;
         } else {
-          PRNTERR2(msg_line, "\"%s\" is an invalid language for %s", temp, token);
+          PRNTERR2("\"%s\" is an invalid language for %s", temp, token);
         }
       } else if (memcmp(token, "HACTFILENAME", token_len) == 0) {
         strcpy(cli_options->hact_file, temp);
@@ -310,11 +310,11 @@ void options(char *file_prefix, struct CLIOptions *cli_options) {
           cli_options->slr_bit = false;
           cli_options->lalr_level = atoi(temp);
           if (cli_options->lalr_level > MAXIMUM_LA_LEVEL) {
-            PRNTWNG2(msg_line, "\"%s\" exceeds maximum value of %d allowed for %s", temp, MAXIMUM_LA_LEVEL, token);
+            PRNTWNG2("\"%s\" exceeds maximum value of %d allowed for %s", temp, MAXIMUM_LA_LEVEL, token);
             cli_options->lalr_level = MAXIMUM_LA_LEVEL;
           }
         } else if (memcmp(translate(temp, token_len), "MAXIMUM", token_len) != 0) {
-          PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
+          PRNTERR2("\"%s\" is an invalid value for %s", temp, token);
         } else if (memcmp("MAXIMUM", translate(temp, token_len), token_len) == 0) {
           cli_options->slr_bit = false;
           cli_options->lalr_level = MAXIMUM_LA_LEVEL;
@@ -323,13 +323,13 @@ void options(char *file_prefix, struct CLIOptions *cli_options) {
         if (verify_is_digit(temp)) {
           cli_options->maximum_distance = atoi(temp);
         } else {
-          PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
+          PRNTERR2("\"%s\" is an invalid value for %s", temp, token);
         }
       } else if (memcmp(token, "MINDISTANCE", token_len) == 0) {
         if (verify_is_digit(temp)) {
           cli_options->minimum_distance = atoi(temp);
         } else {
-          PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
+          PRNTERR2("\"%s\" is an invalid value for %s", temp, token);
         }
       } else if (memcmp("NAMES", token, token_len) == 0) {
         register int token_len = strlen(temp);
@@ -340,7 +340,7 @@ void options(char *file_prefix, struct CLIOptions *cli_options) {
         } else if (memcmp(translate(temp, token_len), "OPTIMIZED", token_len) == 0) {
           cli_options->names_opt = OPTIMIZE_PHRASES;
         } else {
-          PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
+          PRNTERR2("\"%s\" is an invalid value for %s", temp, token);
         }
       } else if (memcmp(token, "ORMARK", token_len) == 0) {
         ormark = temp[0];
@@ -350,7 +350,7 @@ void options(char *file_prefix, struct CLIOptions *cli_options) {
         if (verify_is_digit(temp)) {
           cli_options->stack_size = atoi(temp);
         } else {
-          PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
+          PRNTERR2("\"%s\" is an invalid value for %s", temp, token);
         }
       } else if (memcmp(token, "SUFFIX", token_len) == 0) {
         strcpy(suffix, temp);
@@ -364,7 +364,7 @@ void options(char *file_prefix, struct CLIOptions *cli_options) {
         } else if (memcmp(translate(temp, token_len), "TIME", token_len) == 0) {
           cli_options->table_opt = OPTIMIZE_TIME;
         } else {
-          PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
+          PRNTERR2("\"%s\" is an invalid value for %s", temp, token);
         }
       } else if (memcmp(token, "TRACE", token_len) == 0) {
         token_len = strlen(temp);
@@ -378,10 +378,10 @@ void options(char *file_prefix, struct CLIOptions *cli_options) {
         } else if (memcmp(translate(temp, token_len), "NO", token_len) == 0) {
           cli_options->trace_opt = NOTRACE;
         } else {
-          PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
+          PRNTERR2("\"%s\" is an invalid value for %s", temp, token);
         }
       } else {
-        PRNTERR2(msg_line, "\"%s\" is an invalid option", token);
+        PRNTERR2("\"%s\" is an invalid option", token);
       }
     }
     while (parm[i] != '\0' && /* clean after parameter */ (parm[i] == ',' || parm[i] == '/' || parm[i] == ' ')) {
@@ -692,13 +692,13 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
     strcpy(temp, "ORMARK and ESCAPE");
   }
   if (temp[0] != '\0') {
-    PRNTERR2(msg_line, "The options %s cannot have the same value", temp);
-    PRNT2(msg_line, "Input process aborted at line %d ...", line_no);
+    PRNTERR2("The options %s cannot have the same value", temp);
+    PRNT3("Input process aborted at line %d ...", line_no);
     exit(12);
   }
   if (strlen(hblockb) <= strlen(blockb) && memcmp(hblockb, blockb, strlen(hblockb)) == 0) {
-    PRNTERR2(msg_line, "Hblockb value, %s, cannot be a suffix of blockb: %s", hblockb, blockb);
-    PRNT2(msg_line, "Input process aborted at line %d ...", line_no);
+    PRNTERR2("Hblockb value, %s, cannot be a suffix of blockb: %s", hblockb, blockb);
+    PRNT3("Input process aborted at line %d ...", line_no);
     exit(12);
   }
 }
@@ -880,7 +880,7 @@ scan_token:
 
     while (strncmp(p1, hblocke, hblocke_len) != 0) {
       if (*p1 == '\0') {
-        PRNTERR2(msg_line, "End of file encountered while scanning header action block in rule %ld", num_rules);
+        PRNTERR2("End of file encountered while scanning header action block in rule %ld", num_rules);
         exit(12);
       }
       if (*p1++ == '\n') {
@@ -921,7 +921,7 @@ scan_token:
 
     while (strncmp(p1, blocke, blocke_len) != 0) {
       if (*p1 == '\0') {
-        PRNTERR2(msg_line, "End of file encountered while scanning action block in rule %ld", num_rules);
+        PRNTERR2("End of file encountered while scanning action block in rule %ld", num_rules);
         exit(12);
       }
       if (*p1++ == '\n') {
@@ -965,7 +965,7 @@ scan_token:
         i = min(SYMBOL_SIZE, p2 - p1);
         memcpy(tok_string, p1, i);
         tok_string[i] = '\0';
-        PRNTERR2(msg_line, "Symbol \"%s\" has been referenced in line %ld without the closing \">\"", tok_string, ct_start_line);
+        PRNTERR2("Symbol \"%s\" has been referenced in line %ld without the closing \">\"", tok_string, ct_start_line);
         exit(12);
       }
       break;
@@ -987,7 +987,7 @@ scan_token:
       if (cli_options->warnings_bit) {
         memcpy(tok_string, p1, ct_length);
         tok_string[ct_length] = '\0';
-        PRNTWNG2(msg_line, "Symbol \"%s\" referenced in line %ld requires a closing quote", tok_string, ct_start_line);
+        PRNTWNG2("Symbol \"%s\" referenced in line %ld requires a closing quote", tok_string, ct_start_line);
       }
 
     remove_quotes:
@@ -1162,7 +1162,7 @@ check_symbol_length:
     tok_string[ct_length] = '\0';
     if (cli_options->warnings_bit) {
       if (symbol_image(tok_string) == OMEGA) {
-        PRNTWNG2(msg_line, "Length of Symbol \"%s\" in line %d exceeds maximum of ", tok_string, line_no);
+        PRNTWNG2("Length of Symbol \"%s\" in line %d exceeds maximum of ", tok_string, line_no);
       }
     }
   }
@@ -1494,7 +1494,7 @@ next_line: {
   if (l > output_size) {
     for (int j = l - 1; j >= output_size; j--) {
       if (text[j] != ' ') {
-        PRNTERR2(msg_line, "Size of output line \"%s\" is greater than OUTPUT_SIZE (%d), it was %lu", text, output_size, strlen(text));
+        PRNTERR2("Size of output line \"%s\" is greater than OUTPUT_SIZE (%d), it was %lu", text, output_size, strlen(text));
         break;
       }
     }
@@ -1525,13 +1525,13 @@ void mapmacro(const int def_index, struct CLIOptions *cli_options) {
       strcmp(defelmt[def_index].name, kinput_file) == 0 ||
       strcmp(defelmt[def_index].name, kcurrent_line) == 0 ||
       strcmp(defelmt[def_index].name, knext_line) == 0) {
-    PRNTWNG2(msg_line, "predefined macro \"%s\" cannot be redefined. Line %ld", defelmt[def_index].name, defelmt[def_index].start_line);
+    PRNTWNG2("predefined macro \"%s\" cannot be redefined. Line %ld", defelmt[def_index].name, defelmt[def_index].start_line);
   } else {
     const register int i = hash(defelmt[def_index].name);
     for (register int j = macro_table[i]; j != NIL; j = defelmt[j].next) {
       if (strcmp(defelmt[j].name, defelmt[def_index].name) == 0) {
         if (cli_options->warnings_bit) {
-          PRNTWNG2(msg_line, "Redefinition of macro \"%s\" in line %ld", defelmt[def_index].name, defelmt[def_index].start_line);
+          PRNTWNG2("Redefinition of macro \"%s\" in line %ld", defelmt[def_index].name, defelmt[def_index].start_line);
           break;
         }
       }
@@ -1739,7 +1739,7 @@ void process_actions(char *grm_file, struct CLIOptions *cli_options) {
     p1 = linestart + defelmt[i].start_column;
     for (register int j = 0; j < defelmt[i].length; j++) {
       defelmt[i].macro[j] = *p1;
-      if (*p1++ == '\n') {
+      if (*(p1++) == '\n') {
         if (bufend == input_buffer + IOBUFFER_SIZE) {
           k = bufend - p1;
           if (k < MAX_LINE_SIZE) {
@@ -1793,7 +1793,7 @@ void process_actions(char *grm_file, struct CLIOptions *cli_options) {
       p = line;
       p1 = linestart + actelmt[i].start_column;
       while (*p1 != '\n') {
-        *p++ = *p1++;
+        *(p++) = *(p1++);
       }
       *p = '\0';
     }
@@ -1819,7 +1819,7 @@ void process_actions(char *grm_file, struct CLIOptions *cli_options) {
         if (line_no < actelmt[i].end_line) {
           p = line;
           while (*p1 != '\n') {
-            *p++ = *p1++;
+            *(p++) = *(p1++);
           }
           *p = '\0';
           if (actelmt[i].header_block) {
@@ -1974,7 +1974,7 @@ void accept_action(char *grm_file, struct CLIOptions *cli_options) {
       } else if (IS_A_TERMINAL(rulehdr[ii].lhs)) {
         char temp[SYMBOL_SIZE + 1];
         restore_symbol(temp, RETRIEVE_STRING(rulehdr[ii].lhs));
-        PRNTERR2(msg_line, "In rule %d: terminal \"%s\" used as left hand side", ii, temp);
+        PRNTERR2("In rule %d: terminal \"%s\" used as left hand side", ii, temp);
         PRNTERR("Processing terminated due to input errors.");
         exit(12);
       } else rules[ii].lhs = rulehdr[ii].lhs;
@@ -2052,7 +2052,7 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
       }
     } else {
       if (strrchr(grm_file, '.') == NULL) {
-        PRNTWNG2(msg_line, "A file named \"%s\" with no extension is being opened", grm_file);
+        PRNTWNG2("A file named \"%s\" with no extension is being opened", grm_file);
       }
     }
     //                Open listing file for output.
@@ -2199,15 +2199,15 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
         // Error messages to be printed if an error is encountered during parsing.
         ct_ptr[ct_length] = '\0';
         if (ct == EOF_TK) {
-          PRNTERR2(msg_line, "End-of file reached prematurely");
+          PRNTERR2("End-of file reached prematurely");
         } else if (ct == MACRO_NAME_TK) {
-          PRNTERR2(msg_line, "Misplaced macro name \"%s\" found in line %d, column %d", ct_ptr, line_no, ct_start_col);
+          PRNTERR2("Misplaced macro name \"%s\" found in line %d, column %d", ct_ptr, line_no, ct_start_col);
         } else if (ct == SYMBOL_TK) {
           char tok_string[SYMBOL_SIZE + 1];
           restore_symbol(tok_string, ct_ptr);
-          PRNTERR2(msg_line, "Misplaced symbol \"%s\" found in line %d, column %d", tok_string, line_no, ct_start_col);
+          PRNTERR2("Misplaced symbol \"%s\" found in line %d, column %d", tok_string, line_no, ct_start_col);
         } else {
-          PRNTERR2(msg_line, "Misplaced keyword \"%s\" found in line %d, column %d", ct_ptr, line_no, ct_start_col);
+          PRNTERR2("Misplaced keyword \"%s\" found in line %d, column %d", ct_ptr, line_no, ct_start_col);
         }
         exit(12);
       }

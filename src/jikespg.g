@@ -138,7 +138,7 @@ static void add_block_definition(const struct terminal_type *term)
 /.$location
 static void bad_first_symbol(void)
 {
-    PRNTERR2(msg_line, "First symbol: \"%s\" found in file is illegal. Line %ld, column %d", SYM1.name, SYM1.start_line, SYM1.start_column);
+    PRNTERR2("First symbol: \"%s\" found in file is illegal. Line %ld, column %d", SYM1.name, SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 ./
@@ -159,7 +159,7 @@ static void bad_first_symbol(void)
 /.$location
 static void act$rule_number(void)
 {
-    PRNTERR2(msg_line, "Action block cannot be first object in file. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    PRNTERR2("Action block cannot be first object in file. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 ./
@@ -193,7 +193,7 @@ static void act$rule_number(void)
 /.$location
 static void act$rule_number(void)
 {
-    PRNTWNG2(msg_line, "Macro name \"%s\" does not start with the escape character. Line %ld, column %d", SYM1.name, SYM1.start_line, SYM1.start_column);
+    PRNTWNG2("Macro name \"%s\" does not start with the escape character. Line %ld, column %d", SYM1.name, SYM1.start_line, SYM1.start_column);
 }
 ./
                         | '|'             -- No Good !!!
@@ -201,7 +201,7 @@ static void act$rule_number(void)
 /.$location
 static void bad_macro_name(void)
 {
-    PRNTERR2(msg_line, "Reserved symbol cannot be used as macro name. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    PRNTERR2("Reserved symbol cannot be used as macro name. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 ./
@@ -216,7 +216,7 @@ static void bad_macro_name(void)
 /.$location
 static void act$rule_number(void)
 {
-    PRNTERR2(msg_line, "Macro name not supplied for macro definition. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    PRNTERR2("Macro name not supplied for macro definition. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 ./
@@ -225,7 +225,7 @@ static void act$rule_number(void)
 /.$location
 static void act$rule_number(void)
 {
-    PRNTERR2(msg_line, "Macro keyword misplaced. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    PRNTERR2("Macro keyword misplaced. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 ./
@@ -237,7 +237,7 @@ static void act$rule_number(void)
 /.$location
 static void definition_expected(void)
 {
-    PRNTERR2(msg_line, "Definition block expected where symbol found. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    PRNTERR2("Definition block expected where symbol found. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 ./
@@ -275,7 +275,7 @@ static void process_terminal(void)
 /.$location
 static void bad_terminal(void)
 {
-    PRNTERR2(msg_line, "Keyword  has been misplaced in Terminal section.  Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    PRNTERR2("Keyword  has been misplaced in Terminal section.  Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 ./
@@ -286,7 +286,7 @@ static void bad_terminal(void)
 /.$location
 static void act$rule_number(void)
 {
-    PRNTERR2(msg_line, "Misplaced block found in TERMINALS section.  Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    PRNTERR2("Misplaced block found in TERMINALS section.  Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 ./
@@ -317,7 +317,7 @@ static void act$rule_number(void)
             if (error_image > num_terminals)
             {
                 restore_symbol(tok_string, kerror);
-                PRNTERR2(msg_line, "Illegal aliasing to %s prior to its definition.  Line %ld, column %d", tok_string, SYM3.start_line, SYM3.start_column);
+                PRNTERR2("Illegal aliasing to %s prior to its definition.  Line %ld, column %d", tok_string, SYM3.start_line, SYM3.start_column);
                 exit(12);
             }
             image = error_image;
@@ -327,7 +327,7 @@ static void act$rule_number(void)
             if (eoft_image > num_terminals)
             {
                 restore_symbol(tok_string, keoft);
-                PRNTERR2(msg_line, "Illegal aliasing to %s prior to its definition. Line %ld, column %d", tok_string, SYM3.start_line, SYM3.start_column);
+                PRNTERR2("Illegal aliasing to %s prior to its definition. Line %ld, column %d", tok_string, SYM3.start_line, SYM3.start_column);
                 exit(12);
             }
             image = eoft_image;
@@ -336,7 +336,7 @@ static void act$rule_number(void)
         case EOL_SYMBOL_TK:
             if (eolt_image == OMEGA)
             {
-                PRNTERR2(msg_line, "Illegal aliasing to EOL prior to its definition. Line %ld, column %d", SYM3.start_line, SYM3.start_column);
+                PRNTERR2("Illegal aliasing to EOL prior to its definition. Line %ld, column %d", SYM3.start_line, SYM3.start_column);
                 exit(12);
             }
             image = eolt_image;
@@ -353,7 +353,7 @@ static void act$rule_number(void)
             if (symbol_image(SYM1.name) != OMEGA)
             {
                 restore_symbol(tok_string, SYM1.name);
-                PRNTERR2(msg_line, "Symbol %s was previously defined. Line %ld, column %d", tok_string, SYM1.start_line, SYM1.start_column);
+                PRNTERR2("Symbol %s was previously defined. Line %ld, column %d", tok_string, SYM1.start_line, SYM1.start_column);
                 exit(12);
             }
             assign_symbol_no(SYM1.name, image);
@@ -366,7 +366,7 @@ static void act$rule_number(void)
                     image == eoft_image || image > num_terminals)
                 {
                     restore_symbol(tok_string, kerror);
-                    PRNTERR2(msg_line, "Illegal alias for symbol %s. Line %ld, column %d.", tok_string, SYM1.start_line, SYM1.start_column);
+                    PRNTERR2("Illegal alias for symbol %s. Line %ld, column %d.", tok_string, SYM1.start_line, SYM1.start_column);
                     exit(12);
                 }
                 alias_map(kerror, image);
@@ -375,7 +375,7 @@ static void act$rule_number(void)
             else
             {
                 restore_symbol(tok_string, kerror);
-                PRNTERR2(msg_line, "Symbol %s was previously defined. Line %ld, column %d", tok_string, SYM1.start_line, SYM1.start_column);
+                PRNTERR2("Symbol %s was previously defined. Line %ld, column %d", tok_string, SYM1.start_line, SYM1.start_column);
                 exit(12);
             }
             break;
@@ -387,7 +387,7 @@ static void act$rule_number(void)
                     image == error_image || image > num_terminals)
                 {
                     restore_symbol(tok_string, keoft);
-                    PRNTERR2(msg_line, "Illegal alias for symbol %s. Line %ld, column %d.", tok_string, SYM1.start_line, SYM1.start_column);
+                    PRNTERR2("Illegal alias for symbol %s. Line %ld, column %d.", tok_string, SYM1.start_line, SYM1.start_column);
                     exit(12);
                 }
                 alias_map(keoft, image);
@@ -396,7 +396,7 @@ static void act$rule_number(void)
             else
             {
                 restore_symbol(tok_string, keoft);
-                PRNTERR2(msg_line, "Symbol %s was previously defined.  %ld, column %d", tok_string, SYM1.start_line, SYM1.start_column);
+                PRNTERR2("Symbol %s was previously defined.  %ld, column %d", tok_string, SYM1.start_line, SYM1.start_column);
                 exit(12);
             }
             break;
@@ -409,14 +409,14 @@ static void act$rule_number(void)
                     image == error_image ||
                     image > num_terminals)
                 {
-                    PRNTERR2(msg_line, "Illegal alias for symbol EOL. Line %ld, column %d.", SYM1.start_line, SYM1.start_column);
+                    PRNTERR2("Illegal alias for symbol EOL. Line %ld, column %d.", SYM1.start_line, SYM1.start_column);
                     exit(12);
                 }
                 eolt_image = image;
             }
             else
             {
-                PRNTERR2(msg_line, "Symbol EOL was previously defined. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+                PRNTERR2("Symbol EOL was previously defined. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
                 exit(12);
             }
             break;
@@ -459,7 +459,7 @@ static void act$rule_number(void)
 /.$location
 static void bad_alias_rhs(void)
 {
-    PRNTERR2(msg_line, "Misplaced keyword found in Alias section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    PRNTERR2("Misplaced keyword found in Alias section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 ./
@@ -472,7 +472,7 @@ static void bad_alias_rhs(void)
 /.$location
 static void act$rule_number(void)
 {
-    PRNTERR2(msg_line, "Misplaced block found in Alias section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    PRNTERR2("Misplaced block found in Alias section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 ./
@@ -485,7 +485,7 @@ static void act$rule_number(void)
 /.$location
 static void act$rule_number(void)
 {
-    PRNTERR2(msg_line, "Empty symbol cannot be aliased. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    PRNTERR2("Empty symbol cannot be aliased. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 ./
@@ -494,7 +494,7 @@ static void act$rule_number(void)
 /.$location
 static void missing_quote(void)
 {
-    PRNTERR2(msg_line, "Symbol must be quoted when used as a grammar symbol. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    PRNTERR2("Symbol must be quoted when used as a grammar symbol. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 ./
@@ -531,7 +531,7 @@ static void act$rule_number(void)
 /.$location
 static void bad_start_symbol(void)
 {
-    PRNTERR2(msg_line, "Symbol cannot be used as Start symbol. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    PRNTERR2("Symbol cannot be used as Start symbol. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 ./
@@ -546,7 +546,7 @@ static void bad_start_symbol(void)
 /.$location
 static void act$rule_number(void)
 {
-    PRNTERR2(msg_line, "Misplaced block found in Start section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    PRNTERR2("Misplaced block found in Start section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 ./
@@ -555,7 +555,7 @@ static void act$rule_number(void)
 /.$location
 static void misplaced_keyword_found_in_START_section(void)
 {
-    PRNTERR2(msg_line, "Misplaced keyword found in START section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    PRNTERR2("Misplaced keyword found in START section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 ./
@@ -694,7 +694,7 @@ static void act$rule_number(void)
     {
         char tok_string[SYMBOL_SIZE + 1];
         restore_symbol(tok_string, kerror);
-        PRNTERR2(msg_line, "%s not declared or aliased to terminal symbol. Line %ld, column %d", tok_string, SYM2.start_line, SYM2.start_column);
+        PRNTERR2("%s not declared or aliased to terminal symbol. Line %ld, column %d", tok_string, SYM2.start_line, SYM2.start_column);
         exit(12);
     }
     register struct node *q = Allocate_node();
@@ -722,7 +722,7 @@ static void act$rule_number(void)
     {
         if (sym == eoft_image)
         {
-            PRNTERR2(msg_line, "End-of-file symbol cannot be used in rule. Line %ld, column %d", SYM2.start_line, SYM2.start_column);
+            PRNTERR2("End-of-file symbol cannot be used in rule. Line %ld, column %d", SYM2.start_line, SYM2.start_column);
             exit(12);
         }
         register struct node *q = Allocate_node();
@@ -745,7 +745,7 @@ static void act$rule_number(void)
 /.$location
 static void bad_first_symbol_in_RULES_section(void)
 {
-    PRNTERR2(msg_line, "First symbol in Rules section is not a valid left-hand side.\n Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    PRNTERR2("First symbol in Rules section is not a valid left-hand side.\n Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 ./
@@ -760,7 +760,7 @@ static void bad_first_symbol_in_RULES_section(void)
 /.$location
 static void rule_without_left_hand_side(void)
 {
-    PRNTERR2(msg_line, "Rule without left-hand-side.  Line %ld, column %d", SYM3.start_line, SYM3.start_column);
+    PRNTERR2("Rule without left-hand-side.  Line %ld, column %d", SYM3.start_line, SYM3.start_column);
     exit(12);
 }
 ./
@@ -773,7 +773,7 @@ static void rule_without_left_hand_side(void)
 /.$location
 static void act$rule_number(void)
 {
-    sprintf(msg_line, "Misplaced keyword found in Rules section Line %ld, column %d",  SYM2.start_line, SYM2.start_column);
+    PRNTWNG2("Misplaced keyword found in Rules section Line %ld, column %d",  SYM2.start_line, SYM2.start_column);
     exit(12);
 }
 ./
@@ -800,7 +800,7 @@ static void act$rule_number(void)
 /.$location
 static void misplaced_keyword_found_in_RULES_section(void)
 {
-    sprintf(msg_line,"Misplaced keyword found in RULES section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    PRNTWNG2("Misplaced keyword found in RULES section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 ./
@@ -850,13 +850,13 @@ static void act$rule_number(void)
 
         if (symbol == OMEGA)
         {
-            PRNTERR2(msg_line, "Symbol %s is undefined. Line %ld, column %d", SYM1.name, SYM1.start_line, SYM1.start_column);
+            PRNTERR2("Symbol %s is undefined. Line %ld, column %d", SYM1.name, SYM1.start_line, SYM1.start_column);
             exit(12);
         }
 
         if (symno[symbol].name_index != OMEGA)
         {
-            PRNTERR2(msg_line, "Symbol %s has been named more than once. Line %ld, column %d.", SYM1.name, SYM1.start_line, SYM1.start_column);
+            PRNTERR2("Symbol %s has been named more than once. Line %ld, column %d.", SYM1.name, SYM1.start_line, SYM1.start_column);
             exit(12);
         }
          symno[symbol].name_index = name_map(SYM3.name);
@@ -888,7 +888,7 @@ static void act$rule_number(void)
 /.$location
 static void misplaced_keyword_found_in_NAMES_section(void)
 {
-    PRNTERR2(msg_line, "Keyword  has been misplaced in NAMES section.  Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    PRNTERR2("Keyword  has been misplaced in NAMES section.  Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 ./
@@ -907,7 +907,7 @@ static void misplaced_keyword_found_in_NAMES_section(void)
 /.$location
 static void act$rule_number(void)
 {
-    PRNTERR2(msg_line, "Misplaced action block found in NAMES section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    PRNTERR2("Misplaced action block found in NAMES section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 ./
@@ -916,7 +916,7 @@ static void act$rule_number(void)
 /.$location
 static void act$rule_number(void)
 {
-    PRNTERR2(msg_line, "Misplaced macro name found in NAMES section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    PRNTERR2("Misplaced macro name found in NAMES section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
 ./

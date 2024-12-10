@@ -341,7 +341,7 @@ void print_item(const int item_no) {
   }
   if (item_table[item_no].symbol == empty) /* complete item */
   {
-    sprintf(tok, " (%d)", rule_no);
+    snprintf(tok, sizeof(tok), " (%d)", rule_no);
     if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE - 1) {
       fprintf(syslis, "\n%s", line);
       fill_in(line, offset, SPACE);
@@ -398,7 +398,7 @@ void print_state(const int state_no) {
         strcpy(line, "  ");
       }
       if (q->value != 0) {
-        sprintf(buffer, "%d ", q -> value);
+        snprintf(buffer, sizeof(buffer), "%d ", q -> value);
         strcat(line, buffer);
       }
     }

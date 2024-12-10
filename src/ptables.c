@@ -78,8 +78,8 @@ static void compute_shift_default(void) {
       shift_reduce_count += max_count;
     }
   }
-  PRNT2(msg_line, "Number of Shift entries saved by default: %d", shift_count);
-  PRNT2(msg_line, "Number of Shift/Reduce entries saved by default: %d", shift_reduce_count);
+  PRNT3("Number of Shift entries saved by default: %d", shift_count);
+  PRNT3("Number of Shift/Reduce entries saved by default: %d", shift_reduce_count);
   num_shifts -= shift_count;
   num_shift_reduces -= shift_reduce_count;
   num_entries = num_entries - shift_count - shift_reduce_count;
@@ -165,8 +165,8 @@ static void compute_goto_default(void) {
     }
     statset[state_no].go_to.size = k; /* Readjust size */
   }
-  PRNT2(msg_line, "Number of Goto entries saved by default: %d", goto_count);
-  PRNT2(msg_line, "Number of Goto/Reduce entries saved by default: %d", goto_reduce_count);
+  PRNT3("Number of Goto entries saved by default: %d", goto_count);
+  PRNT3("Number of Goto/Reduce entries saved by default: %d", goto_reduce_count);
   num_gotos -= goto_count;
   num_goto_reduces -= goto_reduce_count;
   num_entries = num_entries - goto_count - goto_reduce_count;
