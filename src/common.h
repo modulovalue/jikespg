@@ -144,8 +144,6 @@ struct OutputFiles {
 
 struct CLIOptions {
   bool list_bit;
-  // TODO • remove support for SLR(1) because it distracts us from the goals of jikespg.
-  bool slr_bit;
   bool edit_bit;
   // TODO • remove with an explicit comment what bits should be set to get verbose mode.
   bool verbose_bit;
@@ -183,7 +181,6 @@ struct CLIOptions {
 static struct CLIOptions init_cli_options() {
   return (struct CLIOptions){
     .list_bit = false,
-    .slr_bit = false,
     .edit_bit = false,
     .verbose_bit = false,
     .first_bit = false,
@@ -442,7 +439,7 @@ void mkrdcts(struct CLIOptions *cli_options);
 
 void la_traverse(int state_no, int goto_indx, int *stack_top);
 
-void remove_single_productions(bool slr_bit);
+void remove_single_productions();
 
 void mkstats(struct CLIOptions *cli_options);
 

@@ -142,7 +142,6 @@ static short *item_list = NULL;
 /// non-terminal can right-most produce itself. It is only constructed
 /// when LALR_LEVEL > 1.
 static bool *lalr_visited;
-static bool *slr_visited;
 static bool *symbol_seen;
 static bool *cyclic;
 static bool *rmpself;
@@ -544,47 +543,6 @@ static void print_relevant_lalr_items(const int state_no, const int item_no, con
   }
   free_nodes(v, tail);
   ffree(lalr_visited);
-}
-
-/// The procedure below is invoked to retrace a path that may have
-/// introduced the CONFLICT_SYMBOL in the FOLLOW set of the nonterminal
-/// that produces ITEM_NO.  Note that such a path must exist.
-static bool slr_trace(const int lhs_symbol, const int conflict_symbol, struct CLIOptions *cli_options) {
-  int item;
-  if (slr_visited[lhs_symbol]) {
-    return false;
-  }
-  slr_visited[lhs_symbol] = true;
-  for (item = nt_items[lhs_symbol]; item != NIL; item = item_list[item]) {
-    if (IS_IN_SET(first, item_table[item].suffix_index, conflict_symbol)) {
-      if (cli_options->trace_opt == TRACE_FULL) {
-        print_root_path(item);
-      }
-      break;
-    }
-    if (IS_IN_SET(first, item_table[item].suffix_index, empty)) {
-      if (slr_trace(rules[item_table[item].rule_number].lhs, conflict_symbol, cli_options)) {
-        break;
-      }
-    }
-  }
-  if (item != NIL) {
-    print_item(item);
-    return true;
-  } else {
-    return false;
-  }
-}
-
-/// This procedure is invoked to print an SLR path of items that leads
-/// to the conflict symbol.
-static void print_relevant_slr_items(const int item_no, const int conflict_symbol, struct CLIOptions *cli_options) {
-  slr_visited = Allocate_boolean_array(num_non_terminals);
-  slr_visited -= num_terminals + 1;
-  if (slr_trace(rules[item_table[item_no].rule_number].lhs, conflict_symbol, cli_options)) {
-  }
-  slr_visited += num_terminals + 1;
-  ffree(slr_visited);
 }
 
 /// This routine is invoked when a grammar contains conflicts, and the
@@ -1530,11 +1488,7 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
         printf("*** Shift/reduce conflict on \"%s\" with rule %d\n", temp, rule_no);
         fprintf(syslis, "\n*** Shift/reduce conflict on \"%s\" with rule %d\n", temp, rule_no);
         if (cli_options->trace_opt != NOTRACE) {
-          if (cli_options->slr_bit) {
-            print_relevant_slr_items(p->item, symbol, cli_options);
-          } else {
-            print_relevant_lalr_items(state_no, p->item, symbol, cli_options);
-          }
+          print_relevant_lalr_items(state_no, p->item, symbol, cli_options);
           print_item(p->item);
         }
       }
@@ -1551,19 +1505,11 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
         printf("*** Reduce/reduce conflict on \"%s\" between rule %d and %d\n", temp, n, rule_no);
         fprintf(syslis, "\n*** Reduce/reduce conflict on \"%s\" between rule %d and %d\n", temp, n, rule_no);
         if (cli_options->trace_opt != NOTRACE) {
-          if (cli_options->slr_bit) {
-            print_relevant_slr_items(p->item1, symbol, cli_options);
-          } else {
-            print_relevant_lalr_items(state_no, p->item1, symbol, cli_options);
-          }
+          print_relevant_lalr_items(state_no, p->item1, symbol, cli_options);
           print_item(p->item1);
           fill_in(msg_line, PRINT_LINE_SIZE - 3, '-');
           fprintf(syslis, "\n%s", msg_line);
-          if (cli_options->slr_bit) {
-            print_relevant_slr_items(p->item2, symbol, cli_options);
-          } else {
-            print_relevant_lalr_items(state_no, p->item2, symbol, cli_options);
-          }
+          print_relevant_lalr_items(state_no, p->item2, symbol, cli_options);
           print_item(p->item2);
         }
       }

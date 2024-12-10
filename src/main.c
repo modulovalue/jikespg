@@ -64,8 +64,6 @@ int main(const int argc, char *argv[]) {
         "-scopes                                   \n"
         "-shift-default                            \n"
         "-single-productions                       \n"
-        // TODO • remove?
-        "-slr                                      \n"
         "-states                                   \n"
         "-table=<space|time>                       \n"
         "-trace=<CONFLICTS|FULL|NO>                \n"

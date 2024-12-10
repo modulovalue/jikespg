@@ -549,11 +549,7 @@ void mkrdcts(struct CLIOptions *cli_options) {
   // We call COMPUTE_READ to perform the following tasks:
   // 1) Count how many elements are needed in LA_ELEMENT: LA_TOP
   // 2) Allocate space for and initialize LA_SET and LA_INDEX
-  if (cli_options->slr_bit) {
-    // Do nothing.
-  } else {
-    compute_read(cli_options);
-  }
+  compute_read(cli_options);
   // Allocate space for REDUCE which will be used to map each
   // into its reduce map. We also initialize RULE_COUNT which
   // will be used to count the number of reduce actions on each
@@ -615,12 +611,7 @@ void mkrdcts(struct CLIOptions *cli_options) {
         // for all complete items
         item_no = item_ptr->value;
         rule_no = item_table[item_no].rule_number;
-        if (cli_options->slr_bit) {
-          // SLR table? use Follow
-          ASSIGN_SET(look_ahead, 0, follow, rules[rule_no].lhs);
-        } else {
-          compute_la(state_no, item_no, look_ahead);
-        }
+        compute_la(state_no, item_no, look_ahead);
         for ALL_TERMINALS3(symbol) {
           // for all symbols in la set
           if (IS_ELEMENT(look_ahead, symbol)) {
@@ -765,7 +756,7 @@ void mkrdcts(struct CLIOptions *cli_options) {
   cli_options->lalr_level = highest_level;
   // If the removal of single productions is requested, do that.
   if (cli_options->single_productions_bit) {
-    remove_single_productions(cli_options->slr_bit);
+    remove_single_productions();
   }
   // If either more than one lookahead was needed or the removal
   // of single productions was requested, the automaton was
@@ -788,25 +779,17 @@ void mkrdcts(struct CLIOptions *cli_options) {
     printf("This grammar is not LR(K).\n");
     fprintf(syslis, "This grammar is not LR(K).\n");
   } else if (num_rr_conflicts > 0 || num_sr_conflicts > 0) {
-    if (cli_options->slr_bit) {
-      printf("This grammar is not SLR(1).\n");
-      fprintf(syslis, "This grammar is not SLR(1).\n");
+    if (highest_level != INFINITY) {
+      printf("This grammar is not LALR(%d).\n", highest_level);
+      fprintf(syslis, "This grammar is not LALR(%d).\n", highest_level);
     } else {
-      if (highest_level != INFINITY) {
-        printf("This grammar is not LALR(%d).\n", highest_level);
-        fprintf(syslis, "This grammar is not LALR(%d).\n", highest_level);
-      } else {
-        printf("This grammar is not LALR(K).\n");
-        fprintf(syslis, "This grammar is not LALR(K).\n");
-      }
+      printf("This grammar is not LALR(K).\n");
+      fprintf(syslis, "This grammar is not LALR(K).\n");
     }
   } else {
     if (highest_level == 0) {
       printf("This grammar is LR(0).\n");
       fprintf(syslis, "This grammar is LR(0).\n");
-    } else if (cli_options->slr_bit) {
-      printf("This grammar is SLR(1).\n");
-      fprintf(syslis, "This grammar is SLR(1).\n");
     } else {
       printf("This grammar is LALR(%d).\n", highest_level);
       fprintf(syslis, "This grammar is LALR(%d).\n", highest_level);

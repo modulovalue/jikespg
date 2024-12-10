@@ -146,7 +146,7 @@ void compute_sp_map(const int symbol) {
 /// transition on SYMBOL is a lookahead-shift, indicating that the
 /// parser requires extra lookahead on a particular symbol, the set of
 /// reduce actions for that symbol is calculated as the empty set.
-void compute_sp_action(const short state_no, const short symbol, const short action, const bool slr_bit) {
+void compute_sp_action(const short state_no, const short symbol, const short action) {
   int rule_no;
   int lhs_symbol;
   int k;
@@ -172,17 +172,13 @@ void compute_sp_action(const short state_no, const short symbol, const short act
       rule_no = item_table[item_no].rule_number;
       lhs_symbol = rules[rule_no].lhs;
       if (RHS_SIZE(rule_no) == 1 && lhs_symbol != accept_image) {
-        if (slr_bit) {
-          ASSIGN_SET(look_ahead, 0, follow, lhs_symbol);
-        } else {
-          i = index_of[lhs_symbol];
-          k = go_to.map[i].laptr;
-          if (la_index[k] == OMEGA) {
-            int stack_top = 0;
-            la_traverse(state_no, i, &stack_top);
-          }
-          ASSIGN_SET(look_ahead, 0, la_set, k);
+        i = index_of[lhs_symbol];
+        k = go_to.map[i].laptr;
+        if (la_index[k] == OMEGA) {
+          int stack_top = 0;
+          la_traverse(state_no, i, &stack_top);
         }
+        ASSIGN_SET(look_ahead, 0, la_set, k);
         RESET_BIT(look_ahead, empty); /* empty not valid look-ahead */
         for ALL_TERMINALS3(i) {
           if (IS_ELEMENT(look_ahead, i)) {
@@ -202,17 +198,13 @@ void compute_sp_action(const short state_no, const short symbol, const short act
     rule_no = -action;
     if (RHS_SIZE(rule_no) == 1) {
       lhs_symbol = rules[rule_no].lhs;
-      if (slr_bit) {
-        ASSIGN_SET(look_ahead, 0, follow, lhs_symbol);
-      } else {
-        i = index_of[lhs_symbol];
-        k = go_to.map[i].laptr;
-        if (la_index[k] == OMEGA) {
-          int stack_top = 0;
-          la_traverse(state_no, i, &stack_top);
-        }
-        ASSIGN_SET(look_ahead, 0, la_set, k);
+      i = index_of[lhs_symbol];
+      k = go_to.map[i].laptr;
+      if (la_index[k] == OMEGA) {
+        int stack_top = 0;
+        la_traverse(state_no, i, &stack_top);
       }
+      ASSIGN_SET(look_ahead, 0, la_set, k);
       RESET_BIT(look_ahead, empty); /* empty not valid look-ahead */
       for ALL_TERMINALS3(i) {
         if (IS_ELEMENT(look_ahead, i)) {
@@ -501,7 +493,7 @@ short sp_state_map(const int rule_head, const int item_no, const int sp_rule_cou
 
 /// This program is invoked to remove as many single production actions as
 /// possible for a conflict-free automaton.
-void remove_single_productions(bool slr_bit) {
+void remove_single_productions() {
   struct goto_header_type go_to;
   struct shift_header_type sh;
   struct reduce_header_type red;
@@ -688,7 +680,7 @@ void remove_single_productions(bool slr_bit) {
       for (int i = 1; i <= go_to.size; i++) {
         symbol = go_to.map[i].symbol;
         if (IS_SP_RHS(symbol)) {
-          compute_sp_action(state_no, symbol, go_to.map[i].action, slr_bit);
+          compute_sp_action(state_no, symbol, go_to.map[i].action);
           symbol_list[symbol] = symbol_root;
           symbol_root = symbol;
         }
@@ -697,7 +689,7 @@ void remove_single_productions(bool slr_bit) {
         symbol = sh.map[i].symbol;
         index_of[symbol] = i;
         if (IS_SP_RHS(symbol)) {
-          compute_sp_action(state_no, symbol, sh.map[i].action, slr_bit);
+          compute_sp_action(state_no, symbol, sh.map[i].action);
           symbol_list[symbol] = symbol_root;
           symbol_root = symbol;
         }
@@ -712,7 +704,7 @@ void remove_single_productions(bool slr_bit) {
           lhs_symbol = rules[rule_no].lhs;
           if (index_of[lhs_symbol] != OMEGA) {
             if (symbol_list[lhs_symbol] == OMEGA) {
-              compute_sp_action(state_no, lhs_symbol, go_to.map[index_of[lhs_symbol]].action, slr_bit);
+              compute_sp_action(state_no, lhs_symbol, go_to.map[index_of[lhs_symbol]].action);
               symbol_list[lhs_symbol] = symbol_root;
               symbol_root = lhs_symbol;
             }

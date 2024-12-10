@@ -234,9 +234,6 @@ void options(char *file_prefix, struct CLIOptions *cli_options) {
         cli_options->shift_default_bit = flag;
       } else if (memcmp("SINGLEPRODUCTIONS", token, token_len) == 0) {
         cli_options->single_productions_bit = flag;
-      } else if (memcmp("SLR", token, token_len) == 0) {
-        cli_options->slr_bit = flag;
-        cli_options->lalr_level = 1;
       } else if (memcmp("STATES", token, token_len) == 0) {
         cli_options->states_bit = flag;
       } else if (memcmp("VERBOSE", token, token_len) == 0) {
@@ -307,7 +304,6 @@ void options(char *file_prefix, struct CLIOptions *cli_options) {
           temp[MAX_PARM_SIZE - 1] = '\0';
         }
         if (verify_is_digit(temp)) {
-          cli_options->slr_bit = false;
           cli_options->lalr_level = atoi(temp);
           if (cli_options->lalr_level > MAXIMUM_LA_LEVEL) {
             PRNTWNG2("\"%s\" exceeds maximum value of %d allowed for %s", temp, MAXIMUM_LA_LEVEL, token);
@@ -316,7 +312,6 @@ void options(char *file_prefix, struct CLIOptions *cli_options) {
         } else if (memcmp(translate(temp, token_len), "MAXIMUM", token_len) != 0) {
           PRNTERR2("\"%s\" is an invalid value for %s", temp, token);
         } else if (memcmp("MAXIMUM", translate(temp, token_len), token_len) == 0) {
-          cli_options->slr_bit = false;
           cli_options->lalr_level = MAXIMUM_LA_LEVEL;
         }
       } else if (memcmp(token, "MAXDISTANCE", token_len) == 0) {
@@ -550,11 +545,7 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
   }
   sprintf(opt_string[++top], "HBLOCKB=%s", hblockb);
   sprintf(opt_string[++top], "HBLOCKE=%s", hblocke);
-  if (cli_options->slr_bit) {
-    // Do nothing.
-  } else {
-    sprintf(opt_string[++top], "LALR=%d", cli_options->lalr_level);
-  }
+  sprintf(opt_string[++top], "LALR=%d", cli_options->lalr_level);
   if (cli_options->list_bit) {
     strcpy(opt_string[++top], "LIST");
   } else {
@@ -595,9 +586,6 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
     strcpy(opt_string[++top], "SINGLE-PRODUCTIONS");
   } else {
     strcpy(opt_string[++top], "NOSINGLE-PRODUCTIONS");
-  }
-  if (cli_options->slr_bit) {
-    strcpy(opt_string[++top], "SLR");
   }
   sprintf(opt_string[++top], "STACK-SIZE=%d", cli_options->stack_size);
   if (cli_options->states_bit) {

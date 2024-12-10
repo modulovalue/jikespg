@@ -1145,7 +1145,7 @@ void mkbasic(struct CLIOptions* cli_options) {
   //   2) if we have to print the FOLLOW map
   //   3) Error-maps are requested
   //   4) There are more than one starting symbol.
-  if (cli_options->slr_bit || cli_options->follow_bit || error_maps_bit || next_rule[lhs_rule[accept_image]] != lhs_rule[accept_image]) {
+  if (cli_options->follow_bit || error_maps_bit || next_rule[lhs_rule[accept_image]] != lhs_rule[accept_image]) {
     follow = (SET_PTR) calloc(num_non_terminals, term_set_size * sizeof(BOOLEAN_CELL));
     if (follow == NULL)
       nospace(__FILE__, __LINE__);
