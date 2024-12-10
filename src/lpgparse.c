@@ -207,13 +207,13 @@ void options(char *file_prefix, struct CLIOptions* cli_options) {
         flag = true;
       }
       if (memcmp("BYTE", token, token_len) == 0) {
-        byte_bit = flag;
+        cli_options->byte_bit = flag;
       } else if (memcmp("CONFLICTS", token, token_len) == 0) {
         cli_options->conflicts_bit = flag;
       } else if (memcmp("DEBUG", token, token_len) == 0) {
-        debug_bit = flag;
+        cli_options->debug_bit = flag;
       } else if (memcmp("DEFERRED", token, token_len) == 0) {
-        deferred_bit = flag;
+        cli_options->deferred_bit = flag;
       } else if (memcmp("EDIT", token, token_len) == 0) {
         cli_options->edit_bit = flag;
       } else if (memcmp("ERRORMAPS", token, token_len) == 0) {
@@ -223,21 +223,21 @@ void options(char *file_prefix, struct CLIOptions* cli_options) {
       } else if (memcmp("FOLLOW", token, token_len) == 0) {
         cli_options->follow_bit = flag;
       } else if (memcmp("GOTODEFAULT", token, token_len) == 0) {
-        goto_default_bit = flag;
+        cli_options->goto_default_bit = flag;
       } else if (memcmp("HALFWORD", token, token_len) == 0) {
-        byte_bit = !flag;
+        cli_options->byte_bit = !flag;
       } else if (memcmp("LIST", token, token_len) == 0) {
         cli_options->list_bit = flag;
       } else if (memcmp("NTCHECK", token, token_len) == 0) {
         cli_options->nt_check_bit = flag;
       } else if (memcmp("READREDUCE", token, token_len) == 0) {
-        read_reduce_bit = flag;
+        cli_options->read_reduce_bit = flag;
       } else if (memcmp("SCOPES", token, token_len) == 0) {
         cli_options->scopes_bit = flag;
       } else if (memcmp("SHIFTDEFAULT", token, token_len) == 0) {
-        shift_default_bit = flag;
+        cli_options->shift_default_bit = flag;
       } else if (memcmp("SINGLEPRODUCTIONS", token, token_len) == 0) {
-        single_productions_bit = flag;
+        cli_options->single_productions_bit = flag;
       } else if (memcmp("SLR", token, token_len) == 0) {
         cli_options->slr_bit = flag;
         lalr_level = 1;
@@ -246,7 +246,7 @@ void options(char *file_prefix, struct CLIOptions* cli_options) {
       } else if (memcmp("VERBOSE", token, token_len) == 0) {
         cli_options->verbose_bit = flag;
       } else if (memcmp("WARNINGS", token, token_len) == 0) {
-        warnings_bit = flag;
+        cli_options->warnings_bit = flag;
       } else if (memcmp("XREF", token, token_len) == 0) {
         cli_options->xref_bit = flag;
       } else {
@@ -398,8 +398,7 @@ void options(char *file_prefix, struct CLIOptions* cli_options) {
 /* if they are (it is an) "options" line(s).  If so, the options are        */
 /* processed.  Then, we process user-supplied options if there are any.  In */
 /* any case, the options in effect are printed.                             */
-struct CLIOptions process_options_lines(char *grm_file, struct OutputFiles *output_files, char *file_prefix) {
-  struct CLIOptions cli_options = init_cli_options();
+void process_options_lines(char *grm_file, struct OutputFiles *output_files, char *file_prefix, struct CLIOptions* cli_options) {
   char old_parm[MAX_LINE_SIZE + 1];
   char output_line[PRINT_LINE_SIZE + 1];
   char opt_string[60][OUTPUT_PARM_SIZE + 1];
@@ -434,7 +433,7 @@ struct CLIOptions process_options_lines(char *grm_file, struct OutputFiles *outp
       *line_end = '\0';
       PRNT(p2); /* Print options line */
       strcpy(parm, p2 + strlen(ooptions));
-      options(file_prefix, &cli_options); /* Process hard-coded options */
+      options(file_prefix, cli_options); /* Process hard-coded options */
     } else {
       p2 = p1; /* make p2 point to first character */
       break;
@@ -457,29 +456,29 @@ struct CLIOptions process_options_lines(char *grm_file, struct OutputFiles *outp
   }
   fprintf(syslis, "\n");
   strcpy(parm, old_parm);
-  options(file_prefix, &cli_options); /* Process new options passed directly to program */
+  options(file_prefix, cli_options); /* Process new options passed directly to program */
   /* Deferred parsing without error maps is useless*/
   if (!error_maps_bit) {
-    deferred_bit = false;
+    cli_options->deferred_bit = false;
   }
   if (act_file[0] == '\0') {
-    sprintf(act_file, "%sact.%s", file_prefix, cli_options.java_bit ? "java" : "h");
+    sprintf(act_file, "%sact.%s", file_prefix, cli_options->java_bit ? "java" : "h");
   }
   if (hact_file[0] == '\0') {
-    sprintf(hact_file, "%shdr.%s", file_prefix, cli_options.java_bit ? "java" : "h");
+    sprintf(hact_file, "%shdr.%s", file_prefix, cli_options->java_bit ? "java" : "h");
   }
-  sprintf(output_files->sym_file, "%ssym.%s", file_prefix, cli_options.java_bit ? "java" : "h");
-  sprintf(output_files->def_file, "%sdef.%s", file_prefix, cli_options.java_bit ? "java" : "h");
-  sprintf(output_files->prs_file, "%sprs.%s", file_prefix, cli_options.java_bit ? "java" : "h");
-  sprintf(output_files->dcl_file, "%sdcl.%s", file_prefix, cli_options.java_bit ? "java" : "h");
+  sprintf(output_files->sym_file, "%ssym.%s", file_prefix, cli_options->java_bit ? "java" : "h");
+  sprintf(output_files->def_file, "%sdef.%s", file_prefix, cli_options->java_bit ? "java" : "h");
+  sprintf(output_files->prs_file, "%sprs.%s", file_prefix, cli_options->java_bit ? "java" : "h");
+  sprintf(output_files->dcl_file, "%sdcl.%s", file_prefix, cli_options->java_bit ? "java" : "h");
   /* turn everything on */
-  if (cli_options.verbose_bit) {
-    cli_options.first_bit = true;
-    cli_options.follow_bit = true;
-    cli_options.list_bit = true;
-    cli_options.states_bit = true;
-    cli_options.xref_bit = true;
-    warnings_bit = true;
+  if (cli_options->verbose_bit) {
+    cli_options->first_bit = true;
+    cli_options->follow_bit = true;
+    cli_options->list_bit = true;
+    cli_options->states_bit = true;
+    cli_options->xref_bit = true;
+    cli_options->warnings_bit = true;
   }
   /*                          PRINT OPTIONS:                                   */
   /* Here we print all options set by the user.  As of now, only about 48      */
@@ -490,10 +489,10 @@ struct CLIOptions process_options_lines(char *grm_file, struct OutputFiles *outp
   sprintf(opt_string[++top], "ACTFILENAME=%s", act_file);
   sprintf(opt_string[++top], "BLOCKB=%s", blockb);
   sprintf(opt_string[++top], "BLOCKE=%s", blocke);
-  if (byte_bit) {
+  if (cli_options->byte_bit) {
     strcpy(opt_string[++top], "BYTE");
   }
-  if (cli_options.conflicts_bit) {
+  if (cli_options->conflicts_bit) {
     strcpy(opt_string[++top], "CONFLICTS");
   } else {
     strcpy(opt_string[++top], "NOCONFLICTS");
@@ -503,17 +502,17 @@ struct CLIOptions process_options_lines(char *grm_file, struct OutputFiles *outp
   } else {
     sprintf(opt_string[++top], "DEFAULT=%d", default_opt);
   }
-  if (debug_bit) {
+  if (cli_options->debug_bit) {
     strcpy(opt_string[++top], "DEBUG");
   } else {
     strcpy(opt_string[++top], "NODEBUG");
   }
-  if (deferred_bit) {
+  if (cli_options->deferred_bit) {
     strcpy(opt_string[++top], "DEFERRED");
   } else {
     strcpy(opt_string[++top], "NODEFERRED");
   }
-  if (cli_options.edit_bit) {
+  if (cli_options->edit_bit) {
     strcpy(opt_string[++top], "EDIT");
   } else {
     strcpy(opt_string[++top], "NOEDIT");
@@ -525,42 +524,42 @@ struct CLIOptions process_options_lines(char *grm_file, struct OutputFiles *outp
   }
   sprintf(opt_string[++top], "ESCAPE=%c", escape);
   sprintf(opt_string[++top], "FILE-PREFIX=%s", file_prefix);
-  if (cli_options.first_bit) {
+  if (cli_options->first_bit) {
     strcpy(opt_string[++top], "FIRST");
   } else {
     strcpy(opt_string[++top], "NOFIRST");
   }
-  if (cli_options.follow_bit) {
+  if (cli_options->follow_bit) {
     strcpy(opt_string[++top], "FOLLOW");
   } else {
     strcpy(opt_string[++top], "NOFOLLOW");
   }
-  if (cli_options.c_bit) {
+  if (cli_options->c_bit) {
     sprintf(opt_string[++top], "GENERATE-PARSER=C");
-  } else if (cli_options.cpp_bit) {
+  } else if (cli_options->cpp_bit) {
     sprintf(opt_string[++top], "GENERATE-PARSER=CPP");
-  } else if (cli_options.java_bit) {
+  } else if (cli_options->java_bit) {
     sprintf(opt_string[++top], "GENERATE-PARSER=JAVA");
   } else {
     strcpy(opt_string[++top], "NOGENERATE-PARSER");
   }
-  if (goto_default_bit) {
+  if (cli_options->goto_default_bit) {
     strcpy(opt_string[++top], "GOTODEFAULT");
   } else {
     strcpy(opt_string[++top], "NOGOTODEFAULT");
   }
   sprintf(opt_string[++top], "HACTFILENAME=%s", hact_file);
-  if (!byte_bit) {
+  if (!cli_options->byte_bit) {
     strcpy(opt_string[++top], "HALFWORD");
   }
   sprintf(opt_string[++top], "HBLOCKB=%s", hblockb);
   sprintf(opt_string[++top], "HBLOCKE=%s", hblocke);
-  if (cli_options.slr_bit) {
+  if (cli_options->slr_bit) {
     // Do nothing.
   } else {
     sprintf(opt_string[++top], "LALR=%d", lalr_level);
   }
-  if (cli_options.list_bit) {
+  if (cli_options->list_bit) {
     strcpy(opt_string[++top], "LIST");
   } else {
     strcpy(opt_string[++top], "NOLIST");
@@ -574,38 +573,38 @@ struct CLIOptions process_options_lines(char *grm_file, struct OutputFiles *outp
   } else {
     strcpy(opt_string[++top], "NAMES=OPTIMIZED");
   }
-  if (cli_options.nt_check_bit) {
+  if (cli_options->nt_check_bit) {
     strcpy(opt_string[++top], "NT-CHECK");
   } else {
     strcpy(opt_string[++top], "NONT-CHECK");
   }
   sprintf(opt_string[++top], "ORMARK=%c", ormark);
   sprintf(opt_string[++top], "PREFIX=%s", prefix);
-  if (read_reduce_bit) {
+  if (cli_options->read_reduce_bit) {
     strcpy(opt_string[++top], "READ-REDUCE");
   } else {
     strcpy(opt_string[++top], "NOREAD-REDUCE");
   }
-  if (cli_options.scopes_bit) {
+  if (cli_options->scopes_bit) {
     strcpy(opt_string[++top], "SCOPES");
   } else {
     strcpy(opt_string[++top], "NOSCOPES");
   }
-  if (shift_default_bit) {
+  if (cli_options->shift_default_bit) {
     strcpy(opt_string[++top], "SHIFT-DEFAULT");
   } else {
     strcpy(opt_string[++top], "NOSHIFT-DEFAULT");
   }
-  if (single_productions_bit) {
+  if (cli_options->single_productions_bit) {
     strcpy(opt_string[++top], "SINGLE-PRODUCTIONS");
   } else {
     strcpy(opt_string[++top], "NOSINGLE-PRODUCTIONS");
   }
-  if (cli_options.slr_bit) {
+  if (cli_options->slr_bit) {
     strcpy(opt_string[++top], "SLR");
   }
   sprintf(opt_string[++top], "STACK-SIZE=%d", stack_size);
-  if (cli_options.states_bit) {
+  if (cli_options->states_bit) {
     strcpy(opt_string[++top], "STATES");
   } else {
     strcpy(opt_string[++top], "NOSTATES");
@@ -625,17 +624,17 @@ struct CLIOptions process_options_lines(char *grm_file, struct OutputFiles *outp
   } else {
     strcpy(opt_string[++top], "TRACE=FULL");
   }
-  if (cli_options.verbose_bit) {
+  if (cli_options->verbose_bit) {
     strcpy(opt_string[++top], "VERBOSE");
   } else {
     strcpy(opt_string[++top], "NOVERBOSE");
   }
-  if (warnings_bit) {
+  if (cli_options->warnings_bit) {
     strcpy(opt_string[++top], "WARNINGS");
   } else {
     strcpy(opt_string[++top], "NOWARNINGS");
   }
-  if (cli_options.xref_bit) {
+  if (cli_options->xref_bit) {
     strcpy(opt_string[++top], "XREF");
   } else {
     strcpy(opt_string[++top], "NOXREF");
@@ -654,12 +653,12 @@ struct CLIOptions process_options_lines(char *grm_file, struct OutputFiles *outp
   }
   PRNT(output_line);
   PRNT("");
-  if (warnings_bit) {
+  if (cli_options->warnings_bit) {
     if (table_opt == OPTIMIZE_SPACE) {
       if (default_opt < 4) {
         PRNTWNG("DEFAULT_OPTion requested must be >= 4");
       }
-    } else if (shift_default_bit) {
+    } else if (cli_options->shift_default_bit) {
       PRNTWNG("SHIFT-DEFAULT option is only valid for Space tables");
     }
   }
@@ -706,7 +705,6 @@ struct CLIOptions process_options_lines(char *grm_file, struct OutputFiles *outp
     PRNT2(msg_line, "Input process aborted at line %d ...", line_no);
     exit(12);
   }
-  return cli_options;
 }
 
 /* HASH takes as argument a symbol and hashes it into a location in          */
@@ -848,7 +846,7 @@ int hblocke_len;
 #define min(x, y) ((x) < (y) ? (x) : (y))
 
 /* SCANNER scans the input stream and returns the next input token.          */
-void scanner(char *grm_file) {
+void scanner(char *grm_file, struct CLIOptions* cli_options) {
   register int i;
   char tok_string[SYMBOL_SIZE + 1];
 scan_token:
@@ -990,7 +988,7 @@ scan_token:
         p2++;
       }
       ct_length = p2 - p1 - 1;
-      if (warnings_bit) {
+      if (cli_options->warnings_bit) {
         memcpy(tok_string, p1, ct_length);
         tok_string[ct_length] = '\0';
         PRNTWNG2(msg_line, "Symbol \"%s\" referenced in line %ld requires a closing quote", tok_string, ct_start_line);
@@ -1166,7 +1164,7 @@ check_symbol_length:
     ct_length = SYMBOL_SIZE;
     memcpy(tok_string, p1, ct_length);
     tok_string[ct_length] = '\0';
-    if (warnings_bit) {
+    if (cli_options->warnings_bit) {
       if (symbol_image(tok_string) == OMEGA) {
         PRNTWNG2(msg_line, "Length of Symbol \"%s\" in line %d exceeds maximum of ", tok_string, line_no);
       }
@@ -1520,7 +1518,7 @@ next_line: {
 /* This procedure takes as argument a macro definition.  If the name of the */
 /* macro is one of the predefined names, it issues an error.  Otherwise, it */
 /* inserts the macro definition into the table headed by MACRO_TABLE.       */
-void mapmacro(const int def_index) {
+void mapmacro(const int def_index, struct CLIOptions* cli_options) {
   if (strcmp(defelmt[def_index].name, krule_text) == 0 ||
       strcmp(defelmt[def_index].name, krule_number) == 0 ||
       strcmp(defelmt[def_index].name, knum_rules) == 0 ||
@@ -1536,7 +1534,7 @@ void mapmacro(const int def_index) {
     const register int i = hash(defelmt[def_index].name);
     for (register int j = macro_table[i]; j != NIL; j = defelmt[j].next) {
       if (strcmp(defelmt[j].name, defelmt[def_index].name) == 0) {
-        if (warnings_bit) {
+        if (cli_options->warnings_bit) {
           PRNTWNG2(msg_line, "Redefinition of macro \"%s\" in line %ld", defelmt[def_index].name, defelmt[def_index].start_line);
           break;
         }
@@ -1692,7 +1690,7 @@ void display_input(void) {
 }
 
 /*     Process all semantic actions and generate action file.               */
-void process_actions(char *grm_file, const struct CLIOptions *cli_options) {
+void process_actions(char *grm_file, struct CLIOptions *cli_options) {
   register int k;
   register int len;
   register char *p;
@@ -1764,7 +1762,7 @@ void process_actions(char *grm_file, const struct CLIOptions *cli_options) {
     for (p = defelmt[i].name; *p != '\0'; p++) {
       *p = isupper(*p) ? tolower(*p) : *p;
     }
-    mapmacro(i);
+    mapmacro(i, cli_options);
   }
   /* If LISTING was requested, invoke listing procedure.                      */
   if (cli_options->list_bit) {
@@ -1858,7 +1856,7 @@ void process_actions(char *grm_file, const struct CLIOptions *cli_options) {
 }
 
 /*          Actions to be taken if grammar is successfully parsed.          */
-void accept_action(char *grm_file, const struct CLIOptions *cli_options) {
+void accept_action(char *grm_file, struct CLIOptions *cli_options) {
   if (rulehdr == NULL) {
     printf("Informative: Empty grammar read in. Processing stopped.\n");
     fprintf(syslis, "***Informative: Empty grammar read in. Processing stopped.\n");
@@ -2017,7 +2015,7 @@ static void build_symno(void) {
 }
 
 /* This procedure opens all relevant files and processes the input grammar.*/
-struct CLIOptions process_input(char *grm_file, char *lis_file, struct OutputFiles *output_files, const int argc, char *argv[], char *file_prefix) {
+void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_files, const int argc, char *argv[], char *file_prefix, struct CLIOptions* cli_options) {
   // Parse args.
   {
     /* If options are passed to the program, copy them into "parm". */
@@ -2092,8 +2090,6 @@ struct CLIOptions process_input(char *grm_file, char *lis_file, struct OutputFil
     code['\f'] = SPACE_CODE;
   }
 
-  struct CLIOptions cli_options;
-
   // Init grammar.
   {
     /* This routine is invoked to allocate space for the global structures       */
@@ -2124,7 +2120,7 @@ struct CLIOptions process_input(char *grm_file, char *lis_file, struct OutputFil
       fprintf(stderr, "Input file \"%s\" containing grammar is empty, undefined, or invalid\n", grm_file);
       exit(12);
     }
-    cli_options = process_options_lines(grm_file, output_files, file_prefix);
+    process_options_lines(grm_file, output_files, file_prefix, cli_options);
     eolt_image = OMEGA;
     blockb_len = strlen(blockb);
     blocke_len = strlen(blocke);
@@ -2158,7 +2154,7 @@ struct CLIOptions process_input(char *grm_file, char *lis_file, struct OutputFil
     /* LALR(1) parser table generated by LPG to recognize the grammar which it   */
     /* places in the rulehdr structure.                                          */
     short state_stack[STACK_SIZE];
-    scanner(grm_file); /* Get first token */
+    scanner(grm_file, cli_options); /* Get first token */
     register int act = START_STATE;
   process_terminal:
     /* Note that this driver assumes that the tables are LPG SPACE    */
@@ -2193,13 +2189,13 @@ struct CLIOptions process_input(char *grm_file, char *lis_file, struct OutputFil
           }
         }
       }
-      scanner(grm_file);
+      scanner(grm_file, cli_options);
       if (act < ACCEPT_ACTION) {
         goto process_terminal;
       }
       act -= ERROR_ACTION;
     } else if (act == ACCEPT_ACTION) {
-      accept_action(grm_file, &cli_options);
+      accept_action(grm_file, cli_options);
       goto end;
     } else {
       // error_action
@@ -2250,5 +2246,5 @@ struct CLIOptions process_input(char *grm_file, char *lis_file, struct OutputFil
   }
 
   end:
-  return cli_options;
+  {}
 }

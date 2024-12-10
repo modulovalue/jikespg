@@ -151,7 +151,60 @@ struct OutputFiles {
   char dcl_file[80];
 };
 
-struct CLIOptions process_input(char *grm_file, char *lis_file, struct OutputFiles *output_files, const int argc, char *argv[], char *file_prefix);
+struct CLIOptions {
+  bool list_bit;
+  // TODO • remove support for SLR(1)?
+  bool slr_bit;
+  bool edit_bit;
+  bool verbose_bit;
+  bool first_bit;
+  bool follow_bit;
+  bool states_bit;
+  bool xref_bit;
+  bool nt_check_bit;
+  bool conflicts_bit;
+  bool c_bit;
+  bool cpp_bit;
+  bool java_bit;
+  bool scopes_bit;
+  bool read_reduce_bit;
+  bool goto_default_bit;
+  bool shift_default_bit;
+  bool byte_bit;
+  bool warnings_bit;
+  bool debug_bit;
+  bool deferred_bit;
+  bool single_productions_bit;
+};
+
+static struct CLIOptions init_cli_options() {
+  return (struct CLIOptions) {
+    .list_bit = false,
+    .slr_bit = false,
+    .edit_bit = false,
+    .verbose_bit = false,
+    .first_bit = false,
+    .follow_bit = false,
+    .states_bit = false,
+    .xref_bit = false,
+    .nt_check_bit = false,
+    .conflicts_bit = true,
+    .c_bit = false,
+    .cpp_bit = false,
+    .java_bit = false,
+    .scopes_bit = false,
+    .read_reduce_bit = true,
+    .goto_default_bit = true,
+    .shift_default_bit = false,
+    .byte_bit = true,
+    .warnings_bit = true,
+    .debug_bit = false,
+    .deferred_bit = true,
+    .single_productions_bit = false,
+  };
+}
+
+void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_files, int argc, char *argv[], char *file_prefix, struct CLIOptions* cli_options);
 
 extern char prefix[];
 extern char suffix[];
@@ -190,52 +243,7 @@ static bool IS_A_NON_TERMINAL(const int i) {
   return i > num_terminals;
 }
 
-struct CLIOptions {
-  bool list_bit;
-  // TODO • remove support for SLR(1)?
-  bool slr_bit;
-  bool edit_bit;
-  bool verbose_bit;
-  bool first_bit;
-  bool follow_bit;
-  bool states_bit;
-  bool xref_bit;
-  bool nt_check_bit;
-  bool conflicts_bit;
-  bool c_bit;
-  bool cpp_bit;
-  bool java_bit;
-  bool scopes_bit;
-};
-
-static struct CLIOptions init_cli_options() {
-  return (struct CLIOptions) {
-    .list_bit = false,
-    .slr_bit = false,
-    .edit_bit = false,
-    .verbose_bit = false,
-    .first_bit = false,
-    .follow_bit = false,
-    .states_bit = false,
-    .xref_bit = false,
-    .nt_check_bit = false,
-    .conflicts_bit = true,
-    .c_bit = false,
-    .cpp_bit = false,
-    .java_bit = false,
-    .scopes_bit = false,
-  };
-}
-
-extern bool read_reduce_bit;
-extern bool goto_default_bit;
-extern bool shift_default_bit;
-extern bool byte_bit;
-extern bool warnings_bit;
-extern bool single_productions_bit;
 extern bool error_maps_bit;
-extern bool debug_bit;
-extern bool deferred_bit;
 
 extern int lalr_level;
 extern int default_opt;
@@ -470,7 +478,7 @@ void sortdes(long array[], long count[], long low, long high, long max);
 
 void reallocate(struct CLIOptions* cli_options);
 
-void resolve_conflicts(int state_no, struct node **action, const short *symbol_list, int reduce_root, bool slr_bit, bool conflicts_bit);
+void resolve_conflicts(int state_no, struct node **action, const short *symbol_list, int reduce_root, struct CLIOptions* cli_options);
 
 void restore_symbol(char *out, const char *in);
 

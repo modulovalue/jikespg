@@ -484,7 +484,7 @@ void produce(struct CLIOptions* cli_options) {
             num_error_rules++;
           }
         }
-        if (warnings_bit && symbol != empty) {
+        if (cli_options->warnings_bit && symbol != empty) {
           item_list[item_no] = item_root;
           item_root = item_no;
         }
@@ -494,14 +494,13 @@ void produce(struct CLIOptions* cli_options) {
   }
   /* If WARNINGS_BIT is on and some error rules are in the wrong,      */
   /* format, report them.                                              */
-  if (warnings_bit && item_root != NIL) {
+  if (cli_options->warnings_bit && item_root != NIL) {
     if (item_list[item_root] == NIL) {
       fprintf(syslis, "*** This error rule is not in manual format:\n\n");
     } else {
       fprintf(syslis, "*** These error rules are not in manual format:\n\n");
     }
-    for (item_no = item_root;
-         item_no != NIL; item_no = item_list[item_no]) {
+    for (item_no = item_root; item_no != NIL; item_no = item_list[item_no]) {
       print_item(item_no);
     }
   }

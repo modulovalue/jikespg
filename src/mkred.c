@@ -51,7 +51,7 @@ struct node *lpgaccess(const int state_no, const int item_no) {
 /* STATE_NO.  A number is assigned to all pairs (S, B), where S is a state,  */
 /* and B is a non-terminal, involved in the paths. GOTO_INDX points to the   */
 /* GOTO_ELEMENT of (STATE_NO, A).                                            */
-static void trace_lalr_path(const int state_no, const int goto_indx) {
+static void trace_lalr_path(const int state_no, const int goto_indx, struct CLIOptions* cli_options) {
   struct node *p;
   struct node *r;
   /*  If STATE is a state number we first check to see if its base     */
@@ -66,7 +66,7 @@ static void trace_lalr_path(const int state_no, const int goto_indx) {
   const struct goto_header_type go_to = statset[state_no].go_to;
   const int state = go_to.map[goto_indx].action;
   if (state > 0) {
-    if (la_base[state] != OMEGA && lalr_level == 1 && !single_productions_bit) {
+    if (la_base[state] != OMEGA && lalr_level == 1 && !cli_options->single_productions_bit) {
       go_to.map[goto_indx].laptr = la_base[state];
       return;
     }
@@ -95,7 +95,7 @@ static void trace_lalr_path(const int state_no, const int goto_indx) {
         for (ii = 1; go_to_inner.map[ii].symbol != symbol; ii++) {
         }
         if (go_to_inner.map[ii].laptr == OMEGA) {
-          trace_lalr_path(t->value, ii);
+          trace_lalr_path(t->value, ii, cli_options);
         }
       }
       free_nodes(w, p);
@@ -118,14 +118,14 @@ static void trace_lalr_path(const int state_no, const int goto_indx) {
 /* follow a non-terminal in a given state.                                   */
 /*  These sets are initialized to the set of terminals that can immediately  */
 /* follow the non-terminal in the state to which it can shift (READ set).    */
-static void compute_read(void) {
+static void compute_read(struct CLIOptions* cli_options) {
   int item_no;
   int rule_no;
   int lhs_symbol;
   struct node *q;
   struct node *s;
   struct node *v;
-  if (lalr_level > 1 || single_productions_bit) {
+  if (lalr_level > 1 ||  cli_options->single_productions_bit) {
     read_set = (SET_PTR)
         calloc(num_states + 1,
                sizeof(BOOLEAN_CELL) * term_set_size);
@@ -172,7 +172,7 @@ static void compute_read(void) {
           for (ii = 1; go_to.map[ii].symbol != lhs_symbol; ii++) {
           }
           if (go_to.map[ii].laptr == OMEGA) {
-            trace_lalr_path(s->value, ii);
+            trace_lalr_path(s->value, ii, cli_options);
           }
         }
         free_nodes(v, q);
@@ -189,7 +189,7 @@ static void compute_read(void) {
     /* rule that either ends up in a reduction, a shift-reduce, or another */
     /* goto-reduce. It will therefore be taken care of automatically by    */
     /* transitive closure.                                                 */
-    if (lalr_level > 1 || single_productions_bit) {
+    if (lalr_level > 1 || cli_options->single_productions_bit) {
       const struct shift_header_type sh = shift[statset[state_no].shift_number];
       for (int j = 1; j <= sh.size; j++) {
         if (sh.map[j].action < 0) {
@@ -203,7 +203,7 @@ static void compute_read(void) {
             for (ii = 1; go_to.map[ii].symbol != lhs_symbol; ii++) {
             }
             if (go_to.map[ii].laptr == OMEGA) {
-              trace_lalr_path(s->value, ii);
+              trace_lalr_path(s->value, ii, cli_options);
             }
           }
           free_nodes(v, q);
@@ -271,7 +271,7 @@ static void compute_read(void) {
           } else {
             la_index[la_ptr] = INFINITY;
           }
-          if (lalr_level > 1 || single_productions_bit) {
+          if (lalr_level > 1 || cli_options->single_productions_bit) {
             if (state > 0) {
               ASSIGN_SET(read_set, state, la_set, la_ptr);
             }
@@ -493,9 +493,8 @@ void mkrdcts(struct CLIOptions* cli_options) {
   /* to construct that map. See ADD_CONFLICT_SYMBOL in resolve.c. */
   /* NOTE that this allocation automatically initialized all      */
   /* elements of the conflict_symbols array to NULL.              */
-  if (single_productions_bit) {
-    conflict_symbols = (struct node **)
-        calloc(num_states + 1, sizeof(struct node *));
+  if (cli_options->single_productions_bit) {
+    conflict_symbols = (struct node **) calloc(num_states + 1, sizeof(struct node *));
     if (conflict_symbols == NULL)
       nospace(__FILE__, __LINE__);
   }
@@ -527,8 +526,8 @@ void mkrdcts(struct CLIOptions* cli_options) {
     item_ptr = statset[state_no].kernel_items;
     int item_no = item_ptr->value;
     single_complete_item[state_no] =
-        !read_reduce_bit &&
-        !single_productions_bit &&
+        !cli_options->read_reduce_bit &&
+        !cli_options->single_productions_bit &&
         table_opt != OPTIMIZE_TIME &&
         table_opt != OPTIMIZE_SPACE &&
         default_opt > 0 &&
@@ -553,7 +552,7 @@ void mkrdcts(struct CLIOptions* cli_options) {
   if (cli_options->slr_bit) {
     // Do nothing.
   } else {
-    compute_read();
+    compute_read(cli_options);
   }
   /* Allocate space for REDUCE which will be used to map each     */
   /* into its reduce map. We also initialize RULE_COUNT which     */
@@ -659,7 +658,7 @@ void mkrdcts(struct CLIOptions* cli_options) {
       /* element (if the conflicts were reduce-reduce conflicts, only   */
       /* the first element in the ACTION(t) list is returned).          */
       if (symbol_root != NIL) {
-        resolve_conflicts(state_no, action, symbol_list, symbol_root, cli_options->slr_bit, cli_options->conflicts_bit);
+        resolve_conflicts(state_no, action, symbol_list, symbol_root, cli_options);
         for (symbol = symbol_root;
              symbol != NIL; symbol = symbol_list[symbol]) {
           if (action[symbol] != NULL) {
@@ -705,7 +704,7 @@ void mkrdcts(struct CLIOptions* cli_options) {
         default_rule = OMEGA;
       } else if (table_opt != OPTIMIZE_TIME &&
                  table_opt != OPTIMIZE_SPACE &&
-                 !single_productions_bit) {
+                 !cli_options->single_productions_bit) {
         q = statset[state_no].complete_items;
         if (q->next == NULL) {
           const int item_no = q->value;
@@ -735,7 +734,7 @@ void mkrdcts(struct CLIOptions* cli_options) {
         if (rule_no != default_rule ||
             table_opt == OPTIMIZE_SPACE ||
             table_opt == OPTIMIZE_TIME ||
-            single_productions_bit) {
+            cli_options->single_productions_bit) {
           red.map[reduce_size].symbol = symbol;
           red.map[reduce_size].rule_number = rule_no;
           reduce_size--;
@@ -765,14 +764,14 @@ void mkrdcts(struct CLIOptions* cli_options) {
   free_conflict_space();
   lalr_level = highest_level;
   /* If the removal of single productions is requested, do that.  */
-  if (single_productions_bit) {
+  if (cli_options->single_productions_bit) {
     remove_single_productions(cli_options->slr_bit);
   }
   /* If either more than one lookahead was needed or the removal  */
   /* of single productions was requested, the automaton was       */
   /* transformed with the addition of new states and new          */
   /* transitions. In such a case, we reconstruct the IN_STAT map. */
-  if (lalr_level > 1 || single_productions_bit) {
+  if (lalr_level > 1 || cli_options->single_productions_bit) {
     for ALL_STATES3(state_no) {
       /* First, clear out the previous map */
       if (in_stat[state_no] != NULL) {

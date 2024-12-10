@@ -1052,11 +1052,10 @@ void mkbasic(struct CLIOptions* cli_options) {
   /* non-terminal as their left-hand side are not considered so  */
   /* as to let the Accpet action remain as a Reduce action       */
   /* instead of a Goto/Reduce action.                            */
-  adequate_item = (struct node **)
-      calloc(num_rules + 1, sizeof(struct node *));
+  adequate_item = (struct node **) calloc(num_rules + 1, sizeof(struct node *));
   if (adequate_item == NULL)
     nospace(__FILE__, __LINE__);
-  if (read_reduce_bit) {
+  if (cli_options->read_reduce_bit) {
     for ALL_RULES3(rule_no) {
       const int j = RHS_SIZE(rule_no);
       if (rules[rule_no].lhs != accept_image && j > 0) {
@@ -1185,7 +1184,7 @@ void mkbasic(struct CLIOptions* cli_options) {
   }
   /* If WARNINGS option is turned on, the unreachable symbols in */
   /* the grammar are printed.                                    */
-  if (warnings_bit) {
+  if (cli_options->warnings_bit) {
     print_unreachables();
   }
   /* If a Cross_Reference listing is requested, it is generated  */

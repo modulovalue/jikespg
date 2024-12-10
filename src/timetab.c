@@ -295,9 +295,9 @@ static void overlap_tables(struct CLIOptions* cli_options) {
   PRNT2(msg_line, "Number of entries in Action Table: %ld", num_entries);
   const long percentage = (action_size - num_entries) * 1000 / num_entries;
   PRNT2(msg_line, "Percentage of increase: %ld.%ld%%", percentage / 10, percentage % 10);
-  if (byte_bit) {
+  if (cli_options->byte_bit) {
     num_bytes = 2 * action_size + table_size;
-    if (!goto_default_bit && !cli_options->nt_check_bit) {
+    if (!cli_options->goto_default_bit && !cli_options->nt_check_bit) {
       for (; last_symbol >= 1 && !is_terminal[last_symbol]; last_symbol--) {
       }
     }
@@ -308,13 +308,13 @@ static void overlap_tables(struct CLIOptions* cli_options) {
   } else {
     num_bytes = 2 * (action_size + table_size);
   }
-  if (goto_default_bit) {
+  if (cli_options->goto_default_bit) {
     num_bytes += (long) 2 * num_symbols;
   }
   const long k_bytes = num_bytes / 1024 + 1;
   PRNT2(msg_line, "Storage Required for Tables: %ld Bytes, %ldK", num_bytes, k_bytes);
   num_bytes = (long) 4 * num_rules;
-  if (byte_bit) {
+  if (cli_options->byte_bit) {
     num_bytes -= num_rules;
     if (num_symbols < 256) {
       num_bytes -= num_rules;
@@ -349,7 +349,7 @@ static void print_tables(struct CLIOptions* cli_options) {
   check = next;
   action = previous;
   offset = error_act;
-  if (read_reduce_bit) {
+  if (cli_options->read_reduce_bit) {
     offset += num_rules;
   }
   la_state_offset = offset;
@@ -378,7 +378,7 @@ static void print_tables(struct CLIOptions* cli_options) {
       for (int j = 1; j <= go_to.size; j++) {
         symbol = go_to.map[j].symbol;
         long i = indx + symbol;
-        if (goto_default_bit || cli_options->nt_check_bit) {
+        if (cli_options->goto_default_bit || cli_options->nt_check_bit) {
           check[i] = symbol;
         } else {
           check[i] = DEFAULT_SYMBOL;
@@ -460,10 +460,10 @@ static void print_tables(struct CLIOptions* cli_options) {
   PRNT2(msg_line, "     Number of Defaults: %d", default_count);
   /* Prepare Header with proper information, and write it out.         */
   output_buffer[0] = 'T';
-  output_buffer[1] = goto_default_bit ? '1' : '0';
+  output_buffer[1] = cli_options->goto_default_bit ? '1' : '0';
   output_buffer[2] = cli_options->nt_check_bit ? '1' : '0';
-  output_buffer[3] = read_reduce_bit ? '1' : '0';
-  output_buffer[4] = single_productions_bit ? '1' : '0';
+  output_buffer[3] = cli_options->read_reduce_bit ? '1' : '0';
+  output_buffer[4] = cli_options->single_productions_bit ? '1' : '0';
   if (default_opt == 0) {
     output_buffer[5] = '0';
   } else if (default_opt == 1) {
@@ -479,7 +479,7 @@ static void print_tables(struct CLIOptions* cli_options) {
   }
   output_buffer[6] = rules[1].lhs == accept_image ? '1' : '0';
   output_buffer[7] = error_maps_bit ? '1' : '0';
-  output_buffer[8] = byte_bit && last_symbol <= 255 ? '1' : '0';
+  output_buffer[8] = cli_options->byte_bit && last_symbol <= 255 ? '1' : '0';
   output_buffer[9] = escape;
   output_ptr = &output_buffer[0] + 10;
   field(num_terminals, 5);
@@ -619,7 +619,7 @@ static void print_tables(struct CLIOptions* cli_options) {
   /* If GOTO_DEFAULT is requested, we print out the GOTODEF vector  */
   /* after rearranging its elements based on the new ordering of the*/
   /* symbols.  The array TEMP is used to hold the GOTODEF values.   */
-  if (goto_default_bit) {
+  if (cli_options->goto_default_bit) {
     long *default_map = Allocate_long_array(num_symbols + 1);
     for (int i = 0; i <= num_symbols; i++) {
       default_map[i] = error_act;
@@ -664,7 +664,7 @@ static void print_tables(struct CLIOptions* cli_options) {
     for ALL_STATES3(state_no) {
       action[state_index[state_no]] = state_no;
     }
-    int j = num_states + 1;
+    long j = num_states + 1;
     for (long i = max_indx; i >= 1; i--) {
       long state_no = action[i];
       if (state_no != OMEGA) {

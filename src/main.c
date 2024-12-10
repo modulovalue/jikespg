@@ -102,7 +102,7 @@ int main(const int argc, char *argv[]) {
   } else {
     char tab_file[80];
 
-    struct CLIOptions cli_options;
+    struct CLIOptions cli_options = init_cli_options();
 
     // Process input.
     {
@@ -142,7 +142,7 @@ int main(const int argc, char *argv[]) {
       }
       strcat(lis_file, ".l"); /* add .l extension for listing file */
       strcat(tab_file, ".t"); /* add .t extension for table file */
-      cli_options = process_input(grm_file, lis_file, &output_files, argc, argv, file_prefix);
+      process_input(grm_file, lis_file, &output_files, argc, argv, file_prefix, &cli_options);
     }
 
     // Process rest.
@@ -155,7 +155,7 @@ int main(const int argc, char *argv[]) {
           PRNT2(msg_line, "\nNumber of Terminals: %ld", num_terminals - 1); /*-1 for %empty */
           PRNT2(msg_line, "Number of Nonterminals: %ld", num_non_terminals - 1); /* -1 for %ACC */
           PRNT2(msg_line, "Number of Productions: %ld", num_rules + 1);
-          if (single_productions_bit) {
+          if (cli_options.single_productions_bit) {
             PRNT2(msg_line, "Number of Single Productions: %ld", num_single_productions);
           }
           PRNT2(msg_line, "Number of Items: %ld", num_items);
@@ -172,7 +172,7 @@ int main(const int argc, char *argv[]) {
           PRNT2(msg_line, "\nNumber of Terminals: %ld", num_terminals - 1);
           PRNT2(msg_line, "Number of Nonterminals: %ld", num_non_terminals - 1);
           PRNT2(msg_line, "Number of Productions: %ld", num_rules + 1);
-          if (single_productions_bit) {
+          if (cli_options.single_productions_bit) {
             PRNT2(msg_line, "Number of Single Productions: %ld", num_single_productions);
           }
           PRNT2(msg_line, "Number of Items: %ld", num_items);
@@ -185,7 +185,7 @@ int main(const int argc, char *argv[]) {
           }
           PRNT2(msg_line, "Number of Shift actions: %ld", num_shifts);
           PRNT2(msg_line, "Number of Goto actions: %ld", num_gotos);
-          if (read_reduce_bit) {
+          if (cli_options.read_reduce_bit) {
             PRNT2(msg_line, "Number of Shift/Reduce actions: %ld", num_shift_reduces);
             PRNT2(msg_line, "Number of Goto/Reduce actions: %ld", num_goto_reduces);
           }
@@ -199,7 +199,7 @@ int main(const int argc, char *argv[]) {
         }
 
         if (table_opt != 0) {
-          if (goto_default_bit && cli_options.nt_check_bit) {
+          if (cli_options.goto_default_bit && cli_options.nt_check_bit) {
             PRNTERR("The options GOTO_DEFAULT and NT_CHECK are incompatible. Tables not generated");
           } else {
             num_entries = max_la_state + num_shifts + num_shift_reduces + num_gotos + num_goto_reduces + num_reductions;

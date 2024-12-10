@@ -1349,7 +1349,7 @@ void free_conflict_space(void) {
 /* where k > 1, then we attempt to resolve the conflicts by computing  */
 /* more lookaheads. Shift-Reduce conflicts are processed first,        */
 /* followed by Reduce-Reduce conflicts.                                */
-void resolve_conflicts(const int state_no, struct node **action, const short *symbol_list, const int reduce_root, bool slr_bit, bool conflicts_bit) {
+void resolve_conflicts(const int state_no, struct node **action, const short *symbol_list, const int reduce_root, struct CLIOptions* cli_options) {
   struct node *p;
   struct node *tail;
   struct stack_element *q;
@@ -1366,7 +1366,7 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
   const struct shift_header_type sh = shift[statset[state_no].shift_number];
   for (int i = 1; i <= sh.size; i++) {
     symbol = sh.map[i].symbol;
-    if (single_productions_bit && action[symbol] != NULL) {
+    if (cli_options->single_productions_bit && action[symbol] != NULL) {
       add_conflict_symbol(state_no, symbol);
     }
     if (lalr_level > 1 && action[symbol] != NULL) {
@@ -1424,7 +1424,7 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
     if (action[symbol] != NULL) {
       act = sh.map[i].action;
       for (p = action[symbol]; p != NULL; tail = p, p = p->next) {
-        if (conflicts_bit) {
+        if (cli_options->conflicts_bit) {
           struct sr_conflict_element *q_inner = allocate_conflict_element();
           q_inner->state_number = act;
           q_inner->item = p->value;
@@ -1448,7 +1448,7 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
   for (symbol = reduce_root;
        symbol != NIL; symbol = symbol_list[symbol]) {
     if (action[symbol] != NULL) {
-      if (single_productions_bit && action[symbol]->next != NULL) {
+      if (cli_options->single_productions_bit && action[symbol]->next != NULL) {
         add_conflict_symbol(state_no, symbol);
       }
       if (lalr_level > 1 && action[symbol]->next != NULL) {
@@ -1491,7 +1491,7 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
       if (action[symbol] != NULL) {
         act = action[symbol]->value;
         for (p = action[symbol]->next; p != NULL; tail = p, p = p->next) {
-          if (conflicts_bit) {
+          if (cli_options->conflicts_bit) {
             struct rr_conflict_element *q_inner = allocate_conflict_element();
             q_inner->symbol = symbol;
             q_inner->item1 = act;
@@ -1534,7 +1534,7 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
         printf("*** Shift/reduce conflict on \"%s\" with rule %d\n", temp, rule_no);
         fprintf(syslis, "\n*** Shift/reduce conflict on \"%s\" with rule %d\n", temp, rule_no);
         if (trace_opt != NOTRACE) {
-          if (slr_bit) {
+          if (cli_options->slr_bit) {
             print_relevant_slr_items(p->item, symbol);
           } else {
             print_relevant_lalr_items(state_no, p->item, symbol);
@@ -1555,7 +1555,7 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
         printf("*** Reduce/reduce conflict on \"%s\" between rule %d and %d\n", temp, n, rule_no);
         fprintf(syslis, "\n*** Reduce/reduce conflict on \"%s\" between rule %d and %d\n", temp, n, rule_no);
         if (trace_opt != NOTRACE) {
-          if (slr_bit) {
+          if (cli_options->slr_bit) {
             print_relevant_slr_items(p->item1, symbol);
           } else {
             print_relevant_lalr_items(state_no, p->item1, symbol);
@@ -1563,7 +1563,7 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
           print_item(p->item1);
           fill_in(msg_line, PRINT_LINE_SIZE - 3, '-');
           fprintf(syslis, "\n%s", msg_line);
-          if (slr_bit) {
+          if (cli_options->slr_bit) {
             print_relevant_slr_items(p->item2, symbol);
           } else {
             print_relevant_lalr_items(state_no, p->item2, symbol);

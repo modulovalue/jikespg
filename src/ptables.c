@@ -244,10 +244,10 @@ void process_tables(char *tab_file, const struct OutputFiles output_files, struc
   }
   /* If Goto Default and/or Shift Default were requested, process    */
   /* appropriately.                                                  */
-  if (shift_default_bit) {
+  if (cli_options->shift_default_bit) {
     compute_shift_default();
   }
-  if (goto_default_bit) {
+  if (cli_options->goto_default_bit) {
     compute_goto_default();
   }
   /* Release the pool of temporary space.                           */

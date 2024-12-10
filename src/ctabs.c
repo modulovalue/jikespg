@@ -1179,7 +1179,7 @@ void common(const bool byte_check_bit, struct CLIOptions* cli_options) {
               table_opt == OPTIMIZE_SPACE ? num_terminals : num_symbols,
               num_scopes - 1,
               num_scopes,
-              read_reduce_bit && lalr_level > 1
+              cli_options->read_reduce_bit && lalr_level > 1
                 ? error_act + num_rules
                 : error_act,
               lalr_level,
@@ -1220,7 +1220,7 @@ void common(const bool byte_check_bit, struct CLIOptions* cli_options) {
               stack_size,
               num_scopes - 1,
               num_scopes,
-              read_reduce_bit && lalr_level > 1
+              cli_options->read_reduce_bit && lalr_level > 1
                 ? error_act + num_rules
                 : error_act,
               lalr_level,
@@ -1245,7 +1245,7 @@ void common(const bool byte_check_bit, struct CLIOptions* cli_options) {
               "%s FULL_DIAGNOSIS\n"
               "%s SPACE_TABLES\n\n",
               num_scopes > 0 ? "#define" : "#undef ",
-              deferred_bit ? "#define" : "#undef ",
+              cli_options->deferred_bit ? "#define" : "#undef ",
               error_maps_bit ? "#define" : "#undef ",
               table_opt == OPTIMIZE_SPACE ? "#define" : "#undef ");
     }
@@ -1262,7 +1262,7 @@ void common(const bool byte_check_bit, struct CLIOptions* cli_options) {
               "class %s_table\n"
               "{\n"
               "public:\n", prs_tag);
-      if (error_maps_bit || debug_bit) {
+      if (error_maps_bit || cli_options->debug_bit) {
         fprintf(sysprs, "    static int original_state(int state) { return -%s[state]; }\n", table_opt == OPTIMIZE_TIME ? "check" : "base_check");
       }
       if (error_maps_bit) {
@@ -1280,7 +1280,7 @@ void common(const bool byte_check_bit, struct CLIOptions* cli_options) {
       fprintf(sysprs, "\n");
     } else if (cli_options->java_bit) {
       fprintf(sysprs, "abstract class %s extends %s implements %s\n{\n", prs_tag, dcl_tag, def_tag);
-      if (error_maps_bit || debug_bit) {
+      if (error_maps_bit || cli_options->debug_bit) {
         fprintf(sysprs, "    public final static int original_state(int state) { return -%s(state); }\n", table_opt == OPTIMIZE_TIME ? "check" : "base_check");
         if (error_maps_bit) {
           fprintf(sysprs, "    public final static int asi(int state) { return asb[original_state(state)]; }\n");
@@ -1308,13 +1308,13 @@ void common(const bool byte_check_bit, struct CLIOptions* cli_options) {
               cli_options->c_bit ? "extern" : "    static",
               cli_options->c_bit ? "extern" : "    static",
               table_opt == OPTIMIZE_TIME ? "action" : "base_action");
-      if (goto_default_bit) {
+      if (cli_options->goto_default_bit) {
         fprintf(sysprs, "%s const unsigned short default_goto[];\n", cli_options->c_bit ? "extern" : "    static");
       }
       if (table_opt == OPTIMIZE_SPACE) {
         fprintf(sysprs, "%s const unsigned %s term_check[];\n", cli_options->c_bit ? "extern" : "    static", num_terminals <= (cli_options->java_bit ? 127 : 255) ? "char " : "short");
         fprintf(sysprs, "%s const unsigned short term_action[];\n", cli_options->c_bit ? "extern" : "    static");
-        if (shift_default_bit) {
+        if (cli_options->shift_default_bit) {
           fprintf(sysprs, "%s const unsigned short default_reduce[];\n", cli_options->c_bit ? "extern" : "    static");
           fprintf(sysprs, "%s const unsigned short shift_state[];\n", cli_options->c_bit ? "extern" : "    static");
           fprintf(sysprs, "%s const unsigned %s shift_check[];\n", cli_options->c_bit ? "extern" : "    static", num_terminals <= (cli_options->java_bit ? 127 : 255) ? "char " : "short");
@@ -1387,7 +1387,7 @@ void common(const bool byte_check_bit, struct CLIOptions* cli_options) {
       fprintf(sysprs, "\n");
     }
     if (table_opt == OPTIMIZE_SPACE) {
-      if (goto_default_bit) {
+      if (cli_options->goto_default_bit) {
         // non_terminal_space_action
         {
           if (cli_options->c_bit) {
@@ -1433,7 +1433,7 @@ void common(const bool byte_check_bit, struct CLIOptions* cli_options) {
         }
       }
       if (lalr_level > 1) {
-        if (shift_default_bit) {
+        if (cli_options->shift_default_bit) {
           // terminal_shift_default_space_lalr_k
           {
             if (cli_options->c_bit) {
@@ -1635,7 +1635,7 @@ void common(const bool byte_check_bit, struct CLIOptions* cli_options) {
           }
         }
       } else {
-        if (shift_default_bit) {
+        if (cli_options->shift_default_bit) {
           // terminal_shift_default_space_action
           {
             if (cli_options->c_bit) {
@@ -1711,7 +1711,7 @@ void common(const bool byte_check_bit, struct CLIOptions* cli_options) {
         }
       }
     } else {
-      if (goto_default_bit) {
+      if (cli_options->goto_default_bit) {
         // non_terminal_time_action
         {
           if (cli_options->c_bit) {
@@ -1980,12 +1980,12 @@ void process_error_maps(struct CLIOptions* cli_options) {
   /* Compute and list amount of space required for the Follow map. */
   if (table_opt == OPTIMIZE_TIME) {
     num_bytes = 2 * (num_symbols + offset);
-    if (byte_bit && last_non_terminal <= 255) {
+    if (cli_options->byte_bit && last_non_terminal <= 255) {
       num_bytes = num_bytes - offset + 1;
     }
   } else {
     num_bytes = 2 * (num_non_terminals + offset);
-    if (byte_bit && num_terminals <= 255) {
+    if (cli_options->byte_bit && num_terminals <= 255) {
       num_bytes = num_bytes - offset + 1;
     }
   }
@@ -2113,12 +2113,11 @@ void process_error_maps(struct CLIOptions* cli_options) {
   }
   /* Compute and list space required for ACTION_SYMBOLS map.   */
   num_bytes = 2 * (num_states + offset);
-  if (byte_bit) {
+  if (cli_options->byte_bit) {
     if (offset <= 255) {
       num_bytes -= num_states + 1;
     }
-    if ((table_opt == OPTIMIZE_TIME && last_terminal <= 255) ||
-        (table_opt != OPTIMIZE_TIME && num_terminals <= 255)) {
+    if ((table_opt == OPTIMIZE_TIME && last_terminal <= 255) || (table_opt != OPTIMIZE_TIME && num_terminals <= 255)) {
       num_bytes -= offset - 1;
     }
   }
@@ -2181,12 +2180,14 @@ void process_error_maps(struct CLIOptions* cli_options) {
   }
   /* Compute and list space required for NACTION_SYMBOLS map.  */
   num_bytes = 2 * (num_states + offset);
-  if (byte_bit) {
-    if (offset <= 255)
+  if (cli_options->byte_bit) {
+    if (offset <= 255) {
       num_bytes -= num_states + 1;
+    }
     if ((table_opt == OPTIMIZE_TIME && last_non_terminal <= 255) ||
-        (table_opt != OPTIMIZE_TIME && num_non_terminals <= 255))
+        (table_opt != OPTIMIZE_TIME && num_non_terminals <= 255)) {
       num_bytes -= offset - 1;
+    }
   }
   PRNT2(msg_line, "    Storage required for NACTION_SYMBOLS map: %ld Bytes", num_bytes);
   ffree(naction_symbols_range);
@@ -2625,7 +2626,7 @@ void print_space_parser(struct CLIOptions* cli_options) {
     /* Prepare header card with proper information, and write it out. */
     offset = error_act;
     if (lalr_level > 1) {
-      if (read_reduce_bit) {
+      if (cli_options->read_reduce_bit) {
         offset += num_rules;
       }
       la_state_offset = offset;
@@ -2672,7 +2673,7 @@ void print_space_parser(struct CLIOptions* cli_options) {
       for (int j = 1; j <= go_to.size; j++) {
         int symbol = go_to.map[j].symbol;
         int i = indx + symbol;
-        if (goto_default_bit || cli_options->nt_check_bit) {
+        if (cli_options->goto_default_bit || cli_options->nt_check_bit) {
           check[i] = symbol;
         }
         int act = go_to.map[j].action;
@@ -2685,7 +2686,7 @@ void print_space_parser(struct CLIOptions* cli_options) {
         }
       }
     }
-    if (error_maps_bit || debug_bit) {
+    if (error_maps_bit || cli_options->debug_bit) {
       if (check_size == 0) {
         check_size = action_size;
         for (int i = 0; i <= check_size; i++) {
@@ -2877,7 +2878,7 @@ void print_space_parser(struct CLIOptions* cli_options) {
       for (int j = 1; j <= sh.size; j++) {
         int symbol = sh.map[j].symbol;
         int act = sh.map[j].action;
-        if (!shift_default_bit || act != shiftdf[symbol]) {
+        if (!cli_options->shift_default_bit || act != shiftdf[symbol]) {
           int i = indx + symbol;
           check[i] = symbol;
           if (act > num_states) {
@@ -2911,7 +2912,7 @@ void print_space_parser(struct CLIOptions* cli_options) {
         default_count++;
       }
       check[indx] = DEFAULT_SYMBOL;
-      if (shift_default_bit) {
+      if (cli_options->shift_default_bit) {
         action[indx] = state_no;
       } else {
         action[indx] = rule_no;
@@ -2948,7 +2949,7 @@ void print_space_parser(struct CLIOptions* cli_options) {
       prnt_ints("\nconst unsigned short CLASS_HEADER term_action[] = {0,\n", 1, term_action_size, 10, action, cli_options);
     }
     /* If GOTO_DEFAULT is requested, we print out the GOTODEF vector.   */
-    if (goto_default_bit) {
+    if (cli_options->goto_default_bit) {
       if (cli_options->java_bit) {
         mystrcpy("\n    public final static char default_goto[] = {0,\n");
       } else {
@@ -2985,7 +2986,7 @@ void print_space_parser(struct CLIOptions* cli_options) {
         mystrcpy("                 };\n");
       }
     }
-    if (shift_default_bit) {
+    if (cli_options->shift_default_bit) {
       if (cli_options->java_bit) {
         mystrcpy("\n    public final static char default_reduce[] = {0,\n");
       } else {
@@ -3156,7 +3157,7 @@ void print_time_parser(struct CLIOptions* cli_options) {
     long offset = error_act;
     int la_state_offset;
     if (lalr_level > 1) {
-      if (read_reduce_bit) {
+      if (cli_options->read_reduce_bit) {
         offset += num_rules;
       }
       la_state_offset = offset;
@@ -3192,7 +3193,7 @@ void print_time_parser(struct CLIOptions* cli_options) {
         for (int j = 1; j <= go_to.size; j++) {
           int symbol = go_to.map[j].symbol;
           long i = indx + symbol;
-          if (goto_default_bit || cli_options->nt_check_bit) {
+          if (cli_options->goto_default_bit || cli_options->nt_check_bit) {
             check[i] = symbol;
           } else {
             check[i] = DEFAULT_SYMBOL;
@@ -3274,7 +3275,7 @@ void print_time_parser(struct CLIOptions* cli_options) {
     PRNT2(msg_line, "     Number of Goto/Reduces: %d", goto_reduce_count);
     PRNT2(msg_line, "     Number of Reduces: %d", reduce_count);
     PRNT2(msg_line, "     Number of Defaults: %d", default_count);
-    if (error_maps_bit || debug_bit) {
+    if (error_maps_bit || cli_options->debug_bit) {
       for ALL_STATES3(state_no) {
         check[state_index[state_no]] = -state_no;
       }
@@ -3447,7 +3448,7 @@ void print_time_parser(struct CLIOptions* cli_options) {
     }
     *output_ptr++ = '\n';
     /* If GOTO_DEFAULT is requested, we print out the GOTODEF vector.   */
-    if (goto_default_bit) {
+    if (cli_options->goto_default_bit) {
       short *default_map = Allocate_short_array(num_symbols + 1);
       if (cli_options->java_bit) {
         mystrcpy("\n    public final static char default_goto[] = {0,\n");

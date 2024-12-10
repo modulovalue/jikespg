@@ -23,7 +23,7 @@ bool *shift_on_error_symbol;
 
 /*  REMAP_NON_TERMINALS remaps the non-terminal symbols and states based on */
 /* frequency of entries.                                                    */
-void remap_non_terminals(void) {
+void remap_non_terminals(struct CLIOptions* cli_options) {
   struct goto_header_type go_to;
   /*   The variable FREQUENCY_SYMBOL is used to hold the non-terminals  */
   /* in the grammar, and  FREQUENCY_COUNT is used correspondingly to    */
@@ -68,7 +68,7 @@ void remap_non_terminals(void) {
   /* If Goto-Default was requested, we find out how many non-terminals  */
   /* were eliminated as a result, and adjust the GOTO-DEFAULT map,      */
   /* based on the new mapping of the non-terminals.                     */
-  if (goto_default_bit) {
+  if (cli_options->goto_default_bit) {
     short *temp_goto_default = Allocate_short_array(num_non_terminals);
     temp_goto_default -= num_terminals + 1;
     for (last_symbol = num_symbols; last_symbol > num_terminals; last_symbol--) {
@@ -188,7 +188,7 @@ void overlap_nt_rows(struct CLIOptions* cli_options) {
     }
     state_index[state_no__] = indx;
   }
-  if (goto_default_bit || cli_options->nt_check_bit) {
+  if (cli_options->goto_default_bit || cli_options->nt_check_bit) {
     check_size = max_indx + num_non_terminals;
   } else {
     check_size = 0;
@@ -202,16 +202,16 @@ void overlap_nt_rows(struct CLIOptions* cli_options) {
   accept_act = max_indx + num_rules + 1;
   error_act = accept_act + 1;
   printf("\n");
-  if (goto_default_bit || cli_options->nt_check_bit) {
+  if (cli_options->goto_default_bit || cli_options->nt_check_bit) {
     PRNT2(msg_line, "Length of base Check Table: %d", check_size);
   }
   PRNT2(msg_line, "Length of base Action Table: %ld", action_size);
   PRNT2(msg_line, "Number of entries in base Action Table: %ld", num_table_entries);
   const int percentage = (action_size - num_table_entries) * 1000 / num_table_entries;
   PRNT2(msg_line, "Percentage of increase: %d.%d%%", percentage / 10, percentage % 10);
-  if (byte_bit) {
+  if (cli_options->byte_bit) {
     num_bytes = 2 * action_size + check_size;
-    if (goto_default_bit || cli_options->nt_check_bit) {
+    if (cli_options->goto_default_bit || cli_options->nt_check_bit) {
       if (last_symbol > 255) {
         num_bytes += check_size;
       }
@@ -219,14 +219,14 @@ void overlap_nt_rows(struct CLIOptions* cli_options) {
   } else {
     num_bytes = 2 * (action_size + check_size);
   }
-  if (goto_default_bit) {
+  if (cli_options->goto_default_bit) {
     num_bytes += (long) 2 * num_non_terminals;
   }
   total_bytes = num_bytes;
   const int k_bytes = num_bytes / 1024 + 1;
   PRNT2(msg_line, "Storage required for base Tables: %ld Bytes, %dK", num_bytes, k_bytes);
   num_bytes = (long) 4 * num_rules;
-  if (byte_bit) {
+  if (cli_options->byte_bit) {
     num_bytes -= num_rules;
     if (num_non_terminals < 256)
       num_bytes -= num_rules;
@@ -654,12 +654,14 @@ void merge_shift_domains(struct CLIOptions* cli_options) {
   }
   percentage = ((long) kk - num_table_entries) * 1000 / num_table_entries;
   PRNT2(msg_line, "Percentage of increase: %d.%d%%", percentage/10, percentage % 10);
-  if (byte_bit) {
+  if (cli_options->byte_bit) {
     num_bytes = shift_check_size;
-    if (num_terminals > 255)
+    if (num_terminals > 255) {
       num_bytes += shift_check_size;
-  } else
+    }
+  } else {
     num_bytes = 2 * shift_check_size;
+  }
   num_bytes += 2 * (num_terminal_states + num_terminals);
 
   k_bytes = num_bytes / 1024 + 1;
@@ -904,17 +906,13 @@ void overlay_sim_t_rows(struct CLIOptions* cli_options) {
     red.map[0].rule_number = error_act;
     new_state_element[i].reduce = red;
   }
-
   num_terminal_states = top;
-
   frequency_symbol = Allocate_long_array(num_terminals + 1);
   frequency_count = Allocate_long_array(num_terminals + 1);
   row_size = Allocate_long_array(max_la_state + 1);
-
-  if (shift_default_bit) {
+  if (cli_options->shift_default_bit) {
     merge_shift_domains(cli_options);
   }
-
   /* We now reorder the terminal states based on the number of actions */
   /* in them, and remap the terminal symbols if they were not already  */
   /* remapped in the previous block for the SHIFT_CHECK vector.        */
@@ -928,7 +926,7 @@ void overlay_sim_t_rows(struct CLIOptions* cli_options) {
     sh = shift[new_state_element[i].shift_number];
     for (int j = 1; j <= sh.size; j++) {
       int symbol = sh.map[j].symbol;
-      if (!shift_default_bit ||
+      if (!cli_options->shift_default_bit ||
           sh.map[j].action != shiftdf[symbol]) {
         row_size[i]++;
         frequency_count[symbol]++;
@@ -957,7 +955,7 @@ void overlay_sim_t_rows(struct CLIOptions* cli_options) {
 
   sortdes(ordered_state, row_size, 1, num_terminal_states, num_terminals);
 
-  if (!shift_default_bit) {
+  if (!cli_options->shift_default_bit) {
     sortdes(frequency_symbol, frequency_count, 1, num_terminals, num_terminal_states);
     for ALL_TERMINALS3(symbol) {
       symbol_map[frequency_symbol[symbol]] = symbol;
@@ -1047,7 +1045,7 @@ void overlap_t_rows(struct CLIOptions* cli_options) {
     const struct shift_header_type sh = shift[new_state_element[state_no].shift_number];
     for (int i = 1; i <= sh.size; i++) {
       symbol = sh.map[i].symbol;
-      if (!shift_default_bit ||
+      if (!cli_options->shift_default_bit ||
           sh.map[i].action != shiftdf[symbol]) {
         terminal_list[symbol] = root_symbol;
         root_symbol = symbol;
@@ -1123,7 +1121,7 @@ void overlap_t_rows(struct CLIOptions* cli_options) {
   PRNT2(msg_line, "Number of entries in Terminal Action Table: %ld", num_table_entries);
   const long percentage = (term_action_size - num_table_entries) * 1000 / num_table_entries;
   PRNT2(msg_line, "Percentage of increase: %ld.%ld%%", percentage / 10, percentage % 10);
-  if (byte_bit) {
+  if (cli_options->byte_bit) {
     num_bytes = 2 * term_action_size + term_check_size;
     if (num_terminals > 255) {
       num_bytes += term_check_size;
@@ -1131,7 +1129,7 @@ void overlap_t_rows(struct CLIOptions* cli_options) {
   } else {
     num_bytes = 2 * (term_action_size + term_check_size);
   }
-  if (shift_default_bit) {
+  if (cli_options->shift_default_bit) {
     num_bytes += 2 * num_terminal_states;
   }
   long k_bytes = num_bytes / 1024 + 1;
@@ -1173,7 +1171,7 @@ void print_tables(struct CLIOptions* cli_options) {
   action = Allocate_int_array(table_size + 1);
   /* Prepare header card with proper information, and write it out. */
   offset = error_act;
-  if (read_reduce_bit) {
+  if (cli_options->read_reduce_bit) {
     offset += num_rules;
   }
   la_state_offset = offset;
@@ -1182,15 +1180,15 @@ void print_tables(struct CLIOptions* cli_options) {
     exit(12);
   }
   output_buffer[0] = 'S';
-  output_buffer[1] = goto_default_bit ? '1' : '0';
+  output_buffer[1] = cli_options->goto_default_bit ? '1' : '0';
   output_buffer[2] = cli_options->nt_check_bit ? '1' : '0';
-  output_buffer[3] = read_reduce_bit ? '1' : '0';
-  output_buffer[4] = single_productions_bit ? '1' : '0';
-  output_buffer[5] = shift_default_bit ? '1' : '0';
+  output_buffer[3] = cli_options->read_reduce_bit ? '1' : '0';
+  output_buffer[4] = cli_options->single_productions_bit ? '1' : '0';
+  output_buffer[5] = cli_options->shift_default_bit ? '1' : '0';
   output_buffer[6] = rules[1].lhs == accept_image ? '1' : '0';
   /* are there more than 1 start symbols? */
   output_buffer[7] = error_maps_bit ? '1' : '0';
-  output_buffer[8] = byte_bit && last_symbol <= 255 ? '1' : '0';
+  output_buffer[8] = cli_options->byte_bit && last_symbol <= 255 ? '1' : '0';
   output_buffer[9] = escape;
   output_ptr = output_buffer + 10;
   field(num_terminals, 5);
@@ -1307,7 +1305,7 @@ void print_tables(struct CLIOptions* cli_options) {
     for (int j = 1; j <= go_to.size; j++) {
       int symbol = go_to.map[j].symbol;
       int i = indx + symbol;
-      if (goto_default_bit || cli_options->nt_check_bit)
+      if (cli_options->goto_default_bit || cli_options->nt_check_bit)
         check[i] = symbol;
       act = go_to.map[j].action;
       if (act > 0) {
@@ -1383,7 +1381,7 @@ void print_tables(struct CLIOptions* cli_options) {
     for (int j = 1; j <= sh.size; j++) {
       int symbol = sh.map[j].symbol;
       act = sh.map[j].action;
-      if (!shift_default_bit || act != shiftdf[symbol]) {
+      if (!cli_options->shift_default_bit || act != shiftdf[symbol]) {
         int i = indx + symbol;
         check[i] = symbol;
         if (act > num_states) {
@@ -1418,7 +1416,7 @@ void print_tables(struct CLIOptions* cli_options) {
       default_count++;
     }
     check[indx] = DEFAULT_SYMBOL;
-    if (shift_default_bit) {
+    if (cli_options->shift_default_bit) {
       action[indx] = state_no;
     } else {
       action[indx] = rule_no;
@@ -1465,7 +1463,7 @@ void print_tables(struct CLIOptions* cli_options) {
     BUFFER_CHECK(systab);
   }
   /* If GOTO_DEFAULT is requested, we print out the GOTODEF vector.   */
-  if (goto_default_bit) {
+  if (cli_options->goto_default_bit) {
     k = 0;
     for ALL_NON_TERMINALS3(symbol) {
       act = gotodef[symbol];
@@ -1493,7 +1491,7 @@ void print_tables(struct CLIOptions* cli_options) {
   /* If SHIFT_DEFAULT is requested, we print out the Default Reduce    */
   /* map, the Shift State map, the Shift Check vector, and the SHIFTDF */
   /* vector.                                                           */
-  if (shift_default_bit) {
+  if (cli_options->shift_default_bit) {
     /* Print out header */
     field(num_terminal_states, 5);
     field(shift_check_size, 5);
@@ -1644,7 +1642,7 @@ void cmprspa(const struct OutputFiles output_files, struct CLIOptions* cli_optio
   if (new_state_element_reduce_nodes == NULL) {
     nospace(__FILE__, __LINE__);
   }
-  remap_non_terminals();
+  remap_non_terminals(cli_options);
   overlap_nt_rows(cli_options);
   merge_similar_t_rows();
   overlay_sim_t_rows(cli_options);

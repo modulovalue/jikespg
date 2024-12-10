@@ -5,19 +5,19 @@ static char hostfile[] = __FILE__;
 
 /* STATE_ELEMENT is used to represent states. Each state is mapped into a   */
 /* unique number. The components QUEUE and LINK are auxiliary:              */
-/*   QUEUE is used to form a sequential linked-list of the states ordered   */
-/* STATE_NUMBER and identified by the variable STATE_ROOT.                  */
-/*   LINK is used to resolve collisions in hashing the states.              */
-/* NEXT_SHIFT is used to resolve collisions in hashing SHIFT maps.          */
 struct state_element {
+  /*   LINK is used to resolve collisions in hashing the states.              */
   struct state_element *link;
+  /*   QUEUE is used to form a sequential linked-list of the states ordered   */
   struct state_element *queue;
+  /* NEXT_SHIFT is used to resolve collisions in hashing SHIFT maps.          */
   struct state_element *next_shift;
   struct node *kernel_items;
   struct node *complete_items;
   struct shift_header_type lr0_shift;
   struct goto_header_type lr0_goto;
   short shift_number;
+  /* STATE_NUMBER and identified by the variable STATE_ROOT.                  */
   short state_number;
 };
 
@@ -83,7 +83,7 @@ struct state_element *lr0_state_map(struct node *kernel) {
 }
 
 /* This procedure constructs an LR(0) automaton.                             */
-void mklr0(void) {
+void mklr0(struct CLIOptions* cli_options) {
   /* STATE_TABLE is the array used to hash the states. States are  */
   /* identified by their Kernel set of items. Hash locations are   */
   /* computed for the states. As states are inserted in the table, */
@@ -317,7 +317,7 @@ void mklr0(void) {
       /* if a state with that kernel set does not yet exist, we create */
       /* it.                                                           */
       q = partition[symbol]; /* kernel of a new state */
-      if (read_reduce_bit && q->next == NULL) {
+      if (cli_options->read_reduce_bit && q->next == NULL) {
         item_no = q->value;
         if (item_table[item_no].symbol == empty) {
           rule_no = item_table[item_no].rule_number;
@@ -493,7 +493,7 @@ void mkstats(struct CLIOptions* cli_options) {
   no_gotos_ptr.map = NULL;
   no_shifts_ptr.size = 0; /* For states with no SHIFTs */
   no_shifts_ptr.map = NULL;
-  mklr0();
+  mklr0(cli_options);
   if (error_maps_bit && (table_opt == OPTIMIZE_TIME || table_opt == OPTIMIZE_SPACE)) {
     produce(cli_options);
   }
