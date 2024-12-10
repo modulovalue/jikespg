@@ -145,8 +145,6 @@ struct OutputFiles {
 struct CLIOptions {
   bool list_bit;
   bool edit_bit;
-  // TODO • remove with an explicit comment what bits should be set to get verbose mode.
-  bool verbose_bit;
   bool first_bit;
   bool follow_bit;
   bool states_bit;
@@ -182,7 +180,6 @@ static struct CLIOptions init_cli_options() {
   return (struct CLIOptions){
     .list_bit = false,
     .edit_bit = false,
-    .verbose_bit = false,
     .first_bit = false,
     .follow_bit = false,
     .states_bit = false,

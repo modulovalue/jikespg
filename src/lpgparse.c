@@ -236,8 +236,6 @@ void options(char *file_prefix, struct CLIOptions *cli_options) {
         cli_options->single_productions_bit = flag;
       } else if (memcmp("STATES", token, token_len) == 0) {
         cli_options->states_bit = flag;
-      } else if (memcmp("VERBOSE", token, token_len) == 0) {
-        cli_options->verbose_bit = flag;
       } else if (memcmp("WARNINGS", token, token_len) == 0) {
         cli_options->warnings_bit = flag;
       } else if (memcmp("XREF", token, token_len) == 0) {
@@ -462,15 +460,6 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
   sprintf(output_files->def_file, "%sdef.%s", file_prefix, cli_options->java_bit ? "java" : "h");
   sprintf(output_files->prs_file, "%sprs.%s", file_prefix, cli_options->java_bit ? "java" : "h");
   sprintf(output_files->dcl_file, "%sdcl.%s", file_prefix, cli_options->java_bit ? "java" : "h");
-  // turn everything on
-  if (cli_options->verbose_bit) {
-    cli_options->first_bit = true;
-    cli_options->follow_bit = true;
-    cli_options->list_bit = true;
-    cli_options->states_bit = true;
-    cli_options->xref_bit = true;
-    cli_options->warnings_bit = true;
-  }
   //                          PRINT OPTIONS:
   // Here we print all options set by the user. As of now, only about 48
   // different options and related aliases are allowed. In case that number
@@ -607,11 +596,6 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
     strcpy(opt_string[++top], "TRACE=CONFLICTS");
   } else {
     strcpy(opt_string[++top], "TRACE=FULL");
-  }
-  if (cli_options->verbose_bit) {
-    strcpy(opt_string[++top], "VERBOSE");
-  } else {
-    strcpy(opt_string[++top], "NOVERBOSE");
   }
   if (cli_options->warnings_bit) {
     strcpy(opt_string[++top], "WARNINGS");
