@@ -2052,23 +2052,23 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
     struct reduce_header_type red;
     sh = shift[statset[state_no].shift_number];
     as_size[state_no] = sh.size;
-    for (state_no = 1; state_no <= sh.size; state_no++) {
+    for (int i = 1; i <= sh.size; i++) {
       int symbol;
       if (cli_options->table_opt == OPTIMIZE_TIME) {
-        symbol = original[sh.map[state_no].symbol];
+        symbol = original[sh.map[i].symbol];
       } else {
-        symbol = sh.map[state_no].symbol;
+        symbol = sh.map[i].symbol;
       }
       SET_BIT_IN(action_symbols, state_no, symbol);
     }
     red = reduce[state_no];
     as_size[state_no] += red.size;
-    for (state_no = 1; state_no <= red.size; state_no++) {
+    for (int i = 1; i <= red.size; i++) {
       int symbol;
       if (cli_options->table_opt == OPTIMIZE_TIME) {
-        symbol = original[red.map[state_no].symbol];
+        symbol = original[red.map[i].symbol];
       } else {
-        symbol = red.map[state_no].symbol;
+        symbol = red.map[i].symbol;
       }
       SET_BIT_IN(action_symbols, state_no, symbol);
     }
@@ -2125,8 +2125,8 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
   // We now repeat the same process for the domain of the GOTO table.
   for ALL_STATES3(state_no) {
     as_size[state_no] = gd_index[state_no + 1] - gd_index[state_no];
-    for (state_no = gd_index[state_no]; state_no < gd_index[state_no + 1]; state_no++) {
-      int symbol = gd_range[state_no] - num_terminals;
+    for (int i = gd_index[i]; i < gd_index[i + 1]; i++) {
+      int symbol = gd_range[i] - num_terminals;
       NTSET_BIT_IN(naction_symbols, state_no, symbol);
     }
   }
@@ -2134,12 +2134,12 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
           state_stack, num_non_terminals, 0);
   ffree(as_size);
   ffree(naction_symbols);
-  for (int state_no = 1; state_no <= gotodom_size; state_no++) {
+  for (int i = 1; i <= gotodom_size; i++) {
     // Remap non-terminals
     if (cli_options->table_opt == OPTIMIZE_TIME) {
-      gd_range[state_no] = symbol_map[gd_range[state_no]];
+      gd_range[i] = symbol_map[gd_range[i]];
     } else {
-      gd_range[state_no] = symbol_map[gd_range[state_no]] - num_terminals;
+      gd_range[i] = symbol_map[gd_range[i]] - num_terminals;
     }
   }
   // We now write the starting location for each state in the
@@ -2164,8 +2164,8 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
   compute_naction_symbols_range(state_start, state_stack,
                                 state_list, naction_symbols_range);
   k = 0;
-  for (int state_no = 0; state_no < offset - 1; state_no++) {
-    field(naction_symbols_range[state_no], 4);
+  for (int i = 0; i < offset - 1; i++) {
+    field(naction_symbols_range[i], 4);
     k++;
     if (k == 18) {
       *output_ptr++ = '\n';
