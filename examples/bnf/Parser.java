@@ -86,7 +86,7 @@ class Parser extends bnfprs implements bnfsym
             act = START_STATE,
             current_kind = lex_stream.Kind(curtok);
  
-    /* Start parsing.                                                */
+    // Start parsing.
         state_stack_top = -1;
 
         ProcessTerminals: for (;;)

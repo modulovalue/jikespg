@@ -62,10 +62,10 @@ SET_PTR action_symbols = NULL;
 
 const char digits[] = "0123456789";
 
-/* ITOC takes as arguments an integer NUM. NUM is an integer containing at */
-/* most 11 digits which is converted into a character string and placed in */
-/* the iobuffer. Leading zeros are eliminated and if the number is         */
-/* negative, a leading "-" is added.                                       */
+/// ITOC takes as arguments an integer NUM. NUM is an integer containing at
+/// most 11 digits which is converted into a character string and placed in
+/// the iobuffer. Leading zeros are eliminated and if the number is
+/// negative, a leading "-" is added.
 void itoc(const int num) {
   char tmp[12];
   register int val = ABS(num);
@@ -99,7 +99,7 @@ void mystrcpy(const char *str) {
   BUFFER_CHECK(syssym);
 }
 
-void prnt_shorts(const char *title, const int init, const int bound, const int perline, const long *array, struct CLIOptions* cli_options) {
+void prnt_shorts(const char *title, const int init, const int bound, const int perline, const long *array, struct CLIOptions *cli_options) {
   mystrcpy(title);
   padline();
   int k = 0;
@@ -125,7 +125,7 @@ void prnt_shorts(const char *title, const int init, const int bound, const int p
   }
 }
 
-void prnt_ints(const char *title, const int init, const int bound, const int perline, const int *array, struct CLIOptions* cli_options) {
+void prnt_ints(const char *title, const int init, const int bound, const int perline, const int *array, struct CLIOptions *cli_options) {
   mystrcpy(title);
   padline();
   int k = 0;
@@ -151,11 +151,11 @@ void prnt_ints(const char *title, const int init, const int bound, const int per
   }
 }
 
-/* FIELD takes as arguments two integers: NUM and LEN.  NUM is an integer  */
-/* containing at most LEN digits which is converted into a character       */
-/* string and placed in the iobuffer.                                      */
-/* Leading zeros are replaced by blanks and if the number is negative,  a  */
-/* leading "-" is added.                                                   */
+/// FIELD takes as arguments two integers: NUM and LEN.  NUM is an integer
+/// containing at most LEN digits which is converted into a character
+/// string and placed in the iobuffer.
+/// Leading zeros are replaced by blanks and if the number is negative,  a
+/// leading "-" is added.
 void field(const long num, const int len) {
   register int val = ABS(num);
   register char *p = output_ptr + len;
@@ -175,36 +175,36 @@ void field(const long num, const int len) {
   output_ptr += len;
 }
 
-/*  SORTDES sorts the elements of ARRAY and COUNT in the range LOW..HIGH   */
-/* based on the values of the elements of COUNT. Knowing that the maximum  */
-/* value of the elements of count cannot exceed MAX and cannot be lower    */
-/* than zero, we can use a bucket sort technique.                          */
+///  SORTDES sorts the elements of ARRAY and COUNT in the range LOW..HIGH
+/// based on the values of the elements of COUNT. Knowing that the maximum
+/// value of the elements of count cannot exceed MAX and cannot be lower
+/// than zero, we can use a bucket sort technique.
 void sortdes(long array[], long count[], const long low, const long high, const long max) {
   register long element;
   register long k;
-  /* BUCKET is used to hold the roots of lists that contain the    */
-  /* elements of each bucket.  LIST is used to hold these lists.   */
+  // BUCKET is used to hold the roots of lists that contain the
+  // elements of each bucket.  LIST is used to hold these lists.
   long *bucket = Allocate_long_array(max + 1);
   long *list = Allocate_long_array(high - low + 1);
   for (register int i = 0; i <= max; i++) {
     bucket[i] = NIL;
   }
-  /* We now partition the elements to be sorted and place them in their*/
-  /* respective buckets.  We iterate backward over ARRAY and COUNT to  */
-  /* keep the sorting stable since elements are inserted in the buckets*/
-  /* in stack-fashion.                                                 */
-  /*                                                                   */
-  /*   NOTE that it is known that the values of the elements of ARRAY  */
-  /* also lie in the range LOW..HIGH.                                  */
+  // We now partition the elements to be sorted and place them in their
+  // respective buckets.  We iterate backward over ARRAY and COUNT to
+  // keep the sorting stable since elements are inserted in the buckets
+  // in stack-fashion.
+  //
+  //   NOTE that it is known that the values of the elements of ARRAY
+  // also lie in the range LOW..HIGH.
   for (register long i = high; i >= low; i--) {
     k = count[i];
     element = array[i];
     list[element - low] = bucket[k];
     bucket[k] = element;
   }
-  /* Iterate over each bucket, and place elements in ARRAY and COUNT   */
-  /* in sorted order.  The iteration is done backward because we want  */
-  /* the arrays sorted in descending order.                            */
+  // Iterate over each bucket, and place elements in ARRAY and COUNT
+  // in sorted order.  The iteration is done backward because we want
+  // the arrays sorted in descending order.
   k = low;
   for (register long i = max; i >= 0; i--) {
     for (element = bucket[i]; element != NIL; element = list[element - low], k++) {
@@ -216,10 +216,10 @@ void sortdes(long array[], long count[], const long low, const long high, const 
   ffree(list);
 }
 
-/*   This procedure is invoked when the TABLE being used is not large      */
-/* enough.  A new table is allocated, the information from the old table   */
-/* is copied, and the old space is released.                               */
-void reallocate(struct CLIOptions* cli_options) {
+///   This procedure is invoked when the TABLE being used is not large
+/// enough.  A new table is allocated, the information from the old table
+/// is copied, and the old space is released.
+void reallocate(struct CLIOptions *cli_options) {
   if (table_size == MAX_TABLE_SIZE) {
     PRNTERR2(msg_line, "Table has exceeded maximum limit of %ld", MAX_TABLE_SIZE);
     exit(12);
@@ -235,7 +235,7 @@ void reallocate(struct CLIOptions* cli_options) {
   }
   long *n = Allocate_long_array(table_size + 1);
   long *p = Allocate_long_array(table_size + 1);
-  /* Copy old information */
+  // Copy old information
   for (register int i = 1; i <= old_size; i++) {
     n[i] = next[i];
     p[i] = previous[i];
@@ -261,23 +261,23 @@ void reallocate(struct CLIOptions* cli_options) {
   previous[last_index] = last_index - 1;
 }
 
-/* This procedure computes the range of the ACTION_SYMBOLS map after */
-/* Optimal Partitioning has been used to compress that map.  Its     */
-/* first argument is an array, STATE_START, that indicates the       */
-/* starting location in the compressed vector for each state.  When  */
-/* a value of STATE_START is negative it indicates that the state in */
-/* question shares its elements with another state.  Its second      */
-/* argument, STATE_STACK, is an array that contains the elements of  */
-/* the partition created by PARTSET.  Each element of the partition  */
-/* is organized as a circular list where the smallest sets appear    */
-/* first in the list.                                                */
+/// This procedure computes the range of the ACTION_SYMBOLS map after
+/// Optimal Partitioning has been used to compress that map.  Its
+/// first argument is an array, STATE_START, that indicates the
+/// starting location in the compressed vector for each state.  When
+/// a value of STATE_START is negative it indicates that the state in
+/// question shares its elements with another state.  Its second
+/// argument, STATE_STACK, is an array that contains the elements of
+/// the partition created by PARTSET.  Each element of the partition
+/// is organized as a circular list where the smallest sets appear
+/// first in the list.
 void compute_action_symbols_range(const long *state_start, const long *state_stack, const long *state_list, long *action_symbols_range) {
   int state;
   int symbol;
   short *symbol_list = Allocate_short_array(num_symbols + 1);
-  /* We now write out the range elements of the ACTION_SYMBOLS map.    */
-  /* Recall that if STATE_START has a negative value, then the set in  */
-  /* question is sharing elements and does not need to be processed.   */
+  // We now write out the range elements of the ACTION_SYMBOLS map.
+  // Recall that if STATE_START has a negative value, then the set in
+  // question is sharing elements and does not need to be processed.
   int k = 0;
   for ALL_SYMBOLS3(j) {
     symbol_list[j] = OMEGA; /* Initialize all links to OMEGA */
@@ -287,10 +287,10 @@ void compute_action_symbols_range(const long *state_start, const long *state_sta
     if (state_start[state_no__] > 0) {
       int symbol_root = 0; /* Add "fence" element: 0 to list */
       symbol_list[symbol_root] = NIL;
-      /* Pop a state from the stack,  and add each of its elements */
-      /* that has not yet been processed into the list.            */
-      /* Continue until stack is empty...                          */
-      /* Recall that the stack is represented by a circular queue. */
+      // Pop a state from the stack,  and add each of its elements
+      // that has not yet been processed into the list.
+      // Continue until stack is empty...
+      // Recall that the stack is represented by a circular queue.
       for (bool end_node = (state = state_no__) == NIL; !end_node; end_node = state == state_no__) {
         state = state_stack[state];
         const struct shift_header_type sh = shift[statset[state].shift_number];
@@ -310,7 +310,7 @@ void compute_action_symbols_range(const long *state_start, const long *state_sta
           }
         }
       }
-      /* Write the list out.                                       */
+      // Write the list out.
       for (symbol = symbol_root; symbol != NIL; symbol = symbol_root) {
         symbol_root = symbol_list[symbol];
         symbol_list[symbol] = OMEGA;
@@ -321,15 +321,15 @@ void compute_action_symbols_range(const long *state_start, const long *state_sta
   ffree(symbol_list);
 }
 
-/* This procedure computes the range of the NACTION_SYMBOLS map. It  */
-/* organization is analoguous to COMPUTE_ACTION_SYMBOLS_RANGE.       */
+/// This procedure computes the range of the NACTION_SYMBOLS map. It
+/// organization is analoguous to COMPUTE_ACTION_SYMBOLS_RANGE.
 void compute_naction_symbols_range(const long *state_start, const long *state_stack, const long *state_list, long *naction_symbols_range) {
   int state;
   int symbol;
   short *symbol_list = Allocate_short_array(num_symbols + 1);
-  /* We now write out the range elements of the NACTION_SYMBOLS map.   */
-  /* Recall that if STATE_START has a negative value, then the set in  */
-  /* question is sharing elements and does not need to be processed.   */
+  // We now write out the range elements of the NACTION_SYMBOLS map.
+  // Recall that if STATE_START has a negative value, then the set in
+  // question is sharing elements and does not need to be processed.
   int k = 0;
   for ALL_SYMBOLS3(j) {
     symbol_list[j] = OMEGA; /* Initialize all links to OMEGA */
@@ -339,10 +339,10 @@ void compute_naction_symbols_range(const long *state_start, const long *state_st
     if (state_start[state_no__] > 0) {
       int symbol_root = 0; /* Add "fence" element: 0 to list */
       symbol_list[symbol_root] = NIL;
-      /* Pop a state from the stack,  and add each of its elements */
-      /* that has not yet been processed into the list.            */
-      /* Continue until stack is empty...                          */
-      /* Recall that the stack is represented by a circular queue. */
+      // Pop a state from the stack,  and add each of its elements
+      // that has not yet been processed into the list.
+      // Continue until stack is empty...
+      // Recall that the stack is represented by a circular queue.
       for (bool end_node = (state = state_no__) == NIL;
            !end_node; end_node = state == state_no__) {
         state = state_stack[state];
@@ -355,7 +355,7 @@ void compute_naction_symbols_range(const long *state_start, const long *state_st
           }
         }
       }
-      /* Write the list out.                                    */
+      // Write the list out.
       for (symbol = symbol_root; symbol != NIL; symbol = symbol_root) {
         symbol_root = symbol_list[symbol];
         symbol_list[symbol] = OMEGA;
@@ -374,7 +374,7 @@ char sym_tag[SYMBOL_SIZE];
 char def_tag[SYMBOL_SIZE];
 char prs_tag[SYMBOL_SIZE];
 
-void init_file(FILE **file, char *file_name, char *file_tag, struct CLIOptions* cli_options) {
+void init_file(FILE **file, char *file_name, char *file_tag, struct CLIOptions *cli_options) {
   const char *p = strrchr(file_name, '.');
   if ((*file = fopen(file_name, "w")) == NULL) {
     fprintf(stderr, "***ERROR: Symbol file \"%s\" cannot be opened\n", file_name);
@@ -389,14 +389,14 @@ void init_file(FILE **file, char *file_name, char *file_tag, struct CLIOptions* 
   }
 }
 
-void exit_file(FILE **file, char *file_tag, struct CLIOptions* cli_options) {
+void exit_file(FILE **file, char *file_tag, struct CLIOptions *cli_options) {
   if (cli_options->c_bit || cli_options->cpp_bit) {
     fprintf(*file, "\n#endif /* %s_INCLUDED */\n", file_tag);
   }
   fclose(*file);
 }
 
-void print_error_maps(struct CLIOptions* cli_options) {
+void print_error_maps(struct CLIOptions *cli_options) {
   long *state_start;
   long *state_stack;
   long *temp;
@@ -412,20 +412,20 @@ void print_error_maps(struct CLIOptions* cli_options) {
   state_start = Allocate_long_array(num_states + 2);
   state_stack = Allocate_long_array(num_states + 1);
   PRNT("\nError maps storage:");
-  /* We now construct a bit map for the set of terminal symbols that  */
-  /* may appear in each state. Then, we invoke PARTSET to apply the   */
-  /* Partition Heuristic and print it.                                */
+  // We now construct a bit map for the set of terminal symbols that
+  // may appear in each state. Then, we invoke PARTSET to apply the
+  // Partition Heuristic and print it.
   as_size = Allocate_long_array(num_states + 1);
   if (cli_options->table_opt == OPTIMIZE_TIME) {
     original = Allocate_long_array(num_symbols + 1);
-    /* In a compressed TIME table, the terminal and non-terminal */
-    /* symbols are mixed together when they are remapped.        */
-    /* We shall now recover the original number associated with  */
-    /* each terminal symbol since it lies very nicely in the     */
-    /* range 1..NUM_TERMINALS.  This will save a considerable    */
-    /* amount of space in the bit_string representation of sets  */
-    /* as well as time when operations are performed on those    */
-    /* bit-strings.                                              */
+    // In a compressed TIME table, the terminal and non-terminal
+    // symbols are mixed together when they are remapped.
+    // We shall now recover the original number associated with
+    // each terminal symbol since it lies very nicely in the
+    // range 1..NUM_TERMINALS.  This will save a considerable
+    // amount of space in the bit_string representation of sets
+    // as well as time when operations are performed on those
+    // bit-strings.
     for ALL_TERMINALS3(symbol) {
       original[symbol_map[symbol]] = symbol;
     }
@@ -458,7 +458,7 @@ void print_error_maps(struct CLIOptions* cli_options) {
   }
   partset(action_symbols, as_size, state_list, state_start, state_stack, num_terminals, 0);
   ffree(action_symbols);
-  /* Compute and write out the base of the ACTION_SYMBOLS map. */
+  // Compute and write out the base of the ACTION_SYMBOLS map.
   action_symbols_base = Allocate_long_array(num_states + 1);
   for ALL_STATES3(state_no) {
     action_symbols_base[state_list[state_no]] = ABS(state_start[state_list[state_no]]);
@@ -469,7 +469,7 @@ void print_error_maps(struct CLIOptions* cli_options) {
     prnt_shorts("\nconst unsigned short CLASS_HEADER asb[] = {0,\n", 1, num_states, 10, action_symbols_base, cli_options);
   }
   ffree(action_symbols_base);
-  /* Compute and write out the range of the ACTION_SYMBOLS map. */
+  // Compute and write out the range of the ACTION_SYMBOLS map.
   offset = state_start[num_states + 1];
   action_symbols_range = Allocate_long_array(offset);
   compute_action_symbols_range(state_start, state_stack, state_list, action_symbols_range);
@@ -503,7 +503,7 @@ void print_error_maps(struct CLIOptions* cli_options) {
   }
   PRNT2(msg_line, "    Storage required for ACTION_SYMBOLS_RANGE map: %ld Bytes", num_bytes);
   ffree(action_symbols_range);
-  /* We now repeat the same process for the domain of the GOTO table.    */
+  // We now repeat the same process for the domain of the GOTO table.
   for ALL_STATES3(state_no) {
     as_size[state_no] = gd_index[state_no + 1] - gd_index[state_no];
     for (int i = gd_index[state_no]; i <= gd_index[state_no + 1] - 1; i++) {
@@ -514,7 +514,7 @@ void print_error_maps(struct CLIOptions* cli_options) {
   partset(naction_symbols, as_size, state_list, state_start, state_stack, num_non_terminals, 0);
   ffree(as_size);
   ffree(naction_symbols);
-  /* Remap non-terminals */
+  // Remap non-terminals
   for (int i = 1; i <= gotodom_size; i++) {
     if (cli_options->table_opt == OPTIMIZE_SPACE) {
       gd_range[i] = symbol_map[gd_range[i]] - num_terminals;
@@ -522,7 +522,7 @@ void print_error_maps(struct CLIOptions* cli_options) {
       gd_range[i] = symbol_map[gd_range[i]];
     }
   }
-  /* Compute and write out the base of the NACTION_SYMBOLS map.*/
+  // Compute and write out the base of the NACTION_SYMBOLS map.
   naction_symbols_base = Allocate_long_array(num_states + 1);
   for ALL_STATES3(state_no) {
     naction_symbols_base[state_list[state_no]] = ABS(state_start[state_list[state_no]]);
@@ -533,7 +533,7 @@ void print_error_maps(struct CLIOptions* cli_options) {
     prnt_shorts("\nconst unsigned short CLASS_HEADER nasb[] = {0,\n", 1, num_states, 10, naction_symbols_base, cli_options);
   }
   ffree(naction_symbols_base);
-  /* Compute and write out the range of the NACTION_SYMBOLS map.*/
+  // Compute and write out the range of the NACTION_SYMBOLS map.
   offset = state_start[num_states + 1];
   naction_symbols_range = Allocate_long_array(offset);
   compute_naction_symbols_range(state_start, state_stack, state_list, naction_symbols_range);
@@ -545,10 +545,10 @@ void print_error_maps(struct CLIOptions* cli_options) {
   PRNT2(msg_line, "    Storage required for NACTION_SYMBOLS_BASE map: %ld Bytes", 2 * num_states);
   PRNT2(msg_line, "    Storage required for NACTION_SYMBOLS_RANGE map: %d Bytes", 2 * (offset - 1));
   ffree(naction_symbols_range);
-  /* We write the name_index of each terminal symbol.  The array TEMP  */
-  /* is used to remap the NAME_INDEX values based on the new symbol    */
-  /* numberings. If time tables are requested, the terminals and non-  */
-  /* terminals are mixed together.                                     */
+  // We write the name_index of each terminal symbol.  The array TEMP
+  // is used to remap the NAME_INDEX values based on the new symbol
+  // numberings. If time tables are requested, the terminals and non-
+  // terminals are mixed together.
   temp = Allocate_long_array(num_symbols + 1);
   if (cli_options->table_opt == OPTIMIZE_SPACE) {
     for ALL_TERMINALS3(symbol) {
@@ -569,11 +569,11 @@ void print_error_maps(struct CLIOptions* cli_options) {
       }
       num_bytes = 2 * num_terminals;
     }
-    /* Compute and list space required for TERMINAL_INDEX map.       */
+    // Compute and list space required for TERMINAL_INDEX map.
     PRNT2(msg_line, "    Storage required for TERMINAL_INDEX map: %ld Bytes", num_bytes);
-    /* We write the name_index of each non_terminal symbol. The array */
-    /* TEMP is used to remap the NAME_INDEX values based on the new   */
-    /* symbol numberings.                                             */
+    // We write the name_index of each non_terminal symbol. The array
+    // TEMP is used to remap the NAME_INDEX values based on the new
+    // symbol numberings.
     for ALL_NON_TERMINALS3(symbol) {
       temp[symbol_map[symbol]] = symno[symbol].name_index;
     }
@@ -592,7 +592,7 @@ void print_error_maps(struct CLIOptions* cli_options) {
       }
       num_bytes = 2 * num_non_terminals;
     }
-    /* Compute and list space required for NON_TERMINAL_INDEX map.   */
+    // Compute and list space required for NON_TERMINAL_INDEX map.
     PRNT2(msg_line, "    Storage required for NON_TERMINAL_INDEX map: %ld Bytes", num_bytes);
   } else {
     for ALL_SYMBOLS3(symbol) {
@@ -621,7 +621,7 @@ void print_error_maps(struct CLIOptions* cli_options) {
       }
       num_bytes = 2 * num_symbols;
     }
-    /* Compute and list space required for SYMBOL_INDEX map.         */
+    // Compute and list space required for SYMBOL_INDEX map.
     PRNT2(msg_line, "    Storage required for SYMBOL_INDEX map: %ld Bytes", num_bytes);
   }
   if (num_scopes > 0) {
@@ -641,7 +641,7 @@ void print_error_maps(struct CLIOptions* cli_options) {
         scope[i].lhs_symbol = symbol_map[scope[i].lhs_symbol];
       }
     }
-    /* Mark all elements of prefix strings. */
+    // Mark all elements of prefix strings.
     for (int i = 1; i <= scope_rhs_size; i++) {
       list[i] = -1;
     }
@@ -708,7 +708,7 @@ void print_error_maps(struct CLIOptions* cli_options) {
     } else {
       mystrcpy("                          };\n");
     }
-    /* Compute and list space required for STRING_BUFFER map.        */
+    // Compute and list space required for STRING_BUFFER map.
     PRNT2(msg_line, "    Storage required for STRING_BUFFER map: %ld Bytes", num_bytes);
   } else {
     // Print C names.
@@ -756,9 +756,9 @@ void print_error_maps(struct CLIOptions* cli_options) {
     } else {
       mystrcpy("                          };\n");
     }
-    /* Compute and list space required for STRING_BUFFER map.        */
+    // Compute and list space required for STRING_BUFFER map.
     PRNT2(msg_line, "    Storage required for STRING_BUFFER map: %ld Bytes", num_bytes);
-    /* Write out NAME_START array */
+    // Write out NAME_START array
     mystrcpy("\nconst unsigned short CLASS_HEADER name_start[] = {0,\n");
     padline();
     int j = 1;
@@ -784,11 +784,11 @@ void print_error_maps(struct CLIOptions* cli_options) {
     } else {
       mystrcpy("                          };\n");
     }
-    /* Compute and list space required for NAME_START map.           */
+    // Compute and list space required for NAME_START map.
     PRNT2(msg_line, "    Storage required for NAME_START map: %ld Bytes", 2 * num_names);
-    /* Write out NAME_LENGTH array */
+    // Write out NAME_LENGTH array
     prnt_shorts("\nconst unsigned char  CLASS_HEADER name_length[] = {0,\n", 1, num_names, 10, name_len, cli_options);
-    /* Compute and list space required for NAME_LENGTH map.          */
+    // Compute and list space required for NAME_LENGTH map.
     PRNT2(msg_line, "    Storage required for NAME_LENGTH map: %ld Bytes", num_names);
     ffree(name_len);
   }
@@ -1025,7 +1025,7 @@ void print_error_maps(struct CLIOptions* cli_options) {
         mystrcpy("\nconst unsigned short CLASS_HEADER in_symb[] = {0,\n");
       }
     }
-    /* Transition symbol */
+    // Transition symbol
     padline();
     *output_ptr++ = '0';
     *output_ptr++ = COMMA;
@@ -1063,7 +1063,7 @@ void print_error_maps(struct CLIOptions* cli_options) {
   }
 }
 
-void common(const bool byte_check_bit, struct CLIOptions* cli_options) {
+void common(const bool byte_check_bit, struct CLIOptions *cli_options) {
   // Write table common.
   {
     if (error_maps_bit) {
@@ -1094,7 +1094,7 @@ void common(const bool byte_check_bit, struct CLIOptions* cli_options) {
     char line[SYMBOL_SIZE + /* max length of a token symbol  */
               2 * MAX_PARM_SIZE + /* max length of prefix + suffix */
               64]; /* +64 for error messages lines  */
-    /* or other fillers(blank, =,...)*/
+    // or other fillers(blank, =,...)
     if (cli_options->java_bit) {
       strcpy(line, "interface ");
       strcat(line, sym_tag);
@@ -1102,7 +1102,7 @@ void common(const bool byte_check_bit, struct CLIOptions* cli_options) {
     } else {
       strcpy(line, "enum {\n");
     }
-    /* We write the terminal symbols map.                    */
+    // We write the terminal symbols map.
     for ALL_TERMINALS3(symbol) {
       char *tok = RETRIEVE_STRING(symbol);
       fprintf(syssym, "%s", line);
@@ -1865,17 +1865,17 @@ void common(const bool byte_check_bit, struct CLIOptions* cli_options) {
   }
 }
 
-/* if ERROR_MAPS are requested, we print them out in the following order:    */
-/*                                                                           */
-/*   1) The FOLLOW map (NEWFOLL)                                             */
-/*   2) The SORTED_STATE vector                                              */
-/*   3) The ORIGINAL_STATE vector                                            */
-/*   4) The map from states into valid symbols on which actions are          */
-/*      defined within the state in question: ACTION_SYMBOLS                 */
-/*   5) The map from each symbol into the set of staes that can              */
-/*      possibly be reached after a transition on the symbol in              */
-/*      question: TRANSITION_STATES                                          */
-void process_error_maps(struct CLIOptions* cli_options, FILE *systab) {
+/// if ERROR_MAPS are requested, we print them out in the following order:
+///
+///   1) The FOLLOW map (NEWFOLL)
+///   2) The SORTED_STATE vector
+///   3) The ORIGINAL_STATE vector
+///   4) The map from states into valid symbols on which actions are
+///      defined within the state in question: ACTION_SYMBOLS
+///   5) The map from each symbol into the set of staes that can
+///      possibly be reached after a transition on the symbol in
+///      question: TRANSITION_STATES
+void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
   long *state_start;
   long *state_stack;
   int *temp;
@@ -1907,18 +1907,18 @@ void process_error_maps(struct CLIOptions* cli_options, FILE *systab) {
   state_stack = Allocate_long_array(num_states + 1);
   term_list = Allocate_int_array(num_symbols + 1);
   PRNT("\nError maps storage:");
-  /* The FOLLOW map is written out as two vectors where the first      */
-  /* vector indexed by a Symbol gives the starting location in the     */
-  /* second vector where the elements of the follow set of that symbol */
-  /* starts.  Note that since the terminal and non-terminal symbols    */
-  /* have been intermixed, the FOLLOW map is written out with the      */
-  /* complete set of symbols as its domain even though it is only      */
-  /* defined on non-terminals.                                         */
-  /*                                                                   */
-  /* We now compute and write the starting location for each symbol.   */
-  /* The offset for the first symbol is 1,  and hence does not         */
-  /* have to be computed.  However,  we compute an extra offset to     */
-  /* indicate the extent of the last symbol.                           */
+  // The FOLLOW map is written out as two vectors where the first
+  // vector indexed by a Symbol gives the starting location in the
+  // second vector where the elements of the follow set of that symbol
+  // starts.  Note that since the terminal and non-terminal symbols
+  // have been intermixed, the FOLLOW map is written out with the
+  // complete set of symbols as its domain even though it is only
+  // defined on non-terminals.
+  //
+  // We now compute and write the starting location for each symbol.
+  // The offset for the first symbol is 1,  and hence does not
+  // have to be computed.  However,  we compute an extra offset to
+  // indicate the extent of the last symbol.
   for (int symbol = 1; symbol <= non_terminal_ubound; symbol++) {
     symbol_count[symbol] = 0;
     symbol_root[symbol] = OMEGA;
@@ -1954,7 +1954,7 @@ void process_error_maps(struct CLIOptions* cli_options, FILE *systab) {
     *output_ptr++ = '\n';
     BUFFER_CHECK(systab);
   }
-  /*  We now write the elements in the range of the FOLLOW map.  */
+  //  We now write the elements in the range of the FOLLOW map.
   k = 0;
   for (int symbol = 1; symbol <= non_terminal_ubound; symbol++) {
     lhs_symbol = symbol_root[symbol];
@@ -1976,7 +1976,7 @@ void process_error_maps(struct CLIOptions* cli_options, FILE *systab) {
     *output_ptr++ = '\n';
     BUFFER_CHECK(systab);
   }
-  /* Compute and list amount of space required for the Follow map. */
+  // Compute and list amount of space required for the Follow map.
   if (cli_options->table_opt == OPTIMIZE_TIME) {
     num_bytes = 2 * (num_symbols + offset);
     if (cli_options->byte_bit && last_non_terminal <= 255) {
@@ -1989,7 +1989,7 @@ void process_error_maps(struct CLIOptions* cli_options, FILE *systab) {
     }
   }
   PRNT2(msg_line, "    Storage required for FOLLOW map: %ld Bytes", num_bytes);
-  /* We now write out the states in sorted order: SORTED_STATE. */
+  // We now write out the states in sorted order: SORTED_STATE.
   k = 0;
   for ALL_STATES3(state_no) {
     field(ordered_state[state_no], 6);
@@ -2004,11 +2004,11 @@ void process_error_maps(struct CLIOptions* cli_options, FILE *systab) {
     *output_ptr++ = '\n';
     BUFFER_CHECK(systab);
   }
-  /* Compute and list space required for SORTED_STATE map.         */
+  // Compute and list space required for SORTED_STATE map.
   num_bytes = 2 * num_states;
   PRNT2(msg_line, "    Storage required for SORTED_STATE map: %ld Bytes", num_bytes);
-  /* We now write a vector parallel to SORTED_STATE that gives us the */
-  /* original number associated with the state: ORIGINAL_STATE.       */
+  // We now write a vector parallel to SORTED_STATE that gives us the
+  // original number associated with the state: ORIGINAL_STATE.
   k = 0;
   for (int state_no = 1; state_no <= num_states; state_no++) {
     field(state_list[state_no], 6);
@@ -2023,30 +2023,30 @@ void process_error_maps(struct CLIOptions* cli_options, FILE *systab) {
     *output_ptr++ = '\n';
     BUFFER_CHECK(systab);
   }
-  /* Compute and list space required for ORIGINAL_STATE map.       */
+  // Compute and list space required for ORIGINAL_STATE map.
   num_bytes = 2 * num_states;
   PRNT2(msg_line, "    Storage required for ORIGINAL_STATE map: %ld Bytes", num_bytes);
-  /* We now construct a bit map for the set of terminal symbols that  */
-  /* may appear in each state. Then, we invoke PARTSET to apply the   */
-  /* Partition Heuristic and print it.                                */
+  // We now construct a bit map for the set of terminal symbols that
+  // may appear in each state. Then, we invoke PARTSET to apply the
+  // Partition Heuristic and print it.
   as_size = Allocate_long_array(num_states + 1);
   if (cli_options->table_opt == OPTIMIZE_TIME) {
     original = Allocate_int_array(num_symbols + 1);
-    /* In a compressed TIME table, the terminal and non-terminal */
-    /* symbols are mixed together when they are remapped.        */
-    /* We shall now recover the original number associated with  */
-    /* each terminal symbol since it lies very nicely in the     */
-    /* range 1..NUM_TERMINALS.  This will save a considerable    */
-    /* amount of space in the bit_string representation of sets  */
-    /* as well as time when operations are performed on those    */
-    /* bit-strings.                                              */
+    // In a compressed TIME table, the terminal and non-terminal
+    // symbols are mixed together when they are remapped.
+    // We shall now recover the original number associated with
+    // each terminal symbol since it lies very nicely in the
+    // range 1..NUM_TERMINALS.  This will save a considerable
+    // amount of space in the bit_string representation of sets
+    // as well as time when operations are performed on those
+    // bit-strings.
     for ALL_TERMINALS3(symbol) {
       original[symbol_map[symbol]] = symbol;
     }
   }
-  /* NOTE that the arrays ACTION_SYMBOLS and NACTION_SYMBOLS are global  */
-  /* variables that are allocated in the procedure PROCESS_TABLES by     */
-  /* calloc which automatically initializes them to 0.                   */
+  // NOTE that the arrays ACTION_SYMBOLS and NACTION_SYMBOLS are global
+  // variables that are allocated in the procedure PROCESS_TABLES by
+  // calloc which automatically initializes them to 0.
   for ALL_STATES3(state_no) {
     struct shift_header_type sh;
     struct reduce_header_type red;
@@ -2076,9 +2076,9 @@ void process_error_maps(struct CLIOptions* cli_options, FILE *systab) {
   partset(action_symbols, as_size, state_list, state_start,
           state_stack, num_terminals, 0);
   ffree(action_symbols);
-  /* We now write the starting location for each state in the domain   */
-  /* of the ACTION_SYMBOL map.                                         */
-  /* The starting locations are contained in the STATE_START vector.   */
+  // We now write the starting location for each state in the domain
+  // of the ACTION_SYMBOL map.
+  // The starting locations are contained in the STATE_START vector.
   offset = state_start[num_states + 1];
   k = 0;
   for ALL_STATES3(state_no) {
@@ -2093,7 +2093,7 @@ void process_error_maps(struct CLIOptions* cli_options, FILE *systab) {
   field(offset, 6);
   *output_ptr++ = '\n';
   BUFFER_CHECK(systab);
-  /* Compute and write out the range of the ACTION_SYMBOLS map. */
+  // Compute and write out the range of the ACTION_SYMBOLS map.
   action_symbols_range = Allocate_long_array(offset);
   compute_action_symbols_range(state_start, state_stack, state_list, action_symbols_range);
   k = 0;
@@ -2110,7 +2110,7 @@ void process_error_maps(struct CLIOptions* cli_options, FILE *systab) {
     *output_ptr++ = '\n';
     BUFFER_CHECK(systab);
   }
-  /* Compute and list space required for ACTION_SYMBOLS map.   */
+  // Compute and list space required for ACTION_SYMBOLS map.
   num_bytes = 2 * (num_states + offset);
   if (cli_options->byte_bit) {
     if (offset <= 255) {
@@ -2122,7 +2122,7 @@ void process_error_maps(struct CLIOptions* cli_options, FILE *systab) {
   }
   PRNT2(msg_line, "    Storage required for ACTION_SYMBOLS map: %ld Bytes", num_bytes);
   ffree(action_symbols_range);
-  /* We now repeat the same process for the domain of the GOTO table.    */
+  // We now repeat the same process for the domain of the GOTO table.
   for ALL_STATES3(state_no) {
     as_size[state_no] = gd_index[state_no + 1] - gd_index[state_no];
     for (state_no = gd_index[state_no]; state_no < gd_index[state_no + 1]; state_no++) {
@@ -2135,16 +2135,16 @@ void process_error_maps(struct CLIOptions* cli_options, FILE *systab) {
   ffree(as_size);
   ffree(naction_symbols);
   for (int state_no = 1; state_no <= gotodom_size; state_no++) {
-    /* Remap non-terminals */
+    // Remap non-terminals
     if (cli_options->table_opt == OPTIMIZE_TIME) {
       gd_range[state_no] = symbol_map[gd_range[state_no]];
     } else {
       gd_range[state_no] = symbol_map[gd_range[state_no]] - num_terminals;
     }
   }
-  /* We now write the starting location for each state in the      */
-  /* domain of the NACTION_SYMBOLS map. The starting locations are */
-  /* contained in the STATE_START vector.                          */
+  // We now write the starting location for each state in the
+  // domain of the NACTION_SYMBOLS map. The starting locations are
+  // contained in the STATE_START vector.
   offset = state_start[num_states + 1];
   k = 0;
   for ALL_STATES3(state_no) {
@@ -2159,7 +2159,7 @@ void process_error_maps(struct CLIOptions* cli_options, FILE *systab) {
   field(offset, 6);
   *output_ptr++ = '\n';
   BUFFER_CHECK(systab);
-  /* Compute and write out the range of the NACTION_SYMBOLS map.*/
+  // Compute and write out the range of the NACTION_SYMBOLS map.
   naction_symbols_range = Allocate_long_array(offset);
   compute_naction_symbols_range(state_start, state_stack,
                                 state_list, naction_symbols_range);
@@ -2177,7 +2177,7 @@ void process_error_maps(struct CLIOptions* cli_options, FILE *systab) {
     *output_ptr++ = '\n';
     BUFFER_CHECK(systab);
   }
-  /* Compute and list space required for NACTION_SYMBOLS map.  */
+  // Compute and list space required for NACTION_SYMBOLS map.
   num_bytes = 2 * (num_states + offset);
   if (cli_options->byte_bit) {
     if (offset <= 255) {
@@ -2190,18 +2190,18 @@ void process_error_maps(struct CLIOptions* cli_options, FILE *systab) {
   }
   PRNT2(msg_line, "    Storage required for NACTION_SYMBOLS map: %ld Bytes", num_bytes);
   ffree(naction_symbols_range);
-  /* Compute map from each symbol to state into which that symbol can    */
-  /* cause a transition: TRANSITION_STATES                               */
-  /* TRANSITION_STATES is also written as two vectors like the FOLLOW    */
-  /* map and the ACTION_DOMAIN map.                                      */
-  /* The first vector contains the starting location in the second       */
-  /* vector for each symbol.                                             */
-  /*   Construct the TRANSITION_STATES map using an array SYMBOL_ROOT    */
-  /* (indexable by each symbol) whose elements are the root of a linked  */
-  /* stack built in STATE_STACK. Another array SYMBOL_COUNT is used to   */
-  /* keep count of the number of states associated with each symbol.     */
-  /* For space tables, the TRANSITION_STATES map is written as two       */
-  /* separate tables: SHIFT_STATES and GOTO_STATES.                      */
+  // Compute map from each symbol to state into which that symbol can
+  // cause a transition: TRANSITION_STATES
+  // TRANSITION_STATES is also written as two vectors like the FOLLOW
+  // map and the ACTION_DOMAIN map.
+  // The first vector contains the starting location in the second
+  // vector for each symbol.
+  //   Construct the TRANSITION_STATES map using an array SYMBOL_ROOT
+  // (indexable by each symbol) whose elements are the root of a linked
+  // stack built in STATE_STACK. Another array SYMBOL_COUNT is used to
+  // keep count of the number of states associated with each symbol.
+  // For space tables, the TRANSITION_STATES map is written as two
+  // separate tables: SHIFT_STATES and GOTO_STATES.
   for ALL_SYMBOLS3(symbol) {
     symbol_root[symbol] = NIL;
     symbol_count[symbol] = 0;
@@ -2210,7 +2210,7 @@ void process_error_maps(struct CLIOptions* cli_options, FILE *systab) {
     struct node *q;
     q = statset[state_no].kernel_items;
     if (q == NULL) {
-      /* is the state a single production state? */
+      // is the state a single production state?
       q = statset[state_no].complete_items; /* pick arbitrary item */
     }
     item_no = q->value - 1;
@@ -2220,7 +2220,7 @@ void process_error_maps(struct CLIOptions* cli_options, FILE *systab) {
     symbol_root[symbol] = state_no;
     symbol_count[symbol]++;
   }
-  /* We now compute and write the starting location for each terminal symbol */
+  // We now compute and write the starting location for each terminal symbol
   offset = 1; /* Offset of the first state */
   field(offset, 6);
   k = 1;
@@ -2238,8 +2238,8 @@ void process_error_maps(struct CLIOptions* cli_options, FILE *systab) {
     *output_ptr++ = '\n';
     BUFFER_CHECK(systab);
   }
-  /* We now write out the range elements of SHIFT_STATES for space     */
-  /* tables or TRANSITION_STATES for time tables.                      */
+  // We now write out the range elements of SHIFT_STATES for space
+  // tables or TRANSITION_STATES for time tables.
   k = 0;
   for (int symbol = 1; symbol <= terminal_ubound; symbol++) {
     for (int state_no = symbol_root[symbol]; state_no != NIL; state_no = state_stack[state_no]) {
@@ -2256,21 +2256,21 @@ void process_error_maps(struct CLIOptions* cli_options, FILE *systab) {
     *output_ptr++ = '\n';
     BUFFER_CHECK(systab);
   }
-  /* If space tables are requested we compute and list space required  */
-  /* for SHIFT_STATES map. The base vector contains NUM_TERMINALS+ 1   */
-  /* elements,  and the vector containing the range elements has size  */
-  /* OFFSET - 1. If time tables are requested we compute and list space*/
-  /* requirements for TRANSITION_STATES map.  The base vector has      */
-  /* NUM_SYMBOLS + 1 elements, and the range elements vector contains  */
-  /* OFFSET - 1 elements.                                              */
+  // If space tables are requested we compute and list space required
+  // for SHIFT_STATES map. The base vector contains NUM_TERMINALS+ 1
+  // elements,  and the vector containing the range elements has size
+  // OFFSET - 1. If time tables are requested we compute and list space
+  // requirements for TRANSITION_STATES map.  The base vector has
+  // NUM_SYMBOLS + 1 elements, and the range elements vector contains
+  // OFFSET - 1 elements.
   if (cli_options->table_opt == OPTIMIZE_TIME) {
     num_bytes = 2 * (num_symbols + offset);
     PRNT2(msg_line, "    Storage required for TRANSITION_STATES map: %ld Bytes", num_bytes);
   } else {
     num_bytes = 2 * (num_terminals + offset);
     PRNT2(msg_line, "    Storage required for SHIFT_STATES map: %ld Bytes", num_bytes);
-    /* We now compute and write the starting location for each  */
-    /* non-terminal symbol...                                   */
+    // We now compute and write the starting location for each
+    // non-terminal symbol...
     offset = 1;
     field(offset, 6); /* Offset of the first state */
     k = 1;
@@ -2288,8 +2288,8 @@ void process_error_maps(struct CLIOptions* cli_options, FILE *systab) {
       *output_ptr++ = '\n';
       BUFFER_CHECK(systab);
     }
-    /* We now write out the range elements of GOTO_STATES whose domain   */
-    /* is a non-terminal symbol.                                         */
+    // We now write out the range elements of GOTO_STATES whose domain
+    // is a non-terminal symbol.
     k = 0;
     for ALL_NON_TERMINALS3(symbol) {
       for (int state_no = symbol_root[symbol];
@@ -2307,13 +2307,13 @@ void process_error_maps(struct CLIOptions* cli_options, FILE *systab) {
       *output_ptr++ = '\n';
       BUFFER_CHECK(systab);
     }
-    /* We compute and list space required for GOTO_STATES map. The       */
-    /* base vector contains NUM_NON_TERMINALS+ 1 elements, and the vector*/
-    /* containing the range elements has size OFFSET - 1                 */
+    // We compute and list space required for GOTO_STATES map. The
+    // base vector contains NUM_NON_TERMINALS+ 1 elements, and the vector
+    // containing the range elements has size OFFSET - 1
     num_bytes = 2 * (num_non_terminals + offset);
     PRNT2(msg_line, "    Storage required for GOTO_STATES map: %ld Bytes", num_bytes);
   }
-  /* Write the number associated with the ERROR symbol.                */
+  // Write the number associated with the ERROR symbol.
   field(error_image, 4);
   field(eolt_image, 4);
   field(num_names, 4);
@@ -2325,7 +2325,7 @@ void process_error_maps(struct CLIOptions* cli_options, FILE *systab) {
   }
   *output_ptr++ = '\n';
   BUFFER_CHECK(systab);
-  /* We write out the names map.                                       */
+  // We write out the names map.
   num_bytes = 0;
   max_len = 0;
   for (int state_no = 1; state_no <= num_names; state_no++) {
@@ -2360,10 +2360,10 @@ void process_error_maps(struct CLIOptions* cli_options, FILE *systab) {
     *output_ptr++ = '\n';
     BUFFER_CHECK(systab);
   }
-  /* We write the name_index of each terminal symbol.  The array TEMP  */
-  /* is used to remap the NAME_INDEX values based on the new symbol    */
-  /* numberings. If time tables are requested, the terminals and non-  */
-  /* terminals are mixed together.                                     */
+  // We write the name_index of each terminal symbol.  The array TEMP
+  // is used to remap the NAME_INDEX values based on the new symbol
+  // numberings. If time tables are requested, the terminals and non-
+  // terminals are mixed together.
   temp = Allocate_int_array(num_symbols + 1);
   if (cli_options->table_opt == OPTIMIZE_TIME) {
     for ALL_SYMBOLS3(symbol) {
@@ -2401,9 +2401,9 @@ void process_error_maps(struct CLIOptions* cli_options, FILE *systab) {
       *output_ptr++ = '\n';
       BUFFER_CHECK(systab);
     }
-    /* We write the name_index of each non_terminal symbol. The     */
-    /* array TEMP is used to remap the NAME_INDEX values based on   */
-    /* the new symbol numberings.                                   */
+    // We write the name_index of each non_terminal symbol. The
+    // array TEMP is used to remap the NAME_INDEX values based on
+    // the new symbol numberings.
     for ALL_NON_TERMINALS3(symbol) {
       temp[symbol_map[symbol]] = symno[symbol].name_index;
     }
@@ -2422,7 +2422,7 @@ void process_error_maps(struct CLIOptions* cli_options, FILE *systab) {
       BUFFER_CHECK(systab);
     }
   }
-  /* Compute and list space requirements for NAME map. */
+  // Compute and list space requirements for NAME map.
   if (max_len > 255) {
     offset = 2 * num_symbols;
   } else {
@@ -2602,7 +2602,7 @@ void process_error_maps(struct CLIOptions* cli_options, FILE *systab) {
   ffree(term_list);
 }
 
-void print_space_parser(struct CLIOptions* cli_options) {
+void print_space_parser(struct CLIOptions *cli_options) {
   bool byte_check_bit = true; {
     int *check;
     int *action;
@@ -2622,7 +2622,7 @@ void print_space_parser(struct CLIOptions* cli_options) {
     check = Allocate_int_array(table_size + 1);
     action = Allocate_int_array(table_size + 1);
     output_ptr = &output_buffer[0];
-    /* Prepare header card with proper information, and write it out. */
+    // Prepare header card with proper information, and write it out.
     offset = error_act;
     if (cli_options->lalr_level > 1) {
       if (cli_options->read_reduce_bit) {
@@ -2642,17 +2642,17 @@ void print_space_parser(struct CLIOptions* cli_options) {
     for (int i = 1; i <= (int) action_size; i++) {
       action[i] = error_act;
     }
-    /*    Update the default non-terminal action of each state with the */
-    /* appropriate corresponding terminal state starting index.         */
+    //    Update the default non-terminal action of each state with the
+    // appropriate corresponding terminal state starting index.
     for (int i = 1; i <= num_terminal_states; i++) {
       indx = term_state_index[i];
       int state_no = new_state_element[i].image;
-      /* Update the action link between the non-terminal and terminal      */
-      /* tables. If error-maps are requested, an indirect linking is made  */
-      /* as follows:                                                       */
-      /*  Each non-terminal row identifies its original state number, and  */
-      /* a new vector START_TERMINAL_STATE indexable by state numbers      */
-      /* identifies the starting point of each state in the terminal table.*/
+      // Update the action link between the non-terminal and terminal
+      // tables. If error-maps are requested, an indirect linking is made
+      // as follows:
+      //  Each non-terminal row identifies its original state number, and
+      // a new vector START_TERMINAL_STATE indexable by state numbers
+      // identifies the starting point of each state in the terminal table.
       if (state_no <= num_states) {
         for (; state_no != NIL; state_no = state_list[state_no]) {
           action[state_index[state_no]] = indx;
@@ -2664,7 +2664,7 @@ void print_space_parser(struct CLIOptions* cli_options) {
         }
       }
     }
-    /*  Now update the non-terminal tables with the non-terminal actions.*/
+    //  Now update the non-terminal tables with the non-terminal actions.
     for ALL_STATES3(state_no) {
       struct goto_header_type go_to;
       indx = state_index[state_no];
@@ -2714,7 +2714,7 @@ void print_space_parser(struct CLIOptions* cli_options) {
       mystrcpy(def_tag);
       mystrcpy("\n{\n");
     }
-    /* Write size of right hand side of rules followed by CHECK table.   */
+    // Write size of right hand side of rules followed by CHECK table.
     if (cli_options->java_bit) {
       mystrcpy("    public final static byte rhs[] = {0,\n");
     } else {
@@ -2791,7 +2791,7 @@ void print_space_parser(struct CLIOptions* cli_options) {
       }
       *output_ptr++ = '\n';
     }
-    /* Write left hand side symbol of rules followed by ACTION table.    */
+    // Write left hand side symbol of rules followed by ACTION table.
     if (cli_options->java_bit) {
       mystrcpy("    public final static char lhs[] = {0,\n");
     } else {
@@ -2862,7 +2862,7 @@ void print_space_parser(struct CLIOptions* cli_options) {
       mystrcpy("const unsigned short *CLASS_HEADER base_action = lhs;\n");
     }
     *output_ptr++ = '\n';
-    /* Initialize the terminal tables,and update with terminal actions. */
+    // Initialize the terminal tables,and update with terminal actions.
     for (int i = 1; i <= term_check_size; i++) {
       check[i] = DEFAULT_SYMBOL;
     }
@@ -2927,7 +2927,7 @@ void print_space_parser(struct CLIOptions* cli_options) {
     PRNT2(msg_line, "     Number of Goto/Reduces: %d", goto_reduce_count);
     PRNT2(msg_line, "     Number of Reduces: %d", reduce_count);
     PRNT2(msg_line, "     Number of Defaults: %d", default_count);
-    /* Write Terminal Check Table.                                      */
+    // Write Terminal Check Table.
     if (num_terminals <= (cli_options->java_bit ? 127 : 255)) {
       if (cli_options->java_bit) {
         prnt_ints("\n    public final static byte term_check[] = {0,\n", 1, term_check_size, 15, check, cli_options);
@@ -2941,13 +2941,13 @@ void print_space_parser(struct CLIOptions* cli_options) {
         prnt_ints("\nconst unsigned short CLASS_HEADER term_check[] = {0,\n", 1, term_check_size, 15, check, cli_options);
       }
     }
-    /* Write Terminal Action Table.                                      */
+    // Write Terminal Action Table.
     if (cli_options->java_bit) {
       prnt_ints("\n    public final static char term_action[] = {0,\n", 1, term_action_size, 10, action, cli_options);
     } else {
       prnt_ints("\nconst unsigned short CLASS_HEADER term_action[] = {0,\n", 1, term_action_size, 10, action, cli_options);
     }
-    /* If GOTO_DEFAULT is requested, we print out the GOTODEF vector.   */
+    // If GOTO_DEFAULT is requested, we print out the GOTODEF vector.
     if (cli_options->goto_default_bit) {
       if (cli_options->java_bit) {
         mystrcpy("\n    public final static char default_goto[] = {0,\n");
@@ -3138,7 +3138,7 @@ void print_space_parser(struct CLIOptions* cli_options) {
   common(byte_check_bit, cli_options);
 }
 
-void print_time_parser(struct CLIOptions* cli_options) {
+void print_time_parser(struct CLIOptions *cli_options) {
   bool byte_check_bit = true; {
     long *action;
     long *check;
@@ -3167,8 +3167,8 @@ void print_time_parser(struct CLIOptions* cli_options) {
       PRNTERR2(msg_line, "Table contains entries that are > %ld; Processing stopped.", MAX_TABLE_SIZE + 1);
       exit(12);
     }
-    /* Initialize all unfilled slots with default values.                */
-    /* RECALL that the vector "check" is aliased to the vector "next".   */
+    // Initialize all unfilled slots with default values.
+    // RECALL that the vector "check" is aliased to the vector "next".
     long indx;
     indx = first_index;
     for (long i = indx; i != NIL && i <= action_size; i = indx) {
@@ -3179,7 +3179,7 @@ void print_time_parser(struct CLIOptions* cli_options) {
     for (long i = action_size + 1; i <= table_size; i++) {
       check[i] = DEFAULT_SYMBOL;
     }
-    /* We set the rest of the table with the proper table entries.       */
+    // We set the rest of the table with the proper table entries.
     for (int state_no = 1; state_no <= max_la_state; state_no++) {
       struct shift_header_type sh;
       struct reduce_header_type red;
@@ -3231,8 +3231,8 @@ void print_time_parser(struct CLIOptions* cli_options) {
         }
         action[i] = result_act;
       }
-      /*   We now initialize the elements reserved for reduce actions in   */
-      /* the current state.                                                */
+      //   We now initialize the elements reserved for reduce actions in
+      // the current state.
       short default_rule = red.map[0].rule_number;
       for (int j = 1; j <= red.size; j++) {
         if (red.map[j].rule_number != default_rule) {
@@ -3248,11 +3248,11 @@ void print_time_parser(struct CLIOptions* cli_options) {
           reduce_count++;
         }
       }
-      /*   We now initialize the element reserved for the DEFAULT reduce   */
-      /* action of the current state.  If error maps are requested,  the   */
-      /* default slot is initialized to the original state number, and the */
-      /* corresponding element of the DEFAULT_REDUCE array is initialized. */
-      /* Otherwise it is initialized to the rule number in question.       */
+      //   We now initialize the element reserved for the DEFAULT reduce
+      // action of the current state.  If error maps are requested,  the
+      // default slot is initialized to the original state number, and the
+      // corresponding element of the DEFAULT_REDUCE array is initialized.
+      // Otherwise it is initialized to the rule number in question.
       int i = indx + DEFAULT_SYMBOL;
       check[i] = DEFAULT_SYMBOL;
       int act = red.map[0].rule_number;
@@ -3297,7 +3297,7 @@ void print_time_parser(struct CLIOptions* cli_options) {
       mystrcpy(def_tag);
       mystrcpy("\n{\n");
     }
-    /* Write size of right hand side of rules followed by CHECK table.   */
+    // Write size of right hand side of rules followed by CHECK table.
     if (cli_options->java_bit) {
       mystrcpy("    public final static byte rhs[] = {0,\n");
     } else {
@@ -3324,7 +3324,7 @@ void print_time_parser(struct CLIOptions* cli_options) {
       mystrcpy("                 };\n");
     }
     *output_ptr++ = '\n';
-    /* Write CHECK table.                                            */
+    // Write CHECK table.
     if (byte_check_bit && !error_maps_bit) {
       if (cli_options->java_bit) {
         mystrcpy("    public final static byte check_table[] = {\n");
@@ -3374,7 +3374,7 @@ void print_time_parser(struct CLIOptions* cli_options) {
       }
     }
     *output_ptr++ = '\n';
-    /* Write left hand side symbol of rules followed by ACTION table.    */
+    // Write left hand side symbol of rules followed by ACTION table.
     if (cli_options->java_bit) {
       mystrcpy("    public final static char lhs[] = {0,\n");
     } else {
@@ -3400,8 +3400,8 @@ void print_time_parser(struct CLIOptions* cli_options) {
     k = 0;
     if (error_maps_bit) {
       long max_indx;
-      /* Construct a map from new state numbers into original      */
-      /*   state numbers using the array check[]                   */
+      // Construct a map from new state numbers into original
+      //   state numbers using the array check[]
       max_indx = accept_act - num_rules - 1;
       for (int i = 1; i <= max_indx; i++) {
         check[i] = OMEGA;
@@ -3446,7 +3446,7 @@ void print_time_parser(struct CLIOptions* cli_options) {
       mystrcpy("const unsigned short *CLASS_HEADER action = lhs;\n");
     }
     *output_ptr++ = '\n';
-    /* If GOTO_DEFAULT is requested, we print out the GOTODEF vector.   */
+    // If GOTO_DEFAULT is requested, we print out the GOTODEF vector.
     if (cli_options->goto_default_bit) {
       short *default_map = Allocate_short_array(num_symbols + 1);
       if (cli_options->java_bit) {
@@ -3498,7 +3498,7 @@ void print_time_parser(struct CLIOptions* cli_options) {
   common(byte_check_bit, cli_options);
 }
 
-void init_parser_files(struct OutputFiles* output_files, struct CLIOptions* cli_options) {
+void init_parser_files(struct OutputFiles *output_files, struct CLIOptions *cli_options) {
   init_file(&sysdcl, output_files->dcl_file, dcl_tag, cli_options);
   init_file(&syssym, output_files->sym_file, sym_tag, cli_options);
   init_file(&sysdef, output_files->def_file, def_tag, cli_options);
@@ -3506,7 +3506,7 @@ void init_parser_files(struct OutputFiles* output_files, struct CLIOptions* cli_
 }
 
 /// PT_STATS prints all the states of the parser.
-void ptstats(struct CLIOptions* cli_options) {
+void ptstats(struct CLIOptions *cli_options) {
   int max_size;
   int symbol;
   int number;
@@ -3515,13 +3515,13 @@ void ptstats(struct CLIOptions* cli_options) {
   char temp[SYMBOL_SIZE + 1];
   char line[MAX_LINE_SIZE + 1];
   fprintf(syslis, "Shift STATES: ");
-  /* iterate over the states */
+  // iterate over the states
   for ALL_STATES3(state_no) {
     print_state(state_no);
     max_size = 0;
-    /* Compute the size of the largest symbol.  The MAX_SIZE cannot */
-    /* be larger than PRINT_LINE_SIZE - 17 to allow for printing of */
-    /* headers for actions to be taken on the symbols.              */
+    // Compute the size of the largest symbol.  The MAX_SIZE cannot
+    // be larger than PRINT_LINE_SIZE - 17 to allow for printing of
+    // headers for actions to be taken on the symbols.
     sh = shift[statset[state_no].shift_number];
     for (int i = 1; i <= sh.size; i++) {
       symbol = sh.map[i].symbol;
@@ -3541,10 +3541,10 @@ void ptstats(struct CLIOptions* cli_options) {
       max_size = MAX(max_size, strlen(temp));
     }
     max_size = MIN(max_size, PRINT_LINE_SIZE - 17);
-    /* 1) Print all Shift actions.                                */
-    /* 2) Print all Goto actions.                                 */
-    /* 3) Print all reduce actions.                               */
-    /* 4) If there is a default then print it.                    */
+    // 1) Print all Shift actions.
+    // 2) Print all Goto actions.
+    // 3) Print all reduce actions.
+    // 4) If there is a default then print it.
     if (sh.size > 0) {
       fprintf(syslis, "\n");
       for (int i = 1; i <= sh.size; i++) {
@@ -3599,19 +3599,19 @@ void ptstats(struct CLIOptions* cli_options) {
   for ALL_LA_STATES3(state_no) {
     char buffer[PRINT_LINE_SIZE + 1];
     int ii = number_len(state_no) + 8; /* 8 = length of "STATE" */
-    /* + 2 spaces + newline  */
+    // + 2 spaces + newline
     fill_in(buffer, PRINT_LINE_SIZE - ii, '-');
     fprintf(syslis, "\n\n\nSTATE %d %s", state_no, buffer);
-    /* Print the set of states that have transitions to STATE_NO. */
+    // Print the set of states that have transitions to STATE_NO.
     if (lastats[state_no].in_state == state_no) {
       fprintf(syslis, "\n(Unreachable State)\n");
     } else {
       fprintf(syslis, "\n(%d)\n", lastats[state_no].in_state);
       max_size = 0;
-      /* Compute the size of the largest symbol.  The MAX_SIZE */
-      /* cannot be larger than PRINT_LINE_SIZE - 17 to allow   */
-      /* for printing of headers for actions to be taken on    */
-      /* the symbols.                                          */
+      // Compute the size of the largest symbol.  The MAX_SIZE
+      // cannot be larger than PRINT_LINE_SIZE - 17 to allow
+      // for printing of headers for actions to be taken on
+      // the symbols.
       sh = shift[lastats[state_no].shift_number];
       for (ii = 1; ii <= sh.size; ii++) {
         symbol = sh.map[ii].symbol;
@@ -3625,10 +3625,10 @@ void ptstats(struct CLIOptions* cli_options) {
         max_size = MAX(max_size, strlen(temp));
       }
       max_size = MIN(max_size, PRINT_LINE_SIZE - 17);
-      /* 1) Print all Shift actions.                            */
-      /* 2) Print all Goto actions.                             */
-      /* 3) Print all reduce actions.                           */
-      /* 4) If there is a default then print it.                */
+      // 1) Print all Shift actions.
+      // 2) Print all Goto actions.
+      // 3) Print all reduce actions.
+      // 4) If there is a default then print it.
       fprintf(syslis, "\n");
       for (ii = 1; ii <= sh.size; ii++) {
         symbol = sh.map[ii].symbol;

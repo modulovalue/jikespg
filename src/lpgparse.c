@@ -15,10 +15,10 @@ static char hostfile[] = __FILE__;
 
 char *string_table = NULL;
 
-/* SYMNO is an array that maps symbol numbers to actual symbols.       */
+/// SYMNO is an array that maps symbol numbers to actual symbols.
 struct symno_type *symno = NULL;
 
-/* NAME is an array containing names to be associated with symbols.    */
+/// NAME is an array containing names to be associated with symbols.
 int *name;
 
 char *RETRIEVE_STRING(const int indx) {
@@ -61,8 +61,8 @@ bool IsAlpha(const int c) {
 
 int line_no = 0;
 
-/* The two character pointer variables, P1 and P2, are used in     */
-/* processing the io buffer, INPUT_BUFFER.                         */
+/// The two character pointer variables, P1 and P2, are used in
+/// processing the io buffer, INPUT_BUFFER.
 char *p1;
 char *p2;
 char *input_buffer;
@@ -71,7 +71,7 @@ char *linestart;
 char *bufend;
 char *ct_ptr;
 
-/* current token & related variables */
+/// current token & related variables
 short ct = 0;
 short ct_start_col = 0;
 short ct_end_col = 0;
@@ -93,9 +93,9 @@ void read_input(char *grm_file) {
   *bufend = '\0';
 }
 
-/* VERIFY takes as argument a character string and checks whether each       */
-/* character is a digit. If all are digits, then 1 is returned; if not, then */
-/* 0 is returned.                                                            */
+/// VERIFY takes as argument a character string and checks whether each
+/// character is a digit. If all are digits, then 1 is returned; if not, then
+/// 0 is returned.
 bool verify_is_digit(const char *item) {
   while (IsDigit(*item)) {
     item++;
@@ -103,8 +103,8 @@ bool verify_is_digit(const char *item) {
   return *item == '\0';
 }
 
-/* TRANSLATE takes as arguments a character array, which it folds to upper   */
-/* to uppercase and returns.                                                 */
+/// TRANSLATE takes as arguments a character array, which it folds to upper
+/// to uppercase and returns.
 char *translate(char *str, const int len) {
   for (register int i = 0; i < len; i++) {
     str[i] = TOUPPER(str[i]);
@@ -112,15 +112,15 @@ char *translate(char *str, const int len) {
   return str;
 }
 
-/* Compare two character strings s1 and s2 to check whether s2        */
-/* is a substring of s1. The string s2 is assumed to be in lowercase  */
-/* and NULL terminated. However, s1 does not have to (indeed, may not)*/
-/* be NULL terminated.                                                */
-/*                                                                    */
-/* The test below may look awkward. For example, why not use:         */
-/*                  if (tolower(s1[i]) != s2[i])  ?                   */
-/* because tolower(ch) is sometimes implemented as (ch-'A'+'a') which */
-/* does not work when "ch" is already a lower case character.         */
+/// Compare two character strings s1 and s2 to check whether s2
+/// is a substring of s1. The string s2 is assumed to be in lowercase
+/// and NULL terminated. However, s1 does not have to (indeed, may not)
+/// be NULL terminated.
+///
+/// The test below may look awkward. For example, why not use:
+///                  if (tolower(s1[i]) != s2[i])  ?
+/// because tolower(ch) is sometimes implemented as (ch-'A'+'a') which
+/// does not work when "ch" is already a lower case character.
 bool strxeq(char *s1, char *s2) {
   for (; *s2 != '\0'; s1++, s2++) {
     if (*s1 != *s2 && *s1 != toupper(*s2))
@@ -133,20 +133,20 @@ const int OUTPUT_PARM_SIZE = MAX_PARM_SIZE + 7;
 const int MAXIMUM_LA_LEVEL = 100;
 const int STRING_BUFFER_SIZE = 8192;
 
-/* OPTION handles the decoding of options passed by the user and resets      */
-/* them appropriately. "options" may be called twice: when a parameter line  */
-/* is passed to the main program and when the user codes an %OPTIONS line in */
-/* his grammar.                                                              */
-/* Basically, there are two kinds of options: switches which indicate a      */
-/* certain setting just by their appearance, and valued options which are    */
-/* followed by an equal sign and the value to be assigned to them.           */
-void options(char *file_prefix, struct CLIOptions* cli_options) {
+/// OPTION handles the decoding of options passed by the user and resets
+/// them appropriately. "options" may be called twice: when a parameter line
+/// is passed to the main program and when the user codes an %OPTIONS line in
+/// his grammar.
+/// Basically, there are two kinds of options: switches which indicate a
+/// certain setting just by their appearance, and valued options which are
+/// followed by an equal sign and the value to be assigned to them.
+void options(char *file_prefix, struct CLIOptions *cli_options) {
   char token[MAX_PARM_SIZE + 1];
   char temp[MAX_PARM_SIZE + 1];
   char delim;
   char *c;
-  /* If we scan the comment sign, we stop processing the rest of the */
-  /* parameter string.                                               */
+  // If we scan the comment sign, we stop processing the rest of the
+  // parameter string.
   for (c = parm; *c != '\0'; c++) {
     if (*c == '-' && *(c + 1) == '-') {
       break;
@@ -158,21 +158,21 @@ void options(char *file_prefix, struct CLIOptions* cli_options) {
     i++;
   }
   while (parm[i] != '\0') {
-    /* Repeat until parm line is exhausted */
-    /* Remove garbage in front */
+    // Repeat until parm line is exhausted
+    // Remove garbage in front
     memmove(parm, parm + i, strlen (parm + i) + 1);
     i = 0;
     while (parm[i] != '\0' && /* Search for delimiter */ (parm[i] != ',' && parm[i] != '/' && parm[i] != '=' && parm[i] != ' ')) {
       i++;
     }
     for (int j = 0; j < i; j++) {
-      /* Fold actual parameter */
+      // Fold actual parameter
       token[j] = TOUPPER(parm[j]);
       temp[j] = parm[j];
     }
     token[i] = '\0';
     temp[i] = '\0';
-    /* find first non-blank after parm */
+    // find first non-blank after parm
     while (parm[i] != '\0' && parm[i] == ' ') {
       i++;
     }
@@ -185,14 +185,14 @@ void options(char *file_prefix, struct CLIOptions* cli_options) {
     if (token_len > MAX_PARM_SIZE) {
       token[MAX_PARM_SIZE] = '\0';
     }
-    /* We check whether we have a switch or a value parameter.                   */
-    /* Each category is checked separately.  A match is made whenever            */
-    /* a minimum unambiguous prefix of the token in question matches an          */
-    /* option...                                                                 */
-    /*                                                                           */
-    /* At this stage, TEMP contains the value of the switch as specified         */
-    /* and TOKEN contains the upper-case folded value of TEMP.                   */
-    /* if switch parameter then process */
+    // We check whether we have a switch or a value parameter.
+    // Each category is checked separately.  A match is made whenever
+    // a minimum unambiguous prefix of the token in question matches an
+    // option...
+    //
+    // At this stage, TEMP contains the value of the switch as specified
+    // and TOKEN contains the upper-case folded value of TEMP.
+    // if switch parameter then process
     if (delim != '=') {
       bool flag;
       if (memcmp(token, "NO", 2) == 0) {
@@ -249,10 +249,10 @@ void options(char *file_prefix, struct CLIOptions* cli_options) {
         PRNTERR2(msg_line, "\"%s\" is an invalid option", temp);
       }
     } else {
-      /* We now process the valued-parameter. Pick value after "=" and process */
+      // We now process the valued-parameter. Pick value after "=" and process
       i++;
       if (IsSpace(parm[i]) || parm[i] == '\0') {
-        /* no value specified */
+        // no value specified
         PRNTERR2(msg_line, "Null string or blank is invalid for parameter %s", token);
         continue;
       }
@@ -390,11 +390,11 @@ void options(char *file_prefix, struct CLIOptions* cli_options) {
   }
 }
 
-/* In this function, we read the first line(s) of the input text to see     */
-/* if they are (it is an) "options" line(s).  If so, the options are        */
-/* processed.  Then, we process user-supplied options if there are any.  In */
-/* any case, the options in effect are printed.                             */
-void process_options_lines(char *grm_file, struct OutputFiles *output_files, char *file_prefix, struct CLIOptions* cli_options) {
+/// In this function, we read the first line(s) of the input text to see
+/// if they are (it is an) "options" line(s).  If so, the options are
+/// processed.  Then, we process user-supplied options if there are any.  In
+/// any case, the options in effect are printed.
+void process_options_lines(char *grm_file, struct OutputFiles *output_files, char *file_prefix, struct CLIOptions *cli_options) {
   char old_parm[MAX_LINE_SIZE + 1];
   char output_line[PRINT_LINE_SIZE + 1];
   char opt_string[60][OUTPUT_PARM_SIZE + 1];
@@ -404,11 +404,11 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
   strcpy(old_parm, parm); /* Save new options passed to program */
   static char ooptions[9] = " OPTIONS";
   ooptions[0] = escape; /* "ooptions" always uses default escape symbol */
-  /* Until end-of-file is reached, process */
+  // Until end-of-file is reached, process
   while (p1 != NULL) {
-    /* all comment and %options lines.       */
+    // all comment and %options lines.
     while (IsSpace(*p2)) {
-      /* skip all space symbols */
+      // skip all space symbols
       if (*p2 == '\n') {
         line_no++;
         linestart = p2;
@@ -417,12 +417,12 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
       p2++;
     }
     line_end = strchr(p2, '\n'); /* find end-of-line */
-    /* First, check if line is a comment line. If so, skip it.  Next,    */
-    /* check if line is an options line. If so, process it. Otherwise,   */
-    /* break out of the loop.                                            */
-    /* Note that no length check is necessary before checking for "--"   */
-    /* or "%options" since the buffer is always extended by              */
-    /* MAX_LINE_SIZE elements past its required length. (see read_input) */
+    // First, check if line is a comment line. If so, skip it.  Next,
+    // check if line is an options line. If so, process it. Otherwise,
+    // break out of the loop.
+    // Note that no length check is necessary before checking for "--"
+    // or "%options" since the buffer is always extended by
+    // MAX_LINE_SIZE elements past its required length. (see read_input)
     if (*p2 == '-' && *(p2 + 1) == '-') {
       // Skip comment line.
     } else if (memcmp(ooptions, translate(p2, 8), 8) == 0) {
@@ -434,8 +434,8 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
       p2 = p1; /* make p2 point to first character */
       break;
     }
-    /* If the line was a comment or an option line, check the following  */
-    /* line.  If we are at the end of the buffer, read in more data...   */
+    // If the line was a comment or an option line, check the following
+    // line.  If we are at the end of the buffer, read in more data...
     p1 = line_end + 1;
     if (bufend == input_buffer + IOBUFFER_SIZE) {
       int i = bufend - p1;
@@ -453,7 +453,7 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
   fprintf(syslis, "\n");
   strcpy(parm, old_parm);
   options(file_prefix, cli_options); /* Process new options passed directly to program */
-  /* Deferred parsing without error maps is useless*/
+  // Deferred parsing without error maps is useless
   if (!error_maps_bit) {
     cli_options->deferred_bit = false;
   }
@@ -467,7 +467,7 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
   sprintf(output_files->def_file, "%sdef.%s", file_prefix, cli_options->java_bit ? "java" : "h");
   sprintf(output_files->prs_file, "%sprs.%s", file_prefix, cli_options->java_bit ? "java" : "h");
   sprintf(output_files->dcl_file, "%sdcl.%s", file_prefix, cli_options->java_bit ? "java" : "h");
-  /* turn everything on */
+  // turn everything on
   if (cli_options->verbose_bit) {
     cli_options->first_bit = true;
     cli_options->follow_bit = true;
@@ -476,12 +476,12 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
     cli_options->xref_bit = true;
     cli_options->warnings_bit = true;
   }
-  /*                          PRINT OPTIONS:                                   */
-  /* Here we print all options set by the user. As of now, only about 48       */
-  /* different options and related aliases are allowed. In case that number    */
-  /* goes up, the bound of the array, opt_string, should be changed.           */
-  /* BLOCKB, BLOCKE, HBLOCKB and HBLOCKE can generate the longest strings      */
-  /* since their value can be up to MAX_PARM_SIZE characters long.             */
+  //                          PRINT OPTIONS:
+  // Here we print all options set by the user. As of now, only about 48
+  // different options and related aliases are allowed. In case that number
+  // goes up, the bound of the array, opt_string, should be changed.
+  // BLOCKB, BLOCKE, HBLOCKB and HBLOCKE can generate the longest strings
+  // since their value can be up to MAX_PARM_SIZE characters long.
   sprintf(opt_string[++top], "ACTFILENAME=%s", cli_options->act_file);
   sprintf(opt_string[++top], "BLOCKB=%s", blockb);
   sprintf(opt_string[++top], "BLOCKE=%s", blocke);
@@ -658,7 +658,7 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
       PRNTWNG("SHIFT-DEFAULT option is only valid for Space tables");
     }
   }
-  /* Check if there are any conflicts in the options.                  */
+  // Check if there are any conflicts in the options.
   temp[0] = '\0';
   if (cli_options->minimum_distance <= 1) {
     PRNT("MIN_DISTANCE must be > 1");
@@ -703,8 +703,8 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
   }
 }
 
-/* HASH takes as argument a symbol and hashes it into a location in          */
-/* HASH_TABLE.                                                               */
+/// HASH takes as argument a symbol and hashes it into a location in
+/// HASH_TABLE.
 int hash(const char *symbl) {
   register unsigned long hash_value = 0;
   for (; *symbl != '\0'; symbl++) {
@@ -718,9 +718,9 @@ int hash(const char *symbl) {
   return hash_value % HT_SIZE;
 }
 
-/* INSERT_STRING takes as an argument a pointer to a ht_elemt structure and  */
-/* a character string.  It inserts the string into the string table and sets */
-/* the value of node to the index into the string table.                     */
+/// INSERT_STRING takes as an argument a pointer to a ht_elemt structure and
+/// a character string.  It inserts the string into the string table and sets
+/// the value of node to the index into the string table.
 void insert_string(struct hash_type *q, const char *string) {
   long string_size = 0;
   if (string_offset + strlen(string) >= string_size) {
@@ -736,26 +736,26 @@ void insert_string(struct hash_type *q, const char *string) {
   }
   q->st_ptr = string_offset;
   while ((string_table[string_offset++] = *string++)); /* Copy until NULL */
-  /* is copied.      */
+  // is copied.
 }
 
 bool EQUAL_STRING(const char *symb, const struct hash_type *p) {
   return strcmp(symb, string_table + p->st_ptr) == 0;
 }
 
-/* PROCESS_SYMBOL takes as an argument a pointer to the most recent token    */
-/* which would be either a symbol or a macro name and then processes it. If  */
-/* the token is a macro name then a check is made to see if it is a pre-     */
-/* defined macro. If it is then an error message is printed and the program  */
-/* is halted. If not, or if the token is a symbol then it is hashed into the */
-/* hash_table and its string is copied into the string table.  A struct is   */
-/* created for the token. The ST_PTR field contains the index into the string*/
-/* table and the NUMBER field is set to zero. Later on if the token is a     */
-/* symbol, the value of the NUMBER field is changed to the appropriate symbol*/
-/* number. However, if the token is a macro name, its value will remain zero.*/
-/* The NAME_INDEX field is set to OMEGA and will be assigned a value later.  */
-/*   ASSIGN_SYMBOL_NO takes as arguments a pointer to a node and an image    */
-/* number and assigns a symbol number to the symbol pointed to by the node.  */
+/// PROCESS_SYMBOL takes as an argument a pointer to the most recent token
+/// which would be either a symbol or a macro name and then processes it. If
+/// the token is a macro name then a check is made to see if it is a pre-
+/// defined macro. If it is then an error message is printed and the program
+/// is halted. If not, or if the token is a symbol then it is hashed into the
+/// hash_table and its string is copied into the string table.  A struct is
+/// created for the token. The ST_PTR field contains the index into the string
+/// table and the NUMBER field is set to zero. Later on if the token is a
+/// symbol, the value of the NUMBER field is changed to the appropriate symbol
+/// number. However, if the token is a macro name, its value will remain zero.
+/// The NAME_INDEX field is set to OMEGA and will be assigned a value later.
+///   ASSIGN_SYMBOL_NO takes as arguments a pointer to a node and an image
+/// number and assigns a symbol number to the symbol pointed to by the node.
 void assign_symbol_no(const char *string_ptr, const int image) {
   register struct hash_type *p;
   const register int i = hash(string_ptr);
@@ -779,10 +779,10 @@ void assign_symbol_no(const char *string_ptr, const int image) {
   hash_table[i] = p;
 }
 
-/* ALIAS_MAP takes as input a symbol and an image. It searcheds the hash     */
-/* table for stringptr and if it finds it, it turns it into an alias of the  */
-/* symbol whose number is IMAGE. Otherwise, it invokes PROCESS_SYMBOL and    */
-/* ASSIGN SYMBOL_NO to enter stringptr into the table and then we alias it.  */
+/// ALIAS_MAP takes as input a symbol and an image. It searcheds the hash
+/// table for stringptr and if it finds it, it turns it into an alias of the
+/// symbol whose number is IMAGE. Otherwise, it invokes PROCESS_SYMBOL and
+/// ASSIGN SYMBOL_NO to enter stringptr into the table and then we alias it.
 static void alias_map(const char *stringptr, const int image) {
   for (register struct hash_type *q = hash_table[hash(stringptr)]; q != NULL; q = q->link) {
     if (EQUAL_STRING(stringptr, q)) {
@@ -793,9 +793,9 @@ static void alias_map(const char *stringptr, const int image) {
   assign_symbol_no(stringptr, image);
 }
 
-/* SYMBOL_IMAGE takes as argument a symbol.  It searches for that symbol  */
-/* in the HASH_TABLE, and if found, it returns its image; otherwise, it      */
-/* returns OMEGA.                                                            */
+/// SYMBOL_IMAGE takes as argument a symbol.  It searches for that symbol
+/// in the HASH_TABLE, and if found, it returns its image; otherwise, it
+/// returns OMEGA.
 static int symbol_image(const char *item) {
   for (const register struct hash_type *q = hash_table[hash(item)]; q != NULL; q = q->link) {
     if (EQUAL_STRING(item, q))
@@ -804,10 +804,10 @@ static int symbol_image(const char *item) {
   return OMEGA;
 }
 
-/* NAME_MAP takes as input a symbol and inserts it into the HASH_TABLE if it */
-/* is not yet in the table. If it was already in the table then it is        */
-/* assigned a NAME_INDEX number if it did not yet have one.  The name index  */
-/* assigned is returned.                                                     */
+/// NAME_MAP takes as input a symbol and inserts it into the HASH_TABLE if it
+/// is not yet in the table. If it was already in the table then it is
+/// assigned a NAME_INDEX number if it did not yet have one.  The name index
+/// assigned is returned.
 static int name_map(const char *symb) {
   register struct hash_type *p;
   const register int i = hash(symb);
@@ -841,12 +841,12 @@ int hblocke_len;
 
 #define min(x, y) ((x) < (y) ? (x) : (y))
 
-/* SCANNER scans the input stream and returns the next input token.          */
-void scanner(char *grm_file, struct CLIOptions* cli_options) {
+/// SCANNER scans the input stream and returns the next input token.
+void scanner(char *grm_file, struct CLIOptions *cli_options) {
   register int i;
   char tok_string[SYMBOL_SIZE + 1];
 scan_token:
-  /* Skip "blank" spaces.                                          */
+  // Skip "blank" spaces.
   p1 = p2;
   while (IsSpace(*p1)) {
     if (*p1++ == '\n') {
@@ -946,7 +946,7 @@ scan_token:
 
     return;
   }
-  /* Scan the next token.                                              */
+  // Scan the next token.
   ct_ptr = p1;
   ct_start_line = line_no;
   ct_start_col = p1 - linestart;
@@ -1168,8 +1168,8 @@ check_symbol_length:
   }
 }
 
-/*  This function allocates a line_elemt structure and returns a pointer    */
-/* to it.                                                                   */
+///  This function allocates a line_elemt structure and returns a pointer
+/// to it.
 struct line_elemt *alloc_line(void) {
   register struct line_elemt *p = line_pool_root;
   if (p != NULL) {
@@ -1183,8 +1183,8 @@ struct line_elemt *alloc_line(void) {
   return p;
 }
 
-/*  This function frees a line_elemt structure which is returned to a free  */
-/* pool.                                                                    */
+///  This function frees a line_elemt structure which is returned to a free
+/// pool.
 void free_line(struct line_elemt *p) {
   p->link = line_pool_root;
   line_pool_root = p;
@@ -1192,11 +1192,11 @@ void free_line(struct line_elemt *p) {
 
 short *macro_table;
 
-/* FIND_MACRO takes as argument a pointer to a macro name. It searches for   */
-/* the macro name in the hash table based on MACRO_TABLE. If the macro name  */
-/* is found then the macro definition associated with it is returned.        */
-/* If the name is not found, then a message is printed, a new definition is  */
-/* entered to avoid more messages and NULL is returned.                      */
+/// FIND_MACRO takes as argument a pointer to a macro name. It searches for
+/// the macro name in the hash table based on MACRO_TABLE. If the macro name
+/// is found then the macro definition associated with it is returned.
+/// If the name is not found, then a message is printed, a new definition is
+/// entered to avoid more messages and NULL is returned.
 struct line_elemt *find_macro(char *name) {
   register char *ptr;
   register struct line_elemt *root = NULL;
@@ -1231,8 +1231,8 @@ struct line_elemt *find_macro(char *name) {
       return root;
     }
   }
-  /* Make phony definition for macro so as to avoid future  */
-  /* errors.                                                */
+  // Make phony definition for macro so as to avoid future
+  // errors.
   if (num_defs >= (int) defelmt_size) {
     defelmt_size += DEFELMT_INCREMENT;
     defelmt = (struct defelmt_type *)
@@ -1251,12 +1251,12 @@ struct line_elemt *find_macro(char *name) {
   return NULL;
 }
 
-/* PROCESS_ACTION_LINE takes as arguments a line of text from an action      */
-/* block and the rule number with which the block is associated.             */
-/* It first scans the text for predefined macro names and then for           */
-/* user defined macro names. If one is found, the macro definition is        */
-/* substituted for the name. The modified action text is then printed out in */
-/* the action file.                                                          */
+/// PROCESS_ACTION_LINE takes as arguments a line of text from an action
+/// block and the rule number with which the block is associated.
+/// It first scans the text for predefined macro names and then for
+/// user defined macro names. If one is found, the macro definition is
+/// substituted for the name. The modified action text is then printed out in
+/// the action file.
 void process_action_line(FILE *sysout, char *text, const int line_no, const int rule_no, char *grm_file) {
   char temp1[MAX_LINE_SIZE + 1];
   char suffix[MAX_LINE_SIZE + 1];
@@ -1270,12 +1270,12 @@ next_line: {
   register int text_len = strlen(text);
   register int k = 0; /* k is the cursor */
   while (k < text_len) {
-    /* all macro names begin with the ESCAPE */
+    // all macro names begin with the ESCAPE
     if (text[k] == escape) {
-      /* character                             */
-      /* 12 is length of %rule_number and */
+      // character
+      // 12 is length of %rule_number and
       if (k + 12 <= text_len) {
-        /* %num_symbols.                    */
+        // %num_symbols.
         if (strxeq(text + k, krule_number)) {
           strcpy(temp1, text + k + 12);
           if (k + 12 != text_len)
@@ -1294,7 +1294,7 @@ next_line: {
           goto proceed;
         }
       }
-      /* 11 is the length of %input_file    */
+      // 11 is the length of %input_file
       if (k + 11 <= text_len) {
         if (strxeq(text + k, kinput_file)) {
           strcpy(temp1, text + k + 11);
@@ -1307,17 +1307,17 @@ next_line: {
         }
       }
       if (k + 10 <= text_len) /* 10 is the length of %rule_size and */
-      /* %rule_text, %num_rules and %next_line */
+      // %rule_text, %num_rules and %next_line
       {
         if (strxeq(text + k, krule_text)) {
           char temp2[MAX_LINE_SIZE + 1];
           int jj;
           if (k + 10 != text_len) {
             strcpy(temp1, text + k + 10);
-            /* Remove trailing blanks */
+            // Remove trailing blanks
             for (jj = strlen(temp1) - 1; jj >= 0 && temp1[jj] == ' '; jj--) {
             }
-            /* if not a string of blanks */
+            // if not a string of blanks
             if (jj != 0) {
               temp1[++jj] = '\0';
             } else {
@@ -1329,7 +1329,7 @@ next_line: {
           }
           const register int max_len = output_size - k - jj;
           restore_symbol(temp2, RETRIEVE_STRING(rules[rule_no].lhs));
-          /* if a single production */
+          // if a single production
           if (rules[rule_no].sp) {
             strcat(temp2, " ->");
           } else {
@@ -1420,15 +1420,15 @@ next_line: {
           goto proceed;
         }
       }
-      /* Macro in question is not one of the predefined macros. Try user-defined   */
-      /* macro list.                                                               */
-      /* find next delimeter */
+      // Macro in question is not one of the predefined macros. Try user-defined
+      // macro list.
+      // find next delimeter
       int jj;
       for (jj = k + 1; jj < text_len && !IsSpace(text[jj]); ++jj) {
       }
       memcpy(symbol, text + k, jj - k); /* copy macro name into symbol */
       symbol[jj - k] = '\0';
-      /* Is there any text after macro ? */
+      // Is there any text after macro ?
       if (jj < text_len) {
         strcpy(suffix, text + jj); /* Copy rest of text into "suffix". */
       } else {
@@ -1436,19 +1436,19 @@ next_line: {
       }
       text[k] = '\0'; /* prefix before macro */
       root = find_macro(symbol); /* "root" points to a circular  */
-      /* linked list of line_elemt(s) */
-      /* containing macro definition. */
+      // linked list of line_elemt(s)
+      // containing macro definition.
       if (root != NULL) /* if macro name was found */
       {
         struct line_elemt *tail;
         q = root;
         root = root->link;
         if (suffix[0] != '\0') {
-          /* If there is room to add the suffix to the  */
-          /* last macro line then do it. Or else        */
-          /* allocate a new line_elemt, copy the suffix */
-          /* into it and add it to the list of lines to */
-          /* be processed.                              */
+          // If there is room to add the suffix to the
+          // last macro line then do it. Or else
+          // allocate a new line_elemt, copy the suffix
+          // into it and add it to the list of lines to
+          // be processed.
           if (strlen(q->line) + strlen(suffix) < output_size) {
             strcat(q -> line, suffix);
             tail = q;
@@ -1461,16 +1461,16 @@ next_line: {
           tail = q;
         }
         tail->link = NULL; /* make circular list linear */
-        /* If there is space for the first macro line to be */
-        /* added to the prefix then do it.                  */
+        // If there is space for the first macro line to be
+        // added to the prefix then do it.
         if (strlen(text) + strlen(root->line) < output_size) {
           strcat(text, root -> line);
           q = root;
           root = root->link;
           free_line(q);
         }
-        /* if there are more macro lines to process, */
-        /* add list to list headed by INPUT_LINE_ROOT*/
+        // if there are more macro lines to process,
+        // add list to list headed by INPUT_LINE_ROOT
         if (root != NULL) {
           tail->link = input_line_root;
           input_line_root = root;
@@ -1488,8 +1488,8 @@ next_line: {
     }
     ++k;
   }
-  /* If text is greater than output size, print error message and truncate     */
-  /* line.                                                                     */
+  // If text is greater than output size, print error message and truncate
+  // line.
   const unsigned long l = strlen(text);
   if (l > output_size) {
     for (int j = l - 1; j >= output_size; j--) {
@@ -1501,7 +1501,7 @@ next_line: {
     text[output_size] = '\0';
   }
   fprintf(sysout, "%s\n", text);
-  /* If there is another macro line copy it to TEXT and then process it. */
+  // If there is another macro line copy it to TEXT and then process it.
   if (input_line_root != NULL) {
     strcpy(text, input_line_root -> line);
     q = input_line_root;
@@ -1511,10 +1511,10 @@ next_line: {
   }
 }
 
-/* This procedure takes as argument a macro definition.  If the name of the */
-/* macro is one of the predefined names, it issues an error.  Otherwise, it */
-/* inserts the macro definition into the table headed by MACRO_TABLE.       */
-void mapmacro(const int def_index, struct CLIOptions* cli_options) {
+/// This procedure takes as argument a macro definition.  If the name of the
+/// macro is one of the predefined names, it issues an error.  Otherwise, it
+/// inserts the macro definition into the table headed by MACRO_TABLE.
+void mapmacro(const int def_index, struct CLIOptions *cli_options) {
   if (strcmp(defelmt[def_index].name, krule_text) == 0 ||
       strcmp(defelmt[def_index].name, krule_number) == 0 ||
       strcmp(defelmt[def_index].name, knum_rules) == 0 ||
@@ -1547,23 +1547,23 @@ const char *EXTRACT_STRING(const int indx) {
   return &string_table[indx];
 }
 
-/* If a listing is requested, this prints all the macros(if any), followed   */
-/* by the aliases(if any), followed by the terminal symbols, followed by the */
-/* rules.                                                                    */
-/* This grammar information is printed on lines no longer than               */
-/* PRINT_LINE_SIZE characters long.  If all the symbols in a rule cannot fit */
-/* on one line, it is continued on a subsequent line beginning at the        */
-/* position after the equivalence symbol (::= or ->) or the middle of the    */
-/* print_line, whichever is smaller.  If a symbol cannot fit on a line       */
-/* beginning at the proper offset, it is laid out on successive lines,       */
-/* beginning at the proper offset.                                           */
+/// If a listing is requested, this prints all the macros(if any), followed
+/// by the aliases(if any), followed by the terminal symbols, followed by the
+/// rules.
+/// This grammar information is printed on lines no longer than
+/// PRINT_LINE_SIZE characters long.  If all the symbols in a rule cannot fit
+/// on one line, it is continued on a subsequent line beginning at the
+/// position after the equivalence symbol (::= or ->) or the middle of the
+/// print_line, whichever is smaller.  If a symbol cannot fit on a line
+/// beginning at the proper offset, it is laid out on successive lines,
+/// beginning at the proper offset.
 void display_input(void) {
   register int len;
   register int offset;
   register int symb;
   char line[PRINT_LINE_SIZE + 1];
   char temp[SYMBOL_SIZE + 1];
-  /* Print the Macro definitions, if any.   */
+  // Print the Macro definitions, if any.
   if (num_defs > 0) {
     fprintf(syslis, "\nDefined Symbols:\n\n");
     for (int j = 0; j < num_defs; j++) {
@@ -1579,7 +1579,7 @@ void display_input(void) {
       fprintf(syslis, "%s%s\n", blocke, line);
     }
   }
-  /*   Print the Aliases, if any.   */
+  //   Print the Aliases, if any.
   if (alias_root != NULL) {
     if (alias_root->link == NULL) {
       fprintf(syslis, "\nAlias:\n\n");
@@ -1603,10 +1603,10 @@ void display_input(void) {
       fprintf(syslis, "%s\n", line);
     }
   }
-  /*   Print the terminals.                                                  */
-  /*   The first symbol (#1) represents the empty string.  The last terminal */
-  /* declared by the user is followed by EOFT which may be followed by the   */
-  /* ERROR symbol.  See LPG GRAMMAR for more details.                        */
+  //   Print the terminals.
+  //   The first symbol (#1) represents the empty string.  The last terminal
+  // declared by the user is followed by EOFT which may be followed by the
+  // ERROR symbol.  See LPG GRAMMAR for more details.
   fprintf(syslis, "\nTerminals:\n\n");
   strcpy(line, "        "); /* 8 spaces */
   len = PRINT_LINE_SIZE - 4;
@@ -1623,7 +1623,7 @@ void display_input(void) {
     }
   }
   fprintf(syslis, "\n%s", line);
-  /*    Print the Rules     */
+  //    Print the Rules
   fprintf(syslis, "\nRules:\n\n");
   for (register int rule_no = 0; rule_no <= num_rules; rule_no++) {
     symb = rules[rule_no].lhs;
@@ -1685,7 +1685,7 @@ void display_input(void) {
   }
 }
 
-/*     Process all semantic actions and generate action file.               */
+///     Process all semantic actions and generate action file.
 void process_actions(char *grm_file, struct CLIOptions *cli_options) {
   register int k;
   register int len;
@@ -1715,7 +1715,7 @@ void process_actions(char *grm_file, struct CLIOptions *cli_options) {
   linestart = p2 - 1;
   p1 = p2;
   line_no = 1;
-  /* Read in all the macro definitions and insert them into macro_table. */
+  // Read in all the macro definitions and insert them into macro_table.
   for (int i = 0; i < num_defs; i++) {
     defelmt[i].macro = (char *) calloc(defelmt[i].length + 2, sizeof(char));
     if (defelmt[i].macro == (char *) NULL)
@@ -1760,11 +1760,11 @@ void process_actions(char *grm_file, struct CLIOptions *cli_options) {
     }
     mapmacro(i, cli_options);
   }
-  /* If LISTING was requested, invoke listing procedure.                      */
+  // If LISTING was requested, invoke listing procedure.
   if (cli_options->list_bit) {
     display_input();
   }
-  /* Read in all the action blocks and process them.                          */
+  // Read in all the action blocks and process them.
   for (int i = 0; i < num_acts; i++) {
     for (; line_no < actelmt[i].start_line; line_no++) {
       while (*p1 != '\n') {
@@ -1851,7 +1851,7 @@ void process_actions(char *grm_file, struct CLIOptions *cli_options) {
   fclose(syshact);
 }
 
-/*          Actions to be taken if grammar is successfully parsed.          */
+///          Actions to be taken if grammar is successfully parsed.
 void accept_action(char *grm_file, struct CLIOptions *cli_options) {
   if (rulehdr == NULL) {
     printf("Informative: Empty grammar read in. Processing stopped.\n");
@@ -1864,7 +1864,7 @@ void accept_action(char *grm_file, struct CLIOptions *cli_options) {
   if (error_maps_bit) {
     // make_names_map
     {
-      /* Construct the NAME map, and update the elements of SYMNO with their names. */
+      // Construct the NAME map, and update the elements of SYMNO with their names.
       symno[accept_image].name_index = name_map("");
       if (error_image == DEFAULT_SYMBOL) {
         symno[DEFAULT_SYMBOL].name_index = symno[accept_image].name_index;
@@ -1885,7 +1885,7 @@ void accept_action(char *grm_file, struct CLIOptions *cli_options) {
           }
         }
       }
-      /* Allocate NAME table. */
+      // Allocate NAME table.
       name = (int *) calloc(num_names + 1, sizeof(int));
       if (name == (int *) NULL)
         nospace(__FILE__, __LINE__);
@@ -1899,9 +1899,9 @@ void accept_action(char *grm_file, struct CLIOptions *cli_options) {
     }
   }
   if (cli_options->list_bit) {
-    /* Aliases are placed in a separate linked list.  NOTE!! After execution */
-    /* of this loop the hash_table is destroyed because the LINK field of    */
-    /* alias symbols is used to construct a list of the alias symbols.       */
+    // Aliases are placed in a separate linked list.  NOTE!! After execution
+    // of this loop the hash_table is destroyed because the LINK field of
+    // alias symbols is used to construct a list of the alias symbols.
     for (register int i = 0; i < HT_SIZE; i++) {
       register struct hash_type *tail = hash_table[i];
       for (register struct hash_type *p = tail; p != NULL; p = tail) {
@@ -1913,11 +1913,11 @@ void accept_action(char *grm_file, struct CLIOptions *cli_options) {
       }
     }
   }
-  /* Construct the rule table.  At this stage, NUM_ITEMS is equal to the sum */
-  /* of the right-hand side lists of symbols.  It is used in the declaration of*/
-  /* RULE_TAB.  After RULE_TAB is allocated, we increase NUM_ITEMS to its      */
-  /* correct value.  Recall that the first rule is numbered 0; therefore we    */
-  /* increase the number of items by 1 to reflect this numbering.              */
+  // Construct the rule table.  At this stage, NUM_ITEMS is equal to the sum
+  // of the right-hand side lists of symbols.  It is used in the declaration of
+  // RULE_TAB.  After RULE_TAB is allocated, we increase NUM_ITEMS to its
+  // correct value.  Recall that the first rule is numbered 0; therefore we
+  // increase the number of items by 1 to reflect this numbering.
   {
     register struct node *ptr;
     register int rhs_ct = 0;
@@ -1928,9 +1928,9 @@ void accept_action(char *grm_file, struct CLIOptions *cli_options) {
     num_items += num_rules + 1;
     SHORT_CHECK(num_items);
     register int ii = 0;
-    /* Put starting rules from start symbol linked list in rule and rhs table    */
+    // Put starting rules from start symbol linked list in rule and rhs table
     if (start_symbol_root != NULL) {
-      /* Turn circular list into linear */
+      // Turn circular list into linear
       register struct node *q = start_symbol_root;
       start_symbol_root = q->next;
       q->next = NULL;
@@ -1944,14 +1944,14 @@ void accept_action(char *grm_file, struct CLIOptions *cli_options) {
       }
       free_nodes(start_symbol_root, q);
     }
-    /*   In this loop, the grammar is placed in the rule table structure and the */
-    /* right-hand sides are placed in the RHS table.  A check is made to prevent */
-    /* terminals from being used as left hand sides.                             */
+    //   In this loop, the grammar is placed in the rule table structure and the
+    // right-hand sides are placed in the RHS table.  A check is made to prevent
+    // terminals from being used as left hand sides.
     for (ii = ii; ii <= num_rules; ii++) {
       rules[ii].rhs = rhs_ct;
       ptr = rulehdr[ii].rhs_root;
       if (ptr != NULL) {
-        /* not am empty right-hand side? */
+        // not am empty right-hand side?
         do {
           ptr = ptr->next;
           rhs_sym[rhs_ct++] = ptr->value;
@@ -1966,7 +1966,7 @@ void accept_action(char *grm_file, struct CLIOptions *cli_options) {
       }
       if (rulehdr[ii].lhs == OMEGA) {
         if (cli_options->list_bit) {
-          /* Proper LHS will be updated after printing */
+          // Proper LHS will be updated after printing
           rules[ii].lhs = OMEGA;
         } else {
           rules[ii].lhs = rules[ii - 1].lhs;
@@ -1989,19 +1989,19 @@ void accept_action(char *grm_file, struct CLIOptions *cli_options) {
 }
 
 // TODO • move into jikespg.g?
-/* BUILD_SYMNO constructs the SYMNO table which is a mapping from each       */
-/* symbol number into that symbol.                                           */
+/// BUILD_SYMNO constructs the SYMNO table which is a mapping from each
+/// symbol number into that symbol.
 static void build_symno(void) {
   const long symno_size = num_symbols + 1;
   symno = (struct symno_type *) calloc(symno_size, sizeof(struct symno_type));
   if (symno == (struct symno_type *) NULL)
     nospace(__FILE__, __LINE__);
-  /* Go through entire hash table. For each non_empty bucket, go through    */
-  /* linked list in that bucket.                                         */
+  // Go through entire hash table. For each non_empty bucket, go through
+  // linked list in that bucket.
   for (register int i = 0; i < HT_SIZE; ++i) {
     for (const register struct hash_type *p = hash_table[i]; p != NULL; p = p->link) {
       const register int symbol = p->number;
-      /* Not an alias */
+      // Not an alias
       if (symbol >= 0) {
         symno[symbol].name_index = OMEGA;
         symno[symbol].ptr = p->st_ptr;
@@ -2010,11 +2010,11 @@ static void build_symno(void) {
   }
 }
 
-/* This procedure opens all relevant files and processes the input grammar.*/
-void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_files, const int argc, char *argv[], char *file_prefix, struct CLIOptions* cli_options) {
+/// This procedure opens all relevant files and processes the input grammar.
+void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_files, const int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options) {
   // Parse args.
   {
-    /* If options are passed to the program, copy them into "parm". */
+    // If options are passed to the program, copy them into "parm".
     if (argc > 2) {
       int j = 0;
       parm[0] = '\0';
@@ -2032,10 +2032,10 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
 
   // Prepare.
   {
-    /* Open input grammar file. If the file cannot be opened and that file name */
-    /* did not have an extension, then the extension ".g" is added to the file  */
-    /* name and we try again. If no file can be found an error message is       */
-    /* issued and the program halts.                                            */
+    // Open input grammar file. If the file cannot be opened and that file name
+    // did not have an extension, then the extension ".g" is added to the file
+    // name and we try again. If no file can be found an error message is
+    // issued and the program halts.
     if ((sysgrm = fopen(grm_file, "r")) == (FILE *) NULL) {
       register int ii;
       for (ii = strlen(grm_file); ii > 0 && grm_file[ii] != '.' && grm_file[ii] != '/' && /* Unix */ grm_file[ii] != '\\'; /* Dos  */ ii--) {
@@ -2055,14 +2055,14 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
         PRNTWNG2(msg_line, "A file named \"%s\" with no extension is being opened", grm_file);
       }
     }
-    /*                Open listing file for output.                             */
+    //                Open listing file for output.
     syslis = fopen(lis_file, "w");
     if (syslis == (FILE *) NULL) {
       fprintf(stderr, "***ERROR: Listing file \"%s\" cannot be openned.\n", lis_file);
       exit(12);
     }
-    /* Complete the initialization of the code array used to replace the        */
-    /* builtin functions isalpha, isdigit and isspace.                          */
+    // Complete the initialization of the code array used to replace the
+    // builtin functions isalpha, isdigit and isspace.
     for (unsigned c = 'a'; c <= 'z'; c++) {
       if (isalpha(c)) {
         code[c] = ALPHA_CODE;
@@ -2088,10 +2088,10 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
 
   // Init grammar.
   {
-    /* This routine is invoked to allocate space for the global structures       */
-    /* needed to process the input grammar.                                      */
-    /**/
-    /* Set up a pool of temporary space.                            */
+    // This routine is invoked to allocate space for the global structures
+    // needed to process the input grammar.
+    //
+    // Set up a pool of temporary space.
     reset_temporary_space();
     terminal = (struct terminal_type *) calloc(STACK_SIZE, sizeof(struct terminal_type));
     if (terminal == (struct terminal_type *) NULL)
@@ -2099,9 +2099,9 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
     hash_table = (struct hash_type **) calloc(HT_SIZE, sizeof(struct hash_type *));
     if (hash_table == (struct hash_type **) NULL)
       nospace(__FILE__, __LINE__);
-    /* Allocate space for input buffer and read in initial data in input   */
-    /* file. Next, invoke PROCESS_OPTION_LINES to process all lines in     */
-    /* input file that are options line.                                   */
+    // Allocate space for input buffer and read in initial data in input
+    // file. Next, invoke PROCESS_OPTION_LINES to process all lines in
+    // input file that are options line.
     input_buffer = (char *) calloc(IOBUFFER_SIZE + 1 + MAX_LINE_SIZE, sizeof(char));
     if (input_buffer == (char *) NULL) {
       nospace(__FILE__, __LINE__);
@@ -2122,7 +2122,7 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
     blocke_len = strlen(blocke);
     hblockb_len = strlen(hblockb);
     hblocke_len = strlen(hblocke);
-    /* Keywords, Reserved symbols, and predefined macros */
+    // Keywords, Reserved symbols, and predefined macros
     kdefine[0] = escape; /*Set empty first space to the default */
     kterminals[0] = escape; /* escape symbol.                      */
     kalias[0] = escape;
@@ -2146,18 +2146,18 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
 
   // Process grammar.
   {
-    /*    PROCESS_GRAMMAR is invoked to process the source input. It uses an     */
-    /* LALR(1) parser table generated by LPG to recognize the grammar which it   */
-    /* places in the rulehdr structure.                                          */
+    //    PROCESS_GRAMMAR is invoked to process the source input. It uses an
+    // LALR(1) parser table generated by LPG to recognize the grammar which it
+    // places in the rulehdr structure.
     short state_stack[STACK_SIZE];
     scanner(grm_file, cli_options); /* Get first token */
     register int act = START_STATE;
   process_terminal:
-    /* Note that this driver assumes that the tables are LPG SPACE    */
-    /* tables with no GOTO-DEFAULTS.                                  */
+    // Note that this driver assumes that the tables are LPG SPACE
+    // tables with no GOTO-DEFAULTS.
     state_stack[++stack_top] = act;
     act = t_action(act, ct, ?);
-    /* Reduce */
+    // Reduce
     if (act <= NUM_RULES) {
       stack_top--;
     } else if (act > ERROR_ACTION || /* Shift_reduce */
@@ -2166,10 +2166,10 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
       // token_action
       {
         {
-          /*    This function, TOKEN_ACTION, pushes the current token onto the        */
-          /* parse stack called TERMINAL. Note that in case of a BLOCK_, the name of  */
-          /* the token is not copied since blocks are processed separately on a       */
-          /* second pass.                                                             */
+          //    This function, TOKEN_ACTION, pushes the current token onto the
+          // parse stack called TERMINAL. Note that in case of a BLOCK_, the name of
+          // the token is not copied since blocks are processed separately on a
+          // second pass.
           const register int top = stack_top + 1;
           terminal[top].kind = ct;
           terminal[top].start_line = ct_start_line;
@@ -2196,7 +2196,7 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
     } else {
       // error_action
       {
-        /* Error messages to be printed if an error is encountered during parsing. */
+        // Error messages to be printed if an error is encountered during parsing.
         ct_ptr[ct_length] = '\0';
         if (ct == EOF_TK) {
           PRNTERR2(msg_line, "End-of file reached prematurely");
@@ -2222,13 +2222,14 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
     goto process_terminal;
   }
 
-  end: {}
+end: {
+  }
 
   // Exit grammar.
   {
-    /* This routine is invoked to free all space used to process the input that  */
-    /* is no longer needed. Note that for the string_table, only the unused      */
-    /* space is released.                                                        */
+    // This routine is invoked to free all space used to process the input that
+    // is no longer needed. Note that for the string_table, only the unused
+    // space is released.
     if (string_offset > 0) {
       string_table = (char *)
       (string_table == (char *) NULL

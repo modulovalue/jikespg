@@ -32,9 +32,9 @@ SET_PTR left_produces;
 
 int top;
 
-/* This procedure prints the name associated with a given symbol. */
-/* The same format that was used in the procedure DISPLAY_INPUT   */
-/* to print aliases is used to print name mappings.               */
+/// This procedure prints the name associated with a given symbol.
+/// The same format that was used in the procedure DISPLAY_INPUT
+/// to print aliases is used to print name mappings.
 void print_name_map(const int symbol) {
   char line[PRINT_LINE_SIZE];
   char tok[SYMBOL_SIZE + 1];
@@ -53,19 +53,19 @@ void print_name_map(const int symbol) {
   fprintf(syslis, "\n%s", line);
 }
 
-/*                             SCOPE_CHECK:                          */
-/* Given a nonterminal LHS_SYMBOL and a nonterminal TARGET where,    */
-/*                                                                   */
-/*                     LHS_SYMBOL ::= TARGET x                       */
-/*                                                                   */
-/* find out if whenever LHS_SYMBOL is introduced through closure, it */
-/* is introduced by a nonterminal SOURCE such that                   */
-/*                                                                   */
-/*                     SOURCE ->rm* LHS_SYMBOL                       */
-/*                                                                   */
-/*                               and                                 */
-/*                                                                   */
-/*                     SOURCE ->rm+ TARGET                           */
+///                             SCOPE_CHECK:
+/// Given a nonterminal LHS_SYMBOL and a nonterminal TARGET where,
+///
+///                     LHS_SYMBOL ::= TARGET x
+///
+/// find out if whenever LHS_SYMBOL is introduced through closure, it
+/// is introduced by a nonterminal SOURCE such that
+///
+///                     SOURCE ->rm* LHS_SYMBOL
+///
+///                               and
+///
+///                     SOURCE ->rm+ TARGET
 bool scope_check(const int lhs_symbol, const int target, const int source) {
   symbol_seen[source] = true;
   if (IS_IN_NTSET(right_produces, target, source - num_terminals) &&
@@ -80,7 +80,7 @@ bool scope_check(const int lhs_symbol, const int target, const int source) {
     const int rule_no = item_table[item_no].rule_number;
     const int symbol = rules[rule_no].lhs;
     if (!symbol_seen[symbol]) {
-      /* not yet processed */
+      // not yet processed
       if (scope_check(lhs_symbol, target, symbol)) {
         return 1;
       }
@@ -89,17 +89,17 @@ bool scope_check(const int lhs_symbol, const int target, const int source) {
   return false;
 }
 
-/* This procedure checks whether an item of the form:                */
-/* [A  ->  w B x  where  B ->* y A z  is a valid scope.              */
-/*                                                                   */
-/* Such an item is a valid scope if the following conditions hold:   */
-/*                                                                   */
-/* 1) it is not the case that x =>* %empty                           */
-/* 2) either it is not the case that w =>* %empty, or it is not the   */
-/*    case that B =>lm* A.                                           */
-/* 3) it is not the case that whenever A is introduced through       */
-/*    closure, it is introduced by a nonterminal C where C =>rm* A   */
-/*    and C =>rm+ B.                                                 */
+/// This procedure checks whether an item of the form:
+/// [A  ->  w B x  where  B ->* y A z  is a valid scope.
+///
+/// Such an item is a valid scope if the following conditions hold:
+///
+/// 1) it is not the case that x =>* %empty
+/// 2) either it is not the case that w =>* %empty, or it is not the
+///    case that B =>lm* A.
+/// 3) it is not the case that whenever A is introduced through
+///    closure, it is introduced by a nonterminal C where C =>rm* A
+///    and C =>rm+ B.
 bool is_scope(const int item_no) {
   for (int i = item_no - item_table[item_no].dot; i < item_no; i++) {
     const int symbol = item_table[i].symbol;
@@ -124,10 +124,10 @@ bool is_scope(const int item_no) {
   return scope_check(lhs_symbol, target, lhs_symbol);
 }
 
-/* This boolean function takes two items as arguments and checks  */
-/* whether they have the same prefix.                      */
+/// This boolean function takes two items as arguments and checks
+/// whether they have the same prefix.
 bool is_prefix_equal(const int item_no, const int item_no2) {
-  /* a suffix */
+  // a suffix
   if (item_no > 0) {
     return false;
   }
@@ -139,7 +139,7 @@ bool is_prefix_equal(const int item_no, const int item_no2) {
   const int start = rules[item_table[item_no2].rule_number].rhs;
   const int dot = start + item_table[item_no2].dot - 1;
   for (int i = start; i <= dot; i++) {
-    /* symbols before dot */
+    // symbols before dot
     if (rhs_sym[i] != rhs_sym[j]) {
       return false;
     }
@@ -148,13 +148,13 @@ bool is_prefix_equal(const int item_no, const int item_no2) {
   return true;
 }
 
-/* This procedure takes as argument an item and inserts the string   */
-/* prefix of the item preceeding the "dot" into the scope table, if  */
-/* that string is not already there.  In any case, the index  number */
-/* associated with the prefix in question is returned.               */
-/* NOTE that since both prefixes and suffixes are entered in the     */
-/* table, the prefix of a given item, ITEM_NO, is encoded as         */
-/* -ITEM_NO, whereas the suffix of that item is encoded as +ITEM_NO. */
+/// This procedure takes as argument an item and inserts the string
+/// prefix of the item preceeding the "dot" into the scope table, if
+/// that string is not already there.  In any case, the index  number
+/// associated with the prefix in question is returned.
+/// NOTE that since both prefixes and suffixes are entered in the
+/// table, the prefix of a given item, ITEM_NO, is encoded as
+/// -ITEM_NO, whereas the suffix of that item is encoded as +ITEM_NO.
 int insert_prefix(const int item_no) {
   unsigned long hash_address = 0;
   const int rule_no = item_table[item_no].rule_number;
@@ -177,11 +177,11 @@ int insert_prefix(const int item_no) {
   return scope_element[scope_top].index;
 }
 
-/* This boolean function takes two items as arguments and checks  */
-/* whether they have the same suffix.                      */
+/// This boolean function takes two items as arguments and checks
+/// whether they have the same suffix.
 bool is_suffix_equal(const int item_no1, const int item_no2) {
   if (item_no1 < 0) {
-    /* a prefix */
+    // a prefix
     return false;
   }
   int rule_no = item_table[item_no1].rule_number;
@@ -191,7 +191,7 @@ bool is_suffix_equal(const int item_no1, const int item_no2) {
   int j = rules[rule_no].rhs + item_table[item_no2].dot;
   const int dot2 = rules[rule_no + 1].rhs - 1;
   while (i <= dot1 && j <= dot2) {
-    /* non-nullable syms before dot */
+    // non-nullable syms before dot
     if (IS_A_NON_TERMINAL(rhs_sym[i])) {
       if (null_nt[rhs_sym[i]]) {
         i++;
@@ -237,12 +237,12 @@ bool is_suffix_equal(const int item_no1, const int item_no2) {
   return true;
 }
 
-/* This procedure is analoguous to INSERT_PREFIX.  It takes as       */
-/* argument an item, and inserts the suffix string following the dot */
-/* in the item into the scope table, if it is not already there.     */
-/* In any case, it returns the index associated with the suffix.     */
-/* When inserting a suffix into the table, all nullable nonterminals */
-/* in the suffix are disregarded.                                    */
+/// This procedure is analoguous to INSERT_PREFIX.  It takes as
+/// argument an item, and inserts the suffix string following the dot
+/// in the item into the scope table, if it is not already there.
+/// In any case, it returns the index associated with the suffix.
+/// When inserting a suffix into the table, all nullable nonterminals
+/// in the suffix are disregarded.
 int insert_suffix(const int item_no) {
   int num_elements = 0;
   unsigned long hash_address = 0;
@@ -276,7 +276,7 @@ int insert_suffix(const int item_no) {
   return scope_element[scope_top].index;
 }
 
-/* This procedure is similar to the global procedure PTITEM.      */
+/// This procedure is similar to the global procedure PTITEM.
 void print_scopes(void) {
   fprintf(syslis, "\nScopes:\n");
   for (int k = 1; k <= num_scopes; k++) {
@@ -290,11 +290,11 @@ void print_scopes(void) {
     strcat(line, " ::= ");
     const int offset = MIN(strlen(line) - 1, PRINT_LINE_SIZE / 2 - 1);
     len = PRINT_LINE_SIZE - (offset + 4);
-    /* locate end of list */
+    // locate end of list
     int ii;
     for (ii = scope[k].prefix; scope_right_side[ii] != 0; ii++) {
     }
-    /* symbols before dot */
+    // symbols before dot
     for (ii = ii - 1; ii >= scope[k].prefix; ii--) {
       symbol = scope_right_side[ii];
       restore_symbol(tok, RETRIEVE_STRING(symbol));
@@ -307,8 +307,8 @@ void print_scopes(void) {
       }
       strcat(line, " ");
     }
-    /* We now add a dot "." to the output line, and print the remaining  */
-    /* symbols on the right hand side.                                   */
+    // We now add a dot "." to the output line, and print the remaining
+    // symbols on the right hand side.
     strcat(line, " .");
     len = PRINT_LINE_SIZE - (offset + 1);
     for (ii = scope[k].suffix; scope_right_side[ii] != 0; ii++) {
@@ -327,10 +327,10 @@ void print_scopes(void) {
   }
 }
 
-/* This procedure takes as parameter a nonterminal, LHS_SYMBOL, and  */
-/* determines whether there is a terminal symbol t such that  */
-/* LHS_SYMBOL can rightmost produce a string tX.  If so, t is        */
-/* returned, otherwise EMPTY is returned.                            */
+/// This procedure takes as parameter a nonterminal, LHS_SYMBOL, and
+/// determines whether there is a terminal symbol t such that
+/// LHS_SYMBOL can rightmost produce a string tX.  If so, t is
+/// returned, otherwise EMPTY is returned.
 int get_shift_symbol(const int lhs_symbol) {
   if (!symbol_seen[lhs_symbol]) {
     struct node *p;
@@ -356,8 +356,8 @@ int get_shift_symbol(const int lhs_symbol) {
   return empty;
 }
 
-/* This procedure is used to compute the transitive closure of    */
-/* the PRODUCES, LEFT_PRODUCES and RIGHT_MOST_PRODUCES maps.      */
+/// This procedure is used to compute the transitive closure of
+/// the PRODUCES, LEFT_PRODUCES and RIGHT_MOST_PRODUCES maps.
 static void compute_produces(const int symbol) {
   int new_symbol;
   struct node *q;
@@ -367,7 +367,7 @@ static void compute_produces(const int symbol) {
   for (struct node *p = direct_produces[symbol]; p != NULL; q = p, p = p->next) {
     new_symbol = p->value;
     if (index_of[new_symbol] == OMEGA) {
-      /* first time seen? */
+      // first time seen?
       compute_produces(new_symbol);
     }
     index_of[symbol] = MIN(index_of[symbol], index_of[new_symbol]);
@@ -377,7 +377,7 @@ static void compute_produces(const int symbol) {
     free_nodes(direct_produces[symbol], q);
   }
   if (index_of[symbol] == indx) {
-    /*symbol is SCC root */
+    //symbol is SCC root
     for (new_symbol = stack[top];
          new_symbol != symbol; new_symbol = stack[--top]) {
       ASSIGN_NTSET(produces, new_symbol, produces, symbol);
@@ -388,30 +388,30 @@ static void compute_produces(const int symbol) {
   }
 }
 
-/* This procedure computes for each state the set of non-terminal symbols   */
-/* that are required as candidates for secondary error recovery.  If the    */
-/* option NAMES=OPTIMIZED is requested, the NAME map is optimized and SYMNO */
-/* is updated accordingly.                                                  */
-void produce(struct CLIOptions* cli_options) {
-  /* TOP, STACK, and INDEX are used for the digraph algorithm      */
-  /* in the routines COMPUTE_PRODUCES.                             */
-  /*                                                               */
-  /* The array PRODUCES is used to construct two maps:             */
-  /*                                                               */
-  /* 1) PRODUCES, a mapping from each non-terminal A to the set of */
-  /* non-terminals C such that:                                    */
-  /*                                                               */
-  /*                   A  =>*  x C w                               */
-  /*                                                               */
-  /* 2) RIGHT_MOST_PRODUCES, a mapping from each non-terminal A to */
-  /* the set of non-terminals C such that:                         */
-  /*                                                               */
-  /*                   C =>+ A x   and   x =>* %empty.             */
-  /*                                                               */
-  /* NOTE: This is really a reverse right-most produces mapping,   */
-  /*       since given the above rule, we say that                 */
-  /*       C right-most produces A.                                */
-  /*                                                               */
+/// This procedure computes for each state the set of non-terminal symbols
+/// that are required as candidates for secondary error recovery.  If the
+/// option NAMES=OPTIMIZED is requested, the NAME map is optimized and SYMNO
+/// is updated accordingly.
+void produce(struct CLIOptions *cli_options) {
+  // TOP, STACK, and INDEX are used for the digraph algorithm
+  // in the routines COMPUTE_PRODUCES.
+  //
+  // The array PRODUCES is used to construct two maps:
+  //
+  // 1) PRODUCES, a mapping from each non-terminal A to the set of
+  // non-terminals C such that:
+  //
+  //                   A  =>*  x C w
+  //
+  // 2) RIGHT_MOST_PRODUCES, a mapping from each non-terminal A to
+  // the set of non-terminals C such that:
+  //
+  //                   C =>+ A x   and   x =>* %empty.
+  //
+  // NOTE: This is really a reverse right-most produces mapping,
+  //       since given the above rule, we say that
+  //       C right-most produces A.
+  //
   int item_no;
   int rule_no;
   struct node *p;
@@ -442,14 +442,14 @@ void produce(struct CLIOptions* cli_options) {
   if (goto_domain == NULL) {
     nospace(__FILE__, __LINE__);
   }
-  /* Note that the space allocated for PRODUCES and DIRECT_PRODUCES    */
-  /* is automatically initialized to 0 by calloc. Logically, this sets */
-  /* all the sets in the PRODUCES map to the empty set and all the     */
-  /* pointers in DIRECT_PRODUCES are set to NULL.                      */
-  /*                                                                   */
-  /* Next, PRODUCES is initialized to compute RIGHT_MOST_PRODUCES.     */
-  /* Also, we count the number of error rules and verify that they are */
-  /* in the right format.                                              */
+  // Note that the space allocated for PRODUCES and DIRECT_PRODUCES
+  // is automatically initialized to 0 by calloc. Logically, this sets
+  // all the sets in the PRODUCES map to the empty set and all the
+  // pointers in DIRECT_PRODUCES are set to NULL.
+  //
+  // Next, PRODUCES is initialized to compute RIGHT_MOST_PRODUCES.
+  // Also, we count the number of error rules and verify that they are
+  // in the right format.
   int item_root = NIL;
   for ALL_NON_TERMINALS3(nt) {
     for (bool end_node = (p = clitems[nt]) == NULL;
@@ -492,8 +492,8 @@ void produce(struct CLIOptions* cli_options) {
       symbol = eoft_image;
     }
   }
-  /* If WARNINGS_BIT is on and some error rules are in the wrong,      */
-  /* format, report them.                                              */
+  // If WARNINGS_BIT is on and some error rules are in the wrong,
+  // format, report them.
   if (cli_options->warnings_bit && item_root != NIL) {
     if (item_list[item_root] == NIL) {
       fprintf(syslis, "*** This error rule is not in manual format:\n\n");
@@ -504,11 +504,11 @@ void produce(struct CLIOptions* cli_options) {
       print_item(item_no);
     }
   }
-  /* Complete the construction of the RIGHT_MOST_PRODUCES map for     */
-  /* non-terminals using the digraph algorithm.                       */
-  /* We make sure that each non-terminal A is not present in its own  */
-  /* PRODUCES set since we are interested in the non-reflexive        */
-  /* (positive) transitive closure.                                   */
+  // Complete the construction of the RIGHT_MOST_PRODUCES map for
+  // non-terminals using the digraph algorithm.
+  // We make sure that each non-terminal A is not present in its own
+  // PRODUCES set since we are interested in the non-reflexive
+  // (positive) transitive closure.
   for ALL_SYMBOLS3(symbol) {
     index_of[symbol] = OMEGA;
   }
@@ -519,21 +519,21 @@ void produce(struct CLIOptions* cli_options) {
     }
     NTRESET_BIT_IN(produces, nt, nt - num_terminals);
   }
-  /* Construct the minimum subset of the domain of the GOTO map       */
-  /* needed for automatic secondary level error recovery.   For each  */
-  /* state, we start out with the set of all nonterminals on which    */
-  /* there is a transition in that state, and pare it down to a       */
-  /* subset S, by removing all nonterminals B in S such that there    */
-  /* is a goto-reduce action on B by a single production.  If the     */
-  /* READ-REDUCE option is not turned on, then, we check whether or   */
-  /* not the goto action on B is to an LR(0) reduce state.Once we have*/
-  /* our subset S, we further reduce its size as follows.  For each   */
-  /* nonterminal A in S such that there exists another nonterminal    */
-  /* B in S, where B ^= A,  A ->+ Bx  and  x =>* %empty, we remove A  */
-  /* from S.                                                          */
-  /* At the end of this process, the nonterminal elements whose       */
-  /* NT_LIST values are still OMEGA are precisely the nonterminal     */
-  /* symbols that are never used as candidates.                       */
+  // Construct the minimum subset of the domain of the GOTO map
+  // needed for automatic secondary level error recovery.   For each
+  // state, we start out with the set of all nonterminals on which
+  // there is a transition in that state, and pare it down to a
+  // subset S, by removing all nonterminals B in S such that there
+  // is a goto-reduce action on B by a single production.  If the
+  // READ-REDUCE option is not turned on, then, we check whether or
+  // not the goto action on B is to an LR(0) reduce state.Once we have
+  // our subset S, we further reduce its size as follows.  For each
+  // nonterminal A in S such that there exists another nonterminal
+  // B in S, where B ^= A,  A ->+ Bx  and  x =>* %empty, we remove A
+  // from S.
+  // At the end of this process, the nonterminal elements whose
+  // NT_LIST values are still OMEGA are precisely the nonterminal
+  // symbols that are never used as candidates.
   for ALL_NON_TERMINALS3(i) {
     nt_list[i] = OMEGA;
   }
@@ -573,8 +573,8 @@ void produce(struct CLIOptions* cli_options) {
       }
     }
   }
-  /* Allocate and construct the permanent goto domain structure:      */
-  /*   GD_INDEX and GD_RANGE.                                         */
+  // Allocate and construct the permanent goto domain structure:
+  //   GD_INDEX and GD_RANGE.
   int n = 0;
   gd_index = Allocate_short_array(num_states + 2);
   gd_range = Allocate_short_array(gotodom_size + 1);
@@ -588,13 +588,13 @@ void produce(struct CLIOptions* cli_options) {
     }
   }
   gd_index[num_states + 1] = n + 1;
-  /* Remove names assigned to nonterminals that are never used as   */
-  /* error candidates.                                              */
+  // Remove names assigned to nonterminals that are never used as
+  // error candidates.
   if (cli_options->names_opt == OPTIMIZE_PHRASES) {
-    /* In addition to nonterminals that are never used as candidates,*/
-    /* if a nullable nonterminal was assigned a name by default      */
-    /* (nonterminals that were "named" by default are identified     */
-    /* with negative indices), that name is also removed.            */
+    // In addition to nonterminals that are never used as candidates,
+    // if a nullable nonterminal was assigned a name by default
+    // (nonterminals that were "named" by default are identified
+    // with negative indices), that name is also removed.
     for ALL_NON_TERMINALS3(symbol) {
       if (nt_list[symbol] == OMEGA) {
         symno[symbol].name_index = symno[accept_image].name_index;
@@ -606,7 +606,7 @@ void produce(struct CLIOptions* cli_options) {
         }
       }
     }
-    /* Adjust name map to remove unused elements and update SYMNO map. */
+    // Adjust name map to remove unused elements and update SYMNO map.
     for (int i = 1; i <= num_names; i++) {
       name_used[i] = false;
     }
@@ -625,7 +625,7 @@ void produce(struct CLIOptions* cli_options) {
       symno[symbol].name_index = names_map[symno[symbol].name_index];
     }
   }
-  /* If the option LIST_BIT is ON, print the name map.                */
+  // If the option LIST_BIT is ON, print the name map.
   if (cli_options->list_bit) {
     fprintf(syslis, "\nName map:\n");
     for ALL_SYMBOLS3(symbol) {
@@ -642,7 +642,7 @@ void produce(struct CLIOptions* cli_options) {
   if (cli_options->scopes_bit) {
     // Process scopes.
     {
-      /* Compute set of "scopes" and use it to construct SCOPE map.     */
+      // Compute set of "scopes" and use it to construct SCOPE map.
       short *prefix_index;
       short *suffix_index;
       short *state_index;
@@ -669,25 +669,25 @@ void produce(struct CLIOptions* cli_options) {
       state_index = Allocate_short_array(num_non_terminals);
       state_index -= num_terminals + 1;
       scope_element = (struct scope_elmt *) calloc(num_items + 1, sizeof(struct scope_elmt));
-      /* Initially, PRODUCES was used to compute the right-most-produces  */
-      /* map.  We save that map map and make it reflexive.  Recall that   */
-      /* RIGHT_PRODUCES is a mapping from each nonterminal B into the set */
-      /* of nonterminals A such that:                                     */
-      /*                                                                  */
-      /*    A =>rm* B                                                     */
-      /*                                                                  */
-      /* Next, reallocate PRODUCES and initialize it in order to          */
-      /* construct the LEFT_PRODUCES map. Initially, CALLOC sets PRODUCES */
-      /* to the empty map.                                                */
-      /* LEFT_PRODUCES is a mapping  from each nonterminal A into the set */
-      /* of nonterminals B such that:                                     */
-      /*                                                                  */
-      /*    A =>lm* B x                                                   */
-      /*                                                                  */
-      /* for some arbitrary string x.                                     */
-      /*                                                                  */
-      /* Since A ->* A for all A,  we insert A in PRODUCES(A)  (but not   */
-      /* in the linked list).                                             */
+      // Initially, PRODUCES was used to compute the right-most-produces
+      // map.  We save that map map and make it reflexive.  Recall that
+      // RIGHT_PRODUCES is a mapping from each nonterminal B into the set
+      // of nonterminals A such that:
+      //
+      //    A =>rm* B
+      //
+      // Next, reallocate PRODUCES and initialize it in order to
+      // construct the LEFT_PRODUCES map. Initially, CALLOC sets PRODUCES
+      // to the empty map.
+      // LEFT_PRODUCES is a mapping  from each nonterminal A into the set
+      // of nonterminals B such that:
+      //
+      //    A =>lm* B x
+      //
+      // for some arbitrary string x.
+      //
+      // Since A ->* A for all A,  we insert A in PRODUCES(A)  (but not
+      // in the linked list).
       right_produces = produces;
       produces = (SET_PTR)
           calloc(num_non_terminals,
@@ -719,8 +719,8 @@ void produce(struct CLIOptions* cli_options) {
           }
         }
       }
-      /* Complete the construction of the LEFT_produces map for       */
-      /* non_terminals using the digraph algorithm.                   */
+      // Complete the construction of the LEFT_produces map for
+      // non_terminals using the digraph algorithm.
       for ALL_NON_TERMINALS3(nt) {
         index_of[nt] = OMEGA;
       }
@@ -731,10 +731,10 @@ void produce(struct CLIOptions* cli_options) {
         }
       }
       left_produces = produces;
-      /* Allocate and initialize the PRODUCES array to construct the      */
-      /* PRODUCES map.  After allocation, CALLOC sets all sets to empty.  */
-      /* Since A ->* A for all A,  we insert A in PRODUCES(A)  (but not   */
-      /* in the linked list).                                             */
+      // Allocate and initialize the PRODUCES array to construct the
+      // PRODUCES map.  After allocation, CALLOC sets all sets to empty.
+      // Since A ->* A for all A,  we insert A in PRODUCES(A)  (but not
+      // in the linked list).
       produces = (SET_PTR)
           calloc(num_non_terminals,
                  non_term_set_size * sizeof(BOOLEAN_CELL));
@@ -763,18 +763,18 @@ void produce(struct CLIOptions* cli_options) {
           }
         }
       }
-      /* Complete the construction of the PRODUCES map for            */
-      /* non_terminals using the digraph algorithm.                   */
-      /*                                                              */
-      /* Since $ACC =>* x A y for all nonterminal A in the grammar, a */
-      /* single call to COMPUTE_PRODUCES does the trick.              */
+      // Complete the construction of the PRODUCES map for
+      // non_terminals using the digraph algorithm.
+      //
+      // Since $ACC =>* x A y for all nonterminal A in the grammar, a
+      // single call to COMPUTE_PRODUCES does the trick.
       for ALL_NON_TERMINALS3(nt) {
         index_of[nt] = OMEGA;
       }
       top = 0;
       compute_produces(accept_image);
-      /* Construct a mapping from each non_terminal A into the set of     */
-      /* items of the form [B  ->  x . A y].                              */
+      // Construct a mapping from each non_terminal A into the set of
+      // items of the form [B  ->  x . A y].
       for ALL_NON_TERMINALS3(nt) {
         item_of[nt] = NIL;
       }
@@ -785,16 +785,16 @@ void produce(struct CLIOptions* cli_options) {
           item_of[dot_symbol] = item_no;
         }
       }
-      /* Construct a list of scoped items in ITEM_LIST.                   */
-      /* Scoped items are derived from rules of the form  A -> x B y such */
-      /* that B =>* w A z, %empty not in FIRST(y), and it is not the case */
-      /* that x = %empty and B ->* A v.                                   */
-      /* Scoped items may also be identified by the user, using %error    */
-      /* productions.                                                     */
-      /* As scoped items are added to the list, we keep track of the      */
-      /* longest prefix encountered.  This is subsequently used to        */
-      /* bucket sort the scoped items in descending order of the length    */
-      /* of their prefixes.                                               */
+      // Construct a list of scoped items in ITEM_LIST.
+      // Scoped items are derived from rules of the form  A -> x B y such
+      // that B =>* w A z, %empty not in FIRST(y), and it is not the case
+      // that x = %empty and B ->* A v.
+      // Scoped items may also be identified by the user, using %error
+      // productions.
+      // As scoped items are added to the list, we keep track of the
+      // longest prefix encountered.  This is subsequently used to
+      // bucket sort the scoped items in descending order of the length
+      // of their prefixes.
       for ALL_ITEMS3(item_no) {
         item_list[item_no] = OMEGA;
       }
@@ -840,10 +840,10 @@ void produce(struct CLIOptions* cli_options) {
           }
         }
       }
-      /* In this loop, the prefix and suffix string for each scope in      */
-      /* entered into a table.  We also use the SYMBOL_SEEN array to       */
-      /* identify the set of left-hand side symbols associated with the    */
-      /* scopes.                                                           */
+      // In this loop, the prefix and suffix string for each scope in
+      // entered into a table.  We also use the SYMBOL_SEEN array to
+      // identify the set of left-hand side symbols associated with the
+      // scopes.
       scope_table = Allocate_short_array(SCOPE_SIZE);
       for (int i = 0; i < SCOPE_SIZE; i++) {
         scope_table[i] = NIL;
@@ -860,9 +860,9 @@ void produce(struct CLIOptions* cli_options) {
         suffix_index[item_no] = insert_suffix(item_no);
       }
       ffree(scope_table);
-      /* We now construct a mapping from each nonterminal symbol that is   */
-      /* the left-hand side of a rule containing scopes into the set of    */
-      /* states that has a transition on the nonterminal in question.      */
+      // We now construct a mapping from each nonterminal symbol that is
+      // the left-hand side of a rule containing scopes into the set of
+      // states that has a transition on the nonterminal in question.
       nt_root = NIL;
       for ALL_NON_TERMINALS3(nt) {
         states_of[nt] = NULL;
@@ -889,13 +889,13 @@ void produce(struct CLIOptions* cli_options) {
       ffree(right_produces);
       left_produces += (num_terminals + 1) * non_term_set_size;
       ffree(left_produces);
-      /* Next, we used the optimal partition procedure to compress the     */
-      /* space used by the sets of states, allocate the SCOPE structure    */
-      /* and store the compressed sets of states in it.                    */
-      /* We also sort the list of items by the length of their prefixes in */
-      /* descending order.  This is done primarily as an optimization.     */
-      /* If a longer prefix matches prior to a shorter one, the parsing    */
-      /* will terminate quicker.                                           */
+      // Next, we used the optimal partition procedure to compress the
+      // space used by the sets of states, allocate the SCOPE structure
+      // and store the compressed sets of states in it.
+      // We also sort the list of items by the length of their prefixes in
+      // descending order.  This is done primarily as an optimization.
+      // If a longer prefix matches prior to a shorter one, the parsing
+      // will terminate quicker.
     process_scope_states: {
         SET_PTR collection;
         long *element_size;
@@ -972,18 +972,18 @@ void produce(struct CLIOptions* cli_options) {
           }
           free_nodes(states_of[symbol], q);
         }
-        /* Use the BUCKET array as a base to partition the scoped items        */
-        /* based on the length of their prefixes.  The list of items in each   */
-        /* bucket is kept in the NEXT_ITEM array sorted in descending order    */
-        /* of the length of the right-hand side of the item.                   */
-        /* Items are kept sorted in that fashion because when two items have   */
-        /* the same prefix, we want the one with the shortest suffix to be     */
-        /* chosen. In other words, if we have two scoped items, say:           */
-        /*                                                                     */
-        /*    A ::= x . y       and      B ::= x . z     where |y| < |z|       */
-        /*                                                                     */
-        /* and both of them are applicable in a given context with similar     */
-        /* result, then we always want A ::= x . y to be used.                 */
+        // Use the BUCKET array as a base to partition the scoped items
+        // based on the length of their prefixes.  The list of items in each
+        // bucket is kept in the NEXT_ITEM array sorted in descending order
+        // of the length of the right-hand side of the item.
+        // Items are kept sorted in that fashion because when two items have
+        // the same prefix, we want the one with the shortest suffix to be
+        // chosen. In other words, if we have two scoped items, say:
+        //
+        //    A ::= x . y       and      B ::= x . z     where |y| < |z|
+        //
+        // and both of them are applicable in a given context with similar
+        // result, then we always want A ::= x . y to be used.
         for (int i = 1; i <= max_prefix_length; i++) {
           bucket[i] = NIL;
         }
@@ -1004,10 +1004,10 @@ void produce(struct CLIOptions* cli_options) {
             next_item[tail] = item_no; /* insert in middle or end */
           }
         }
-        /* Reconstruct list of scoped items in sorted order. Since we want   */
-        /* the items in descending order, we start with the smallest bucket  */
-        /* proceeding to the largest one and insert the items from each      */
-        /* bucket in LIFO order in ITEM_LIST.                                */
+        // Reconstruct list of scoped items in sorted order. Since we want
+        // the items in descending order, we start with the smallest bucket
+        // proceeding to the largest one and insert the items from each
+        // bucket in LIFO order in ITEM_LIST.
         item_root = NIL;
         for (int k = 1; k <= max_prefix_length; k++) {
           for (int item_no = bucket[k]; item_no != NIL; item_no = next_item[item_no]) {
@@ -1024,7 +1024,7 @@ void produce(struct CLIOptions* cli_options) {
         ffree(list);
         ffree(bucket);
       } /* End PROCESS_SCOPE_STATES */
-      /* Next, we initialize the remaining fields of the SCOPE structure.  */
+      // Next, we initialize the remaining fields of the SCOPE structure.
       int item_no = item_root;
       for (int i = 1; item_no != NIL; i++) {
         scope[i].prefix = prefix_index[item_no];

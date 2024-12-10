@@ -27,7 +27,7 @@ $offset /.    ./
 $location
 /.
 
-/* $rule_text */
+/// $rule_text
 #line $next_line "$input_file"./
 
 $action
@@ -578,8 +578,8 @@ static void act$rule_number(void)
         q -> value = empty;
         q -> next = q;
         start_symbol_root = q;
-        num_rules = 0;                 /* One rule */
-        num_items = 0;                 /* 0 items */
+        num_rules = 0;                 // One rule
+        num_items = 0;                 // 0 items
     }
     build_symno();
 }
@@ -616,10 +616,10 @@ static void act$rule_number(void)
         num_items = 1;
     }
 
-/* Since we don't know for sure how many start symbols we have, a    */
-/* "while" loop is used to increment the size of rulehdr. However,   */
-/* it is highly unlikely that this loop would ever execute more than */
-/* once if the size of RULE_INCREMENT is reasonable.                 */
+/// Since we don't know for sure how many start symbols we have, a
+/// "while" loop is used to increment the size of rulehdr. However,
+/// it is highly unlikely that this loop would ever execute more than
+/// once if the size of RULE_INCREMENT is reasonable.
     while (num_rules >= (int)rulehdr_size)
     {
         rulehdr_size += RULEHDR_INCREMENT;
@@ -942,7 +942,7 @@ static void process_TERMINALS_section(void)
         assign_symbol_no(kerror, OMEGA);
         error_image = symbol_image(kerror);
     }
-    else error_image = DEFAULT_SYMBOL;   /* should be 0 */
+    else error_image = DEFAULT_SYMBOL;   // should be 0
 
     assign_symbol_no(kaccept, OMEGA);
     accept_image = symbol_image(kaccept);

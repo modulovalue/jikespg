@@ -21,14 +21,14 @@ long *frequency_count;
 
 bool *shift_on_error_symbol;
 
-/*  REMAP_NON_TERMINALS remaps the non-terminal symbols and states based on */
-/* frequency of entries.                                                    */
-void remap_non_terminals(struct CLIOptions* cli_options) {
+///  REMAP_NON_TERMINALS remaps the non-terminal symbols and states based on
+/// frequency of entries.
+void remap_non_terminals(struct CLIOptions *cli_options) {
   struct goto_header_type go_to;
-  /*   The variable FREQUENCY_SYMBOL is used to hold the non-terminals  */
-  /* in the grammar, and  FREQUENCY_COUNT is used correspondingly to    */
-  /* hold the number of actions defined on each non-terminal.           */
-  /* ORDERED_STATE and ROW_SIZE are used in a similar fashion for states*/
+  //   The variable FREQUENCY_SYMBOL is used to hold the non-terminals
+  // in the grammar, and  FREQUENCY_COUNT is used correspondingly to
+  // hold the number of actions defined on each non-terminal.
+  // ORDERED_STATE and ROW_SIZE are used in a similar fashion for states
   long *frequency_symbol = Allocate_long_array(num_non_terminals);
   frequency_symbol -= num_terminals + 1;
   long *frequency_count = Allocate_long_array(num_non_terminals);
@@ -48,26 +48,26 @@ void remap_non_terminals(struct CLIOptions* cli_options) {
       frequency_count[symbol]++;
     }
   }
-  /* The non-terminals are sorted in descending order based on the      */
-  /* number of actions defined on then, and they are remapped based on  */
-  /* the new arrangement obtained by the sorting.                       */
+  // The non-terminals are sorted in descending order based on the
+  // number of actions defined on then, and they are remapped based on
+  // the new arrangement obtained by the sorting.
   sortdes(frequency_symbol, frequency_count, num_terminals + 1, num_symbols, num_states);
   for ALL_NON_TERMINALS3(i) {
     symbol_map[frequency_symbol[i]] = i;
   }
-  /*    All non-terminal entries in the state automaton are updated     */
-  /* accordingly.  We further subtract NUM_TERMINALS from each          */
-  /* non-terminal to make them fall in the range [1..NUM_NON_TERMINLS]  */
-  /* instead of [NUM_TERMINALS+1..NUM_SYMBOLS].                         */
+  //    All non-terminal entries in the state automaton are updated
+  // accordingly.  We further subtract NUM_TERMINALS from each
+  // non-terminal to make them fall in the range [1..NUM_NON_TERMINLS]
+  // instead of [NUM_TERMINALS+1..NUM_SYMBOLS].
   for ALL_STATES3(state_no) {
     go_to = statset[state_no].go_to;
     for (int i = 1; i <= go_to.size; i++) {
       go_to.map[i].symbol = symbol_map[go_to.map[i].symbol] - num_terminals;
     }
   }
-  /* If Goto-Default was requested, we find out how many non-terminals  */
-  /* were eliminated as a result, and adjust the GOTO-DEFAULT map,      */
-  /* based on the new mapping of the non-terminals.                     */
+  // If Goto-Default was requested, we find out how many non-terminals
+  // were eliminated as a result, and adjust the GOTO-DEFAULT map,
+  // based on the new mapping of the non-terminals.
   if (cli_options->goto_default_bit) {
     short *temp_goto_default = Allocate_short_array(num_non_terminals);
     temp_goto_default -= num_terminals + 1;
@@ -78,8 +78,8 @@ void remap_non_terminals(struct CLIOptions* cli_options) {
     }
     last_symbol -= num_terminals;
     PRNT2(msg_line, "Number of non-terminals eliminated: %ld", num_non_terminals - last_symbol);
-    /* Remap the GOTO-DEFAULT map.                                */
-    /* to hold the original map.                                  */
+    // Remap the GOTO-DEFAULT map.
+    // to hold the original map.
     for ALL_NON_TERMINALS3(symbol) {
       temp_goto_default[symbol_map[symbol]] = gotodef[symbol];
     }
@@ -89,9 +89,9 @@ void remap_non_terminals(struct CLIOptions* cli_options) {
   } else {
     last_symbol = num_non_terminals;
   }
-  /* The states are sorted in descending order based on the number of   */
-  /* actions defined on them, and they are remapped based on the new    */
-  /* arrangement obtained by the sorting.                               */
+  // The states are sorted in descending order based on the number of
+  // actions defined on them, and they are remapped based on the new
+  // arrangement obtained by the sorting.
   sortdes(ordered_state, row_size, 1, num_states, last_symbol);
   frequency_symbol += num_terminals + 1;
   ffree(frequency_symbol);
@@ -100,22 +100,22 @@ void remap_non_terminals(struct CLIOptions* cli_options) {
   ffree(row_size);
 }
 
-/* We now overlap the non-terminal table, or more precisely, we compute the */
-/* starting position in a vector where each of its rows may be placed       */
-/* without clobbering elements in another row.  The starting positions are  */
-/* stored in the vector STATE_INDEX.                                        */
-void overlap_nt_rows(struct CLIOptions* cli_options) {
+/// We now overlap the non-terminal table, or more precisely, we compute the
+/// starting position in a vector where each of its rows may be placed
+/// without clobbering elements in another row.  The starting positions are
+/// stored in the vector STATE_INDEX.
+void overlap_nt_rows(struct CLIOptions *cli_options) {
   int indx;
   long num_bytes;
   num_table_entries = num_gotos + num_goto_reduces + num_states;
   increment_size = MAX(num_table_entries / 100 * increment, last_symbol + 1);
   table_size = MIN(num_table_entries + increment_size, MAX_TABLE_SIZE);
-  /* Allocate space for table, and initlaize the AVAIL_POOL list.  The     */
-  /* variable FIRST_INDEX keeps track of the first element in the doubly-  */
-  /* linked list, and LAST_ELEMENT keeps track of the last element in the  */
-  /* list.                                                                 */
-  /*   The variable MAX_INDX is used to keep track of the maximum starting */
-  /* position for a row that has been used.                                */
+  // Allocate space for table, and initlaize the AVAIL_POOL list.  The
+  // variable FIRST_INDEX keeps track of the first element in the doubly-
+  // linked list, and LAST_ELEMENT keeps track of the last element in the
+  // list.
+  //   The variable MAX_INDX is used to keep track of the maximum starting
+  // position for a row that has been used.
   next = Allocate_long_array(table_size + 1);
   previous = Allocate_long_array(table_size + 1);
   first_index = 1;
@@ -129,15 +129,15 @@ void overlap_nt_rows(struct CLIOptions* cli_options) {
   previous[last_index] = last_index - 1;
   next[last_index] = NIL;
   int max_indx = first_index;
-  /* We now iterate over all the states in their new sorted order as */
-  /* indicated by the variable STATE_NO, and determine an "overlap"  */
-  /* position for them.                                              */
+  // We now iterate over all the states in their new sorted order as
+  // indicated by the variable STATE_NO, and determine an "overlap"
+  // position for them.
   for ALL_STATES3(state_no) {
     const int state_no__ = ordered_state[state_no];
-    /* INDX is set to the beginning of the list of available slots  */
-    /* and we try to determine if it might be a valid starting      */
-    /* position.  If not, INDX is moved to the next element, and we */
-    /* repeat the process until a valid position is found.          */
+    // INDX is set to the beginning of the list of available slots
+    // and we try to determine if it might be a valid starting
+    // position.  If not, INDX is moved to the next element, and we
+    // repeat the process until a valid position is found.
     const struct goto_header_type go_to = statset[state_no__].go_to;
     indx = first_index;
   look_for_match_in_base_table:
@@ -153,11 +153,11 @@ void overlap_nt_rows(struct CLIOptions* cli_options) {
         goto look_for_match_in_base_table;
       }
     }
-    /* At this stage, a position(INDX), was found to overlay the row */
-    /* in question.  Remove elements associated with all positions   */
-    /* that will be taken by row from the doubly-linked list.        */
-    /* NOTE tha since SYMBOLs start at 1, the first index can never  */
-    /* be a candidate (==> I = INDX + SYMBOL) in this loop.          */
+    // At this stage, a position(INDX), was found to overlay the row
+    // in question.  Remove elements associated with all positions
+    // that will be taken by row from the doubly-linked list.
+    // NOTE tha since SYMBOLs start at 1, the first index can never
+    // be a candidate (==> I = INDX + SYMBOL) in this loop.
     for (int j = 1; j <= go_to.size; j++) {
       const int symbol = go_to.map[j].symbol;
       int i = indx + symbol;
@@ -234,13 +234,13 @@ void overlap_nt_rows(struct CLIOptions* cli_options) {
   PRNT2(msg_line, "Storage required for Rules: %ld Bytes", num_bytes);
 }
 
-/* We now try to merge states in the terminal table that are similar.*/
-/* Two states S1 and S2 are said to be similar if they contain the   */
-/* same shift actions, and they reduce to the same set of rules.  In  */
-/* addition,  there must not exist a terminal symbol "t" such that:  */
-/* REDUCE(S1, t) and REDUCE(S2, t) are defined, and                  */
-/* REDUCE(S1, t) ^= REDUCE(S2, t)                                    */
-void merge_similar_t_rows(struct CLIOptions* cli_options) {
+/// We now try to merge states in the terminal table that are similar.
+/// Two states S1 and S2 are said to be similar if they contain the
+/// same shift actions, and they reduce to the same set of rules.  In
+/// addition,  there must not exist a terminal symbol "t" such that:
+/// REDUCE(S1, t) and REDUCE(S2, t) are defined, and
+/// REDUCE(S1, t) ^= REDUCE(S2, t)
+void merge_similar_t_rows(struct CLIOptions *cli_options) {
   struct reduce_header_type red;
   unsigned long hash_address;
   struct node *q;
@@ -257,10 +257,10 @@ void merge_similar_t_rows(struct CLIOptions* cli_options) {
   for (int i = 0; i <= num_shift_maps; i++) {
     table[i] = NIL;
   }
-  /* We now hash all the states into TABLE, based on their shift map   */
-  /* number.                                                           */
-  /* The rules in the range of the REDUCE MAP are placed in sorted     */
-  /* order in a linear linked list headed by REDUCE_ROOT.              */
+  // We now hash all the states into TABLE, based on their shift map
+  // number.
+  // The rules in the range of the REDUCE MAP are placed in sorted
+  // order in a linear linked list headed by REDUCE_ROOT.
   for (int state_no = 1; state_no <= max_la_state; state_no++) {
     struct node *reduce_root = NULL;
     if (state_no > num_states) {
@@ -271,7 +271,7 @@ void merge_similar_t_rows(struct CLIOptions* cli_options) {
     for (int i = 1; i <= red.size; i++) {
       const int rule_no = red.map[i].rule_number;
       for (q = reduce_root; q != NULL; tail = q, q = q->next) {
-        /* Is it or not in REDUCE_ROOT list? */
+        // Is it or not in REDUCE_ROOT list?
         if (q->value == rule_no)
           goto continue_traverse_reduce_map;
         if (q->value > rule_no)
@@ -289,9 +289,9 @@ void merge_similar_t_rows(struct CLIOptions* cli_options) {
       }
     continue_traverse_reduce_map:;
     }
-    /*   We compute the HASH_ADDRESS,  mark if the state has a shift     */
-    /* action on the ERROR symbol, and search the hash TABLE to see if a */
-    /* state matching the description is already in there.               */
+    //   We compute the HASH_ADDRESS,  mark if the state has a shift
+    // action on the ERROR symbol, and search the hash TABLE to see if a
+    // state matching the description is already in there.
     if (state_no > num_states) {
       hash_address = lastats[state_no].shift_number;
     } else {
@@ -315,15 +315,15 @@ void merge_similar_t_rows(struct CLIOptions* cli_options) {
         break;
       }
     }
-    /* If the state is a new state to be inserted in the table, we now   */
-    /* do so,  and place it in the proper category based on its reduces, */
-    /* In any case, the IMAGE field is updated, and so is the relevant   */
-    /* STATE_LIST element.                                               */
-    /*                                                                   */
-    /* If the state contains a shift action on the error symbol and also */
-    /* contains reduce actions,  we allocate a new element for it and    */
-    /* place it in the list headed by MULTI_ROOT.  Such states are not   */
-    /* merged, because we do not take default reductions in them.        */
+    // If the state is a new state to be inserted in the table, we now
+    // do so,  and place it in the proper category based on its reduces,
+    // In any case, the IMAGE field is updated, and so is the relevant
+    // STATE_LIST element.
+    //
+    // If the state contains a shift action on the error symbol and also
+    // contains reduce actions,  we allocate a new element for it and
+    // place it in the list headed by MULTI_ROOT.  Such states are not
+    // merged, because we do not take default reductions in them.
     if (shift_on_error_symbol[state_no] && reduce_root != NULL) {
       top++;
       if (ii == NIL) {
@@ -367,15 +367,15 @@ void merge_similar_t_rows(struct CLIOptions* cli_options) {
   ffree(table);
 }
 
-/*    If shift-default actions are requested, the shift actions      */
-/* associated with each state are factored out of the Action matrix  */
-/* and all identical rows are merged.  This merged matrix is used to */
-/* create a boolean vector that may be used to confirm whether       */
-/* there is a shift action in a given state S on a given symbol t.   */
-/* If we can determine that there is a shift action on a pair (S, t) */
-/* we can apply shift default to the Shift actions just like we did  */
-/* for the Goto actions.                                             */
-void merge_shift_domains(struct CLIOptions* cli_options) {
+///    If shift-default actions are requested, the shift actions
+/// associated with each state are factored out of the Action matrix
+/// and all identical rows are merged.  This merged matrix is used to
+/// create a boolean vector that may be used to confirm whether
+/// there is a shift action in a given state S on a given symbol t.
+/// If we can determine that there is a shift action on a pair (S, t)
+/// we can apply shift default to the Shift actions just like we did
+/// for the Goto actions.
+void merge_shift_domains(struct CLIOptions *cli_options) {
   short *shift_domain_link;
   long *ordered_shift;
   short *terminal_list;
@@ -388,28 +388,28 @@ void merge_shift_domains(struct CLIOptions* cli_options) {
 
   bool *shift_symbols;
 
-  /* Some of the rows in the shift action map have already been merged */
-  /* by the merging of compatible states... We simply need to increase */
-  /* the size of the granularity by merging these new terminal states  */
-  /* based only on their shift actions.                                */
-  /*                                                                   */
-  /* The array SHIFT_DOMAIN_TABLE is used as the base for a hash table.*/
-  /* Each submap represented by a row of the shift action map is hashed*/
-  /* into this table by summing the terminal symbols in its domain.    */
-  /* The submap is then entered in the hash table and assigned a unique*/
-  /* number if such a map was not already placed in the hash table.    */
-  /* Otherwise, the number assigned to the previous submap is also     */
-  /* associated with the new submap.                                   */
-  /*                                                                   */
-  /* The vector SHIFT_IMAGE is used to keep track of the unique number */
-  /* associated with each unique shift submap.                         */
-  /* The vector REAL_SHIFT_NUMBER is the inverse of SHIFT_IMAGE. It is */
-  /* used to associate each unique number to its shift submap.         */
-  /* The integer NUM_TABLE_ENTRIES is used to count the number of      */
-  /* elements in the new merged shift map.                             */
-  /*                                                                   */
-  /* The arrays ORDERED_SHIFT and ROW_SIZE are also initialized here.  */
-  /* They are used to sort the rows of the shift actions map later...  */
+  // Some of the rows in the shift action map have already been merged
+  // by the merging of compatible states... We simply need to increase
+  // the size of the granularity by merging these new terminal states
+  // based only on their shift actions.
+  //
+  // The array SHIFT_DOMAIN_TABLE is used as the base for a hash table.
+  // Each submap represented by a row of the shift action map is hashed
+  // into this table by summing the terminal symbols in its domain.
+  // The submap is then entered in the hash table and assigned a unique
+  // number if such a map was not already placed in the hash table.
+  // Otherwise, the number assigned to the previous submap is also
+  // associated with the new submap.
+  //
+  // The vector SHIFT_IMAGE is used to keep track of the unique number
+  // associated with each unique shift submap.
+  // The vector REAL_SHIFT_NUMBER is the inverse of SHIFT_IMAGE. It is
+  // used to associate each unique number to its shift submap.
+  // The integer NUM_TABLE_ENTRIES is used to count the number of
+  // elements in the new merged shift map.
+  //
+  // The arrays ORDERED_SHIFT and ROW_SIZE are also initialized here.
+  // They are used to sort the rows of the shift actions map later...
   shift_domain_link = Allocate_short_array(num_terminal_states + 1);
   ordered_shift = Allocate_long_array(num_shift_maps + 1);
   terminal_list = Allocate_short_array(num_terminals + 1);
@@ -461,8 +461,8 @@ void merge_shift_domains(struct CLIOptions* cli_options) {
     num_table_entries += shift_size;
   continu:;
   }
-  /*   Compute the frequencies, and remap the terminal symbols         */
-  /* accordingly.                                                      */
+  //   Compute the frequencies, and remap the terminal symbols
+  // accordingly.
   for ALL_TERMINALS3(symbol) {
     frequency_symbol[symbol] = symbol;
     frequency_count[symbol] = 0;
@@ -497,8 +497,8 @@ void merge_shift_domains(struct CLIOptions* cli_options) {
       red.map[i].symbol = symbol_map[red.map[i].symbol];
     }
   }
-  /* If ERROR_MAPS are requested, we also have to remap the original   */
-  /* REDUCE maps.                                                      */
+  // If ERROR_MAPS are requested, we also have to remap the original
+  // REDUCE maps.
   if (error_maps_bit) {
     for ALL_STATES3(state_no) {
       red = reduce[state_no];
@@ -507,16 +507,16 @@ void merge_shift_domains(struct CLIOptions* cli_options) {
       }
     }
   }
-  /* Remap the SHIFT_DEFAULT map.                             */
+  // Remap the SHIFT_DEFAULT map.
   temp_shift_default = Allocate_short_array(num_terminals + 1);
   for ALL_TERMINALS3(symbol) {
     temp_shift_default[symbol_map[symbol]] = shiftdf[symbol];
   }
   ffree(shiftdf);
   shiftdf = temp_shift_default;
-  /* We now compute the starting position for each Shift check row     */
-  /* as we did for the terminal states.  The starting positions are    */
-  /* stored in the vector SHIFT_CHECK_INDEX.                           */
+  // We now compute the starting position for each Shift check row
+  // as we did for the terminal states.  The starting positions are
+  // stored in the vector SHIFT_CHECK_INDEX.
   sortdes(ordered_shift, row_size, 1, shift_domain_count, num_terminals);
   increment_size = MAX(num_table_entries / 100 * increment, num_terminals + 1);
   int old_table_size = table_size;
@@ -540,7 +540,7 @@ void merge_shift_domains(struct CLIOptions* cli_options) {
   previous[last_index] = last_index - 1;
   next[last_index] = NIL;
   int max_indx = first_index;
-  /* Look for a suitable index where to overlay the shift check row.   */
+  // Look for a suitable index where to overlay the shift check row.
   for (int k = 1; k <= shift_domain_count; k++) {
     int shift_no = ordered_shift[k];
     sh = shift[real_shift_number[shift_no]];
@@ -559,11 +559,11 @@ void merge_shift_domains(struct CLIOptions* cli_options) {
         goto look_for_match_in_sh_chk_tab;
       }
     }
-    /* INDX marks the starting position for the row, remove all the      */
-    /* positions that are claimed by that shift check row.               */
-    /* If a position has the value 0,   then it is the starting position */
-    /* of a Shift row that was previously processed, and that element    */
-    /* has already been removed from the list of available positions.    */
+    // INDX marks the starting position for the row, remove all the
+    // positions that are claimed by that shift check row.
+    // If a position has the value 0,   then it is the starting position
+    // of a Shift row that was previously processed, and that element
+    // has already been removed from the list of available positions.
     for (int j = 1; j <= sh.size; j++) {
       int symbol = sh.map[j].symbol;
       int i = indx + symbol;
@@ -578,11 +578,11 @@ void merge_shift_domains(struct CLIOptions* cli_options) {
       }
       next[i] = OMEGA;
     }
-    /* We now remove the starting position itself from the list without  */
-    /* marking it as taken, since it can still be used for a shift check.*/
-    /* MAX_INDX is updated if required.                                  */
-    /* SHIFT_CHECK_INDEX(SHIFT_NO) is properly set to INDX as the        */
-    /* starting position of STATE_NO.                                    */
+    // We now remove the starting position itself from the list without
+    // marking it as taken, since it can still be used for a shift check.
+    // MAX_INDX is updated if required.
+    // SHIFT_CHECK_INDEX(SHIFT_NO) is properly set to INDX as the
+    // starting position of STATE_NO.
     if (first_index == last_index)
       first_index = NIL;
     else if (indx == first_index) {
@@ -601,7 +601,7 @@ void merge_shift_domains(struct CLIOptions* cli_options) {
     }
     shift_check_index[shift_no] = indx;
   }
-  /* Update all counts, and report statistics.                         */
+  // Update all counts, and report statistics.
   shift_check_size = max_indx + num_terminals;
   printf("\n");
   PRNT2(msg_line, "Length of Shift Check Table: %d", shift_check_size);
@@ -633,13 +633,13 @@ void merge_shift_domains(struct CLIOptions* cli_options) {
   ffree(shift_domain_link);
 }
 
-/* By now, similar states have been grouped together, and placed in  */
-/* one of three linear linked lists headed by the root pointers:     */
-/* MULTI_ROOT, SINGLE_ROOT, and EMPTY_ROOT.                          */
-/* We iterate over each of these lists and construct new states out  */
-/* of these groups of similar states when they are compatible. Then, */
-/* we remap the terminal symbols.                                    */
-void overlay_sim_t_rows(struct CLIOptions* cli_options) {
+/// By now, similar states have been grouped together, and placed in
+/// one of three linear linked lists headed by the root pointers:
+/// MULTI_ROOT, SINGLE_ROOT, and EMPTY_ROOT.
+/// We iterate over each of these lists and construct new states out
+/// of these groups of similar states when they are compatible. Then,
+/// we remap the terminal symbols.
+void overlay_sim_t_rows(struct CLIOptions *cli_options) {
   int num_shifts_saved = 0;
   int num_reductions_saved = 0;
   int default_saves = 0;
@@ -654,25 +654,25 @@ void overlay_sim_t_rows(struct CLIOptions* cli_options) {
   short *rule_count = Allocate_short_array(num_rules + 1);
   short *reduce_action = Allocate_short_array(num_terminals + 1);
 
-  /*     We first iterate over the groups of similar states in the     */
-  /* MULTI_ROOT list.  These states have been grouped together,        */
-  /* because they have the same Shift map, and reduce to the same      */
-  /* rules, but we must check that they are fully compatible by making */
-  /* sure that no two states contain reduction to a different rule on  */
-  /* the same symbol.                                                  */
-  /*     The idea is to take a state out of the group, and merge with  */
-  /* it as many other compatible states from the group as possible.    */
-  /* remaining states from the group that caused clashes are thrown    */
-  /* back into the MULTI_ROOT list as a new group of states.           */
+  //     We first iterate over the groups of similar states in the
+  // MULTI_ROOT list.  These states have been grouped together,
+  // because they have the same Shift map, and reduce to the same
+  // rules, but we must check that they are fully compatible by making
+  // sure that no two states contain reduction to a different rule on
+  // the same symbol.
+  //     The idea is to take a state out of the group, and merge with
+  // it as many other compatible states from the group as possible.
+  // remaining states from the group that caused clashes are thrown
+  // back into the MULTI_ROOT list as a new group of states.
   for (int i = multi_root; i != NIL; i = new_state_element[i].thread) {
     for (q = new_state_element_reduce_nodes[i]; q != NULL; q = q->next) {
       rule_count[q->value] = 0;
     }
-    /* REDUCE_ACTION is used to keep track of reductions that are to be  */
-    /* applied on terminal symbols as the states are merged.  We pick    */
-    /* out the first state (STATE_NO) from the group of states involved, */
-    /* initialize REDUCE_ACTION with its reduce map, and count the number*/
-    /* of reductions associated with each rule in that state.            */
+    // REDUCE_ACTION is used to keep track of reductions that are to be
+    // applied on terminal symbols as the states are merged.  We pick
+    // out the first state (STATE_NO) from the group of states involved,
+    // initialize REDUCE_ACTION with its reduce map, and count the number
+    // of reductions associated with each rule in that state.
     int state_no = new_state_element[i].image;
     if (state_no > num_states) {
       red = lastats[state_no].reduce;
@@ -687,21 +687,21 @@ void overlay_sim_t_rows(struct CLIOptions* cli_options) {
       reduce_action[red.map[j].symbol] = rule_no;
       rule_count[rule_no]++;
     }
-    /* STATE_SET_ROOT is used to traverse the rest of the list that form */
-    /* the group of states being processed.  STATE_SUBSET_ROOT is used   */
-    /* to construct the new list that will consist of all states in the  */
-    /* group that are compatible starting with the initial state.        */
-    /* STATE_ROOT is used to construct a list of all states in the group */
-    /* that are not compatible with the initial state.                   */
+    // STATE_SET_ROOT is used to traverse the rest of the list that form
+    // the group of states being processed.  STATE_SUBSET_ROOT is used
+    // to construct the new list that will consist of all states in the
+    // group that are compatible starting with the initial state.
+    // STATE_ROOT is used to construct a list of all states in the group
+    // that are not compatible with the initial state.
     int state_set_root = state_list[state_no];
     int state_subset_root = state_no;
     state_list[state_subset_root] = NIL;
     int state_root = NIL;
     for (int state_no = state_set_root; state_no != NIL; state_no = state_set_root) {
       state_set_root = state_list[state_set_root];
-      /* We traverse the reduce map of the state taken out from the group  */
-      /* and check to see if it is compatible with the subset being        */
-      /* constructed so far.                                               */
+      // We traverse the reduce map of the state taken out from the group
+      // and check to see if it is compatible with the subset being
+      // constructed so far.
       if (state_no > num_states) {
         red = lastats[state_no].reduce;
       } else {
@@ -715,12 +715,12 @@ void overlay_sim_t_rows(struct CLIOptions* cli_options) {
         }
       }
 
-      /* If J > Q->REDUCE_ELEMENT.N then we traversed the whole reduce map,*/
-      /* and all the reductions involved are compatible with the new state */
-      /* being constructed.  The state involved is added to the subset, the*/
-      /* rule counts are updated, and the REDUCE_ACTIONS map is updated.   */
-      /*     Otherwise, we add the state involved to the STATE_ROOT list   */
-      /* which will be thrown back in the MULTI_ROOT list.                 */
+      // If J > Q->REDUCE_ELEMENT.N then we traversed the whole reduce map,
+      // and all the reductions involved are compatible with the new state
+      // being constructed.  The state involved is added to the subset, the
+      // rule counts are updated, and the REDUCE_ACTIONS map is updated.
+      //     Otherwise, we add the state involved to the STATE_ROOT list
+      // which will be thrown back in the MULTI_ROOT list.
       if (jj > red.size) {
         state_list[state_no] = state_subset_root;
         state_subset_root = state_no;
@@ -743,10 +743,10 @@ void overlay_sim_t_rows(struct CLIOptions* cli_options) {
       }
     }
 
-    /* Figure out the best default rule candidate, and update            */
-    /* DEFAULT_SAVES.                                                    */
-    /* Recall that all accept actions were changed into reduce actions   */
-    /* by rule 0.                                                        */
+    // Figure out the best default rule candidate, and update
+    // DEFAULT_SAVES.
+    // Recall that all accept actions were changed into reduce actions
+    // by rule 0.
     int k = 0;
     int reduce_size = 0;
     int default_rule = error_act;
@@ -762,9 +762,9 @@ void overlay_sim_t_rows(struct CLIOptions* cli_options) {
     default_saves += k;
     reduce_size -= k;
 
-    /* If STATE_ROOT is not NIL then there are states in the group that  */
-    /* did not meet the compatibility test.  Throw those states back in  */
-    /* front of MULTI_ROOT as a group.                                   */
+    // If STATE_ROOT is not NIL then there are states in the group that
+    // did not meet the compatibility test.  Throw those states back in
+    // front of MULTI_ROOT as a group.
     if (state_root != NIL) {
       top++;
       new_state_element[top].thread = new_state_element[i].thread;
@@ -779,9 +779,9 @@ void overlay_sim_t_rows(struct CLIOptions* cli_options) {
     } else
       free_nodes(new_state_element_reduce_nodes[i], tail);
 
-    /* Create Reduce map for the newly created terminal state.           */
-    /* We may assume that SYMBOL field of defaults is already set to     */
-    /* the DEFAULT_SYMBOL value.                                         */
+    // Create Reduce map for the newly created terminal state.
+    // We may assume that SYMBOL field of defaults is already set to
+    // the DEFAULT_SYMBOL value.
     new_red = Allocate_reduce_map(reduce_size);
     new_red.map[0].symbol = DEFAULT_SYMBOL;
     new_red.map[0].rule_number = default_rule;
@@ -803,12 +803,12 @@ void overlay_sim_t_rows(struct CLIOptions* cli_options) {
     new_state_element[i].image = state_subset_root;
   }
 
-  /* We now process groups of states that have reductions to a single  */
-  /* rule.  Those states are fully compatible, and the default is the  */
-  /* rule in question.                                                 */
-  /* Any of the REDUCE_ELEMENT maps that belongs to a state in the     */
-  /* group of states being processed may be reused for the new  merged */
-  /* state.                                                            */
+  // We now process groups of states that have reductions to a single
+  // rule.  Those states are fully compatible, and the default is the
+  // rule in question.
+  // Any of the REDUCE_ELEMENT maps that belongs to a state in the
+  // group of states being processed may be reused for the new  merged
+  // state.
   for (int i = single_root; i != NIL; i = new_state_element[i].thread) {
     int state_no = new_state_element[i].image;
     q = new_state_element_reduce_nodes[i];
@@ -850,8 +850,8 @@ void overlay_sim_t_rows(struct CLIOptions* cli_options) {
     new_state_element[i].reduce = new_red;
   }
 
-  /* Groups of states that have no reductions are also compatible.     */
-  /* Their default is ERROR_ACTION.                                    */
+  // Groups of states that have no reductions are also compatible.
+  // Their default is ERROR_ACTION.
   for (int i = empty_root; i != NIL; i = new_state_element[i].thread) {
     int state_no = new_state_element[i].image;
     if (state_no > num_states) {
@@ -870,9 +870,9 @@ void overlay_sim_t_rows(struct CLIOptions* cli_options) {
   if (cli_options->shift_default_bit) {
     merge_shift_domains(cli_options);
   }
-  /* We now reorder the terminal states based on the number of actions */
-  /* in them, and remap the terminal symbols if they were not already  */
-  /* remapped in the previous block for the SHIFT_CHECK vector.        */
+  // We now reorder the terminal states based on the number of actions
+  // in them, and remap the terminal symbols if they were not already
+  // remapped in the previous block for the SHIFT_CHECK vector.
   for ALL_TERMINALS3(symbol) {
     frequency_symbol[symbol] = symbol;
     frequency_count[symbol] = 0;
@@ -894,7 +894,7 @@ void overlay_sim_t_rows(struct CLIOptions* cli_options) {
       num_shifts_saved += row_size[i];
     }
 
-    /* Note that the Default action is skipped !!! */
+    // Note that the Default action is skipped !!!
     red = new_state_element[i].reduce;
     for (int j = 1; j <= red.size; j++) {
       int symbol = red.map[j].symbol;
@@ -937,8 +937,8 @@ void overlay_sim_t_rows(struct CLIOptions* cli_options) {
       }
     }
 
-    /* If ERROR_MAPS are requested, we also have to remap the original   */
-    /* REDUCE maps.                                                      */
+    // If ERROR_MAPS are requested, we also have to remap the original
+    // REDUCE maps.
     if (error_maps_bit) {
       for ALL_STATES3(state_no) {
         red = reduce[state_no];
@@ -961,10 +961,10 @@ void overlay_sim_t_rows(struct CLIOptions* cli_options) {
   ffree(new_state_element_reduce_nodes);
 }
 
-/* We now compute the starting position for each terminal state just */
-/* as we did for the non-terminal states.                            */
-/* The starting positions are stored in the vector TERM_STATE_INDEX. */
-void overlap_t_rows(struct CLIOptions* cli_options) {
+/// We now compute the starting position for each terminal state just
+/// as we did for the non-terminal states.
+/// The starting positions are stored in the vector TERM_STATE_INDEX.
+void overlap_t_rows(struct CLIOptions *cli_options) {
   int symbol;
   int indx;
   long num_bytes;
@@ -994,10 +994,10 @@ void overlap_t_rows(struct CLIOptions* cli_options) {
   int max_indx = first_index;
   for (int k = 1; k <= num_terminal_states; k++) {
     const int state_no = ordered_state[k];
-    /* For the terminal table, we are dealing with two lists, the SHIFT  */
-    /* list, and the REDUCE list. Those lists are merged together first  */
-    /* in TERMINAL_LIST.  Since we have to iterate over the list twice,  */
-    /* this merging makes things easy.                                   */
+    // For the terminal table, we are dealing with two lists, the SHIFT
+    // list, and the REDUCE list. Those lists are merged together first
+    // in TERMINAL_LIST.  Since we have to iterate over the list twice,
+    // this merging makes things easy.
     int root_symbol = NIL;
     const struct shift_header_type sh = shift[new_state_element[state_no].shift_number];
     for (int i = 1; i <= sh.size; i++) {
@@ -1013,7 +1013,7 @@ void overlap_t_rows(struct CLIOptions* cli_options) {
       terminal_list[red.map[i].symbol] = root_symbol;
       root_symbol = red.map[i].symbol;
     }
-    /* Look for a suitable index where to overlay the state.             */
+    // Look for a suitable index where to overlay the state.
     indx = first_index;
   look_for_match_in_term_table:
     if (indx == NIL) {
@@ -1028,8 +1028,8 @@ void overlap_t_rows(struct CLIOptions* cli_options) {
         goto look_for_match_in_term_table;
       }
     }
-    /* INDX marks the starting position for the state, remove all the    */
-    /* positions that are claimed by terminal actions in the state.      */
+    // INDX marks the starting position for the state, remove all the
+    // positions that are claimed by terminal actions in the state.
     for (symbol = root_symbol; symbol != NIL; symbol = terminal_list[symbol]) {
       const int i = indx + symbol;
       if (i == last_index) {
@@ -1041,11 +1041,11 @@ void overlap_t_rows(struct CLIOptions* cli_options) {
       }
       next[i] = OMEGA;
     }
-    /* We now remove the starting position itself from the list, and     */
-    /* mark it as taken(CHECK(INDX) = OMEGA)                             */
-    /* MAX_INDX is updated if required.                                  */
-    /* TERM_STATE_INDEX(STATE_NO) is properly set to INDX as the starting*/
-    /* position of STATE_NO.                                             */
+    // We now remove the starting position itself from the list, and
+    // mark it as taken(CHECK(INDX) = OMEGA)
+    // MAX_INDX is updated if required.
+    // TERM_STATE_INDEX(STATE_NO) is properly set to INDX as the starting
+    // position of STATE_NO.
     if (first_index == last_index) {
       first_index = NIL;
     } else if (indx == first_index) {
@@ -1064,7 +1064,7 @@ void overlap_t_rows(struct CLIOptions* cli_options) {
     }
     term_state_index[state_no] = indx;
   }
-  /* Update all counts, and report statistics.                         */
+  // Update all counts, and report statistics.
   term_check_size = max_indx + num_terminals;
   for (term_action_size = max_indx + num_terminals;
        term_action_size >= max_indx; term_action_size--) {
@@ -1092,10 +1092,10 @@ void overlap_t_rows(struct CLIOptions* cli_options) {
   long k_bytes = num_bytes / 1024 + 1;
   PRNT2(msg_line, "Storage required for Terminal Tables: %ld Bytes, %ldK", num_bytes, k_bytes);
   total_bytes += num_bytes;
-  /* Report total number of storage used.                              */
+  // Report total number of storage used.
   k_bytes = total_bytes / 1024 + 1;
   PRNT2(msg_line, "Total storage required for Tables: %ld Bytes, %ldK", total_bytes, k_bytes);
-  /* We now write out the tables to the SYSTAB file.                   */
+  // We now write out the tables to the SYSTAB file.
   table_size = MAX(check_size, term_check_size);
   table_size = MAX(table_size, shift_check_size);
   table_size = MAX(table_size, action_size);
@@ -1105,8 +1105,8 @@ void overlap_t_rows(struct CLIOptions* cli_options) {
   ffree(previous);
 }
 
-/* We now write out the tables to the SYSTAB file.                   */
-void print_tables(struct CLIOptions* cli_options, FILE *systab) {
+/// We now write out the tables to the SYSTAB file.
+void print_tables(struct CLIOptions *cli_options, FILE *systab) {
   int *check;
   int *action;
   int la_state_offset;
@@ -1126,7 +1126,7 @@ void print_tables(struct CLIOptions* cli_options, FILE *systab) {
   long offset;
   check = Allocate_int_array(table_size + 1);
   action = Allocate_int_array(table_size + 1);
-  /* Prepare header card with proper information, and write it out. */
+  // Prepare header card with proper information, and write it out.
   offset = error_act;
   if (cli_options->read_reduce_bit) {
     offset += num_rules;
@@ -1143,7 +1143,7 @@ void print_tables(struct CLIOptions* cli_options, FILE *systab) {
   output_buffer[4] = cli_options->single_productions_bit ? '1' : '0';
   output_buffer[5] = cli_options->shift_default_bit ? '1' : '0';
   output_buffer[6] = rules[1].lhs == accept_image ? '1' : '0';
-  /* are there more than 1 start symbols? */
+  // are there more than 1 start symbols?
   output_buffer[7] = error_maps_bit ? '1' : '0';
   output_buffer[8] = cli_options->byte_bit && last_symbol <= 255 ? '1' : '0';
   output_buffer[9] = escape;
@@ -1163,7 +1163,7 @@ void print_tables(struct CLIOptions* cli_options, FILE *systab) {
   field(la_state_offset, 5);
   field(cli_options->lalr_level, 5);
   *output_ptr++ = '\n';
-  /* We write the terminal symbols map.                    */
+  // We write the terminal symbols map.
   for ALL_TERMINALS3(symbol) {
     tok = RETRIEVE_STRING(symbol);
     if (tok[0] == '\n') /* we're dealing with special symbol?  */
@@ -1193,7 +1193,7 @@ void print_tables(struct CLIOptions* cli_options, FILE *systab) {
     *output_ptr++ = '\n';
     BUFFER_CHECK(systab);
   }
-  /* We write the non-terminal symbols map.                */
+  // We write the non-terminal symbols map.
   for ALL_NON_TERMINALS3(symbol) {
     int len;
     tok = RETRIEVE_STRING(symbol);
@@ -1224,25 +1224,25 @@ void print_tables(struct CLIOptions* cli_options, FILE *systab) {
     *output_ptr++ = '\n';
     BUFFER_CHECK(systab);
   }
-  /* Initialize TABLES with default actions.               */
+  // Initialize TABLES with default actions.
   for (int i = 1; i <= check_size; i++) {
     check[i] = DEFAULT_SYMBOL;
   }
   for (int i = 1; i <= (int) action_size; i++) {
     action[i] = error_act;
   }
-  /*    Update the default non-terminal action of each state with the */
-  /* appropriate corresponding terminal state starting index.         */
+  //    Update the default non-terminal action of each state with the
+  // appropriate corresponding terminal state starting index.
   for (int i = 1; i <= num_terminal_states; i++) {
     indx = term_state_index[i];
     int state_no = new_state_element[i].image;
 
-    /*   Update the action link between the non-terminal and terminal    */
-    /* tables.  If error-maps are requested, an indirect linking is made */
-    /* as follows:                                                       */
-    /*  Each non-terminal row identifies its original state number, and  */
-    /* a new vector START_TERMINAL_STATE indexable by state numbers      */
-    /* identifies the starting point of each state in the terminal table.*/
+    //   Update the action link between the non-terminal and terminal
+    // tables.  If error-maps are requested, an indirect linking is made
+    // as follows:
+    //  Each non-terminal row identifies its original state number, and
+    // a new vector START_TERMINAL_STATE indexable by state numbers
+    // identifies the starting point of each state in the terminal table.
     if (state_no <= num_states) {
       for (; state_no != NIL; state_no = state_list[state_no]) {
         action[state_index[state_no]] = indx;
@@ -1254,7 +1254,7 @@ void print_tables(struct CLIOptions* cli_options, FILE *systab) {
       }
     }
   }
-  /*  Now update the non-terminal tables with the non-terminal actions.*/
+  //  Now update the non-terminal tables with the non-terminal actions.
   for ALL_STATES3(state_no) {
     struct goto_header_type go_to;
     indx = state_index[state_no];
@@ -1274,7 +1274,7 @@ void print_tables(struct CLIOptions* cli_options, FILE *systab) {
       }
     }
   }
-  /* Write size of right hand side of rules followed by CHECK table.   */
+  // Write size of right hand side of rules followed by CHECK table.
   k = 0;
   for (int i = 1; i <= num_rules; i++) {
     field(RHS_SIZE(i), 4);
@@ -1298,7 +1298,7 @@ void print_tables(struct CLIOptions* cli_options, FILE *systab) {
     *output_ptr++ = '\n';
     BUFFER_CHECK(systab);
   }
-  /* Write left hand side symbol of rules followed by ACTION table.    */
+  // Write left hand side symbol of rules followed by ACTION table.
   k = 0;
   for (int i = 1; i <= num_rules; i++) {
     field(symbol_map[rules[i].lhs] - num_terminals, 6);
@@ -1322,7 +1322,7 @@ void print_tables(struct CLIOptions* cli_options, FILE *systab) {
     *output_ptr++ = '\n';
     BUFFER_CHECK(systab);
   }
-  /* Initialize the terminal tables,and update with terminal actions. */
+  // Initialize the terminal tables,and update with terminal actions.
   for (int i = 1; i <= term_check_size; i++) {
     check[i] = DEFAULT_SYMBOL;
   }
@@ -1389,7 +1389,7 @@ void print_tables(struct CLIOptions* cli_options, FILE *systab) {
   PRNT2(msg_line, "     Number of Goto/Reduces: %d", goto_reduce_count);
   PRNT2(msg_line, "     Number of Reduces: %d", reduce_count);
   PRNT2(msg_line, "     Number of Defaults: %d", default_count);
-  /* Write Terminal Check Table.                                      */
+  // Write Terminal Check Table.
   k = 0;
   for (int i = 1; i <= term_check_size; i++) {
     field(check[i], 4);
@@ -1404,7 +1404,7 @@ void print_tables(struct CLIOptions* cli_options, FILE *systab) {
     *output_ptr++ = '\n';
     BUFFER_CHECK(systab);
   }
-  /* Write Terminal Action Table.                                      */
+  // Write Terminal Action Table.
   k = 0;
   for (int i = 1; i <= term_action_size; i++) {
     field(action[i], 6);
@@ -1419,7 +1419,7 @@ void print_tables(struct CLIOptions* cli_options, FILE *systab) {
     *output_ptr++ = '\n';
     BUFFER_CHECK(systab);
   }
-  /* If GOTO_DEFAULT is requested, we print out the GOTODEF vector.   */
+  // If GOTO_DEFAULT is requested, we print out the GOTODEF vector.
   if (cli_options->goto_default_bit) {
     k = 0;
     for ALL_NON_TERMINALS3(symbol) {
@@ -1445,11 +1445,11 @@ void print_tables(struct CLIOptions* cli_options, FILE *systab) {
       BUFFER_CHECK(systab);
     }
   }
-  /* If SHIFT_DEFAULT is requested, we print out the Default Reduce    */
-  /* map, the Shift State map, the Shift Check vector, and the SHIFTDF */
-  /* vector.                                                           */
+  // If SHIFT_DEFAULT is requested, we print out the Default Reduce
+  // map, the Shift State map, the Shift Check vector, and the SHIFTDF
+  // vector.
   if (cli_options->shift_default_bit) {
-    /* Print out header */
+    // Print out header
     field(num_terminal_states, 5);
     field(shift_check_size, 5);
     *output_ptr++ = '\n';
@@ -1471,9 +1471,9 @@ void print_tables(struct CLIOptions* cli_options, FILE *systab) {
       BUFFER_CHECK(systab);
     }
 
-    /* First, check whether the  maximum value in SHIFT_STATE    */
-    /* table exceeds 9999. If so, stop. Otherwise, write out     */
-    /* SHIFT_STATE table.                                        */
+    // First, check whether the  maximum value in SHIFT_STATE
+    // table exceeds 9999. If so, stop. Otherwise, write out
+    // SHIFT_STATE table.
     if (shift_check_size - num_terminals > 9999) {
       PRNTERR("SHIFT_STATE map contains > 9999 elements");
       return;
@@ -1493,8 +1493,8 @@ void print_tables(struct CLIOptions* cli_options, FILE *systab) {
       *output_ptr++ = '\n';
       BUFFER_CHECK(systab);
     }
-    /* Set the Check vector with the symbols in the domain of the shift  */
-    /* maps.                                                             */
+    // Set the Check vector with the symbols in the domain of the shift
+    // maps.
     for (int i = 1; i <= shift_check_size; i++) {
       check[i] = DEFAULT_SYMBOL;
     }
@@ -1552,12 +1552,12 @@ void print_tables(struct CLIOptions* cli_options, FILE *systab) {
       BUFFER_CHECK(systab);
     }
   }
-  /* We first sort the new state numbers.  A bucket sort technique     */
-  /* is used using the ACTION vector as a base to simulate the         */
-  /* buckets.  NOTE: the iteration over the buckets is done backward   */
-  /* because we also construct a list of the original state numbers    */
-  /* that reflects the permutation of the new state numbers.           */
-  /* During the backward iteration,  we construct the list as a stack. */
+  // We first sort the new state numbers.  A bucket sort technique
+  // is used using the ACTION vector as a base to simulate the
+  // buckets.  NOTE: the iteration over the buckets is done backward
+  // because we also construct a list of the original state numbers
+  // that reflects the permutation of the new state numbers.
+  // During the backward iteration,  we construct the list as a stack.
   if (error_maps_bit || cli_options->states_bit) {
     int max_indx;
     max_indx = accept_act - num_rules - 1;
@@ -1585,7 +1585,7 @@ void print_tables(struct CLIOptions* cli_options, FILE *systab) {
   fwrite(output_buffer, sizeof(char), output_ptr - &output_buffer[0], systab);
 }
 
-void cmprspa(struct OutputFiles* output_files, struct CLIOptions* cli_options, FILE *systab) {
+void cmprspa(struct OutputFiles *output_files, struct CLIOptions *cli_options, FILE *systab) {
   state_index = Allocate_long_array(max_la_state + 1);
   ordered_state = Allocate_long_array(max_la_state + 1);
   symbol_map = Allocate_int_array(num_symbols + 1);

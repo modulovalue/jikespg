@@ -5,9 +5,9 @@ static char hostfile[] = __FILE__;
 #include <string.h>
 #include "common.h"
 
-/* The following are global variables and constants used to manage a  */
-/* pool of temporary space. Externally, the user invokes the function */
-/* "talloc" just as he would invoke "malloc".                         */
+/// The following are global variables and constants used to manage a
+/// pool of temporary space. Externally, the user invokes the function
+/// "talloc" just as he would invoke "malloc".
 const int LOG_BLKSIZE = 14;
 const int BLKSIZE = 1 << LOG_BLKSIZE;
 const int BASE_INCREMENT = 64;
@@ -19,22 +19,22 @@ long temp_top = 0;
 long temp_size = 0;
 long temp_base_size = 0;
 
-/* This procedure obtains more TEMPORARY space.                       */
+/// This procedure obtains more TEMPORARY space.
 bool allocate_more_space(cell ***base, long *size, long *base_size) {
-  /* The variable size always indicates the maximum number of cells     */
-  /* that has been allocated and reserved for the storage pool.         */
-  /* Initially, size should be set to 0 to indicate that no space has   */
-  /* yet been allocated. The pool of cells available is divided into    */
-  /* segments of size 2**LOG_BLKSIZE each and each segment is pointer   */
-  /* to by a slot in the array base.                                    */
-  /*                                                                    */
-  /* By dividing "size" by the size of the segment we obtain the        */
-  /* index for the next segment in base. If base is already full, it is */
-  /* reallocated.                                                       */
-  /*                                                                    */
+  // The variable size always indicates the maximum number of cells
+  // that has been allocated and reserved for the storage pool.
+  // Initially, size should be set to 0 to indicate that no space has
+  // yet been allocated. The pool of cells available is divided into
+  // segments of size 2**LOG_BLKSIZE each and each segment is pointer
+  // to by a slot in the array base.
+  //
+  // By dividing "size" by the size of the segment we obtain the
+  // index for the next segment in base. If base is already full, it is
+  // reallocated.
+  //
   const long k = *size >> LOG_BLKSIZE; /* which segment? */
   if (k == *base_size) {
-    /* base overflow? reallocate */
+    // base overflow? reallocate
     *base_size += BASE_INCREMENT;
     *base = (cell **) (*base == NULL ? malloc(sizeof(cell *) * *base_size) : realloc(*base, sizeof(cell *) * *base_size));
     if (*base == (cell **) NULL) {
@@ -44,14 +44,14 @@ bool allocate_more_space(cell ***base, long *size, long *base_size) {
       (*base)[i] = NULL;
     }
   }
-  /* If the Ast slot "k" does not already contain a segment, We try to  */
-  /* allocate one and place its address in (*base)[k].                  */
-  /* If the allocation was not successful, we terminate;                */
-  /* otherwise, we adjust the address in (*base)[k] so as to allow us   */
-  /* to index the segment directly, instead of having to perform a      */
-  /* subtraction for each reference. Finally, we update size.           */
-  /*                                                                    */
-  /* Finally, we set the block to zeros.                                */
+  // If the Ast slot "k" does not already contain a segment, We try to
+  // allocate one and place its address in (*base)[k].
+  // If the allocation was not successful, we terminate;
+  // otherwise, we adjust the address in (*base)[k] so as to allow us
+  // to index the segment directly, instead of having to perform a
+  // subtraction for each reference. Finally, we update size.
+  //
+  // Finally, we set the block to zeros.
   if ((*base)[k] == NULL) {
     (*base)[k] = (cell *) malloc(sizeof(cell) << LOG_BLKSIZE);
     if ((*base)[k] == (cell *) NULL) {
@@ -64,14 +64,14 @@ bool allocate_more_space(cell ***base, long *size, long *base_size) {
   return true;
 }
 
-/* This procedure resets the temporary space already allocated so     */
-/* that it can be reused before new blocks are allocated.             */
+/// This procedure resets the temporary space already allocated so
+/// that it can be reused before new blocks are allocated.
 void reset_temporary_space(void) {
   temp_top = 0; /* index of next usable elemt */
   temp_size = 0;
 }
 
-/* This procedure frees all allocated temporary space.                */
+/// This procedure frees all allocated temporary space.
 void free_temporary_space(void) {
   for (int k = 0; k < temp_base_size && temp_base[k] != NULL; k++) {
     temp_base[k] += k * BLKSIZE;
@@ -86,8 +86,8 @@ void free_temporary_space(void) {
   temp_size = 0;
 }
 
-/* talloc allocates an object of size "size" in temporary space and   */
-/* returns a pointer to it.                                           */
+/// talloc allocates an object of size "size" in temporary space and
+/// returns a pointer to it.
 void *talloc(const long size) {
   long i = temp_top;
   temp_top += (size + sizeof(cell) - 1) / sizeof(cell);
@@ -102,17 +102,17 @@ void *talloc(const long size) {
   return &temp_base[i >> LOG_BLKSIZE][i];
 }
 
-/* The following are global variables and constants used to manage a  */
-/* pool of global space. Externally, the user invokes one of the      */
-/* functions:                                                         */
-/*                                                                    */
-/*    ALLOCATE_NODE                                                   */
-/*    ALLOCATE_GOTO_MAP                                               */
-/*    ALLOCATE_SHIFT_MAP                                              */
-/*    ALLOCATE_REDUCE_MAP                                             */
-/*                                                                    */
-/* These functions allocate space from the global pool in the same    */
-/* using the function "galloc" below.                                 */
+/// The following are global variables and constants used to manage a
+/// pool of global space. Externally, the user invokes one of the
+/// functions:
+///
+///    ALLOCATE_NODE
+///    ALLOCATE_GOTO_MAP
+///    ALLOCATE_SHIFT_MAP
+///    ALLOCATE_REDUCE_MAP
+///
+/// These functions allocate space from the global pool in the same
+/// using the function "galloc" below.
 cell **global_base = NULL;
 long global_top = 0;
 long global_size = 0;
@@ -120,19 +120,19 @@ long global_base_size = 0;
 
 struct node *node_pool = NULL;
 
-/* galloc allocates an object of size "size" in global space and      */
-/* returns a pointer to it. It is analogous to "talloc", but it      */
-/* is a local (static) routine that is only invoked in this file by   */
-/* other more specialized routines.                                   */
+/// galloc allocates an object of size "size" in global space and
+/// returns a pointer to it. It is analogous to "talloc", but it
+/// is a local (static) routine that is only invoked in this file by
+/// other more specialized routines.
 void *galloc(const long size) {
   long i = global_top;
   global_top += (size + sizeof(cell) - 1) / sizeof(cell);
   if (global_top > global_size) {
     {
-      /* This function is invoked when the space left in a segment is not   */
-      /* enough for GALLOC to allocate a requested object. Rather than      */
-      /* waste the space, as many NODE structures as possible are allocated */
-      /* in that space and stacked up in the NODE_POOL list.                */
+      // This function is invoked when the space left in a segment is not
+      // enough for GALLOC to allocate a requested object. Rather than
+      // waste the space, as many NODE structures as possible are allocated
+      // in that space and stacked up in the NODE_POOL list.
       int top = i;
       while (true) {
         const long i = top;
@@ -155,15 +155,15 @@ void *galloc(const long size) {
   return &global_base[i >> LOG_BLKSIZE][i];
 }
 
-/*  This function frees a linked list of nodes by adding them to the free   */
-/* list.  Head points to head of linked list and tail to the end.           */
+///  This function frees a linked list of nodes by adding them to the free
+/// list.  Head points to head of linked list and tail to the end.
 void free_nodes(struct node *head, struct node *tail) {
   tail->next = node_pool;
   node_pool = head;
 }
 
-/* FILL_IN is a subroutine that pads a buffer, STRING,  with CHARACTER a     */
-/* certain AMOUNT of times.                                                  */
+/// FILL_IN is a subroutine that pads a buffer, STRING,  with CHARACTER a
+/// certain AMOUNT of times.
 void fill_in(char string[], const int amount, const char character) {
   int ii;
   for (ii = 0; ii <= amount; ii++) {
@@ -172,13 +172,13 @@ void fill_in(char string[], const int amount, const char character) {
   string[ii] = '\0';
 }
 
-/* QCKSRT is a quicksort algorithm that takes as arguments an array of       */
-/* integers, two numbers L and H that indicate the lower and upper bound     */
-/* positions in ARRAY to be sorted.                                          */
+/// QCKSRT is a quicksort algorithm that takes as arguments an array of
+/// integers, two numbers L and H that indicate the lower and upper bound
+/// positions in ARRAY to be sorted.
 void qcksrt(short array[], const int l, const int h) {
   int lostack[14];
   int histack[14];
-  /* 2 ** 15 - 1 elements                          */
+  // 2 ** 15 - 1 elements
   int top = 1;
   lostack[top] = l;
   histack[top] = h;
@@ -210,8 +210,8 @@ void qcksrt(short array[], const int l, const int h) {
   }
 }
 
-/* NUMBER_LEN takes a state number and returns the number of digits in that  */
-/* number.                                                                   */
+/// NUMBER_LEN takes a state number and returns the number of digits in that
+/// number.
 int number_len(int state_no) {
   int num = 0;
   do {
@@ -221,11 +221,11 @@ int number_len(int state_no) {
   return num;
 }
 
-/* This procedure takes two character strings as arguments: IN and OUT.  */
-/* IN identifies a grammar symbol or name that is checked as to whether  */
-/* or not it needs to be quoted. If so, the necessary quotes are added   */
-/* as IN is copied into the space identified by OUT.                     */
-/* NOTE that it is assumed that IN and OUT do not overlap each other.    */
+/// This procedure takes two character strings as arguments: IN and OUT.
+/// IN identifies a grammar symbol or name that is checked as to whether
+/// or not it needs to be quoted. If so, the necessary quotes are added
+/// as IN is copied into the space identified by OUT.
+/// NOTE that it is assumed that IN and OUT do not overlap each other.
 void restore_symbol(char *out, const char *in) {
   const int len = strlen(in);
   if (len > 0) {
@@ -249,21 +249,21 @@ void restore_symbol(char *out, const char *in) {
   }
   strcpy(out, in);
   if (out[0] == '\n') {
-    /* one of the special grammar symbols? */
+    // one of the special grammar symbols?
     out[0] = escape;
   }
 }
 
-/* PRINT_LARGE_TOKEN generates code to print a token that may exceed the     */
-/* limit of its field.  The argument are LINE which is the symbol a varying  */
-/* length character string, TOKEN which is the symbol to be printed, INDENT  */
-/* which is a character string to be used as an initial prefix to indent the */
-/* output line, and LEN which indicates the maximum number of characters that*/
-/* can be printed on a given line.  At the end of this process, LINE will    */
-/* have the value of the remaining substring that can fit on the output line.*/
-/* If a TOKEN is too large to be indented in a line, but not too large for   */
-/* the whole line, we forget the indentation, and printed it. Otherwise, it  */
-/* is "chapped up" and printed in pieces that are each indented.             */
+/// PRINT_LARGE_TOKEN generates code to print a token that may exceed the
+/// limit of its field.  The argument are LINE which is the symbol a varying
+/// length character string, TOKEN which is the symbol to be printed, INDENT
+/// which is a character string to be used as an initial prefix to indent the
+/// output line, and LEN which indicates the maximum number of characters that
+/// can be printed on a given line.  At the end of this process, LINE will
+/// have the value of the remaining substring that can fit on the output line.
+/// If a TOKEN is too large to be indented in a line, but not too large for
+/// the whole line, we forget the indentation, and printed it. Otherwise, it
+/// is "chapped up" and printed in pieces that are each indented.
 void print_large_token(char *line, char *token, const char *indent, int len) {
   int toklen = strlen(token);
   if (toklen > len && toklen <= PRINT_LINE_SIZE - 1) {
@@ -284,16 +284,16 @@ void print_large_token(char *line, char *token, const char *indent, int len) {
   }
 }
 
-/* PRINT_ITEM takes as parameter an ITEM_NO which it prints.                 */
+/// PRINT_ITEM takes as parameter an ITEM_NO which it prints.
 void print_item(const int item_no) {
   char tempstr[PRINT_LINE_SIZE + 1];
   char line[PRINT_LINE_SIZE + 1];
   char tok[SYMBOL_SIZE + 1];
-  /* We first print the left hand side of the rule, leaving at least   */
-  /* 5 spaces in the output line to accommodate the equivalence symbol  */
-  /* "::=" surrounded by blanks on both sides.  Then, we print all the */
-  /* terminal symbols on the right hand side up to but not including   */
-  /* the dot symbol.                                                   */
+  // We first print the left hand side of the rule, leaving at least
+  // 5 spaces in the output line to accommodate the equivalence symbol
+  // "::=" surrounded by blanks on both sides.  Then, we print all the
+  // terminal symbols on the right hand side up to but not including
+  // the dot symbol.
   const int rule_no = item_table[item_no].rule_number;
   int symbol = rules[rule_no].lhs;
   restore_symbol(tok, RETRIEVE_STRING(symbol));
@@ -315,9 +315,9 @@ void print_item(const int item_no) {
     }
     strcat(line, " ");
   }
-  /* We now add a DOT "." to the output line and print the remaining   */
-  /* symbols on the right hand side.  If ITEM_NO is a complete item,   */
-  /* we also print the rule number.                                    */
+  // We now add a DOT "." to the output line and print the remaining
+  // symbols on the right hand side.  If ITEM_NO is a complete item,
+  // we also print the rule number.
   if (item_table[item_no].dot == 0 || item_table[item_no].symbol == empty) {
     strcpy(tok, ".");
   } else {
@@ -351,28 +351,28 @@ void print_item(const int item_no) {
   fprintf(syslis, "\n%s", line);
 }
 
-/* PRINT_STATE prints all the items in a state.  NOTE that when single       */
-/* productions are eliminated, certain items that were added in a state by   */
-/* CLOSURE, will no longer show up in the output.  Example: If we have the   */
-/* item [A ::= .B]  in a state, and the GOTO_REDUCE generated on B has been  */
-/* replaced by say the GOTO or GOTO_REDUCE of A, the item above can no longer*/
-/* be retrieved, since transitions in a given state are reconstructed from   */
-/* the KERNEL and ADEQUATE items of the actions in the GOTO and SHIFT maps.  */
+/// PRINT_STATE prints all the items in a state.  NOTE that when single
+/// productions are eliminated, certain items that were added in a state by
+/// CLOSURE, will no longer show up in the output.  Example: If we have the
+/// item [A ::= .B]  in a state, and the GOTO_REDUCE generated on B has been
+/// replaced by say the GOTO or GOTO_REDUCE of A, the item above can no longer
+/// be retrieved, since transitions in a given state are reconstructed from
+/// the KERNEL and ADEQUATE items of the actions in the GOTO and SHIFT maps.
 void print_state(const int state_no) {
   int item_no;
   struct node *q;
   char buffer[PRINT_LINE_SIZE + 1];
   char line[PRINT_LINE_SIZE + 1];
-  /* ITEM_SEEN is used to construct sets of items, to help avoid       */
-  /* adding duplicates in a list.  Duplicates can occur because an     */
-  /* item from the kernel set will either be shifted on if it is not a */
-  /* complete item, or it will be a member of the Complete_items set.  */
-  /* Duplicates can also occur because of the elimination of single    */
-  /* productions.                                                      */
+  // ITEM_SEEN is used to construct sets of items, to help avoid
+  // adding duplicates in a list.  Duplicates can occur because an
+  // item from the kernel set will either be shifted on if it is not a
+  // complete item, or it will be a member of the Complete_items set.
+  // Duplicates can also occur because of the elimination of single
+  // productions.
   bool *state_seen = Allocate_boolean_array(max_la_state + 1);
   bool *item_seen = Allocate_boolean_array(num_items + 1);
   short *item_list = Allocate_short_array(num_items + 1);
-  /* INITIALIZATION -----------------------------------------------------------*/
+  // INITIALIZATION -----------------------------------------------------------
   for ALL_STATES3(state_no) {
     state_seen[state_no] = false;
   }
@@ -380,16 +380,16 @@ void print_state(const int state_no) {
     item_seen[item_no] = false;
   }
   int kernel_size = 0;
-  /* END OF INITIALIZATION ----------------------------------------------------*/
+  // END OF INITIALIZATION ----------------------------------------------------
   fill_in(buffer, PRINT_LINE_SIZE - (number_len(state_no) + 8 /* 8 = length("STATE") + 2 spaces + newline*/), '-');
   fprintf(syslis, "\n\n\nSTATE %d %s", state_no, buffer);
-  /* Print the set of states that have transitions to STATE_NO.        */
+  // Print the set of states that have transitions to STATE_NO.
   int n = 0;
   strcpy(line, "( ");
   for (bool end_node = (q = in_stat[state_no]) == NULL;
        !end_node;
        end_node = q == in_stat[state_no]) {
-    /* copy list of IN_STAT into array */
+    // copy list of IN_STAT into array
     q = q->next;
     if (!state_seen[q->value]) {
       state_seen[q->value] = true;
@@ -405,15 +405,15 @@ void print_state(const int state_no) {
   }
   strcat(line, ")");
   fprintf(syslis, "\n%s\n", line);
-  /* Add the set of kernel items to the array ITEM_LIST, and mark all  */
-  /* items seen to avoid duplicates.                                   */
+  // Add the set of kernel items to the array ITEM_LIST, and mark all
+  // items seen to avoid duplicates.
   for (q = statset[state_no].kernel_items; q != NULL; q = q->next) {
     kernel_size++;
     item_no = q->value;
     item_list[kernel_size] = item_no; /* add to array */
     item_seen[item_no] = true; /* Mark as "seen" */
   }
-  /* Add the Complete Items to the array ITEM_LIST, and mark used.     */
+  // Add the Complete Items to the array ITEM_LIST, and mark used.
   n = kernel_size;
   for (q = statset[state_no].complete_items; q != NULL; q = q->next) {
     item_no = q->value;
@@ -422,15 +422,15 @@ void print_state(const int state_no) {
       item_list[++n] = item_no;
     }
   }
-  /* Iterate over the shift map.  Shift-Reduce actions are identified  */
-  /* by a negative integer that indicates the rule in question , and   */
-  /* the associated item can be retrieved by indexing the array        */
-  /* ADEQUATE_ITEMS at the location of the rule.  For shift-actions, we*/
-  /* simply take the predecessor-items of all the items in the kernel  */
-  /* of the following state.                                           */
-  /* If the shift-action is a look-ahead shift, we check to see if the */
-  /* look-ahead state contains shift actions, and retrieve the next    */
-  /* state from one of those shift actions.                            */
+  // Iterate over the shift map.  Shift-Reduce actions are identified
+  // by a negative integer that indicates the rule in question , and
+  // the associated item can be retrieved by indexing the array
+  // ADEQUATE_ITEMS at the location of the rule.  For shift-actions, we
+  // simply take the predecessor-items of all the items in the kernel
+  // of the following state.
+  // If the shift-action is a look-ahead shift, we check to see if the
+  // look-ahead state contains shift actions, and retrieve the next
+  // state from one of those shift actions.
   const struct shift_header_type sh = shift[statset[state_no].shift_number];
   for (int i = 1; i <= sh.size; i++) {
     int next_state = sh.map[i].action;
@@ -459,7 +459,7 @@ void print_state(const int state_no) {
       }
     }
   }
-  /* GOTOS and GOTO-REDUCES are analogous to SHIFTS and SHIFT-REDUCES. */
+  // GOTOS and GOTO-REDUCES are analogous to SHIFTS and SHIFT-REDUCES.
   const struct goto_header_type go_to = statset[state_no].go_to;
   for (int i = 1; i <= go_to.size; i++) {
     if (go_to.map[i].action > 0) {
@@ -477,9 +477,9 @@ void print_state(const int state_no) {
       }
     }
   }
-  /* Print the Kernel items.  If there are any closure items, skip a   */
-  /* line, sort then, then print them.  The kernel items are in sorted */
-  /* order.                                                            */
+  // Print the Kernel items.  If there are any closure items, skip a
+  // line, sort then, then print them.  The kernel items are in sorted
+  // order.
   for (item_no = 1; item_no <= kernel_size; item_no++) {
     print_item(item_list[item_no]);
   }
@@ -495,7 +495,7 @@ void print_state(const int state_no) {
   ffree(state_seen);
 }
 
-/* This procedure is invoked when a call to MALLOC, CALLOC or REALLOC fails. */
+/// This procedure is invoked when a call to MALLOC, CALLOC or REALLOC fails.
 void nospace(char *file_name, const long line_number) {
   fprintf(stderr, "*** Cannot allocate space ... LPG terminated in file %s at line %ld\n", file_name, line_number);
   exit(12);

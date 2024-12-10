@@ -56,9 +56,9 @@ int top;
 int symbol_root;
 int rule_root;
 
-/* This function first tries to recycle an action_element node from a */
-/* free list. If the list is empty a new node is allocated from       */
-/* temporary storage.                                                 */
+/// This function first tries to recycle an action_element node from a
+/// free list. If the list is empty a new node is allocated from
+/// temporary storage.
 struct action_element *allocate_action_element(void) {
   struct action_element *p = action_element_pool;
   if (p != NULL) {
@@ -72,30 +72,30 @@ struct action_element *allocate_action_element(void) {
   return p;
 }
 
-/* This routine returns a list of action_element structures to the    */
-/* free list.                                                         */
+/// This routine returns a list of action_element structures to the
+/// free list.
 void free_action_elements(struct action_element *head, struct action_element *tail) {
   tail->next = action_element_pool;
   action_element_pool = head;
 }
 
-/* Compute_sp_map is an instantiation of the digraph algorithm. It    */
-/* is invoked repeatedly by remove_single_productions to:             */
-/*                                                                    */
-/*   1) Partially order the right-hand side of all the single         */
-/*      productions (SP) into a list [A1, A2, A3, ..., An]            */
-/*      such that if Ai -> Aj then i < j.                             */
-/*                                                                    */
-/*   2) As a side effect, it uses the ordering above to order all     */
-/*      the SP rules.                                                 */
+/// Compute_sp_map is an instantiation of the digraph algorithm. It
+/// is invoked repeatedly by remove_single_productions to:
+///
+///   1) Partially order the right-hand side of all the single
+///      productions (SP) into a list [A1, A2, A3, ..., An]
+///      such that if Ai -> Aj then i < j.
+///
+///   2) As a side effect, it uses the ordering above to order all
+///      the SP rules.
 void compute_sp_map(const int symbol) {
   int rule_no;
   stack[++top] = symbol;
   const int indx = top;
   index_of[symbol] = indx;
-  /* In this instantiation of the digraph algorithm, two symbols (A, B) */
-  /* are related if  A -> B is an SP and A is the right-hand side of    */
-  /* some other SP rule.                                                */
+  // In this instantiation of the digraph algorithm, two symbols (A, B)
+  // are related if  A -> B is an SP and A is the right-hand side of
+  // some other SP rule.
   for (rule_no = sp_rules[symbol]; rule_no != NIL; rule_no = next_rule[rule_no]) {
     const int lhs_symbol = rules[rule_no].lhs;
     if (IS_SP_RHS(lhs_symbol)) {
@@ -105,17 +105,17 @@ void compute_sp_map(const int symbol) {
       index_of[symbol] = MIN(index_of[symbol], index_of[lhs_symbol]);
     }
   }
-  /* If the index of symbol is the same index it started with then      */
-  /* symbol if the root of a SCC...                                     */
+  // If the index of symbol is the same index it started with then
+  // symbol if the root of a SCC...
   if (index_of[symbol] == indx) {
-    /* If symbol is on top of the stack then it is the only       */
-    /* symbol in its SCC (thus it is not part of a cycle).        */
-    /* Note that since remove_single_productions is only invoked  */
-    /* when the input grammar is conflict-free, the graph of      */
-    /* the single productions will never contain any cycle.       */
-    /* Thus, this test will always succeed and all single         */
-    /* productions associated with the symbol being processed     */
-    /* are added to the list of SP rules here...                  */
+    // If symbol is on top of the stack then it is the only
+    // symbol in its SCC (thus it is not part of a cycle).
+    // Note that since remove_single_productions is only invoked
+    // when the input grammar is conflict-free, the graph of
+    // the single productions will never contain any cycle.
+    // Thus, this test will always succeed and all single
+    // productions associated with the symbol being processed
+    // are added to the list of SP rules here...
     if (stack[top] == symbol) {
       for (rule_no = sp_rules[symbol]; rule_no != NIL; rule_no = next_rule[rule_no]) {
         if (rule_root == NIL) {
@@ -127,8 +127,8 @@ void compute_sp_map(const int symbol) {
         rule_root = rule_no;
       }
     }
-    /* As all SCC contains exactly one symbol (as explained above)*/
-    /* this loop will always execute exactly once.                */
+    // As all SCC contains exactly one symbol (as explained above)
+    // this loop will always execute exactly once.
     int i;
     do {
       i = stack[top--];
@@ -137,15 +137,15 @@ void compute_sp_map(const int symbol) {
   }
 }
 
-/* When the parser enters STATE_NO, and it is processing SYMBOL, its   */
-/* next move is ACTION. Given these 3 parameters, compute_sp_action   */
-/* computes the set of reduce actions that may be executed after      */
-/* SYMBOL is shifted in STATE_NO.                                     */
-/*                                                                    */
-/* NOTE that this algorithm works only for the LALR(1) case. When the */
-/* transition on SYMBOL is a lookahead-shift, indicating that the     */
-/* parser requires extra lookahead on a particular symbol, the set of */
-/* reduce actions for that symbol is calculated as the empty set.     */
+/// When the parser enters STATE_NO, and it is processing SYMBOL, its
+/// next move is ACTION. Given these 3 parameters, compute_sp_action
+/// computes the set of reduce actions that may be executed after
+/// SYMBOL is shifted in STATE_NO.
+///
+/// NOTE that this algorithm works only for the LALR(1) case. When the
+/// transition on SYMBOL is a lookahead-shift, indicating that the
+/// parser requires extra lookahead on a particular symbol, the set of
+/// reduce actions for that symbol is calculated as the empty set.
 void compute_sp_action(const short state_no, const short symbol, const short action, const bool slr_bit) {
   int rule_no;
   int lhs_symbol;
@@ -155,17 +155,17 @@ void compute_sp_action(const short state_no, const short symbol, const short act
     sp_action[symbol] = Allocate_short_array(num_terminals + 1);
   }
   for ALL_TERMINALS3(i) {
-    /* initialize sp_action to the empty map */
+    // initialize sp_action to the empty map
     sp_action[symbol][i] = OMEGA;
   }
   int i;
-  /* Note that before this routine is invoked, the global vector        */
-  /* index_of identifies the index of each symbol in the goto map of    */
-  /* state_no.                                                          */
+  // Note that before this routine is invoked, the global vector
+  // index_of identifies the index of each symbol in the goto map of
+  // state_no.
   if (is_conflict_symbol[symbol]) {
-    /* do nothing */
+    // do nothing
   } else if (action > 0) {
-    /* transition action (shift or goto) */
+    // transition action (shift or goto)
     struct node *p;
     for (const struct node *item_ptr = statset[action].complete_items; item_ptr != NULL; item_ptr = item_ptr->next) {
       const int item_no = item_ptr->value;
@@ -191,14 +191,14 @@ void compute_sp_action(const short state_no, const short symbol, const short act
         }
       }
     }
-    /* Remove all lookahead symbols on which conflicts were       */
-    /* detected from consideration.                               */
+    // Remove all lookahead symbols on which conflicts were
+    // detected from consideration.
     for (bool end_node = (p = conflict_symbols[action]) == NULL; !end_node; end_node = p == conflict_symbols[action]) {
       p = p->next;
       sp_action[symbol][p->value] = OMEGA;
     }
   } else {
-    /* read-reduce action */
+    // read-reduce action
     rule_no = -action;
     if (RHS_SIZE(rule_no) == 1) {
       lhs_symbol = rules[rule_no].lhs;
@@ -223,13 +223,13 @@ void compute_sp_action(const short state_no, const short symbol, const short act
   }
 }
 
-/* Sp_default_action takes as parameter a state, state_no and a rule, */
-/* rule_no that may be reduced when the parser enters state_no.        */
-/* Sp_default_action tries to determine the highest rule that may be  */
-/* reached via a sequence of SP reductions.                           */
+/// Sp_default_action takes as parameter a state, state_no and a rule,
+/// rule_no that may be reduced when the parser enters state_no.
+/// Sp_default_action tries to determine the highest rule that may be
+/// reached via a sequence of SP reductions.
 short sp_default_action(const short state_no, short rule_no) {
   const struct goto_header_type go_to = statset[state_no].go_to;
-  /* While the rule we have at hand is a single production, ...         */
+  // While the rule we have at hand is a single production, ...
   while (IS_SP_RULE(rule_no)) {
     const int lhs_symbol = rules[rule_no].lhs;
     int ii;
@@ -237,7 +237,7 @@ short sp_default_action(const short state_no, short rule_no) {
     }
     int action = go_to.map[ii].action;
     if (action < 0) {
-      /* goto-reduce action? */
+      // goto-reduce action?
       action = -action;
       if (RHS_SIZE(action) != 1) {
         break;
@@ -245,8 +245,8 @@ short sp_default_action(const short state_no, short rule_no) {
       rule_no = action;
     } else {
       int best_rule = OMEGA;
-      /* Enter the state action and look for preferably a SP rule   */
-      /* or some rule with right-hand size 1.                       */
+      // Enter the state action and look for preferably a SP rule
+      // or some rule with right-hand size 1.
       const struct reduce_header_type red = reduce[action];
       for (ii = 1; ii <= red.size; ii++) {
         action = red.map[ii].rule_number;
@@ -267,13 +267,13 @@ short sp_default_action(const short state_no, short rule_no) {
   return rule_no;
 }
 
-/* This routine takes as parameter a state, state_no, a nonterminal,  */
-/* lhs_symbol (that is the right-hand side of a SP or a rule with     */
-/* right-hand size 1, but not identified as a SP) on which there is   */
-/* a transition in state_no and a lookahead symbol la_symbol that may */
-/* be processed after taking the transition. It returns the reduce    */
-/* action that follows the transition if an action on la_symbol is    */
-/* found, otherwise it returns the most suitable default action.      */
+/// This routine takes as parameter a state, state_no, a nonterminal,
+/// lhs_symbol (that is the right-hand side of a SP or a rule with
+/// right-hand size 1, but not identified as a SP) on which there is
+/// a transition in state_no and a lookahead symbol la_symbol that may
+/// be processed after taking the transition. It returns the reduce
+/// action that follows the transition if an action on la_symbol is
+/// found, otherwise it returns the most suitable default action.
 int sp_nt_action(const short state_no, const int lhs_symbol, const short la_symbol) {
   const struct goto_header_type go_to = statset[state_no].go_to;
   int ii;
@@ -298,14 +298,14 @@ int sp_nt_action(const short state_no, const int lhs_symbol, const short la_symb
   return action;
 }
 
-/* Let BASE_RULE be a rule  A -> X.  The item [A -> .X] is in STATE1  */
-/* and STATE2.  After shifting on X (in STATE1 and STATE2), if the    */
-/* lookahead is LA_SYMBOL then BASE_RULE is reduced. In STATE1, a     */
-/* sequence of single-production reductions is executed ending with   */
-/* a reduction of RULE1. In STATE2, a sequence of single-productions  */
-/* is also executed ending with RULE2.                                */
-/* The goal of this function is to find the greatest ancestor of      */
-/* BASE_RULE that is also a descendant of both RULE1 and RULE2.       */
+/// Let BASE_RULE be a rule  A -> X.  The item [A -> .X] is in STATE1
+/// and STATE2.  After shifting on X (in STATE1 and STATE2), if the
+/// lookahead is LA_SYMBOL then BASE_RULE is reduced. In STATE1, a
+/// sequence of single-production reductions is executed ending with
+/// a reduction of RULE1. In STATE2, a sequence of single-productions
+/// is also executed ending with RULE2.
+/// The goal of this function is to find the greatest ancestor of
+/// BASE_RULE that is also a descendant of both RULE1 and RULE2.
 int greatest_common_ancestor(const short base_rule, const short la_symbol, const short state1, const short rule1, const short state2, const short rule2) {
   int act1 = base_rule;
   int act2 = base_rule;
@@ -322,10 +322,10 @@ int greatest_common_ancestor(const short base_rule, const short la_symbol, const
   return rule_no;
 }
 
-/* In SOURCE_STATE there is a transition on SYMBOL into STATE_NO.     */
-/* SYMBOL is the right-hand side of a SP rule and the global map      */
-/* sp_action[SYMBOL] yields a set of update reduce actions that may   */
-/* follow the transition on SYMBOL into STATE_NO.                     */
+/// In SOURCE_STATE there is a transition on SYMBOL into STATE_NO.
+/// SYMBOL is the right-hand side of a SP rule and the global map
+/// sp_action[SYMBOL] yields a set of update reduce actions that may
+/// follow the transition on SYMBOL into STATE_NO.
 void compute_update_actions(const short source_state, const short state_no, const short symbol) {
   struct update_action_element *p;
   const struct reduce_header_type red = reduce[state_no];
@@ -335,17 +335,17 @@ void compute_update_actions(const short source_state, const short state_no, cons
       if (rule_no == OMEGA) {
         rule_no = sp_default_action(source_state, red.map[i].rule_number);
       }
-      /* Lookup the update map to see if a previous update was made */
-      /* in STATE_NO on SYMBOL...                                   */
+      // Lookup the update map to see if a previous update was made
+      // in STATE_NO on SYMBOL...
       for (p = update_action[state_no]; p != NULL; p = p->next) {
         if (p->symbol == red.map[i].symbol) {
           break;
         }
       }
-      /* If no previous update action was defined on STATE_NO and   */
-      /* SYMBOL, simply add it. Otherwise, chose as the greatest    */
-      /* common ancestor of the initial reduce action and the two   */
-      /* contending updates as the update action.                   */
+      // If no previous update action was defined on STATE_NO and
+      // SYMBOL, simply add it. Otherwise, chose as the greatest
+      // common ancestor of the initial reduce action and the two
+      // contending updates as the update action.
       if (p == NULL) {
         p = (struct update_action_element *) talloc(sizeof(struct update_action_element));
         if (p == (struct update_action_element *) NULL)
@@ -367,63 +367,63 @@ void compute_update_actions(const short source_state, const short state_no, cons
   }
 }
 
-/* Sp_state_map is invoked to create a new state using the reduce map */
-/* sp_symbol[SYMBOL]. The new state will be entered via a transition  */
-/* on SYMBOL which is the right-hand side of the SP rule of which     */
-/* ITEM_NO is the final item.                                         */
-/*                                                                    */
-/* RULE_HEAD is the root of a list of rules in the global vector      */
-/* next_rule.  This list of rules identifies the range of the reduce  */
-/* map sp_symbol[SYMBOL]. The value SP_RULE_COUNT is the number of    */
-/* rules in the list. The value SP_ACTION_COUNT is the number of      */
-/* actions in the map sp_symbol[SYMBOL].                              */
+/// Sp_state_map is invoked to create a new state using the reduce map
+/// sp_symbol[SYMBOL]. The new state will be entered via a transition
+/// on SYMBOL which is the right-hand side of the SP rule of which
+/// ITEM_NO is the final item.
+///
+/// RULE_HEAD is the root of a list of rules in the global vector
+/// next_rule.  This list of rules identifies the range of the reduce
+/// map sp_symbol[SYMBOL]. The value SP_RULE_COUNT is the number of
+/// rules in the list. The value SP_ACTION_COUNT is the number of
+/// actions in the map sp_symbol[SYMBOL].
 short sp_state_map(const int rule_head, const int item_no, const int sp_rule_count, const int sp_action_count, const int symbol) {
   struct sp_state_element *state;
   struct node *p;
   int rule_no;
-  /* These new SP states are defined by their reduce maps. Hash the */
-  /* reduce map based on the set of rules in its range - simply add */
-  /* them up and reduce modulo STATE_TABLE_SIZE.                    */
+  // These new SP states are defined by their reduce maps. Hash the
+  // reduce map based on the set of rules in its range - simply add
+  // them up and reduce modulo STATE_TABLE_SIZE.
   unsigned long hash_address = 0;
   for (rule_no = rule_head; rule_no != NIL; rule_no = next_rule[rule_no]) {
     hash_address += rule_no;
   }
   hash_address %= STATE_TABLE_SIZE;
-  /* Search the hash table for a compatible state. Two states S1    */
-  /* and S2 are compatible if                                       */
-  /*     1) the set of rules in their reduce map is identical.      */
-  /*     2) for each terminal symbol t, either                      */
-  /*            reduce[S1][t] == reduce[S2][t] or                   */
-  /*            reduce[S1][t] == OMEGA         or                   */
-  /*            reduce[S2][t] == OMEGA                              */
+  // Search the hash table for a compatible state. Two states S1
+  // and S2 are compatible if
+  //     1) the set of rules in their reduce map is identical.
+  //     2) for each terminal symbol t, either
+  //            reduce[S1][t] == reduce[S2][t] or
+  //            reduce[S1][t] == OMEGA         or
+  //            reduce[S2][t] == OMEGA
   for (state = sp_table[hash_address]; state != NULL; state = state->link) {
     if (state->rule_count == sp_rule_count) {
-      /* same # of rules? */
+      // same # of rules?
       for (p = state->rule_root; p != NULL; p = p->next) {
         if (next_rule[p->value] == OMEGA) {
-          /* not in list? */
+          // not in list?
           break;
         }
       }
-      /* If the set of rules are identical, we proceed to compare the   */
-      /* actions for compatibility. The idea is to make sure that all   */
-      /* actions in the hash table do not clash in the actions in the   */
-      /* map sp_action[SYMBOL].                                         */
+      // If the set of rules are identical, we proceed to compare the
+      // actions for compatibility. The idea is to make sure that all
+      // actions in the hash table do not clash in the actions in the
+      // map sp_action[SYMBOL].
       if (p == NULL) {
-        /* all the rules match? */
+        // all the rules match?
         struct action_element *actionp;
         for (actionp = state->action_root; actionp != NULL; actionp = actionp->next) {
           if (sp_action[symbol][actionp->symbol] != OMEGA && sp_action[symbol][actionp->symbol] != actionp->action) {
             break;
           }
         }
-        /* If the two states are compatible merge them into the map   */
-        /* sp_action[SYMBOL]. (Note that this effectively destroys    */
-        /* the original map.) Also, keep track of whether or not an   */
-        /* actual merging action was necessary with the boolean       */
-        /* variable no_overwrite.                                     */
+        // If the two states are compatible merge them into the map
+        // sp_action[SYMBOL]. (Note that this effectively destroys
+        // the original map.) Also, keep track of whether or not an
+        // actual merging action was necessary with the boolean
+        // variable no_overwrite.
         if (actionp == NULL) {
-          /* compatible states */
+          // compatible states
           struct action_element *action_tail;
           bool no_overwrite = true;
           for (actionp = state->action_root; actionp != NULL; action_tail = actionp, actionp = actionp->next) {
@@ -432,8 +432,8 @@ short sp_state_map(const int rule_head, const int item_no, const int sp_rule_cou
               no_overwrite = false;
             }
           }
-          /* If the item was not previously associated with this    */
-          /* state, add it.                                         */
+          // If the item was not previously associated with this
+          // state, add it.
           for (p = state->complete_items; p != NULL; p = p->next) {
             if (p->value == item_no) {
               break;
@@ -445,9 +445,9 @@ short sp_state_map(const int rule_head, const int item_no, const int sp_rule_cou
             p->next = state->complete_items;
             state->complete_items = p;
           }
-          /* If the two maps are identical (there was no merging),  */
-          /* return the state number otherwise, free the old map    */
-          /* and break out of the search loop.                      */
+          // If the two maps are identical (there was no merging),
+          // return the state number otherwise, free the old map
+          // and break out of the search loop.
           if (no_overwrite && state->action_count == sp_action_count) {
             return state->state_number;
           }
@@ -457,8 +457,8 @@ short sp_state_map(const int rule_head, const int item_no, const int sp_rule_cou
       }
     }
   }
-  /* If we did not find a compatible state, construct a new one.    */
-  /* Add it to the list of state and add it to the hash table.      */
+  // If we did not find a compatible state, construct a new one.
+  // Add it to the list of state and add it to the hash table.
   if (state == NULL) {
     state = (struct sp_state_element *) talloc(sizeof(struct sp_state_element));
     if (state == NULL) {
@@ -483,8 +483,8 @@ short sp_state_map(const int rule_head, const int item_no, const int sp_rule_cou
       state->rule_root = p;
     }
   }
-  /* If the state is new or had its reduce map merged with another  */
-  /* map, we update the reduce map here.                            */
+  // If the state is new or had its reduce map merged with another
+  // map, we update the reduce map here.
   state->action_count = sp_action_count;
   state->action_root = NULL;
   for ALL_TERMINALS3(i) {
@@ -499,8 +499,8 @@ short sp_state_map(const int rule_head, const int item_no, const int sp_rule_cou
   return state->state_number;
 }
 
-/* This program is invoked to remove as many single production actions as    */
-/* possible for a conflict-free automaton.                                   */
+/// This program is invoked to remove as many single production actions as
+/// possible for a conflict-free automaton.
 void remove_single_productions(bool slr_bit) {
   struct goto_header_type go_to;
   struct shift_header_type sh;
@@ -524,9 +524,9 @@ void remove_single_productions(bool slr_bit) {
     short link,
         shift_number;
   } *new_shift;
-  /* Set up a pool of temporary space.                            */
+  // Set up a pool of temporary space.
   reset_temporary_space();
-  /* Allocate all other necessary temporary objects.                */
+  // Allocate all other necessary temporary objects.
   sp_rules = Allocate_short_array(num_symbols + 1);
   stack = Allocate_short_array(num_symbols + 1);
   index_of = Allocate_short_array(num_symbols + 1);
@@ -559,7 +559,7 @@ void remove_single_productions(bool slr_bit) {
   if (update_action == NULL) {
     nospace(__FILE__, __LINE__);
   }
-  /* Initialize all relevant sets and maps to the empty set.        */
+  // Initialize all relevant sets and maps to the empty set.
   rule_root = NIL;
   symbol_root = NIL;
   for ALL_RULES3(rule_no) {
@@ -570,12 +570,12 @@ void remove_single_productions(bool slr_bit) {
     sp_rules[symbol] = NIL;
     sp_action[symbol] = NULL;
   }
-  /* Construct a set of all symbols used in the right-hand side of  */
-  /* single production in symbol_list. The variable symbol_root     */
-  /* points to the root of the list. Also, construct a mapping from */
-  /* each symbol into the set of single productions of which it is  */
-  /* the right-hand side. sp_rules is the base of that map and the  */
-  /* relevant sets are stored in the vector next_rule.              */
+  // Construct a set of all symbols used in the right-hand side of
+  // single production in symbol_list. The variable symbol_root
+  // points to the root of the list. Also, construct a mapping from
+  // each symbol into the set of single productions of which it is
+  // the right-hand side. sp_rules is the base of that map and the
+  // relevant sets are stored in the vector next_rule.
   for ALL_RULES3(rule_no) {
     if (rules[rule_no].sp) {
       int i = rhs_sym[rules[rule_no].rhs];
@@ -587,13 +587,13 @@ void remove_single_productions(bool slr_bit) {
       }
     }
   }
-  /* Initialize the index_of vector and clear the stack (top).      */
-  /* Next, iterate over the list of right-hand side symbols used in */
-  /* single productions and invoke compute_sp_map to partially      */
-  /* order these symbols (based on the ::= (or ->) relationship) as */
-  /* well as their associated rules. (See compute_sp_map for detail)*/
-  /* As the list of rules is constructed as a circular list to keep */
-  /* it in proper order, it is turned into a linear list here.      */
+  // Initialize the index_of vector and clear the stack (top).
+  // Next, iterate over the list of right-hand side symbols used in
+  // single productions and invoke compute_sp_map to partially
+  // order these symbols (based on the ::= (or ->) relationship) as
+  // well as their associated rules. (See compute_sp_map for detail)
+  // As the list of rules is constructed as a circular list to keep
+  // it in proper order, it is turned into a linear list here.
   for (int i = symbol_root; i != NIL; i = symbol_list[i]) {
     index_of[i] = OMEGA;
   }
@@ -604,17 +604,17 @@ void remove_single_productions(bool slr_bit) {
     }
   }
   if (rule_root != NIL) {
-    /* make rule_list non-circular */
+    // make rule_list non-circular
     int rule_no = rule_root;
     rule_root = rule_list[rule_no];
     rule_list[rule_no] = NIL;
   }
-  /* Clear out all the sets in sp_rules and using the new revised   */
-  /* list of SP rules mark the new set of right-hand side symbols.  */
-  /* Note this code is important for consistency in case we are     */
-  /* removing single productions in an automaton containing         */
-  /* conflicts. If an automaton does not contain any conflict, the  */
-  /* new set of SP rules is always the same as the initial set.     */
+  // Clear out all the sets in sp_rules and using the new revised
+  // list of SP rules mark the new set of right-hand side symbols.
+  // Note this code is important for consistency in case we are
+  // removing single productions in an automaton containing
+  // conflicts. If an automaton does not contain any conflict, the
+  // new set of SP rules is always the same as the initial set.
   for (int i = symbol_root; i != NIL; i = symbol_list[i]) {
     sp_rules[i] = NIL;
   }
@@ -624,16 +624,16 @@ void remove_single_productions(bool slr_bit) {
     int i = rhs_sym[rules[rule_no].rhs];
     sp_rules[i] = OMEGA;
   }
-  /* Initialize the base of the hash table for the new SP states.   */
-  /* Initialize the root pointer for the list of new states.        */
-  /* Initialize max_sp_state to num_states. It will be incremented  */
-  /* each time a new state is constructed.                          */
-  /* Initialize the update_action table.                            */
-  /* Initialize the is_conflict_symbol array for non_terminals.     */
-  /* Since nonterminals are not used as lookahead symbols, they are */
-  /* never involved in conflicts.                                   */
-  /* Initialize the set/list (symbol_root, symbol_list) to the      */
-  /* empty set/list.                                                */
+  // Initialize the base of the hash table for the new SP states.
+  // Initialize the root pointer for the list of new states.
+  // Initialize max_sp_state to num_states. It will be incremented
+  // each time a new state is constructed.
+  // Initialize the update_action table.
+  // Initialize the is_conflict_symbol array for non_terminals.
+  // Since nonterminals are not used as lookahead symbols, they are
+  // never involved in conflicts.
+  // Initialize the set/list (symbol_root, symbol_list) to the
+  // empty set/list.
   for (int i = 0; i < STATE_TABLE_SIZE; i++) {
     sp_table[i] = NULL;
   }
@@ -649,15 +649,15 @@ void remove_single_productions(bool slr_bit) {
   for ALL_SYMBOLS3(symbol) {
     symbol_list[symbol] = OMEGA;
   }
-  /* Traverse all regular states and process the relevant ones.     */
+  // Traverse all regular states and process the relevant ones.
   for ALL_STATES3(state_no) {
     new_action[state_no] = NULL;
     go_to = statset[state_no].go_to;
     sh = shift[statset[state_no].shift_number];
-    /* If the state has no goto actions, it is not considered, as */
-    /* no single productions could have been introduced in it.    */
-    /* Otherwise, we initialize index_of to the empty map and     */
-    /* presume that symbol_list is initialized to the empty set.  */
+    // If the state has no goto actions, it is not considered, as
+    // no single productions could have been introduced in it.
+    // Otherwise, we initialize index_of to the empty map and
+    // presume that symbol_list is initialized to the empty set.
     if (go_to.size > 0) {
       struct node *item_ptr;
       for ALL_SYMBOLS3(symbol) {
@@ -670,21 +670,21 @@ void remove_single_productions(bool slr_bit) {
         p = p->next;
         is_conflict_symbol[p->value] = true;
       }
-      /* First, use index_of to map each nonterminal symbol on  */
-      /* which there is a transition in state_no into its index */
-      /* in the goto map of state_no.                           */
-      /* Note that this initialization must be executed first   */
-      /* before we process the next loop, because index_of is   */
-      /* a global variable that is used in the routine          */
-      /* compute_sp_action.                                     */
+      // First, use index_of to map each nonterminal symbol on
+      // which there is a transition in state_no into its index
+      // in the goto map of state_no.
+      // Note that this initialization must be executed first
+      // before we process the next loop, because index_of is
+      // a global variable that is used in the routine
+      // compute_sp_action.
       for (int i = 1; i <= go_to.size; i++) {
         index_of[go_to.map[i].symbol] = i;
       }
-      /* Traverse first the goto map, then the shift map and    */
-      /* for each symbol that is the right-hand side of a single*/
-      /* production on which there is a transition, compute the */
-      /* lookahead set that can follow this transition and add  */
-      /* the symbol to the set of candidates (in symbol_list).  */
+      // Traverse first the goto map, then the shift map and
+      // for each symbol that is the right-hand side of a single
+      // production on which there is a transition, compute the
+      // lookahead set that can follow this transition and add
+      // the symbol to the set of candidates (in symbol_list).
       for (int i = 1; i <= go_to.size; i++) {
         symbol = go_to.map[i].symbol;
         if (IS_SP_RHS(symbol)) {
@@ -702,10 +702,10 @@ void remove_single_productions(bool slr_bit) {
           symbol_root = symbol;
         }
       }
-      /* We now traverse the set of single productions in order */
-      /* and for each rule that was introduced through closure  */
-      /* in the state (there is an action on both the left and */
-      /* right-hand side)...                                    */
+      // We now traverse the set of single productions in order
+      // and for each rule that was introduced through closure
+      // in the state (there is an action on both the left and
+      // right-hand side)...
       for (int rule_no = rule_root; rule_no != NIL; rule_no = rule_list[rule_no]) {
         symbol = rhs_sym[rules[rule_no].rhs];
         if (symbol_list[symbol] != OMEGA) {
@@ -716,21 +716,21 @@ void remove_single_productions(bool slr_bit) {
               symbol_list[lhs_symbol] = symbol_root;
               symbol_root = lhs_symbol;
             }
-            /* Copy all reduce actions defined after the          */
-            /* transition on the left-hand side into the          */
-            /* corresponding action defined after the transition  */
-            /* on the right-hand side. If an action is defined    */
-            /* for the left-hand side -                           */
-            /*                                                    */
-            /*     sp_action[lhs_symbol][i] != OMEGA              */
-            /*                                                    */
-            /* - but not for the right-hand side -                */
-            /*                                                    */
-            /*     sp_action[symbol][i] == OMEGA                  */
-            /*                                                    */
-            /* it is an indication that after the transition on   */
-            /* symbol, the action on i is a lookahead shift. In   */
-            /* that case, no action is copied.                    */
+            // Copy all reduce actions defined after the
+            // transition on the left-hand side into the
+            // corresponding action defined after the transition
+            // on the right-hand side. If an action is defined
+            // for the left-hand side -
+            //
+            //     sp_action[lhs_symbol][i] != OMEGA
+            //
+            // - but not for the right-hand side -
+            //
+            //     sp_action[symbol][i] == OMEGA
+            //
+            // it is an indication that after the transition on
+            // symbol, the action on i is a lookahead shift. In
+            // that case, no action is copied.
             for ALL_TERMINALS3(symbol) {
               if (sp_action[lhs_symbol][symbol] != OMEGA && sp_action[symbol][symbol] != OMEGA) {
                 sp_action[symbol][symbol] = sp_action[lhs_symbol][symbol];
@@ -739,15 +739,15 @@ void remove_single_productions(bool slr_bit) {
           }
         }
       }
-      /* For each symbol that is the right-hand side of some SP */
-      /* for which a reduce map is defined, we either construct */
-      /* a new state if the transition is into a final state,   */
-      /* or we update the relevant reduce action of the state   */
-      /* into which the transition is made, otherwise.          */
-      /*                                                        */
-      /* When execution of this loop is terminated the set      */
-      /* symbol_root/symbol_list is reinitialize to the empty   */
-      /* set.                                                   */
+      // For each symbol that is the right-hand side of some SP
+      // for which a reduce map is defined, we either construct
+      // a new state if the transition is into a final state,
+      // or we update the relevant reduce action of the state
+      // into which the transition is made, otherwise.
+      //
+      // When execution of this loop is terminated the set
+      // symbol_root/symbol_list is reinitialize to the empty
+      // set.
       for (symbol = symbol_root; symbol != NIL; symbol_list[symbol] = OMEGA, symbol = symbol_root) {
         symbol_root = symbol_list[symbol];
         if (IS_SP_RHS(symbol)) {
@@ -756,24 +756,24 @@ void remove_single_productions(bool slr_bit) {
           } else {
             action = go_to.map[index_of[symbol]].action;
           }
-          /* If the transition is a lookahead shift, do nothing.*/
-          /* If the action is a goto- or shift-reduce, compute  */
-          /* the relevant rule and item involved.               */
-          /* Otherwise, the action is a shift or a goto. If the */
-          /* transition is into a final state then it is        */
-          /* processed as the case of read-reduce above. If     */
-          /* not, we invoke compute_update_actions to update    */
-          /* the relevant actions.                              */
+          // If the transition is a lookahead shift, do nothing.
+          // If the action is a goto- or shift-reduce, compute
+          // the relevant rule and item involved.
+          // Otherwise, the action is a shift or a goto. If the
+          // transition is into a final state then it is
+          // processed as the case of read-reduce above. If
+          // not, we invoke compute_update_actions to update
+          // the relevant actions.
           int rule_no;
           if (action > num_states) {
-            /* lookahead shift */
+            // lookahead shift
             rule_no = OMEGA;
           } else if (action < 0) {
-            /* read-reduce action */
+            // read-reduce action
             rule_no = -action;
             item_no = adequate_item[rule_no]->value;
           } else {
-            /* transition action  */
+            // transition action
             item_ptr = statset[action].kernel_items;
             item_no = item_ptr->value;
             if (item_ptr->next == NULL && item_table[item_no].symbol == empty) {
@@ -783,17 +783,17 @@ void remove_single_productions(bool slr_bit) {
               rule_no = OMEGA;
             }
           }
-          /* If we have a valid SP rule we first construct the  */
-          /* set of rules in the range of the reduce map of the */
-          /* right-hand side of the rule. If that set contains  */
-          /* a single rule then the action on the right-hand    */
-          /* side is redefined as the same action on the left-  */
-          /* hand side of the rule in question. Otherwise, we   */
-          /* create a new state for the final item of the SP    */
-          /* rule consisting of the reduce map associated with  */
-          /* the right-hand side of the SP rule and the new     */
-          /* action on the right-hand side is a transition into */
-          /* this new state.                                    */
+          // If we have a valid SP rule we first construct the
+          // set of rules in the range of the reduce map of the
+          // right-hand side of the rule. If that set contains
+          // a single rule then the action on the right-hand
+          // side is redefined as the same action on the left-
+          // hand side of the rule in question. Otherwise, we
+          // create a new state for the final item of the SP
+          // rule consisting of the reduce map associated with
+          // the right-hand side of the SP rule and the new
+          // action on the right-hand side is a transition into
+          // this new state.
           if (rule_no != OMEGA) {
             if (IS_SP_RULE(rule_no)) {
               struct action_element *p_inner;
@@ -831,25 +831,25 @@ void remove_single_productions(bool slr_bit) {
       }
     }
   }
-  /* We are now ready to extend all global maps based on states and */
-  /* permanently install the new states.                            */
+  // We are now ready to extend all global maps based on states and
+  // permanently install the new states.
   statset = (struct statset_type *) realloc(statset, (max_sp_state + 1) * sizeof(struct statset_type));
   if (statset == NULL)
     nospace(__FILE__, __LINE__);
   reduce = (struct reduce_header_type *) realloc(reduce, (max_sp_state + 1) * sizeof(struct reduce_header_type));
   if (reduce == NULL)
     nospace(__FILE__, __LINE__);
-  /* see routine PRODUCE */
+  // see routine PRODUCE
   if (gd_index != NULL) {
     gd_index = (short *) realloc(gd_index, (max_sp_state + 2) * sizeof(short));
     if (gd_index == NULL)
       nospace(__FILE__, __LINE__);
-    /* Each element gd_index[i] points to the starting location   */
-    /* of a slice in another array. The last element of the slice */
-    /* can be computed as (gd_index[i+1] - 1). After extending    */
-    /* gd_index, we set each new element to point to the same     */
-    /* index as its previous element, making it point to a null   */
-    /* slice.                                                     */
+    // Each element gd_index[i] points to the starting location
+    // of a slice in another array. The last element of the slice
+    // can be computed as (gd_index[i+1] - 1). After extending
+    // gd_index, we set each new element to point to the same
+    // index as its previous element, making it point to a null
+    // slice.
     for (int state_no = num_states + 2; state_no <= max_sp_state + 1; state_no++) {
       gd_index[state_no] = gd_index[state_no - 1];
     }
@@ -860,9 +860,9 @@ void remove_single_productions(bool slr_bit) {
   for (int state_no = num_states + 1; state_no <= max_sp_state; state_no++) {
     in_stat[state_no] = NULL;
   }
-  /* We now adjust all references to a lookahead state. The idea is */
-  /* offset the number associated with each lookahead state by the  */
-  /* number of new SP states that were added.                       */
+  // We now adjust all references to a lookahead state. The idea is
+  // offset the number associated with each lookahead state by the
+  // number of new SP states that were added.
   for (int j = 1; j <= num_shift_maps; j++) {
     sh = shift[j];
     for (int i = 1; i <= sh.size; i++) {
@@ -879,30 +879,30 @@ void remove_single_productions(bool slr_bit) {
   lastats -= max_sp_state - num_states;
   max_la_state += max_sp_state - num_states;
   SHORT_CHECK(max_la_state);
-  /* We now permanently construct all the new SP states.            */
+  // We now permanently construct all the new SP states.
   for (state = sp_state_root; state != NULL; state = state->next) {
     struct action_element *actionp;
     int default_rule;
     int reduce_size;
     int state_no = state->state_number;
-    /* These states are identified as special SP states since     */
-    /* they have no kernel items. They also have no goto and      */
-    /* shift actions.                                             */
+    // These states are identified as special SP states since
+    // they have no kernel items. They also have no goto and
+    // shift actions.
     statset[state_no].kernel_items = NULL;
     statset[state_no].complete_items = state->complete_items;
     statset[state_no].go_to.size = 0;
     statset[state_no].go_to.map = NULL;
     statset[state_no].shift_number = 0;
-    /* Count the number of actions defined on each rule in the    */
-    /* range of the reduce map.                                   */
+    // Count the number of actions defined on each rule in the
+    // range of the reduce map.
     for (p = state->rule_root; p != NULL; p = p->next) {
       rule_count[p->value] = 0;
     }
     for (actionp = state->action_root; actionp != NULL; actionp = actionp->next) {
       rule_count[actionp->action]++;
     }
-    /* Count the total number of reduce actions in the reduce map */
-    /* and calculate the default.                                 */
+    // Count the total number of reduce actions in the reduce map
+    // and calculate the default.
     reduce_size = 0;
     sp_rule_count = 0;
     for (p = state->rule_root; p != NULL; rule_tail = p, p = p->next) {
@@ -913,7 +913,7 @@ void remove_single_productions(bool slr_bit) {
       }
     }
     free_nodes(state->rule_root, rule_tail);
-    /* Construct a permanent reduce map for this SP state.        */
+    // Construct a permanent reduce map for this SP state.
     num_reductions += reduce_size;
     red = Allocate_reduce_map(reduce_size);
     reduce[state_no] = red;
@@ -925,29 +925,29 @@ void remove_single_productions(bool slr_bit) {
       reduce_size--;
     }
   }
-  /* We are now ready to update some old actions and add new ones.  */
-  /* This may require that we create new shift maps.  We            */
-  /* initialize top to 0 so we can use it as an index to allocate   */
-  /* elements from new_shift. We also initialize all the elements   */
-  /* of shift_table to NIL. Shift_table will be used as the base of */
-  /* a hash table for the new shift maps.                           */
+  // We are now ready to update some old actions and add new ones.
+  // This may require that we create new shift maps.  We
+  // initialize top to 0 so we can use it as an index to allocate
+  // elements from new_shift. We also initialize all the elements
+  // of shift_table to NIL. Shift_table will be used as the base of
+  // a hash table for the new shift maps.
   top = 0;
   for (int i = 0; i <= SHIFT_TABLE_UBOUND; i++) {
     shift_table[i] = NIL;
   }
-  /* At most, the shift array contains 1..num_states elements. As,  */
-  /* each of these elements might be (theoretically) replaced by a  */
-  /* new one, we need to double its size.                           */
+  // At most, the shift array contains 1..num_states elements. As,
+  // each of these elements might be (theoretically) replaced by a
+  // new one, we need to double its size.
   shift = (struct shift_header_type *)
       realloc(shift,
               2 * (num_states + 1) * sizeof(struct shift_header_type));
   if (shift == NULL)
     nospace(__FILE__, __LINE__);
-  /* For each state with updates or new actions, take appropriate   */
-  /* actions.                                                       */
+  // For each state with updates or new actions, take appropriate
+  // actions.
   for ALL_STATES3(state_no) {
-    /* Update reduce actions for final items of single productions*/
-    /* that are in non-final states.                              */
+    // Update reduce actions for final items of single productions
+    // that are in non-final states.
     if (update_action[state_no] != NULL) {
       struct update_action_element *p_inner;
       red = reduce[state_no];
@@ -958,13 +958,13 @@ void remove_single_productions(bool slr_bit) {
         red.map[index_of[p_inner->symbol]].rule_number = p_inner->action;
       }
     }
-    /* Update initial automaton with transitions into new SP states. */
+    // Update initial automaton with transitions into new SP states.
     if (new_action[state_no] != NULL) {
       bool any_shift_action;
       struct action_element *p_inner;
-      /* Mark the index of each symbol on which there is a      */
-      /* transition and copy the shift map into the vector      */
-      /* shift_transition.                                      */
+      // Mark the index of each symbol on which there is a
+      // transition and copy the shift map into the vector
+      // shift_transition.
       go_to = statset[state_no].go_to;
       for (int i = 1; i <= go_to.size; i++) {
         index_of[go_to.map[i].symbol] = i;
@@ -974,10 +974,10 @@ void remove_single_productions(bool slr_bit) {
         index_of[sh.map[i].symbol] = i;
         shift_transition[sh.map[i].symbol] = sh.map[i].action;
       }
-      /* Iterate over the new action and update the goto map    */
-      /* directly for goto actions but update shift_transition  */
-      /* for shift actions. Also, keep track as to whether or   */
-      /* not there were any shift transitions at all...         */
+      // Iterate over the new action and update the goto map
+      // directly for goto actions but update shift_transition
+      // for shift actions. Also, keep track as to whether or
+      // not there were any shift transitions at all...
       any_shift_action = false;
       for (p_inner = new_action[state_no]; p_inner != NULL; p_inner = p_inner->next) {
         if (IS_A_NON_TERMINAL(p_inner->symbol)) {
@@ -995,23 +995,23 @@ void remove_single_productions(bool slr_bit) {
           any_shift_action = true;
         }
       }
-      /* If there were any shift actions, a new shift map may   */
-      /* have been created. Hash shift_transition into the      */
-      /* shift hash table.                                      */
+      // If there were any shift actions, a new shift map may
+      // have been created. Hash shift_transition into the
+      // shift hash table.
       if (any_shift_action) {
         struct shift_header_type sh2;
         unsigned long hash_address;
         hash_address = sh.size;
         for (int i = 1; i <= sh.size; i++) {
-          /* Compute Hash location */
+          // Compute Hash location
           hash_address += sh.map[i].symbol;
         }
         hash_address %= SHIFT_TABLE_SIZE;
-        /* Search HASH_ADDRESS location for shift map that matches    */
-        /* the shift map in shift_transition.  If a match is found    */
-        /* we leave the loop prematurely, the search index j is not   */
-        /* NIL, and it identifies the shift map in the hash table     */
-        /* that matched the shift_transition.                         */
+        // Search HASH_ADDRESS location for shift map that matches
+        // the shift map in shift_transition.  If a match is found
+        // we leave the loop prematurely, the search index j is not
+        // NIL, and it identifies the shift map in the hash table
+        // that matched the shift_transition.
         int jj;
         for (jj = shift_table[hash_address]; jj != NIL; jj = new_shift[jj].link) {
           sh2 = shift[new_shift[jj].shift_number];
@@ -1027,10 +1027,10 @@ void remove_single_productions(bool slr_bit) {
             }
           }
         }
-        /* If j == NIL, the map at hand had not yet being inserted in */
-        /* the table, it is inserted.  Otherwise, we have a match,    */
-        /* and STATE_NO is reset to share the shift map previously    */
-        /* inserted that matches its shift map.                       */
+        // If j == NIL, the map at hand had not yet being inserted in
+        // the table, it is inserted.  Otherwise, we have a match,
+        // and STATE_NO is reset to share the shift map previously
+        // inserted that matches its shift map.
         if (jj == NIL) {
           sh2 = Allocate_shift_map(sh.size);
           for (int i = 1; i <= sh.size; i++) {
@@ -1051,19 +1051,19 @@ void remove_single_productions(bool slr_bit) {
       }
     }
   }
-  /* Free all nodes used in the construction of the conflict_symbols*/
-  /* map as this map is no longer useful and its size is based on   */
-  /* the base value of num_states.                                  */
+  // Free all nodes used in the construction of the conflict_symbols
+  // map as this map is no longer useful and its size is based on
+  // the base value of num_states.
   for ALL_STATES3(state_no) {
     if (conflict_symbols[state_no] != NULL) {
       p = conflict_symbols[state_no]->next;
       free_nodes(p, conflict_symbols[state_no]);
     }
   }
-  /* All updates have now been made, adjust the number of regular   */
-  /* states to include the new SP states.                           */
+  // All updates have now been made, adjust the number of regular
+  // states to include the new SP states.
   num_states = max_sp_state;
-  /* Free all temporary space allocated earlier.                    */
+  // Free all temporary space allocated earlier.
   ffree(sp_rules);
   ffree(stack);
   ffree(index_of);

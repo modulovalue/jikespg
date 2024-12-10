@@ -5,57 +5,57 @@ static char hostfile[] = __FILE__;
 
 #include "common.h"
 
-/* VISITED is a structure used to mark state-symbol pairs that have    */
-/* been visited in the process of computing follow-sources for a       */
-/* given action in conflict.                                           */
-/* The field MAP is an array indexable by the states 1..NUM_STATES;    */
-/* each element of which points to a set (list) of symbols. Thus, for  */
-/* a given state S, and for all symbol X in the list MAP[S], [S,X]     */
-/* has been visited. For efficiency, the fields LIST and ROOT are used */
-/* to store the set (list) of indexed elements of MAP that are not     */
-/* NULL.                                                               */
-/* See routines MARK_VISITED, WAS_VISITED, CLEAR_VISITED,              */
-/*              INIT_LALRK_PROCESS, EXIT_PROCESS                       */
+/// VISITED is a structure used to mark state-symbol pairs that have
+/// been visited in the process of computing follow-sources for a
+/// given action in conflict.
+/// The field MAP is an array indexable by the states 1..NUM_STATES;
+/// each element of which points to a set (list) of symbols. Thus, for
+/// a given state S, and for all symbol X in the list MAP[S], [S,X]
+/// has been visited. For efficiency, the fields LIST and ROOT are used
+/// to store the set (list) of indexed elements of MAP that are not
+/// NULL.
+/// See routines MARK_VISITED, WAS_VISITED, CLEAR_VISITED,
+///              INIT_LALRK_PROCESS, EXIT_PROCESS
 static struct visited_element {
   struct node **map;
   short *list;
   short root;
 } visited;
 
-/* Given a set of actions that are in conflict on a given symbol, the  */
-/* structure SOURCES_ELEMENT is used to store a mapping from each      */
-/* such action into a set of configurations that can be reached        */
-/* following execution of the action in question up to the point where */
-/* the automaton is about to shift the conflict symbol.                */
-/* The field CONFIGS is an array indexable by actions which are        */
-/* encoded as follows:                                                 */
-/*    1. shift-reduce  [-NUM_RULES..-1]                                */
-/*    2. reduce        [0..NUM_RULES]                                  */
-/*    3. shift         [NUM_RULES+1..NUM_STATES+1].                    */
-/* Each element of CONFIGS points to a set (sorted list) of            */
-/* configurations.  For efficiency, the fields LIST and ROOT are used  */
-/* to store the set (list) of indexed elements of CONFIGS that are not */
-/* NULL.                                                               */
-/* See routines ALLOCATE_SOURCES, FREE_SOURCES, CLEAR_SOURCES,         */
-/*              ADD_CONFIGS, UNION_CONFIG_SETS.                        */
-/* See STATE_TO_RESOLVE_CONFLICTS for an explanation of STACK_SEEN.    */
-/*                                                                     */
-/* A configuration is a stack of states that represents a certain path */
-/* in the automaton. The stack is implemented as a list of             */
-/* STACK_ELEMENT nodes linked through the field PREVIOUS.              */
-/* A set/list of configurations is linked through the field NEXT.      */
-/* When attempting to resolve conflicts we try to make sure that the   */
-/* set of configurations associated with each action is unique. This   */
-/* is achieved by throwing these configurations into a set and making  */
-/* sure that there are no duplicates. The field LINK is used for that  */
-/* purpose (see routine STACK_WAS_SEEN). The field STATE_NUMBER is     */
-/* obviously used to store the number of a state in the automaton. The */
-/* field SIZE holds index of the node within the stack. Thus, for the  */
-/* first element of the stack this field represents the number of      */
-/* elements in the stack; for the last element, this field holds the   */
-/* value 1.                                                            */
-/* See routines ALLOCATE_STACK_ELEMENT, FREE_STACK_ELEMENT,            */
-/*              ADD_DANGLING_STACK, FREE_DANGLING_STACK.               */
+/// Given a set of actions that are in conflict on a given symbol, the
+/// structure SOURCES_ELEMENT is used to store a mapping from each
+/// such action into a set of configurations that can be reached
+/// following execution of the action in question up to the point where
+/// the automaton is about to shift the conflict symbol.
+/// The field CONFIGS is an array indexable by actions which are
+/// encoded as follows:
+///    1. shift-reduce  [-NUM_RULES..-1]
+///    2. reduce        [0..NUM_RULES]
+///    3. shift         [NUM_RULES+1..NUM_STATES+1].
+/// Each element of CONFIGS points to a set (sorted list) of
+/// configurations.  For efficiency, the fields LIST and ROOT are used
+/// to store the set (list) of indexed elements of CONFIGS that are not
+/// NULL.
+/// See routines ALLOCATE_SOURCES, FREE_SOURCES, CLEAR_SOURCES,
+///              ADD_CONFIGS, UNION_CONFIG_SETS.
+/// See STATE_TO_RESOLVE_CONFLICTS for an explanation of STACK_SEEN.
+///
+/// A configuration is a stack of states that represents a certain path
+/// in the automaton. The stack is implemented as a list of
+/// STACK_ELEMENT nodes linked through the field PREVIOUS.
+/// A set/list of configurations is linked through the field NEXT.
+/// When attempting to resolve conflicts we try to make sure that the
+/// set of configurations associated with each action is unique. This
+/// is achieved by throwing these configurations into a set and making
+/// sure that there are no duplicates. The field LINK is used for that
+/// purpose (see routine STACK_WAS_SEEN). The field STATE_NUMBER is
+/// obviously used to store the number of a state in the automaton. The
+/// field SIZE holds index of the node within the stack. Thus, for the
+/// first element of the stack this field represents the number of
+/// elements in the stack; for the last element, this field holds the
+/// value 1.
+/// See routines ALLOCATE_STACK_ELEMENT, FREE_STACK_ELEMENT,
+///              ADD_DANGLING_STACK, FREE_DANGLING_STACK.
 static struct sources_element {
   struct stack_element **configs;
   struct stack_element **stack_seen;
@@ -74,14 +74,14 @@ struct stack_element {
 static struct stack_element *stack_pool = NULL;
 static struct stack_element *dangling_stacks = NULL;
 
-/* The structure STATE_ELEMENT is used to construct lookahead states.  */
-/* LA_STATE_ROOT point to a list of lookahead states using the LINK    */
-/* field. The field NEXT_SHIFT is used to hash the new shift maps      */
-/* associated with lookahead states. The field IN_STATE identifies the */
-/* state that shifted into the lookahead state in question. The field  */
-/* SYMBOL identifies the symbol on shift the transition was made into  */
-/* the lookahead state in question.  The remaining fields are          */
-/* self-explanatory.                                                   */
+/// The structure STATE_ELEMENT is used to construct lookahead states.
+/// LA_STATE_ROOT point to a list of lookahead states using the LINK
+/// field. The field NEXT_SHIFT is used to hash the new shift maps
+/// associated with lookahead states. The field IN_STATE identifies the
+/// state that shifted into the lookahead state in question. The field
+/// SYMBOL identifies the symbol on shift the transition was made into
+/// the lookahead state in question.  The remaining fields are
+/// self-explanatory.
 struct state_element {
   struct state_element *link;
   struct state_element *next_shift;
@@ -95,11 +95,11 @@ struct state_element {
 
 static struct state_element *la_state_root = NULL;
 
-/* The structures SR_CONFLICT_ELEMENT and RR_CONFLICT_ELEMENT are used */
-/* th store conflict information. CONFLICT_ELEMENT_POOL is used to     */
-/* keep track of a pool conflict element structures (SR or RR) that    */
-/* are available for allocation.                                       */
-/* See routines ALLOCATE_CONFLICT_ELEMENT and FREE_CONFLICT_ELEMENTS.  */
+/// The structures SR_CONFLICT_ELEMENT and RR_CONFLICT_ELEMENT are used
+/// th store conflict information. CONFLICT_ELEMENT_POOL is used to
+/// keep track of a pool conflict element structures (SR or RR) that
+/// are available for allocation.
+/// See routines ALLOCATE_CONFLICT_ELEMENT and FREE_CONFLICT_ELEMENTS.
 struct sr_conflict_element {
   struct sr_conflict_element *next;
   short state_number;
@@ -119,28 +119,28 @@ struct rr_conflict_element {
 static struct rr_conflict_element *rr_conflict_root;
 static void *conflict_element_pool = NULL;
 
-/* NT_ITEMS and ITEM_LIST are used to construct a mapping from each    */
-/* nonterminal into the set of items of which the nonterminal in       */
-/* question is the dot symbol. See CONFLICTS_INITIALIZATION.           */
+/// NT_ITEMS and ITEM_LIST are used to construct a mapping from each
+/// nonterminal into the set of items of which the nonterminal in
+/// question is the dot symbol. See CONFLICTS_INITIALIZATION.
 static short *nt_items = NULL;
 static short *item_list = NULL;
 
-/* LALR_VISITED is used to keep track of (state, nonterminal) pairs    */
-/* that are visited in tracing the path of a lalr conflict.SLR_VISITED */
-/* is similarly used to keep track of nonterminal symbols that are     */
-/* visited in tracing the path of an slr conflict. SYMBOL_SEEN is used */
-/* to keep track of nonterminal symbols that are visited in tracing a  */
-/* path to the start state (root).                                     */
-/*                                                                     */
-/* CYCLIC is a boolean vector used to identify states that can enter   */
-/* a cycle of transitions on nullable nonterminals.                    */
-/* As the computation of CYCLIC requires a modified version of the     */
-/* digraph algorithm, the variables STACK, INDEX_OF and TOP are used   */
-/* for that algorithm.                                                 */
-/*                                                                     */
-/* RMPSELF is a boolean vector that indicates whether a given          */
-/* non-terminal can right-most produce itself. It is only constructed  */
-/* when LALR_LEVEL > 1.                                                */
+/// LALR_VISITED is used to keep track of (state, nonterminal) pairs
+/// that are visited in tracing the path of a lalr conflict.SLR_VISITED
+/// is similarly used to keep track of nonterminal symbols that are
+/// visited in tracing the path of an slr conflict. SYMBOL_SEEN is used
+/// to keep track of nonterminal symbols that are visited in tracing a
+/// path to the start state (root).
+///
+/// CYCLIC is a boolean vector used to identify states that can enter
+/// a cycle of transitions on nullable nonterminals.
+/// As the computation of CYCLIC requires a modified version of the
+/// digraph algorithm, the variables STACK, INDEX_OF and TOP are used
+/// for that algorithm.
+///
+/// RMPSELF is a boolean vector that indicates whether a given
+/// non-terminal can right-most produce itself. It is only constructed
+/// when LALR_LEVEL > 1.
 static bool *lalr_visited;
 static bool *slr_visited;
 static bool *symbol_seen;
@@ -153,10 +153,10 @@ static short top;
 
 static struct state_element **shift_table;
 
-/* This function allocates a conflict_element (sr or rr) structure */
-/* & returns a pointer to it. If there are nodes in the free pool, */
-/* one of them is returned. Otherwise, a new node is allocated     */
-/* from the temporary storage pool.                                */
+/// This function allocates a conflict_element (sr or rr) structure
+/// & returns a pointer to it. If there are nodes in the free pool,
+/// one of them is returned. Otherwise, a new node is allocated
+/// from the temporary storage pool.
 static void *allocate_conflict_element(void) {
   void *p = conflict_element_pool;
   if (p != NULL)
@@ -170,18 +170,18 @@ static void *allocate_conflict_element(void) {
   return p;
 }
 
-/* This routine returns a list of conflict_element (sr/rr)structures  */
-/* to the free pool.                                                  */
+/// This routine returns a list of conflict_element (sr/rr)structures
+/// to the free pool.
 static void free_conflict_elements(void *head, void *tail) {
   ((struct sr_conflict_element *) tail)->next =
       (struct sr_conflict_element *) conflict_element_pool;
   conflict_element_pool = head;
 }
 
-/* This function allocates a stack_element structure and returns a */
-/* pointer to it. If there are nodes in the free pool, one of them */
-/* is returned. Otherwise, a new node is allocated from the        */
-/* temporary storage pool.                                         */
+/// This function allocates a stack_element structure and returns a
+/// pointer to it. If there are nodes in the free pool, one of them
+/// is returned. Otherwise, a new node is allocated from the
+/// temporary storage pool.
 static struct stack_element *allocate_stack_element(void) {
   struct stack_element *p = stack_pool;
   if (p != NULL) {
@@ -195,16 +195,16 @@ static struct stack_element *allocate_stack_element(void) {
   return p;
 }
 
-/* This routine returns a list of stack_element structures to the     */
-/* free pool.                                                         */
+/// This routine returns a list of stack_element structures to the
+/// free pool.
 static void free_stack_elements(struct stack_element *head, struct stack_element *tail) {
   tail->next = stack_pool;
   stack_pool = head;
 }
 
-/* When an allocated stack_element structure is not directly associated    */
-/* with an action, it is added to a circular list of dangling stack_element*/
-/* nodes so that its space can be reclaimed.                               */
+/// When an allocated stack_element structure is not directly associated
+/// with an action, it is added to a circular list of dangling stack_element
+/// nodes so that its space can be reclaimed.
 static void add_dangling_stack_element(struct stack_element *s) {
   if (dangling_stacks == NULL) {
     s->next = s;
@@ -215,9 +215,9 @@ static void add_dangling_stack_element(struct stack_element *s) {
   dangling_stacks = s;
 }
 
-/* This function is invoked to free up all dangling stack_element nodes    */
-/* and reset the dangling stack list.                                      */
-/* Recall that the dangling stack list is circular.                        */
+/// This function is invoked to free up all dangling stack_element nodes
+/// and reset the dangling stack list.
+/// Recall that the dangling stack list is circular.
 static void free_dangling_stack_elements(void) {
   if (dangling_stacks != NULL) {
     struct stack_element *tail = dangling_stacks;
@@ -226,8 +226,8 @@ static void free_dangling_stack_elements(void) {
   }
 }
 
-/* This function allocates and initializes a SOURCE_ELEMENT map.           */
-/* See definition of SOURCE_ELEMENT above.                                 */
+/// This function allocates and initializes a SOURCE_ELEMENT map.
+/// See definition of SOURCE_ELEMENT above.
 static struct sources_element allocate_sources(void) {
   struct sources_element sources;
   sources.configs = (struct stack_element **)
@@ -247,9 +247,9 @@ static struct sources_element allocate_sources(void) {
   return sources;
 }
 
-/* This function takes as argument a SOURCES_ELEMENT structure which it    */
-/* resets to the empty map.                                                */
-/* See definition of SOURCE_ELEMENT above.                                 */
+/// This function takes as argument a SOURCES_ELEMENT structure which it
+/// resets to the empty map.
+/// See definition of SOURCE_ELEMENT above.
 static struct sources_element clear_sources(struct sources_element sources) {
   struct stack_element *tail;
   for (int act = sources.root; act != NIL; act = sources.list[act]) {
@@ -262,9 +262,9 @@ static struct sources_element clear_sources(struct sources_element sources) {
   return sources;
 }
 
-/* This function takes as argument a SOURCES_ELEMENT structure. First, it  */
-/* clears it to reclaim all space that was used by STACK_ELEMENTs and then */
-/* it frees the array space used as a base to construct the map.           */
+/// This function takes as argument a SOURCES_ELEMENT structure. First, it
+/// clears it to reclaim all space that was used by STACK_ELEMENTs and then
+/// it frees the array space used as a base to construct the map.
 static void free_sources(struct sources_element sources) {
   sources = clear_sources(sources);
   sources.configs -= num_rules;
@@ -274,37 +274,37 @@ static void free_sources(struct sources_element sources) {
   ffree(sources.list);
 }
 
-/* This function takes as argument two pointers to sorted lists of stacks. */
-/* It merges the lists in the proper order and returns the resulting list. */
+/// This function takes as argument two pointers to sorted lists of stacks.
+/// It merges the lists in the proper order and returns the resulting list.
 static struct stack_element *union_config_sets(struct stack_element *root1, struct stack_element *root2) {
   struct stack_element *p1;
   struct stack_element *p2;
   struct stack_element *root = NULL;
-  /* This loop iterates over both lists until one (or both) has been */
-  /* completely processed. Each time around the loop, a stack is     */
-  /* removed from one of the lists and possibly added to the new     */
-  /* list. The new list is initially kept as a circular list to      */
-  /* preserve the sorted ordering in which elements are added to it. */
+  // This loop iterates over both lists until one (or both) has been
+  // completely processed. Each time around the loop, a stack is
+  // removed from one of the lists and possibly added to the new
+  // list. The new list is initially kept as a circular list to
+  // preserve the sorted ordering in which elements are added to it.
   while (root1 != NULL && root2 != NULL) {
-    /* Compare the two stacks in front of the lists for equality.  */
-    /* We exit this loop when we encounter the end of one (or both)*/
-    /* of the stacks or two elements in them that are not the same.*/
+    // Compare the two stacks in front of the lists for equality.
+    // We exit this loop when we encounter the end of one (or both)
+    // of the stacks or two elements in them that are not the same.
     for (p1 = root1, p2 = root2;
          p1 != NULL && p2 != NULL;
          p1 = p1->previous, p2 = p2->previous) {
       if (p1->state_number != p2->state_number)
         break;
     }
-    /* We now have 3 cases to consider:                            */
-    /*    1. The two stacks are equal? Discard one!                */
-    /*    2. List 1 stack is prefix of list 2 stack (p1 == NULL)?  */
-    /*       or list 1 stack is less than list 2 stack?            */
-    /*       Remove list 1 stack and add it to new list.           */
-    /*    3. List 2 stack is either a prefix of list 1 stack, or   */
-    /*       it is smaller!                                        */
-    /*       Remove list 2 stack and add it to new list.           */
+    // We now have 3 cases to consider:
+    //    1. The two stacks are equal? Discard one!
+    //    2. List 1 stack is prefix of list 2 stack (p1 == NULL)?
+    //       or list 1 stack is less than list 2 stack?
+    //       Remove list 1 stack and add it to new list.
+    //    3. List 2 stack is either a prefix of list 1 stack, or
+    //       it is smaller!
+    //       Remove list 2 stack and add it to new list.
     if (p1 == p2) {
-      /* are both p1 and p2 NULL? */
+      // are both p1 and p2 NULL?
       p2 = root2;
       root2 = root2->next;
       add_dangling_stack_element(p2);
@@ -330,11 +330,11 @@ static struct stack_element *union_config_sets(struct stack_element *root1, stru
       root = p2;
     }
   }
-  /* At this stage, at least one (or both) list has been expended    */
-  /* (or was empty to start with).                                   */
-  /* If the new list is not empty, turn it into a linear list and    */
-  /* append the unexpended list to it, if any.                       */
-  /* Otherwise, set the new list to the nonempty list if any!        */
+  // At this stage, at least one (or both) list has been expended
+  // (or was empty to start with).
+  // If the new list is not empty, turn it into a linear list and
+  // append the unexpended list to it, if any.
+  // Otherwise, set the new list to the nonempty list if any!
   if (root != NULL) {
     struct stack_element *tail = root;
     root = root->next;
@@ -345,14 +345,14 @@ static struct stack_element *union_config_sets(struct stack_element *root1, stru
   return root;
 }
 
-/* This function takes as argument a SOURCES_ELEMENT map, an ACTION and a  */
-/* set (sorted list) of configurations. It adds the set of configurations  */
-/* to the previous set of configurations associated with the ACTION in the */
-/* SOURCES_ELEMENT map.                                                    */
+/// This function takes as argument a SOURCES_ELEMENT map, an ACTION and a
+/// set (sorted list) of configurations. It adds the set of configurations
+/// to the previous set of configurations associated with the ACTION in the
+/// SOURCES_ELEMENT map.
 static struct sources_element add_configs(struct sources_element sources, const int action, struct stack_element *config_root) {
   if (config_root != NULL) {
     if (sources.configs[action] == NULL) {
-      /* The previous was empty? */
+      // The previous was empty?
       sources.list[action] = sources.root;
       sources.root = action;
     }
@@ -361,8 +361,8 @@ static struct sources_element add_configs(struct sources_element sources, const 
   return sources;
 }
 
-/* This function clears out all external space used by the VISITED set and */
-/* resets VISITED to the empty set.                                        */
+/// This function clears out all external space used by the VISITED set and
+/// resets VISITED to the empty set.
 static void clear_visited(void) {
   struct node *tail;
   for (int state_no = visited.root; state_no != NIL; state_no = visited.list[state_no]) {
@@ -374,8 +374,8 @@ static void clear_visited(void) {
   visited.root = NIL;
 }
 
-/* This boolean function checks whether a given pair [state, symbol]*/
-/* was already inserted in the VISITED set.                                */
+/// This boolean function checks whether a given pair [state, symbol]
+/// was already inserted in the VISITED set.
 static bool was_visited(const int state_no, const int symbol) {
   struct node *p;
   for (p = visited.map[state_no]; p != NULL; p = p->next) {
@@ -386,10 +386,10 @@ static bool was_visited(const int state_no, const int symbol) {
   return p != NULL;
 }
 
-/* This function inserts a given pair [state, symbol] into the VISITED set.*/
+/// This function inserts a given pair [state, symbol] into the VISITED set.
 static void mark_visited(const int state_no, const int symbol) {
   if (visited.map[state_no] == NULL) {
-    /* 1st time we see state_no? */
+    // 1st time we see state_no?
     visited.list[state_no] = visited.root;
     visited.root = state_no;
   }
@@ -399,8 +399,8 @@ static void mark_visited(const int state_no, const int symbol) {
   visited.map[state_no] = p;
 }
 
-/* This procedure is a modified instantiation of the digraph algorithm */
-/* to compute the CYCLIC set of states.                                */
+/// This procedure is a modified instantiation of the digraph algorithm
+/// to compute the CYCLIC set of states.
 static void compute_cyclic(const short state_no) {
   int act;
   stack[++top] = state_no;
@@ -412,7 +412,7 @@ static void compute_cyclic(const short state_no) {
     const int symbol = go_to.map[i].symbol;
     act = go_to.map[i].action;
     if (act > 0 && null_nt[symbol]) {
-      /* We have a transition on a nullable nonterminal? */
+      // We have a transition on a nullable nonterminal?
       if (index_of[act] == OMEGA) {
         compute_cyclic(act);
       } else if (index_of[act] != INFINITY) {
@@ -430,18 +430,18 @@ static void compute_cyclic(const short state_no) {
   }
 }
 
-/*    In tracing an error, we will be moving backward in the state     */
-/* automaton looking for items with the conflict symbol as look-ahead. */
-/* In the case of SLR, we may have to analoguously look at an          */
-/* arbitrary set of items involved.  In moving around these graphs, it */
-/* is possible to encounter a cycle, in which case, we simply want to  */
-/* back out of the cycle and try another path. We therefore need to    */
-/* keep track of which nodes have already been visited.  For LALR      */
-/* conflicts, we use the LA_PTR field of the GOTO_ELEMENTs as an index */
-/* to a BOOLEAN array LALR_VISITED.  For SLR conflicts, a boolean      */
-/* array, SLR_VISITED, indexable by non-terminals, is used.  For       */
-/* trace-backs to the root item, the boolean array SYMBOL_SEEN, also   */
-/* also indexable by non-terminals, is used.                           */
+///    In tracing an error, we will be moving backward in the state
+/// automaton looking for items with the conflict symbol as look-ahead.
+/// In the case of SLR, we may have to analoguously look at an
+/// arbitrary set of items involved.  In moving around these graphs, it
+/// is possible to encounter a cycle, in which case, we simply want to
+/// back out of the cycle and try another path. We therefore need to
+/// keep track of which nodes have already been visited.  For LALR
+/// conflicts, we use the LA_PTR field of the GOTO_ELEMENTs as an index
+/// to a BOOLEAN array LALR_VISITED.  For SLR conflicts, a boolean
+/// array, SLR_VISITED, indexable by non-terminals, is used.  For
+/// trace-backs to the root item, the boolean array SYMBOL_SEEN, also
+/// also indexable by non-terminals, is used.
 static bool trace_root(const int lhs_symbol) {
   if (lhs_symbol == accept_image) {
     return true;
@@ -459,8 +459,8 @@ static bool trace_root(const int lhs_symbol) {
   return false;
 }
 
-/* The procedure below is invoked to retrace a path from the initial   */
-/* item to a given item (ITEM_NO) passed to it as argument.            */
+/// The procedure below is invoked to retrace a path from the initial
+/// item to a given item (ITEM_NO) passed to it as argument.
 static void print_root_path(const int item_no) {
   symbol_seen = Allocate_boolean_array(num_non_terminals);
   symbol_seen -= num_terminals + 1;
@@ -471,14 +471,14 @@ static void print_root_path(const int item_no) {
   ffree(symbol_seen);
 }
 
-/* This procedure takes as argument, a state number, STATE_NO, an      */
-/* index into the goto map of state_no, GOTO_INDX, which identifies a  */
-/* starting point for a search for the CONFLICT_SYMBOL. It attempts to */
-/* find a path in the automaton (from the starting point) that leads   */
-/* to a state where the conflict symbol can be read. If a path is      */
-/* found, all items along the path are printed and SUCCESS is returned.*/
-/*  Otherwise, FAILURE is returned.                                    */
-static bool lalr_path_retraced(const int state_no, const int goto_indx, const int conflict_symbol, struct CLIOptions* cli_options) {
+/// This procedure takes as argument, a state number, STATE_NO, an
+/// index into the goto map of state_no, GOTO_INDX, which identifies a
+/// starting point for a search for the CONFLICT_SYMBOL. It attempts to
+/// find a path in the automaton (from the starting point) that leads
+/// to a state where the conflict symbol can be read. If a path is
+/// found, all items along the path are printed and SUCCESS is returned.
+///  Otherwise, FAILURE is returned.
+static bool lalr_path_retraced(const int state_no, const int goto_indx, const int conflict_symbol, struct CLIOptions *cli_options) {
   struct node *q;
   struct node *tail;
   struct goto_header_type go_to = statset[state_no].go_to;
@@ -489,7 +489,7 @@ static bool lalr_path_retraced(const int state_no, const int goto_indx, const in
   for (const struct node *p = state > 0 ? statset[state].kernel_items : adequate_item[-state]; p != NULL && !found; p = p->next) {
     item = p->value - 1;
     if (IS_IN_SET(first, item_table[item].suffix_index, conflict_symbol)) {
-      /* Conflict_symbol can be read in state? */
+      // Conflict_symbol can be read in state?
       if (cli_options->trace_opt == TRACE_FULL)
         print_root_path(item);
       found = true;
@@ -519,10 +519,10 @@ static bool lalr_path_retraced(const int state_no, const int goto_indx, const in
   return found;
 }
 
-/*   In this procedure, we attempt to retrace an LALR conflict path    */
-/* (there may be more than one) of CONFLICT_SYMBOL in the state        */
-/* automaton that led to ITEM_NO in state STATE_NO.                    */
-static void print_relevant_lalr_items(const int state_no, const int item_no, const int conflict_symbol, struct CLIOptions* cli_options) {
+///   In this procedure, we attempt to retrace an LALR conflict path
+/// (there may be more than one) of CONFLICT_SYMBOL in the state
+/// automaton that led to ITEM_NO in state STATE_NO.
+static void print_relevant_lalr_items(const int state_no, const int item_no, const int conflict_symbol, struct CLIOptions *cli_options) {
   struct node *p;
   struct node *tail;
   const int lhs_symbol = rules[item_table[item_no].rule_number].lhs;
@@ -546,10 +546,10 @@ static void print_relevant_lalr_items(const int state_no, const int item_no, con
   ffree(lalr_visited);
 }
 
-/* The procedure below is invoked to retrace a path that may have      */
-/* introduced the CONFLICT_SYMBOL in the FOLLOW set of the nonterminal */
-/* that produces ITEM_NO.  Note that such a path must exist.           */
-static bool slr_trace(const int lhs_symbol, const int conflict_symbol, struct CLIOptions* cli_options) {
+/// The procedure below is invoked to retrace a path that may have
+/// introduced the CONFLICT_SYMBOL in the FOLLOW set of the nonterminal
+/// that produces ITEM_NO.  Note that such a path must exist.
+static bool slr_trace(const int lhs_symbol, const int conflict_symbol, struct CLIOptions *cli_options) {
   int item;
   if (slr_visited[lhs_symbol]) {
     return false;
@@ -576,9 +576,9 @@ static bool slr_trace(const int lhs_symbol, const int conflict_symbol, struct CL
   }
 }
 
-/* This procedure is invoked to print an SLR path of items that leads  */
-/* to the conflict symbol.                                             */
-static void print_relevant_slr_items(const int item_no, const int conflict_symbol, struct CLIOptions* cli_options) {
+/// This procedure is invoked to print an SLR path of items that leads
+/// to the conflict symbol.
+static void print_relevant_slr_items(const int item_no, const int conflict_symbol, struct CLIOptions *cli_options) {
   slr_visited = Allocate_boolean_array(num_non_terminals);
   slr_visited -= num_terminals + 1;
   if (slr_trace(rules[item_table[item_no].rule_number].lhs, conflict_symbol, cli_options)) {
@@ -587,30 +587,30 @@ static void print_relevant_slr_items(const int item_no, const int conflict_symbo
   ffree(slr_visited);
 }
 
-/* This routine is invoked when a grammar contains conflicts, and the  */
-/* first conflict is detected.                                         */
+/// This routine is invoked when a grammar contains conflicts, and the
+/// first conflict is detected.
 static void conflicts_initialization(void) {
-  /* NT_ITEMS and ITEM_LIST are used in reporting SLR conflicts, and */
-  /* in recreating paths from the Start item. See the routines       */
-  /* PRINT_RELEVANT_SLR_ITEMS and PRINT_ROOT_PATH.                   */
+  // NT_ITEMS and ITEM_LIST are used in reporting SLR conflicts, and
+  // in recreating paths from the Start item. See the routines
+  // PRINT_RELEVANT_SLR_ITEMS and PRINT_ROOT_PATH.
   nt_items = Allocate_short_array(num_non_terminals);
   nt_items -= num_terminals + 1;
   item_list = Allocate_short_array(num_items + 1);
   fill_in(msg_line, (PRINT_LINE_SIZE - 11) / 2 - 1, '-');
   fprintf(syslis, "\n%s CONFLICTS %s\n", msg_line, msg_line);
-  /*   SLR conflicts may be caused by a symbol in the FOLLOW set of a    */
-  /* left hand side, which is not actually in the LALR look-ahead set in */
-  /* that context.  Therefore, there may not exist a path in the state   */
-  /* automaton from the state where the conflict was detected to another */
-  /* state where it was introduced.  In such a case, we try to retrace a */
-  /* path that contributed the conflict-symbol to the FOLLOW set via a   */
-  /* sequence of productions.                                            */
-  /*                                                                     */
-  /* To assist in this task, we build below a map from each non-terminal */
-  /* A to the set of items of which A is the dot SYMBOL. I.e., all items */
-  /* of the form [x .A y] where x and y are arbitrary strings, and A is  */
-  /* a non-terminal. This map is also used in retracing a path from the  */
-  /* Start item to any other item.                                       */
+  //   SLR conflicts may be caused by a symbol in the FOLLOW set of a
+  // left hand side, which is not actually in the LALR look-ahead set in
+  // that context.  Therefore, there may not exist a path in the state
+  // automaton from the state where the conflict was detected to another
+  // state where it was introduced.  In such a case, we try to retrace a
+  // path that contributed the conflict-symbol to the FOLLOW set via a
+  // sequence of productions.
+  //
+  // To assist in this task, we build below a map from each non-terminal
+  // A to the set of items of which A is the dot SYMBOL. I.e., all items
+  // of the form [x .A y] where x and y are arbitrary strings, and A is
+  // a non-terminal. This map is also used in retracing a path from the
+  // Start item to any other item.
   for ALL_NON_TERMINALS3(symbol) {
     nt_items[symbol] = NIL;
   }
@@ -622,7 +622,7 @@ static void conflicts_initialization(void) {
   }
 }
 
-/* Add SYMBOL to the set of symbols CONFLICT_SYMBOLS[STATE_NO].        */
+/// Add SYMBOL to the set of symbols CONFLICT_SYMBOLS[STATE_NO].
 static void add_conflict_symbol(const int state_no, const int symbol) {
   struct node *p = Allocate_node();
   p->value = symbol;
@@ -635,22 +635,22 @@ static void add_conflict_symbol(const int state_no, const int symbol) {
   conflict_symbols[state_no] = p;
 }
 
-/* This function takes as argument a configuration STACK, a SYMBOL on  */
-/* which a transition can be made in the configuration and a terminal  */
-/* lookahead symbol, LA_SYMBOL. It executes the transition on SYMBOL   */
-/* and simulates all paths taken in the automaton after that transition*/
-/* until new state(s) are reached where a transition is possible on    */
-/* the lookahead symbol. It then returns the new set of configurations */
-/* found on which a transition on LA_SYMBOL is possible.               */
+/// This function takes as argument a configuration STACK, a SYMBOL on
+/// which a transition can be made in the configuration and a terminal
+/// lookahead symbol, LA_SYMBOL. It executes the transition on SYMBOL
+/// and simulates all paths taken in the automaton after that transition
+/// until new state(s) are reached where a transition is possible on
+/// the lookahead symbol. It then returns the new set of configurations
+/// found on which a transition on LA_SYMBOL is possible.
 static struct stack_element *follow_sources(struct stack_element *stack, int symbol, const int la_symbol) {
   struct shift_header_type sh;
   struct goto_header_type go_to;
   struct stack_element *q;
   int act;
   struct stack_element *configs = NULL; /* Initialize the output set of configurations */
-  /* If the starting configuration consists of a single state and    */
-  /* the initial [state, symbol] pair has already been visited,      */
-  /* return the null set. Otherwise, mark the pair visited and ...   */
+  // If the starting configuration consists of a single state and
+  // the initial [state, symbol] pair has already been visited,
+  // return the null set. Otherwise, mark the pair visited and ...
   const int state_no = stack->state_number;
   if (stack->size == 1) {
     if (was_visited(state_no, symbol) ||
@@ -659,11 +659,11 @@ static struct stack_element *follow_sources(struct stack_element *stack, int sym
     }
     mark_visited(state_no, symbol);
   }
-  /* Find the transition defined on the symbol...                    */
-  /* If the SYMBOL is a nonterminal and we can determine that the    */
-  /* lookahead symbol (LA_SYMBOL) cannot possibly follow the         */
-  /* nonterminal in question in this context, we simply abandon the  */
-  /* search and return the NULL set.                                 */
+  // Find the transition defined on the symbol...
+  // If the SYMBOL is a nonterminal and we can determine that the
+  // lookahead symbol (LA_SYMBOL) cannot possibly follow the
+  // nonterminal in question in this context, we simply abandon the
+  // search and return the NULL set.
   if (IS_A_NON_TERMINAL(symbol)) {
     go_to = statset[state_no].go_to;
     int ii;
@@ -684,13 +684,13 @@ static struct stack_element *follow_sources(struct stack_element *stack, int sym
     }
     act = sh.map[ii].action;
   }
-  /* If the ACTion on the symbol is a shift or a goto, ...           */
+  // If the ACTion on the symbol is a shift or a goto, ...
   if (act > 0) {
-    /* We check to see if the new state contains an action on the  */
-    /* lookahead symbol. If that's the case then we create a new   */
-    /* configuration by appending ACT to the starting configuration*/
-    /* and add this newly formed configuration to the set(list) of */
-    /* configurations...                                           */
+    // We check to see if the new state contains an action on the
+    // lookahead symbol. If that's the case then we create a new
+    // configuration by appending ACT to the starting configuration
+    // and add this newly formed configuration to the set(list) of
+    // configurations...
     sh = shift[statset[act].shift_number];
     int ii;
     for (ii = 1; ii <= sh.size; ii++) {
@@ -707,12 +707,12 @@ static struct stack_element *follow_sources(struct stack_element *stack, int sym
       q->next = NULL;
       configs = q;
     }
-    /* If the new state cannot get into a cycle of null            */
-    /* transitions, we check to see if it contains any transition  */
-    /* on a nullable nonterminal. For each such transition, we     */
-    /* append the new state to the stack and recursively invoke    */
-    /* FOLLOW_SOURCES to check if a transition on LA_SYMBOL cannot */
-    /* follow such a null transition.                              */
+    // If the new state cannot get into a cycle of null
+    // transitions, we check to see if it contains any transition
+    // on a nullable nonterminal. For each such transition, we
+    // append the new state to the stack and recursively invoke
+    // FOLLOW_SOURCES to check if a transition on LA_SYMBOL cannot
+    // follow such a null transition.
     if (!cyclic[act]) {
       go_to = statset[act].go_to;
       for (ii = 1; ii <= go_to.size; ii++) {
@@ -734,24 +734,24 @@ static struct stack_element *follow_sources(struct stack_element *stack, int sym
       }
     }
   }
-  /* We now iterate over the kernel set of items associated with the */
-  /* ACTion defined on SYMBOL...                                     */
+  // We now iterate over the kernel set of items associated with the
+  // ACTion defined on SYMBOL...
   for (const struct node *item_ptr = act > 0 ? statset[act].kernel_items : adequate_item[-act];
        item_ptr != NULL; item_ptr = item_ptr->next) {
     int item_no = item_ptr->value;
-    /* For each item that is a final item whose left-hand side     */
-    /* is neither the starting symbol nor a symbol that can        */
-    /* right-most produce itself...                                */
+    // For each item that is a final item whose left-hand side
+    // is neither the starting symbol nor a symbol that can
+    // right-most produce itself...
     if (item_table[item_no].symbol == empty) {
       const int rule_no = item_table[item_no].rule_number;
       const int lhs_symbol = rules[rule_no].lhs;
       if (lhs_symbol != accept_image && !rmpself[lhs_symbol]) {
-        /* If the length of the prefix of the item preceeding  */
-        /* the dot is shorter that the length of the stack, we */
-        /* retrace the item's path within the stack and        */
-        /* invoke FOLLOW_SOURCES with the prefix of the stack  */
-        /* where the item was introduced through closure, the  */
-        /* left-hand side of the item and the lookahead symbol.*/
+        // If the length of the prefix of the item preceeding
+        // the dot is shorter that the length of the stack, we
+        // retrace the item's path within the stack and
+        // invoke FOLLOW_SOURCES with the prefix of the stack
+        // where the item was introduced through closure, the
+        // left-hand side of the item and the lookahead symbol.
         if (item_table[item_no].dot < stack->size) {
           q = stack;
           for (int i = 1; i < item_table[item_no].dot; i++) {
@@ -761,17 +761,17 @@ static struct stack_element *follow_sources(struct stack_element *stack, int sym
           configs = union_config_sets(configs, q);
         } else {
           struct node *tail;
-          /* Compute the item in the root state of the stack,*/
-          /* and find the root state...                      */
+          // Compute the item in the root state of the stack,
+          // and find the root state...
           item_no -= stack->size;
           for (q = stack; q->size != 1; q = q->previous) {
           }
-          /* We are now back in the main automaton, find all */
-          /* sources where the item was introduced through   */
-          /* closure start a new configuration and invoke    */
-          /* FOLLOW_SOURCES with the appropriate arguments to*/
-          /* calculate the set of configurations associated  */
-          /* with these sources.                             */
+          // We are now back in the main automaton, find all
+          // sources where the item was introduced through
+          // closure start a new configuration and invoke
+          // FOLLOW_SOURCES with the appropriate arguments to
+          // calculate the set of configurations associated
+          // with these sources.
           struct node *v = lpgaccess(q->state_number, item_no);
           for (struct node *p = v; p != NULL; tail = p, p = p->next) {
             q = allocate_stack_element();
@@ -795,27 +795,27 @@ static struct stack_element *follow_sources(struct stack_element *stack, int sym
   return configs;
 }
 
-/* This function has a similar structure as FOLLOW_SOURCES.  But,      */
-/* instead of computing configurations that can be reached, it         */
-/* computes lookahead symbols that can be reached.  It takes as        */
-/* argument a configuration STACK, a SYMBOL on which a transition can  */
-/* be made in the configuration and a set variable, LOOK_AHEAD, where  */
-/* the result is to be stored.  When NEXT_LA is invoked from the       */
-/* outside, LOOK_AHEAD is assumed to be initialized to the empty set.  */
-/* NEXT_LA first executes the transition on SYMBOL and thereafter, all */
-/* terminal symbols that can be read are added to LOOKAHEAD.           */
+/// This function has a similar structure as FOLLOW_SOURCES.  But,
+/// instead of computing configurations that can be reached, it
+/// computes lookahead symbols that can be reached.  It takes as
+/// argument a configuration STACK, a SYMBOL on which a transition can
+/// be made in the configuration and a set variable, LOOK_AHEAD, where
+/// the result is to be stored.  When NEXT_LA is invoked from the
+/// outside, LOOK_AHEAD is assumed to be initialized to the empty set.
+/// NEXT_LA first executes the transition on SYMBOL and thereafter, all
+/// terminal symbols that can be read are added to LOOKAHEAD.
 static void next_la(struct stack_element *stack, const int symbol, const SET_PTR look_ahead) {
   struct goto_header_type go_to;
   struct stack_element *q;
   int act;
-  /* The only symbol that can follow the end-of-file symbol is the   */
-  /* end-of-file symbol.                                             */
+  // The only symbol that can follow the end-of-file symbol is the
+  // end-of-file symbol.
   if (symbol == eoft_image) {
     SET_BIT_IN(look_ahead, 0, eoft_image);
     return;
   }
   const int state_no = stack->state_number;
-  /* Find the transition defined on the symbol...                    */
+  // Find the transition defined on the symbol...
   if (IS_A_NON_TERMINAL(symbol)) {
     go_to = statset[state_no].go_to;
     int ii;
@@ -829,34 +829,34 @@ static void next_la(struct stack_element *stack, const int symbol, const SET_PTR
     }
     act = sh.map[ii].action;
   }
-  /* If the ACTion on the symbol is a shift or a goto, then all      */
-  /* terminal symbols that can be read in ACT are added to           */
-  /* LOOK_AHEAD.                                                     */
+  // If the ACTion on the symbol is a shift or a goto, then all
+  // terminal symbols that can be read in ACT are added to
+  // LOOK_AHEAD.
   if (act > 0) {
     SET_UNION(look_ahead, 0, read_set, act);
   }
-  /* We now iterate over the kernel set of items associated with the */
-  /* ACTion defined on SYMBOL...                                     */
-  /* Recall that the READ_SET of ACT is but the union of the FIRST   */
-  /* map defined on the suffixes of the items in the kernel of ACT.  */
+  // We now iterate over the kernel set of items associated with the
+  // ACTion defined on SYMBOL...
+  // Recall that the READ_SET of ACT is but the union of the FIRST
+  // map defined on the suffixes of the items in the kernel of ACT.
   for (const struct node *item_ptr = act > 0
                                        ? statset[act].kernel_items
                                        : adequate_item[-act];
        item_ptr != NULL; item_ptr = item_ptr->next) {
     int item_no = item_ptr->value;
-    /* For each item that is a final item whose left-hand side     */
-    /* is neither the starting symbol nor a symbol that can        */
-    /* right-most produce itself...                                */
+    // For each item that is a final item whose left-hand side
+    // is neither the starting symbol nor a symbol that can
+    // right-most produce itself...
     if (IS_IN_SET(first, item_table[item_no - 1].suffix_index, empty)) {
       const int rule_no = item_table[item_no].rule_number;
       const int lhs_symbol = rules[rule_no].lhs;
       if (lhs_symbol != accept_image && !rmpself[lhs_symbol]) {
-        /* If the length of the prefix of the item preceeding  */
-        /* the dot is shorter that the length of the stack, we */
-        /* retrace the item's path within the stack and        */
-        /* invoke NEXT_LA with the prefix of the stack         */
-        /* where the item was introduced through closure, the  */
-        /* left-hand side of the item and LOOK_AHEAD.          */
+        // If the length of the prefix of the item preceeding
+        // the dot is shorter that the length of the stack, we
+        // retrace the item's path within the stack and
+        // invoke NEXT_LA with the prefix of the stack
+        // where the item was introduced through closure, the
+        // left-hand side of the item and LOOK_AHEAD.
         if (item_table[item_no].dot < stack->size) {
           q = stack;
           for (int i = 1; i < item_table[item_no].dot; i++) {
@@ -865,24 +865,24 @@ static void next_la(struct stack_element *stack, const int symbol, const SET_PTR
           next_la(q, lhs_symbol, look_ahead);
         } else {
           struct node *tail;
-          /* Compute the item in the root state of the stack,*/
-          /* and find the root state...                      */
+          // Compute the item in the root state of the stack,
+          // and find the root state...
           item_no -= stack->size;
           for (q = stack; q->size != 1; q = q->previous) {
           }
-          /* We are now back in the main automaton, find all */
-          /* sources where the item was introduced through   */
-          /* closure and add all terminal symbols in the     */
-          /* follow set of the left-hand side symbol in each */
-          /* source to LOOK_AHEAD.                           */
+          // We are now back in the main automaton, find all
+          // sources where the item was introduced through
+          // closure and add all terminal symbols in the
+          // follow set of the left-hand side symbol in each
+          // source to LOOK_AHEAD.
           struct node *v = lpgaccess(q->state_number, item_no);
           for (struct node *p = v; p != NULL; tail = p, p = p->next) {
             go_to = statset[p->value].go_to;
             int ii;
             for (ii = 1; go_to.map[ii].symbol != lhs_symbol; ii++) {
             }
-            /* If look-ahead after left hand side is not   */
-            /* yet computed,call LA_TRAVERSE to compute it.*/
+            // If look-ahead after left hand side is not
+            // yet computed,call LA_TRAVERSE to compute it.
             if (la_index[go_to.map[ii].laptr] == OMEGA) {
               int stack_top = 0;
               la_traverse(p->value, ii, &stack_top);
@@ -896,12 +896,12 @@ static void next_la(struct stack_element *stack, const int symbol, const SET_PTR
   }
 }
 
-/* This function takes as argument an array, STACK_SEEN, with          */
-/* STATE_TABLE_SIZE elements (indexable in the range                   */
-/* 0..STATE_TABLE_SIZE-1) which is the base of a hash table and a      */
-/* STACK. It searches the hash table to see if it already contained    */
-/* the stack in question. If yes, it returns TRUE. Otherwise, it       */
-/* inserts the stack into the table and returns FALSE.                 */
+/// This function takes as argument an array, STACK_SEEN, with
+/// STATE_TABLE_SIZE elements (indexable in the range
+/// 0..STATE_TABLE_SIZE-1) which is the base of a hash table and a
+/// STACK. It searches the hash table to see if it already contained
+/// the stack in question. If yes, it returns TRUE. Otherwise, it
+/// inserts the stack into the table and returns FALSE.
 static bool stack_was_seen(struct stack_element **stack_seen, struct stack_element *stack) {
   struct stack_element *p;
   struct stack_element *q;
@@ -930,11 +930,11 @@ static bool stack_was_seen(struct stack_element **stack_seen, struct stack_eleme
   return false;
 }
 
-/* STATE_TO_RESOLVE_CONFLICTS is a function that attempts to resolve   */
-/* conflicts by doing more look-ahead.  If the conflict resolution     */
-/* is successful, then a new state is created and returned; otherwise, */
-/* the NULL pointer is returned.                                       */
-static struct state_element *state_to_resolve_conflicts(struct sources_element sources, int la_symbol, int level, struct CLIOptions* cli_options) {
+/// STATE_TO_RESOLVE_CONFLICTS is a function that attempts to resolve
+/// conflicts by doing more look-ahead.  If the conflict resolution
+/// is successful, then a new state is created and returned; otherwise,
+/// the NULL pointer is returned.
+static struct state_element *state_to_resolve_conflicts(struct sources_element sources, int la_symbol, int level, struct CLIOptions *cli_options) {
   struct sources_element new_sources;
   struct node **action;
   struct node *p;
@@ -971,8 +971,8 @@ static struct state_element *state_to_resolve_conflicts(struct sources_element s
              sizeof(struct state_element *));
   if (la_shift_state == NULL)
     nospace(__FILE__, __LINE__);
-  /* Initialize new lookahead state. Initialize counters. Check and  */
-  /* adjust HIGHEST_LEVEL reached so far, if necessary.              */
+  // Initialize new lookahead state. Initialize counters. Check and
+  // adjust HIGHEST_LEVEL reached so far, if necessary.
   state = NULL;
   num_shift_actions = 0;
   num_reduce_actions = 0;
@@ -981,47 +981,47 @@ static struct state_element *state_to_resolve_conflicts(struct sources_element s
   if (level > highest_level) {
     highest_level = level;
   }
-  /* One of the parameters received is a SOURCES map whose domain is */
-  /* a set of actions and each of these actions is mapped into a set */
-  /* of configurations that can be reached after that action is      */
-  /* executed (in the state where the conflicts were detected).      */
-  /* In this loop, we compute an ACTION map which maps each each     */
-  /* terminal symbol into 0 or more actions in the domain of SOURCES.*/
-  /*                                                                 */
-  /* NOTE in a sources map, if a configuration is associated with    */
-  /* more than one action then the grammar is not LALR(k) for any k. */
-  /* We check for that condition below. However, this check is there */
-  /* for purely cosmetic reason. It is not necessary for the         */
-  /* algorithm to work correctly and its removal will speed up this  */
-  /* loop somewhat (for conflict-less input).                        */
-  /* The first loop below initializes the hash table used for        */
-  /* lookups ...                                                     */
+  // One of the parameters received is a SOURCES map whose domain is
+  // a set of actions and each of these actions is mapped into a set
+  // of configurations that can be reached after that action is
+  // executed (in the state where the conflicts were detected).
+  // In this loop, we compute an ACTION map which maps each each
+  // terminal symbol into 0 or more actions in the domain of SOURCES.
+  //
+  // NOTE in a sources map, if a configuration is associated with
+  // more than one action then the grammar is not LALR(k) for any k.
+  // We check for that condition below. However, this check is there
+  // for purely cosmetic reason. It is not necessary for the
+  // algorithm to work correctly and its removal will speed up this
+  // loop somewhat (for conflict-less input).
+  // The first loop below initializes the hash table used for
+  // lookups ...
   for (int i = 0; i < STATE_TABLE_SIZE; i++) {
     sources.stack_seen[i] = NULL;
   }
   symbol_root = NIL;
   for (act = sources.root; act != NIL; act = sources.list[act]) {
-    /* For each action we iterate over its associated set of       */
-    /* configurations and invoke NEXT_LA to compute the lookahead  */
-    /* set for that configuration. These lookahead sets are in     */
-    /* turn unioned together to form a lookahead set for the       */
-    /* action in question.                                         */
+    // For each action we iterate over its associated set of
+    // configurations and invoke NEXT_LA to compute the lookahead
+    // set for that configuration. These lookahead sets are in
+    // turn unioned together to form a lookahead set for the
+    // action in question.
     INIT_SET(look_ahead);
     for (stack = sources.configs[act];
          stack != NULL; stack = stack->next) {
       if (stack_was_seen(sources.stack_seen, stack)) {
-        /* This is the superfluous code mentioned above! */
+        // This is the superfluous code mentioned above!
         highest_level = INFINITY;
         goto clean_up_and_return;
       }
       next_la(stack, la_symbol, look_ahead);
     }
     RESET_BIT(look_ahead, empty); /* EMPTY never in LA set */
-    /* For each lookahead symbol computed for this action, add an  */
-    /* action to the ACTION map and keep track of the symbols on   */
-    /* which any action is defined.                                */
-    /* If new conflicts are detected and we are already at the     */
-    /* lookahead level requested, we terminate the computation...  */
+    // For each lookahead symbol computed for this action, add an
+    // action to the ACTION map and keep track of the symbols on
+    // which any action is defined.
+    // If new conflicts are detected and we are already at the
+    // lookahead level requested, we terminate the computation...
     count = 0;
     for ALL_TERMINALS3(symbol) {
       if (IS_ELEMENT(look_ahead, symbol)) {
@@ -1038,24 +1038,24 @@ static struct state_element *state_to_resolve_conflicts(struct sources_element s
         action[symbol] = p;
       }
     }
-    /* If the action in question is a reduction then we keep track */
-    /* of how many times it was used.                              */
+    // If the action in question is a reduction then we keep track
+    // of how many times it was used.
     if (act >= 0 && act <= num_rules) {
       rule_count[act] = count;
     }
   }
-  /* We now iterate over the symbols on which actions are defined.   */
-  /* If we detect conflicts on any symbol, we compute new sources    */
-  /* and try to recover by computing more lookahead. Otherwise, we   */
-  /* update the counts and create two lists: a list of symbols on    */
-  /* which shift actions are defined and a list of symbols on which  */
-  /* reduce actions are defined.                                     */
+  // We now iterate over the symbols on which actions are defined.
+  // If we detect conflicts on any symbol, we compute new sources
+  // and try to recover by computing more lookahead. Otherwise, we
+  // update the counts and create two lists: a list of symbols on
+  // which shift actions are defined and a list of symbols on which
+  // reduce actions are defined.
   for (int symbol = symbol_root; symbol != NIL; symbol = symbol_list[symbol]) {
-    /* We have four cases to consider:                             */
-    /*    1. There are conflicts on SYMBOL                         */
-    /*    2. The action on SYMBOL is a shift-reduce                */
-    /*    3. The action on SYMBOL is a shift                       */
-    /*    4. The action on SYMBOL is a reduce                      */
+    // We have four cases to consider:
+    //    1. There are conflicts on SYMBOL
+    //    2. The action on SYMBOL is a shift-reduce
+    //    3. The action on SYMBOL is a shift
+    //    4. The action on SYMBOL is a reduce
     if (action[symbol]->next != NULL) {
       new_sources = clear_sources(new_sources);
       for (p = action[symbol]; p != NULL; tail = p, p = p->next) {
@@ -1100,8 +1100,8 @@ static struct state_element *state_to_resolve_conflicts(struct sources_element s
       reduce_root = symbol;
     }
   }
-  /* We now iterate over the reduce actions in the domain of sources */
-  /* and compute a default action.                                   */
+  // We now iterate over the reduce actions in the domain of sources
+  // and compute a default action.
   default_rule = OMEGA;
   count = 0;
   for (act = sources.root; act != NIL; act = sources.list[act]) {
@@ -1112,17 +1112,17 @@ static struct state_element *state_to_resolve_conflicts(struct sources_element s
       }
     }
   }
-  /* By now, we are ready to create a new look-ahead state. The      */
-  /* actions for the state are in the ACTION vector, and the         */
-  /* constants: NUM_SHIFT_ACTIONS and NUM_REDUCE_ACTIONS indicate    */
-  /* the number of shift and reduce actions in the ACTION vector.    */
-  /* Note that the IN_STATE field of each look-ahead state created   */
-  /* is initially set to the number associated with that state. If   */
-  /* all the conflicts detected in the state, S, that requested the  */
-  /* creation of a look-ahead state are resolved, then this field    */
-  /* is updated with S.                                              */
-  /* Otherwise, this field indicates that this look-ahead state is   */
-  /* dangling - no other state point to it.                          */
+  // By now, we are ready to create a new look-ahead state. The
+  // actions for the state are in the ACTION vector, and the
+  // constants: NUM_SHIFT_ACTIONS and NUM_REDUCE_ACTIONS indicate
+  // the number of shift and reduce actions in the ACTION vector.
+  // Note that the IN_STATE field of each look-ahead state created
+  // is initially set to the number associated with that state. If
+  // all the conflicts detected in the state, S, that requested the
+  // creation of a look-ahead state are resolved, then this field
+  // is updated with S.
+  // Otherwise, this field indicates that this look-ahead state is
+  // dangling - no other state point to it.
   state = (struct state_element *)
       talloc(sizeof(struct state_element));
   if (state == (struct state_element *) NULL)
@@ -1134,21 +1134,21 @@ static struct state_element *state_to_resolve_conflicts(struct sources_element s
   state->symbol = la_symbol;
   state->state_number = max_la_state;
   state->in_state = max_la_state; /* Initialize it to something! */
-  /* If there are any shift-actions in this state, we create a shift */
-  /* map for them if one does not yet exist, otherwise, we reuse the */
-  /* old existing one.                                               */
+  // If there are any shift-actions in this state, we create a shift
+  // map for them if one does not yet exist, otherwise, we reuse the
+  // old existing one.
   if (num_shift_actions > 0) {
     unsigned long hash_address;
     struct shift_header_type sh;
     struct state_element *p_inner;
-    /* In this loop, we compute the hash address as the number of  */
-    /* shift actions, plus the sum of all the symbols on which a   */
-    /* shift action is defined.  As a side effect, we also take    */
-    /* care of some other issues. Shift actions which were encoded */
-    /* to distinguish them from reduces action are decoded.        */
-    /* The counters for shift and shift-reduce actions are updated.*/
-    /* For all Shift actions to look-ahead states, the IN_STATE    */
-    /* field of these look-ahead target states are updated.        */
+    // In this loop, we compute the hash address as the number of
+    // shift actions, plus the sum of all the symbols on which a
+    // shift action is defined.  As a side effect, we also take
+    // care of some other issues. Shift actions which were encoded
+    // to distinguish them from reduces action are decoded.
+    // The counters for shift and shift-reduce actions are updated.
+    // For all Shift actions to look-ahead states, the IN_STATE
+    // field of these look-ahead target states are updated.
     hash_address = num_shift_actions; /* Initialize hash address */
     for (int symbol = shift_root; symbol != NIL; symbol = action_list[symbol]) {
       hash_address += symbol;
@@ -1157,21 +1157,21 @@ static struct state_element *state_to_resolve_conflicts(struct sources_element s
       } else if (action[symbol]->value <= num_states) {
         num_shifts++;
       } else {
-        /* lookahead-shift */
+        // lookahead-shift
         la_shift_state[symbol]->in_state = max_la_state;
       }
     }
     hash_address %= SHIFT_TABLE_SIZE;
-    /* Search list associated with HASH_ADDRESS, and if the shift  */
-    /* map in question is found, update the SHIFT, and SHIFT_NUMBER*/
-    /* fields of the new Look-Ahead State.                         */
+    // Search list associated with HASH_ADDRESS, and if the shift
+    // map in question is found, update the SHIFT, and SHIFT_NUMBER
+    // fields of the new Look-Ahead State.
     for (p_inner = shift_table[hash_address]; p_inner != NULL; p_inner = p_inner->next_shift) {
-      /* Search hash table for shift map */
+      // Search hash table for shift map
       sh = p_inner->shift;
       if (sh.size == num_shift_actions) {
         int ii;
         for (ii = 1; ii <= num_shift_actions; ii++) {
-          /* compare shift maps */
+          // compare shift maps
           if (sh.map[ii].action != action[sh.map[ii].symbol]->value) {
             break;
           }
@@ -1184,8 +1184,8 @@ static struct state_element *state_to_resolve_conflicts(struct sources_element s
         }
       }
     }
-    /* Shift map was not found.  We have to create a new one and   */
-    /* insert it into the table.                                   */
+    // Shift map was not found.  We have to create a new one and
+    // insert it into the table.
     if (p_inner == NULL) {
       num_shift_maps++;
       sh = Allocate_shift_map(num_shift_actions);
@@ -1202,9 +1202,9 @@ static struct state_element *state_to_resolve_conflicts(struct sources_element s
     state->shift.size = 0;
     state->shift_number = 0;
   }
-  /* Construct Reduce map.                                           */
-  /* When SPACE or TIME tables are requested, no default actions are */
-  /* taken.                                                          */
+  // Construct Reduce map.
+  // When SPACE or TIME tables are requested, no default actions are
+  // taken.
 Build_reduce_map: {
     struct reduce_header_type red;
     if (default_rule != OMEGA &&
@@ -1232,8 +1232,8 @@ Build_reduce_map: {
       red.map[0].rule_number = OMEGA;
     }
   }
-  /* Release all space allocated to process this lookahead state and */
-  /* return.                                                         */
+  // Release all space allocated to process this lookahead state and
+  // return.
 clean_up_and_return:
   free_sources(new_sources);
   for (int symbol = symbol_root; symbol != NIL; symbol = symbol_list[symbol]) {
@@ -1252,38 +1252,38 @@ clean_up_and_return:
   return state;
 }
 
-/* This procedure is invoked when LALR_LEVEL > 1 to construct the      */
-/* RMPSELF set which identifies the nonterminals that can right-most   */
-/* produce themselves. It takes as argumen the map PRODUCES which      */
-/* identifies for each nonterminal the set of nonterminals that it can */
-/* right-most produce.                                                 */
+/// This procedure is invoked when LALR_LEVEL > 1 to construct the
+/// RMPSELF set which identifies the nonterminals that can right-most
+/// produce themselves. It takes as argumen the map PRODUCES which
+/// identifies for each nonterminal the set of nonterminals that it can
+/// right-most produce.
 void init_rmpself(const SET_PTR produces) {
   rmpself = Allocate_boolean_array(num_non_terminals);
   rmpself -= num_terminals + 1;
-  /* Note that each element of the map produces is a boolean vector  */
-  /* that is indexable in the range 1..num_non_terminals. Since each */
-  /* nonterminal is offset by the value num_terminals (to distinguish*/
-  /* it from the terminals),it must therefore be adjusted accordingly*/
-  /* when dereferencing an element in the range of the produces map. */
+  // Note that each element of the map produces is a boolean vector
+  // that is indexable in the range 1..num_non_terminals. Since each
+  // nonterminal is offset by the value num_terminals (to distinguish
+  // it from the terminals),it must therefore be adjusted accordingly
+  // when dereferencing an element in the range of the produces map.
   for ALL_NON_TERMINALS3(nt) {
     rmpself[nt] = IS_IN_NTSET(produces, nt, nt - num_terminals);
   }
 }
 
-/* If LALR(k), k > 1, is requested, we may have to create more shift   */
-/* maps. Initialize SHIFT_TABLE. Note that each element of SHIFT_TABLE */
-/* is automatically initialized to NULL by CALLOC.                     */
-/* (See STATE_TO_RESOLVE_CONFLICTS)                                    */
-/* Second, we check whether the grammar is not LR(k) for any k  */
-/* because there exist a nonterminal A such that                       */
-/*                                                                     */
-/*                     A =>+rm A                                       */
-/*                                                                     */
-/* Finally, allocate and compute the CYCLIC vector which identifies    */
-/* states that can enter a cycle via transitions on nullable           */
-/* nonterminals. If such a cyle exists, the grammar can also be        */
-/* claimed to be not LR(k) for any k.                                  */
-void init_lalrk_process(struct CLIOptions* cli_options) {
+/// If LALR(k), k > 1, is requested, we may have to create more shift
+/// maps. Initialize SHIFT_TABLE. Note that each element of SHIFT_TABLE
+/// is automatically initialized to NULL by CALLOC.
+/// (See STATE_TO_RESOLVE_CONFLICTS)
+/// Second, we check whether the grammar is not LR(k) for any k
+/// because there exist a nonterminal A such that
+///
+///                     A =>+rm A
+///
+/// Finally, allocate and compute the CYCLIC vector which identifies
+/// states that can enter a cycle via transitions on nullable
+/// nonterminals. If such a cyle exists, the grammar can also be
+/// claimed to be not LR(k) for any k.
+void init_lalrk_process(struct CLIOptions *cli_options) {
   not_lrk = false;
   if (cli_options->lalr_level > 1) {
     shift_table = (struct state_element **) calloc(SHIFT_TABLE_SIZE, sizeof(struct state_element *));
@@ -1317,9 +1317,9 @@ void init_lalrk_process(struct CLIOptions* cli_options) {
   }
 }
 
-/* Free all support structures that were allocated to help compute     */
-/* additional lookahead.                                               */
-void exit_lalrk_process(struct CLIOptions* cli_options) {
+/// Free all support structures that were allocated to help compute
+/// additional lookahead.
+void exit_lalrk_process(struct CLIOptions *cli_options) {
   if (cli_options->lalr_level > 1) {
     rmpself += num_terminals + 1;
     ffree(rmpself);
@@ -1332,7 +1332,7 @@ void exit_lalrk_process(struct CLIOptions* cli_options) {
   }
 }
 
-/* If we had to report conflicts, free the SLR support structures.     */
+/// If we had to report conflicts, free the SLR support structures.
 void free_conflict_space(void) {
   if (nt_items != NULL) {
     nt_items += num_terminals + 1;
@@ -1341,11 +1341,11 @@ void free_conflict_space(void) {
   }
 }
 
-/* If conflicts were detected and LALR(k) processing was requested,    */
-/* where k > 1, then we attempt to resolve the conflicts by computing  */
-/* more lookaheads. Shift-Reduce conflicts are processed first,        */
-/* followed by Reduce-Reduce conflicts.                                */
-void resolve_conflicts(const int state_no, struct node **action, const short *symbol_list, const int reduce_root, struct CLIOptions* cli_options) {
+/// If conflicts were detected and LALR(k) processing was requested,
+/// where k > 1, then we attempt to resolve the conflicts by computing
+/// more lookaheads. Shift-Reduce conflicts are processed first,
+/// followed by Reduce-Reduce conflicts.
+void resolve_conflicts(const int state_no, struct node **action, const short *symbol_list, const int reduce_root, struct CLIOptions *cli_options) {
   struct node *p;
   struct node *tail;
   struct stack_element *q;
@@ -1354,10 +1354,10 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
   int item_no;
   int lhs_symbol;
   int symbol;
-  /* Note that a shift action to a state "S" is encoded with the     */
-  /* value (S+NUM_RULES) to help distinguish it from reduce actions. */
-  /* Reduce actions lie in the range [0..NUM_RULES].   Shift-reduce  */
-  /* actions lie in the range [-NUM_RULES..-1].                      */
+  // Note that a shift action to a state "S" is encoded with the
+  // value (S+NUM_RULES) to help distinguish it from reduce actions.
+  // Reduce actions lie in the range [0..NUM_RULES].   Shift-reduce
+  // actions lie in the range [-NUM_RULES..-1].
   sr_conflict_root = NULL;
   const struct shift_header_type sh = shift[statset[state_no].shift_number];
   for (int i = 1; i <= sh.size; i++) {
@@ -1400,13 +1400,13 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
         }
         free_nodes(v, tail);
       }
-      /* The function STATE_TO_RESOLVE_CONFLICTS returns a pointer   */
-      /* value to a STATE_ELEMENT which has been constructed to      */
-      /* resolve the conflicts in question. If the value returned by */
-      /* that function is NULL, then it was not possible to resolve  */
-      /* the conflicts.  In any case, STATE_TO_RESOLVE_CONFLICTS     */
-      /* frees the space that is used by the action map headed by    */
-      /* ACTION_ROOT.                                                */
+      // The function STATE_TO_RESOLVE_CONFLICTS returns a pointer
+      // value to a STATE_ELEMENT which has been constructed to
+      // resolve the conflicts in question. If the value returned by
+      // that function is NULL, then it was not possible to resolve
+      // the conflicts.  In any case, STATE_TO_RESOLVE_CONFLICTS
+      // frees the space that is used by the action map headed by
+      // ACTION_ROOT.
       state = state_to_resolve_conflicts(sources, symbol, 2, cli_options);
       if (state != NULL) {
         state->in_state = state_no;
@@ -1414,9 +1414,9 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
         action[symbol] = NULL;
       }
     }
-    /* If unresolved shift-reduce conflicts are detected on symbol,*/
-    /*  add them to the list of conflicts so they can be reported  */
-    /* (if the CONFLICT option is on) and count them.              */
+    // If unresolved shift-reduce conflicts are detected on symbol,
+    //  add them to the list of conflicts so they can be reported
+    // (if the CONFLICT option is on) and count them.
     if (action[symbol] != NULL) {
       act = sh.map[i].action;
       for (p = action[symbol]; p != NULL; tail = p, p = p->next) {
@@ -1430,16 +1430,16 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
         }
         num_sr_conflicts++;
       }
-      /* Remove reduce actions defined on symbol so as to give   */
-      /* precedence to the shift.                                */
+      // Remove reduce actions defined on symbol so as to give
+      // precedence to the shift.
       free_nodes(action[symbol], tail);
       action[symbol] = NULL;
     }
   }
-  /* We construct a map from each action to a list of states as we   */
-  /* did for the Shift-reduce conflicts. A boolean vector ITEM_SEEN  */
-  /* is used to prevent duplication of actions. This problem does    */
-  /* not occur with Shift-Reduce conflicts.                          */
+  // We construct a map from each action to a list of states as we
+  // did for the Shift-reduce conflicts. A boolean vector ITEM_SEEN
+  // is used to prevent duplication of actions. This problem does
+  // not occur with Shift-Reduce conflicts.
   rr_conflict_root = NULL;
   for (symbol = reduce_root;
        symbol != NIL; symbol = symbol_list[symbol]) {
@@ -1471,9 +1471,9 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
           }
           free_nodes(v, tail);
         }
-        /*     STATE_TO_RESOLVE_CONFLICTS will return a pointer to a   */
-        /* STATE_ELEMENT if the conflicts were resolvable with more    */
-        /* lookaheads, otherwise, it returns NULL.                     */
+        //     STATE_TO_RESOLVE_CONFLICTS will return a pointer to a
+        // STATE_ELEMENT if the conflicts were resolvable with more
+        // lookaheads, otherwise, it returns NULL.
         state = state_to_resolve_conflicts(sources, symbol, 2, cli_options);
         if (state != NULL) {
           state->in_state = state_no;
@@ -1481,9 +1481,9 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
           action[symbol] = NULL;
         }
       }
-      /* If unresolved reduce-reduce conflicts are detected on   */
-      /* symbol, add them to the list of conflicts so they can be*/
-      /* reported (if the CONFLICT option is on) and count them. */
+      // If unresolved reduce-reduce conflicts are detected on
+      // symbol, add them to the list of conflicts so they can be
+      // reported (if the CONFLICT option is on) and count them.
       if (action[symbol] != NULL) {
         act = action[symbol]->value;
         for (p = action[symbol]->next; p != NULL; tail = p, p = p->next) {
@@ -1497,10 +1497,10 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
           }
           num_rr_conflicts++;
         }
-        /* Remove all reduce actions that are defined on symbol    */
-        /* except the first one. That rule is the one with the     */
-        /* longest right-hand side that was associated with symbol.*/
-        /* See code in MKRED.C.                                    */
+        // Remove all reduce actions that are defined on symbol
+        // except the first one. That rule is the one with the
+        // longest right-hand side that was associated with symbol.
+        // See code in MKRED.C.
         if (action[symbol]->next != NULL) {
           free_nodes(action[symbol]->next, tail);
           action[symbol]->next = NULL;
@@ -1508,11 +1508,11 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
       }
     }
   }
-  /* If any unresolved conflicts were detected, process them.        */
+  // If any unresolved conflicts were detected, process them.
   if (sr_conflict_root != NULL || rr_conflict_root != NULL) {
-    /* If conflicts are detected, they are placed in two lists headed by   */
-    /* SR_CONFLICT_ROOT and RR_CONFLICT_ROOT.  We scan these lists, and    */
-    /* report the conflicts.                                               */
+    // If conflicts are detected, they are placed in two lists headed by
+    // SR_CONFLICT_ROOT and RR_CONFLICT_ROOT.  We scan these lists, and
+    // report the conflicts.
     int symbol;
     int rule_no;
     char temp[SYMBOL_SIZE + 1];
@@ -1520,7 +1520,7 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
       conflicts_initialization();
     }
     print_state(state_no); /* Print state containing conflicts */
-    /* Process shift-reduce conflicts.                                 */
+    // Process shift-reduce conflicts.
     if (sr_conflict_root != NULL) {
       struct sr_conflict_element *tail;
       for (struct sr_conflict_element *p = sr_conflict_root; p != NULL; tail = p, p = p->next) {
@@ -1540,7 +1540,7 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
       }
       free_conflict_elements(sr_conflict_root, tail);
     }
-    /* Process reduce-reduce conflicts.                                */
+    // Process reduce-reduce conflicts.
     if (rr_conflict_root != NULL) {
       struct rr_conflict_element *tail;
       for (struct rr_conflict_element *p = rr_conflict_root; p != NULL; tail = p, p = p->next) {
@@ -1573,14 +1573,14 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
   free_dangling_stack_elements();
 }
 
-/* Transfer the look-ahead states to their permanent destination, the  */
-/* array LASTATS and update the original automaton with the relevant   */
-/* transitions into the lookahead states.                              */
+/// Transfer the look-ahead states to their permanent destination, the
+/// array LASTATS and update the original automaton with the relevant
+/// transitions into the lookahead states.
 void create_lastats(void) {
   struct state_element *p;
-  /* Allocate LASTATS structure to permanently construct lookahead   */
-  /* states and reallocate SHIFT map as we may have to construct     */
-  /* new shift maps.                                                 */
+  // Allocate LASTATS structure to permanently construct lookahead
+  // states and reallocate SHIFT map as we may have to construct
+  // new shift maps.
   lastats = (struct lastats_type *) calloc(max_la_state - num_states, sizeof(struct lastats_type));
   if (lastats == NULL)
     nospace(__FILE__, __LINE__);
@@ -1588,8 +1588,8 @@ void create_lastats(void) {
   shift = (struct shift_header_type *) realloc(shift, (max_la_state + 1) * sizeof(struct shift_header_type));
   if (shift == NULL)
     nospace(__FILE__, __LINE__);
-  /* Allocate temporary space used to construct final lookahead      */
-  /* states.                                                         */
+  // Allocate temporary space used to construct final lookahead
+  // states.
   struct state_element **new_shift_actions = calloc(num_states + 1, sizeof(struct state_element *));
   if (new_shift_actions == NULL)
     nospace(__FILE__, __LINE__);
@@ -1597,10 +1597,10 @@ void create_lastats(void) {
   short *shift_list = Allocate_short_array(num_terminals + 1);
   short *shift_count = Allocate_short_array(max_la_state + 1);
   short *state_list = Allocate_short_array(max_la_state + 1);
-  /* The array shift_action will be used to construct a shift map    */
-  /* for a given state. It is initialized here to the empty map.     */
-  /* The array shift_count is used to count how many references      */
-  /* there are to each shift map.                                    */
+  // The array shift_action will be used to construct a shift map
+  // for a given state. It is initialized here to the empty map.
+  // The array shift_count is used to count how many references
+  // there are to each shift map.
   for ALL_TERMINALS3(symbol) {
     shift_action[symbol] = OMEGA;
   }
@@ -1610,11 +1610,11 @@ void create_lastats(void) {
   for ALL_STATES3(state_no) {
     shift_count[statset[state_no].shift_number]++;
   }
-  /* Traverse the list of lookahead states and initialize the        */
-  /* final lastat element appropriately. Also, construct a mapping   */
-  /* from each relevant initial state into the list of lookahead     */
-  /* states into which it can shift. We also keep track of these     */
-  /* initial states in a list headed by state_root.                  */
+  // Traverse the list of lookahead states and initialize the
+  // final lastat element appropriately. Also, construct a mapping
+  // from each relevant initial state into the list of lookahead
+  // states into which it can shift. We also keep track of these
+  // initial states in a list headed by state_root.
   int state_root = NIL;
   for (p = la_state_root; p != NULL; p = p->link) {
     lastats[p->state_number].in_state = p->in_state;
@@ -1633,11 +1633,11 @@ void create_lastats(void) {
       new_shift_actions[state_no] = p;
     }
   }
-  /* We now traverse the list of initial states that can shift into  */
-  /* lookahead states and update their shift map appropriately.      */
+  // We now traverse the list of initial states that can shift into
+  // lookahead states and update their shift map appropriately.
   for (int state_no = state_root; state_no != NIL; state_no = state_list[state_no]) {
-    /* Copy the shift map associated with STATE_NO into the direct */
-    /* access map SHIFT_ACTION.                                    */
+    // Copy the shift map associated with STATE_NO into the direct
+    // access map SHIFT_ACTION.
     const int shift_no = statset[state_no].shift_number;
     struct shift_header_type sh = shift[shift_no];
     int shift_root = NIL;
@@ -1647,8 +1647,8 @@ void create_lastats(void) {
       shift_list[symbol] = shift_root;
       shift_root = symbol;
     }
-    /* Add the lookahead shift transitions to the initial shift    */
-    /* map.                                                        */
+    // Add the lookahead shift transitions to the initial shift
+    // map.
     int shift_size = sh.size;
     for (p = new_shift_actions[state_no]; p != NULL; p = p->next_shift) {
       if (shift_action[p->symbol] == OMEGA) {
@@ -1662,11 +1662,11 @@ void create_lastats(void) {
       }
       shift_action[p->symbol] = p->state_number;
     }
-    /* There are two conditions under which we have to construct   */
-    /* a new shift map:                                            */
-    /*     1. The initial shift map was shared with other states.  */
-    /*     2. The updated shift map contains more elements than    */
-    /*        the initial one.                                     */
+    // There are two conditions under which we have to construct
+    // a new shift map:
+    //     1. The initial shift map was shared with other states.
+    //     2. The updated shift map contains more elements than
+    //        the initial one.
     if (shift_count[shift_no] > 1) {
       shift_count[shift_no]--;
       num_shift_maps++;
@@ -1677,13 +1677,13 @@ void create_lastats(void) {
       sh = Allocate_shift_map(shift_size);
       shift[shift_no] = sh;
     }
-    /* Reconstruct the relevant shift map.                         */
+    // Reconstruct the relevant shift map.
     for (int symbol = shift_root, i = 1; symbol != NIL; shift_action[symbol] = OMEGA, symbol = shift_list[symbol], i++) {
       sh.map[i].symbol = symbol;
       sh.map[i].action = shift_action[symbol];
     }
   }
-  /* Free all local temporary structures and return.                 */
+  // Free all local temporary structures and return.
   ffree(new_shift_actions);
   ffree(shift_action);
   ffree(shift_list);

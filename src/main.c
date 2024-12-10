@@ -109,7 +109,7 @@ int main(const int argc, char *argv[]) {
       char file_prefix[80] = "";
       char grm_file[80];
       char lis_file[80];
-      /* Create file names for output files */
+      // Create file names for output files
       strcpy(grm_file, argv[argc - 1]);
       char *slash = strrchr(grm_file, '/');
       char tmpbuf[20];
@@ -119,7 +119,7 @@ int main(const int argc, char *argv[]) {
         strcpy(tmpbuf, grm_file);
       }
       const char *dot = strrchr(tmpbuf, '.');
-      /* if filename has no extension, copy it. */
+      // if filename has no extension, copy it.
       if (dot == NULL) {
         strcpy(lis_file, tmpbuf);
         strcpy(tab_file, tmpbuf);
@@ -130,7 +130,7 @@ int main(const int argc, char *argv[]) {
         file_prefix[ii] = '\0';
       } else {
         int ii;
-        /* if file name contains an extension copy up to the dot */
+        // if file name contains an extension copy up to the dot
         for (ii = 0; ii < 5 && tmpbuf + ii != dot; ii++) {
           file_prefix[ii] = tmpbuf[ii];
         }
@@ -203,10 +203,10 @@ int main(const int argc, char *argv[]) {
             PRNTERR("The options GOTO_DEFAULT and NT_CHECK are incompatible. Tables not generated");
           } else {
             num_entries = max_la_state + num_shifts + num_shift_reduces + num_gotos + num_goto_reduces + num_reductions;
-            /* We release space used by RHS_SYM, the ADEQUATE_ITEM     */
-            /* map, ITEM_TABLE (if we don't have to dump error maps),  */
-            /* IN_STAT, FIRST, NULL_NT and FOLLOW (if it's no longer   */
-            /* needed).                                                */
+            // We release space used by RHS_SYM, the ADEQUATE_ITEM
+            // map, ITEM_TABLE (if we don't have to dump error maps),
+            // IN_STAT, FIRST, NULL_NT and FOLLOW (if it's no longer
+            // needed).
             ffree(rhs_sym);
             if (adequate_item != NULL) {
               for ALL_RULES3(rule_no) {
