@@ -484,7 +484,7 @@ void produce(struct CLIOptions *cli_options) {
             num_error_rules++;
           }
         }
-        if (cli_options->warnings_bit && symbol != empty) {
+        if (symbol != empty) {
           item_list[item_no] = item_root;
           item_root = item_no;
         }
@@ -492,9 +492,8 @@ void produce(struct CLIOptions *cli_options) {
       symbol = eoft_image;
     }
   }
-  // If WARNINGS_BIT is on and some error rules are in the wrong,
-  // format, report them.
-  if (cli_options->warnings_bit && item_root != NIL) {
+  // If some error rules are in the wrong format and report them.
+  if (item_root != NIL) {
     if (item_list[item_root] == NIL) {
       fprintf(syslis, "*** This error rule is not in manual format:\n\n");
     } else {

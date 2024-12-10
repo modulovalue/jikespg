@@ -236,8 +236,6 @@ void options(char *file_prefix, struct CLIOptions *cli_options) {
         cli_options->single_productions_bit = flag;
       } else if (memcmp("STATES", token, token_len) == 0) {
         cli_options->states_bit = flag;
-      } else if (memcmp("WARNINGS", token, token_len) == 0) {
-        cli_options->warnings_bit = flag;
       } else if (memcmp("XREF", token, token_len) == 0) {
         cli_options->xref_bit = flag;
       } else {
@@ -597,11 +595,6 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
   } else {
     strcpy(opt_string[++top], "TRACE=FULL");
   }
-  if (cli_options->warnings_bit) {
-    strcpy(opt_string[++top], "WARNINGS");
-  } else {
-    strcpy(opt_string[++top], "NOWARNINGS");
-  }
   if (cli_options->xref_bit) {
     strcpy(opt_string[++top], "XREF");
   } else {
@@ -621,12 +614,12 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
   }
   PRNT(output_line);
   PRNT("");
-  if (cli_options->warnings_bit) {
-    if (cli_options->table_opt == OPTIMIZE_SPACE) {
-      if (cli_options->default_opt < 4) {
-        PRNTWNG("DEFAULT_OPTion requested must be >= 4");
-      }
-    } else if (cli_options->shift_default_bit) {
+  if (cli_options->table_opt == OPTIMIZE_SPACE) {
+    if (cli_options->default_opt < 4) {
+      PRNTWNG("DEFAULT_OPTION requested must be >= 4 if optimizing for space");
+    }
+  } else if (cli_options->table_opt == OPTIMIZE_TIME) {
+    if (cli_options->shift_default_bit) {
       PRNTWNG("SHIFT-DEFAULT option is only valid for Space tables");
     }
   }
@@ -956,11 +949,9 @@ scan_token:
         p2++;
       }
       ct_length = p2 - p1 - 1;
-      if (cli_options->warnings_bit) {
-        memcpy(tok_string, p1, ct_length);
-        tok_string[ct_length] = '\0';
-        PRNTWNG2("Symbol \"%s\" referenced in line %ld requires a closing quote", tok_string, ct_start_line);
-      }
+      memcpy(tok_string, p1, ct_length);
+      tok_string[ct_length] = '\0';
+      PRNTWNG2("Symbol \"%s\" referenced in line %ld requires a closing quote", tok_string, ct_start_line);
 
     remove_quotes:
       if (ct_length == 0) /* Empty symbol? disregard it */
@@ -1132,10 +1123,8 @@ check_symbol_length:
     ct_length = SYMBOL_SIZE;
     memcpy(tok_string, p1, ct_length);
     tok_string[ct_length] = '\0';
-    if (cli_options->warnings_bit) {
-      if (symbol_image(tok_string) == OMEGA) {
-        PRNTWNG2("Length of Symbol \"%s\" in line %d exceeds maximum of ", tok_string, line_no);
-      }
+    if (symbol_image(tok_string) == OMEGA) {
+      PRNTWNG2("Length of Symbol \"%s\" in line %d exceeds maximum of ", tok_string, line_no);
     }
   }
 }
@@ -1502,10 +1491,8 @@ void mapmacro(const int def_index, struct CLIOptions *cli_options) {
     const register int i = hash(defelmt[def_index].name);
     for (register int j = macro_table[i]; j != NIL; j = defelmt[j].next) {
       if (strcmp(defelmt[j].name, defelmt[def_index].name) == 0) {
-        if (cli_options->warnings_bit) {
-          PRNTWNG2("Redefinition of macro \"%s\" in line %ld", defelmt[def_index].name, defelmt[def_index].start_line);
-          break;
-        }
+        PRNTWNG2("Redefinition of macro \"%s\" in line %ld", defelmt[def_index].name, defelmt[def_index].start_line);
+        break;
       }
     }
     defelmt[def_index].next = macro_table[i];

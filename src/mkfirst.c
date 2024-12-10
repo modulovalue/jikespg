@@ -1179,23 +1179,17 @@ void mkbasic(struct CLIOptions* cli_options) {
       }
     }
   }
-  // If WARNINGS option is turned on, the unreachable symbols in
-  // the grammar are printed.
-  if (cli_options->warnings_bit) {
-    print_unreachables();
-  }
-  // If a Cross_Reference listing is requested, it is generated
-  // here.
+  // The unreachable symbols in the grammar are printed.
+  print_unreachables();
+  // If a Cross_Reference listing is requested, it is generated here.
   if (cli_options->xref_bit) {
     print_xref();
   }
-  // If a listing of the FIRST map is requested, it is generated
-  // here.
+  // If a listing of the FIRST map is requested, it is generated here.
   if (cli_options->first_bit) {
     print_nt_first();
   }
-  // If a listing of the FOLLOW map is requested, it is generated
-  // here.
+  // If a listing of the FOLLOW map is requested, it is generated here.
   if (cli_options->follow_bit) {
     print_follow_map();
   }

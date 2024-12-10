@@ -226,12 +226,10 @@ void reallocate(struct CLIOptions *cli_options) {
   }
   const register int old_size = table_size;
   table_size = MIN(table_size + increment_size, MAX_TABLE_SIZE);
-  if (cli_options->verbose_bit) {
-    if (cli_options->table_opt == OPTIMIZE_TIME) {
-      PRNT3("Reallocating storage for TIME table, adding %ld entries", table_size - old_size);
-    } else {
-      PRNT3("Reallocating storage for SPACE table, adding %ld entries", table_size - old_size);
-    }
+  if (cli_options->table_opt == OPTIMIZE_TIME) {
+    PRNT3("Reallocating storage for TIME table, adding %ld entries", table_size - old_size);
+  } else {
+    PRNT3("Reallocating storage for SPACE table, adding %ld entries", table_size - old_size);
   }
   long *n = Allocate_long_array(table_size + 1);
   long *p = Allocate_long_array(table_size + 1);
