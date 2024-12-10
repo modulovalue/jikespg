@@ -1,0 +1,15 @@
+# Getting started
+
+- Go to src and run:
+> make clean && make jikespg
+- move jikespg into the relevant example directories and run in the relevant directory
+> ./jikespg pathtogrammar.g
+
+---
+
+# Debugging
+
+- run
+> lldb --file jikespg pathtogrammar.g
+- and enter r.
+- enter exit to exit
