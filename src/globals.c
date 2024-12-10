@@ -39,15 +39,7 @@ long num_error_rules = 0;
 
 bool error_maps_bit = false;
 
-int lalr_level = 1;
-int default_opt = 5;
-int trace_opt = TRACE_CONFLICTS;
-int names_opt = OPTIMIZE_PHRASES;
-int table_opt = 0;
 int increment = 30;
-int maximum_distance = 30;
-int minimum_distance = 3;
-int stack_size = 128;
 
 char escape = '%';
 char ormark = '|';

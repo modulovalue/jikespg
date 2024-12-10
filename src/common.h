@@ -175,6 +175,14 @@ struct CLIOptions {
   bool debug_bit;
   bool deferred_bit;
   bool single_productions_bit;
+  int lalr_level;
+  int default_opt;
+  int trace_opt;
+  int names_opt;
+  int table_opt;
+  int maximum_distance;
+  int minimum_distance;
+  int stack_size;
 };
 
 static struct CLIOptions init_cli_options() {
@@ -201,6 +209,14 @@ static struct CLIOptions init_cli_options() {
     .debug_bit = false,
     .deferred_bit = true,
     .single_productions_bit = false,
+    .lalr_level = 1,
+    .default_opt = 5,
+    .trace_opt = TRACE_CONFLICTS,
+    .names_opt = OPTIMIZE_PHRASES,
+    .table_opt = 0,
+    .maximum_distance = 30,
+    .minimum_distance = 3,
+    .stack_size = 128,
   };
 }
 
@@ -244,16 +260,6 @@ static bool IS_A_NON_TERMINAL(const int i) {
 }
 
 extern bool error_maps_bit;
-
-extern int lalr_level;
-extern int default_opt;
-extern int trace_opt;
-extern int table_opt;
-extern int names_opt;
-extern int increment;
-extern int maximum_distance;
-extern int minimum_distance;
-extern int stack_size;
 
 extern char escape;
 extern char ormark;
@@ -420,9 +426,9 @@ void create_lastats(void);
 
 void dump_tables(void);
 
-void exit_lalrk_process(void);
+void exit_lalrk_process(struct CLIOptions* cli_options);
 
-void init_lalrk_process(void);
+void init_lalrk_process(struct CLIOptions* cli_options);
 
 void init_rmpself(SET_PTR produces);
 
@@ -470,7 +476,7 @@ void init_parser_files(struct OutputFiles output_files, struct CLIOptions* cli_o
 
 void process_tables(char *tab_file, struct OutputFiles output_files, struct CLIOptions* cli_options);
 
-void ptstats(void);
+void ptstats(struct CLIOptions* cli_options);
 
 void remvsp(void);
 
@@ -709,3 +715,5 @@ extern int highest_level;
 extern long la_top;
 extern short *la_index;
 extern bool not_lrk;
+
+extern int increment;

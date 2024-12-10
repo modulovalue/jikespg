@@ -464,15 +464,15 @@ static void print_tables(struct CLIOptions* cli_options) {
   output_buffer[2] = cli_options->nt_check_bit ? '1' : '0';
   output_buffer[3] = cli_options->read_reduce_bit ? '1' : '0';
   output_buffer[4] = cli_options->single_productions_bit ? '1' : '0';
-  if (default_opt == 0) {
+  if (cli_options->default_opt == 0) {
     output_buffer[5] = '0';
-  } else if (default_opt == 1) {
+  } else if (cli_options->default_opt == 1) {
     output_buffer[5] = '1';
-  } else if (default_opt == 2) {
+  } else if (cli_options->default_opt == 2) {
     output_buffer[5] = '2';
-  } else if (default_opt == 3) {
+  } else if (cli_options->default_opt == 3) {
     output_buffer[5] = '3';
-  } else if (default_opt == 4) {
+  } else if (cli_options->default_opt == 4) {
     output_buffer[5] = '4';
   } else {
     output_buffer[5] = '5';
@@ -493,7 +493,7 @@ static void print_tables(struct CLIOptions* cli_options) {
   field(accept_act, 5);
   field(error_act, 5);
   field(la_state_offset, 5);
-  field(lalr_level, 5);
+  field(cli_options->lalr_level, 5);
   *output_ptr++ = '\n';
   /* We write the terminal symbols map.                    */
   for (symbol = 1; symbol <= num_symbols; symbol++) {

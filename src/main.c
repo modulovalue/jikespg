@@ -195,10 +195,10 @@ int main(const int argc, char *argv[]) {
         }
 
         if (cli_options.states_bit) {
-          ptstats();
+          ptstats(&cli_options);
         }
 
-        if (table_opt != 0) {
+        if (cli_options.table_opt != 0) {
           if (cli_options.goto_default_bit && cli_options.nt_check_bit) {
             PRNTERR("The options GOTO_DEFAULT and NT_CHECK are incompatible. Tables not generated");
           } else {

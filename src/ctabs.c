@@ -228,7 +228,7 @@ void reallocate(struct CLIOptions* cli_options) {
   const register int old_size = table_size;
   table_size = MIN(table_size + increment_size, MAX_TABLE_SIZE);
   if (cli_options->verbose_bit) {
-    if (table_opt == OPTIMIZE_TIME) {
+    if (cli_options->table_opt == OPTIMIZE_TIME) {
       PRNT2(msg_line, "Reallocating storage for TIME table, adding %ld entries", table_size - old_size);
     } else {
       PRNT2(msg_line, "Reallocating storage for SPACE table, adding %ld entries", table_size - old_size);
@@ -417,7 +417,7 @@ void print_error_maps(struct CLIOptions* cli_options) {
   /* may appear in each state. Then, we invoke PARTSET to apply the   */
   /* Partition Heuristic and print it.                                */
   as_size = Allocate_long_array(num_states + 1);
-  if (table_opt == OPTIMIZE_TIME) {
+  if (cli_options->table_opt == OPTIMIZE_TIME) {
     original = Allocate_long_array(num_symbols + 1);
     /* In a compressed TIME table, the terminal and non-terminal */
     /* symbols are mixed together when they are remapped.        */
@@ -438,7 +438,7 @@ void print_error_maps(struct CLIOptions* cli_options) {
     as_size[state_no] = sh.size;
     for (int i = 1; i <= sh.size; i++) {
       int symbol;
-      if (table_opt == OPTIMIZE_TIME) {
+      if (cli_options->table_opt == OPTIMIZE_TIME) {
         symbol = original[sh.map[i].symbol];
       } else {
         symbol = sh.map[i].symbol;
@@ -449,7 +449,7 @@ void print_error_maps(struct CLIOptions* cli_options) {
     as_size[state_no] += red.size;
     for (int i = 1; i <= red.size; i++) {
       int symbol;
-      if (table_opt == OPTIMIZE_TIME) {
+      if (cli_options->table_opt == OPTIMIZE_TIME) {
         symbol = original[red.map[i].symbol];
       } else {
         symbol = red.map[i].symbol;
@@ -495,9 +495,9 @@ void print_error_maps(struct CLIOptions* cli_options) {
   }
   num_bytes = 2 * num_states;
   PRNT2(msg_line, "    Storage required for ACTION_SYMBOLS_BASE map: %ld Bytes", num_bytes);
-  if (table_opt == OPTIMIZE_TIME && last_terminal <= (cli_options->java_bit ? 127 : 255)) {
+  if (cli_options->table_opt == OPTIMIZE_TIME && last_terminal <= (cli_options->java_bit ? 127 : 255)) {
     num_bytes = offset - 1;
-  } else if (table_opt != OPTIMIZE_TIME && num_terminals <= (cli_options->java_bit ? 127 : 255)) {
+  } else if (cli_options->table_opt != OPTIMIZE_TIME && num_terminals <= (cli_options->java_bit ? 127 : 255)) {
     num_bytes = offset - 1;
   } else {
     num_bytes = 2 * (offset - 1);
@@ -517,7 +517,7 @@ void print_error_maps(struct CLIOptions* cli_options) {
   ffree(naction_symbols);
   /* Remap non-terminals */
   for (int i = 1; i <= gotodom_size; i++) {
-    if (table_opt == OPTIMIZE_SPACE) {
+    if (cli_options->table_opt == OPTIMIZE_SPACE) {
       gd_range[i] = symbol_map[gd_range[i]] - num_terminals;
     } else {
       gd_range[i] = symbol_map[gd_range[i]];
@@ -551,7 +551,7 @@ void print_error_maps(struct CLIOptions* cli_options) {
   /* numberings. If time tables are requested, the terminals and non-  */
   /* terminals are mixed together.                                     */
   temp = Allocate_long_array(num_symbols + 1);
-  if (table_opt == OPTIMIZE_SPACE) {
+  if (cli_options->table_opt == OPTIMIZE_SPACE) {
     for ALL_TERMINALS3(symbol) {
       temp[symbol_map[symbol]] = symno[symbol].name_index;
     }
@@ -636,7 +636,7 @@ void print_error_maps(struct CLIOptions* cli_options) {
     }
     for (int i = 1; i <= num_scopes; i++) {
       scope[i].look_ahead = symbol_map[scope[i].look_ahead];
-      if (table_opt == OPTIMIZE_SPACE) {
+      if (cli_options->table_opt == OPTIMIZE_SPACE) {
         scope[i].lhs_symbol = symbol_map[scope[i].lhs_symbol] - num_terminals;
       } else {
         scope[i].lhs_symbol = symbol_map[scope[i].lhs_symbol];
@@ -1090,7 +1090,7 @@ void common(const bool byte_check_bit, struct CLIOptions* cli_options) {
     fwrite(output_buffer, sizeof(char), output_ptr - &output_buffer[0], sysdcl);
   }
 
-  // print symbols
+  // Print symbols.
   {
     char line[SYMBOL_SIZE + /* max length of a token symbol  */
               2 * MAX_PARM_SIZE + /* max length of prefix + suffix */
@@ -1126,7 +1126,7 @@ void common(const bool byte_check_bit, struct CLIOptions* cli_options) {
     fprintf(syssym, "%s%s", line, cli_options->java_bit ? ";\n}\n" : "\n     };\n");
   }
 
-  // print definitions
+  // Print definitions.
   {
     if (cli_options->java_bit) {
       fprintf(sysdef, "interface %s\n{\n    public final static int\n\n", def_tag);
@@ -1152,8 +1152,8 @@ void common(const bool byte_check_bit, struct CLIOptions* cli_options) {
                 "      NUM_STATES        = %ld,\n\n",
 
                 error_image,
-                maximum_distance,
-                minimum_distance,
+                cli_options->maximum_distance,
+                cli_options->minimum_distance,
                 max_name_length,
                 max_name_length,
                 num_states);
@@ -1176,13 +1176,13 @@ void common(const bool byte_check_bit, struct CLIOptions* cli_options) {
               "      ACCEPT_ACTION     = %ld,\n"
               "      ERROR_ACTION      = %ld;\n"
               "};\n\n",
-              table_opt == OPTIMIZE_SPACE ? num_terminals : num_symbols,
+              cli_options->table_opt == OPTIMIZE_SPACE ? num_terminals : num_symbols,
               num_scopes - 1,
               num_scopes,
-              cli_options->read_reduce_bit && lalr_level > 1
+              cli_options->read_reduce_bit && cli_options->lalr_level > 1
                 ? error_act + num_rules
                 : error_act,
-              lalr_level,
+              cli_options->lalr_level,
               num_rules,
               num_terminals,
               num_non_terminals,
@@ -1213,17 +1213,17 @@ void common(const bool byte_check_bit, struct CLIOptions* cli_options) {
               "      ACCEPT_ACTION     = %ld,\n"
               "      ERROR_ACTION      = %ld\n"
               "     };\n\n",
-              table_opt == OPTIMIZE_SPACE ? num_terminals : num_symbols,
-              maximum_distance + lalr_level - 1,
-              maximum_distance + lalr_level,
-              stack_size - 1,
-              stack_size,
+              cli_options->table_opt == OPTIMIZE_SPACE ? num_terminals : num_symbols,
+              cli_options->maximum_distance + cli_options->lalr_level - 1,
+              cli_options->maximum_distance + cli_options->lalr_level,
+              cli_options->stack_size - 1,
+              cli_options->stack_size,
               num_scopes - 1,
               num_scopes,
-              cli_options->read_reduce_bit && lalr_level > 1
+              cli_options->read_reduce_bit && cli_options->lalr_level > 1
                 ? error_act + num_rules
                 : error_act,
-              lalr_level,
+              cli_options->lalr_level,
               num_rules,
               num_terminals,
               num_non_terminals,
@@ -1236,7 +1236,7 @@ void common(const bool byte_check_bit, struct CLIOptions* cli_options) {
     }
   }
 
-  // print externs
+  // Print externs.
   {
     if (cli_options->c_bit || cli_options->cpp_bit) {
       fprintf(sysprs,
@@ -1247,7 +1247,7 @@ void common(const bool byte_check_bit, struct CLIOptions* cli_options) {
               num_scopes > 0 ? "#define" : "#undef ",
               cli_options->deferred_bit ? "#define" : "#undef ",
               error_maps_bit ? "#define" : "#undef ",
-              table_opt == OPTIMIZE_SPACE ? "#define" : "#undef ");
+              cli_options->table_opt == OPTIMIZE_SPACE ? "#define" : "#undef ");
     }
     if (cli_options->c_bit) {
       fprintf(sysprs,
@@ -1255,7 +1255,7 @@ void common(const bool byte_check_bit, struct CLIOptions* cli_options) {
               "#define asi(state)            asb[original_state(state)]\n"
               "#define nasi(state)           nasb[original_state(state)]\n"
               "#define in_symbol(state)      in_symb[original_state(state)]\n\n",
-              table_opt == OPTIMIZE_TIME ? "check" : "base_check");
+              cli_options->table_opt == OPTIMIZE_TIME ? "check" : "base_check");
     } else if (cli_options->cpp_bit) {
       fprintf(sysprs,
               "class LexStream;\n\n"
@@ -1263,7 +1263,7 @@ void common(const bool byte_check_bit, struct CLIOptions* cli_options) {
               "{\n"
               "public:\n", prs_tag);
       if (error_maps_bit || cli_options->debug_bit) {
-        fprintf(sysprs, "    static int original_state(int state) { return -%s[state]; }\n", table_opt == OPTIMIZE_TIME ? "check" : "base_check");
+        fprintf(sysprs, "    static int original_state(int state) { return -%s[state]; }\n", cli_options->table_opt == OPTIMIZE_TIME ? "check" : "base_check");
       }
       if (error_maps_bit) {
         fprintf(sysprs,
@@ -1281,7 +1281,7 @@ void common(const bool byte_check_bit, struct CLIOptions* cli_options) {
     } else if (cli_options->java_bit) {
       fprintf(sysprs, "abstract class %s extends %s implements %s\n{\n", prs_tag, dcl_tag, def_tag);
       if (error_maps_bit || cli_options->debug_bit) {
-        fprintf(sysprs, "    public final static int original_state(int state) { return -%s(state); }\n", table_opt == OPTIMIZE_TIME ? "check" : "base_check");
+        fprintf(sysprs, "    public final static int original_state(int state) { return -%s(state); }\n", cli_options->table_opt == OPTIMIZE_TIME ? "check" : "base_check");
         if (error_maps_bit) {
           fprintf(sysprs, "    public final static int asi(int state) { return asb[original_state(state)]; }\n");
           fprintf(sysprs, "    static int nasi(int state) { return nasb[original_state(state)]; }\n");
@@ -1293,7 +1293,7 @@ void common(const bool byte_check_bit, struct CLIOptions* cli_options) {
     }
     if (cli_options->c_bit || cli_options->cpp_bit) {
       fprintf(sysprs, "%s const unsigned char  rhs[];\n", cli_options->c_bit ? "extern" : "    static");
-      if (check_size > 0 || table_opt == OPTIMIZE_TIME) {
+      if (check_size > 0 || cli_options->table_opt == OPTIMIZE_TIME) {
         const bool small = byte_check_bit && !error_maps_bit;
         fprintf(sysprs, "%s const %s check_table[];\n"
                 "%s const %s *%s;\n",
@@ -1301,17 +1301,17 @@ void common(const bool byte_check_bit, struct CLIOptions* cli_options) {
                 small ? "unsigned char " : "  signed short",
                 cli_options->c_bit ? "extern" : "    static",
                 small ? "unsigned char " : "  signed short",
-                table_opt == OPTIMIZE_TIME ? "check" : "base_check");
+                cli_options->table_opt == OPTIMIZE_TIME ? "check" : "base_check");
       }
       fprintf(sysprs, "%s const unsigned short lhs[];\n"
               "%s const unsigned short *%s;\n",
               cli_options->c_bit ? "extern" : "    static",
               cli_options->c_bit ? "extern" : "    static",
-              table_opt == OPTIMIZE_TIME ? "action" : "base_action");
+              cli_options->table_opt == OPTIMIZE_TIME ? "action" : "base_action");
       if (cli_options->goto_default_bit) {
         fprintf(sysprs, "%s const unsigned short default_goto[];\n", cli_options->c_bit ? "extern" : "    static");
       }
-      if (table_opt == OPTIMIZE_SPACE) {
+      if (cli_options->table_opt == OPTIMIZE_SPACE) {
         fprintf(sysprs, "%s const unsigned %s term_check[];\n", cli_options->c_bit ? "extern" : "    static", num_terminals <= (cli_options->java_bit ? 127 : 255) ? "char " : "short");
         fprintf(sysprs, "%s const unsigned short term_action[];\n", cli_options->c_bit ? "extern" : "    static");
         if (cli_options->shift_default_bit) {
@@ -1339,7 +1339,7 @@ void common(const bool byte_check_bit, struct CLIOptions* cli_options) {
                 cli_options->c_bit ? "extern" : "    static",
                 cli_options->c_bit ? "extern" : "    static",
                 cli_options->c_bit ? "extern" : "    static");
-        if (table_opt == OPTIMIZE_SPACE) {
+        if (cli_options->table_opt == OPTIMIZE_SPACE) {
           fprintf(sysprs,
                   "%s const unsigned %s terminal_index[];\n"
                   "%s const unsigned %s non_terminal_index[];\n",
@@ -1386,7 +1386,7 @@ void common(const bool byte_check_bit, struct CLIOptions* cli_options) {
       }
       fprintf(sysprs, "\n");
     }
-    if (table_opt == OPTIMIZE_SPACE) {
+    if (cli_options->table_opt == OPTIMIZE_SPACE) {
       if (cli_options->goto_default_bit) {
         // non_terminal_space_action
         {
@@ -1432,7 +1432,7 @@ void common(const bool byte_check_bit, struct CLIOptions* cli_options) {
           }
         }
       }
-      if (lalr_level > 1) {
+      if (cli_options->lalr_level > 1) {
         if (cli_options->shift_default_bit) {
           // terminal_shift_default_space_lalr_k
           {
@@ -1755,7 +1755,7 @@ void common(const bool byte_check_bit, struct CLIOptions* cli_options) {
           }
         }
       }
-      if (lalr_level > 1) {
+      if (cli_options->lalr_level > 1) {
         // terminal_time_lalr_k
         {
           if (cli_options->c_bit) {
@@ -1857,7 +1857,7 @@ void common(const bool byte_check_bit, struct CLIOptions* cli_options) {
     }
   }
 
-  // exit parser files
+  // Exit parser files.
   {
     exit_file(&sysdcl, dcl_tag, cli_options);
     exit_file(&syssym, sym_tag, cli_options);
@@ -1896,10 +1896,10 @@ void process_error_maps(struct CLIOptions* cli_options) {
   int non_terminal_ubound;
   long num_bytes;
   char tok[SYMBOL_SIZE + 1];
-  terminal_ubound = table_opt == OPTIMIZE_TIME
+  terminal_ubound = cli_options->table_opt == OPTIMIZE_TIME
                       ? num_symbols
                       : num_terminals;
-  non_terminal_ubound = table_opt == OPTIMIZE_TIME
+  non_terminal_ubound = cli_options->table_opt == OPTIMIZE_TIME
                           ? num_symbols
                           : num_non_terminals;
   symbol_root = Allocate_int_array(num_symbols + 1);
@@ -1926,7 +1926,7 @@ void process_error_maps(struct CLIOptions* cli_options) {
   }
   for ALL_NON_TERMINALS3(lhs_symbol) {
     int symbol;
-    if (table_opt == OPTIMIZE_TIME) {
+    if (cli_options->table_opt == OPTIMIZE_TIME) {
       symbol = symbol_map[lhs_symbol];
     } else {
       symbol = symbol_map[lhs_symbol] - num_terminals;
@@ -1978,7 +1978,7 @@ void process_error_maps(struct CLIOptions* cli_options) {
     BUFFER_CHECK(systab);
   }
   /* Compute and list amount of space required for the Follow map. */
-  if (table_opt == OPTIMIZE_TIME) {
+  if (cli_options->table_opt == OPTIMIZE_TIME) {
     num_bytes = 2 * (num_symbols + offset);
     if (cli_options->byte_bit && last_non_terminal <= 255) {
       num_bytes = num_bytes - offset + 1;
@@ -2031,7 +2031,7 @@ void process_error_maps(struct CLIOptions* cli_options) {
   /* may appear in each state. Then, we invoke PARTSET to apply the   */
   /* Partition Heuristic and print it.                                */
   as_size = Allocate_long_array(num_states + 1);
-  if (table_opt == OPTIMIZE_TIME) {
+  if (cli_options->table_opt == OPTIMIZE_TIME) {
     original = Allocate_int_array(num_symbols + 1);
     /* In a compressed TIME table, the terminal and non-terminal */
     /* symbols are mixed together when they are remapped.        */
@@ -2055,7 +2055,7 @@ void process_error_maps(struct CLIOptions* cli_options) {
     as_size[state_no] = sh.size;
     for (state_no = 1; state_no <= sh.size; state_no++) {
       int symbol;
-      if (table_opt == OPTIMIZE_TIME) {
+      if (cli_options->table_opt == OPTIMIZE_TIME) {
         symbol = original[sh.map[state_no].symbol];
       } else {
         symbol = sh.map[state_no].symbol;
@@ -2066,7 +2066,7 @@ void process_error_maps(struct CLIOptions* cli_options) {
     as_size[state_no] += red.size;
     for (state_no = 1; state_no <= red.size; state_no++) {
       int symbol;
-      if (table_opt == OPTIMIZE_TIME) {
+      if (cli_options->table_opt == OPTIMIZE_TIME) {
         symbol = original[red.map[state_no].symbol];
       } else {
         symbol = red.map[state_no].symbol;
@@ -2117,7 +2117,7 @@ void process_error_maps(struct CLIOptions* cli_options) {
     if (offset <= 255) {
       num_bytes -= num_states + 1;
     }
-    if ((table_opt == OPTIMIZE_TIME && last_terminal <= 255) || (table_opt != OPTIMIZE_TIME && num_terminals <= 255)) {
+    if ((cli_options->table_opt == OPTIMIZE_TIME && last_terminal <= 255) || (cli_options->table_opt != OPTIMIZE_TIME && num_terminals <= 255)) {
       num_bytes -= offset - 1;
     }
   }
@@ -2137,7 +2137,7 @@ void process_error_maps(struct CLIOptions* cli_options) {
   ffree(naction_symbols);
   for (int state_no = 1; state_no <= gotodom_size; state_no++) {
     /* Remap non-terminals */
-    if (table_opt == OPTIMIZE_TIME) {
+    if (cli_options->table_opt == OPTIMIZE_TIME) {
       gd_range[state_no] = symbol_map[gd_range[state_no]];
     } else {
       gd_range[state_no] = symbol_map[gd_range[state_no]] - num_terminals;
@@ -2184,8 +2184,8 @@ void process_error_maps(struct CLIOptions* cli_options) {
     if (offset <= 255) {
       num_bytes -= num_states + 1;
     }
-    if ((table_opt == OPTIMIZE_TIME && last_non_terminal <= 255) ||
-        (table_opt != OPTIMIZE_TIME && num_non_terminals <= 255)) {
+    if ((cli_options->table_opt == OPTIMIZE_TIME && last_non_terminal <= 255) ||
+        (cli_options->table_opt != OPTIMIZE_TIME && num_non_terminals <= 255)) {
       num_bytes -= offset - 1;
     }
   }
@@ -2264,7 +2264,7 @@ void process_error_maps(struct CLIOptions* cli_options) {
   /* requirements for TRANSITION_STATES map.  The base vector has      */
   /* NUM_SYMBOLS + 1 elements, and the range elements vector contains  */
   /* OFFSET - 1 elements.                                              */
-  if (table_opt == OPTIMIZE_TIME) {
+  if (cli_options->table_opt == OPTIMIZE_TIME) {
     num_bytes = 2 * (num_symbols + offset);
     PRNT2(msg_line, "    Storage required for TRANSITION_STATES map: %ld Bytes", num_bytes);
   } else {
@@ -2321,7 +2321,7 @@ void process_error_maps(struct CLIOptions* cli_options) {
   field(num_scopes, 4);
   field(scope_rhs_size, 4);
   field(scope_state_size, 4);
-  if (table_opt == OPTIMIZE_SPACE) {
+  if (cli_options->table_opt == OPTIMIZE_SPACE) {
     field(num_error_rules, 4);
   }
   *output_ptr++ = '\n';
@@ -2366,7 +2366,7 @@ void process_error_maps(struct CLIOptions* cli_options) {
   /* numberings. If time tables are requested, the terminals and non-  */
   /* terminals are mixed together.                                     */
   temp = Allocate_int_array(num_symbols + 1);
-  if (table_opt == OPTIMIZE_TIME) {
+  if (cli_options->table_opt == OPTIMIZE_TIME) {
     for ALL_SYMBOLS3(symbol) {
       temp[symbol_map[symbol]] = symno[symbol].name_index;
     }
@@ -2459,7 +2459,7 @@ void process_error_maps(struct CLIOptions* cli_options) {
     }
     for (int i = 1; i <= num_scopes; i++) {
       scope[i].look_ahead = symbol_map[scope[i].look_ahead];
-      if (table_opt == OPTIMIZE_TIME) {
+      if (cli_options->table_opt == OPTIMIZE_TIME) {
         scope[i].lhs_symbol = symbol_map[scope[i].lhs_symbol];
       } else {
         scope[i].lhs_symbol = symbol_map[scope[i].lhs_symbol] - num_terminals;
@@ -2567,7 +2567,7 @@ void process_error_maps(struct CLIOptions* cli_options) {
       *output_ptr++ = '\n';
       BUFFER_CHECK(systab);
     }
-    if (table_opt == OPTIMIZE_TIME) {
+    if (cli_options->table_opt == OPTIMIZE_TIME) {
       num_bytes = 5 * num_scopes + scope_rhs_size + scope_state_size;
       if (num_symbols > 255) {
         num_bytes += 2 * num_scopes + scope_rhs_size;
@@ -2625,7 +2625,7 @@ void print_space_parser(struct CLIOptions* cli_options) {
     output_ptr = &output_buffer[0];
     /* Prepare header card with proper information, and write it out. */
     offset = error_act;
-    if (lalr_level > 1) {
+    if (cli_options->lalr_level > 1) {
       if (cli_options->read_reduce_bit) {
         offset += num_rules;
       }
@@ -3156,7 +3156,7 @@ void print_time_parser(struct CLIOptions* cli_options) {
     action = previous;
     long offset = error_act;
     int la_state_offset;
-    if (lalr_level > 1) {
+    if (cli_options->lalr_level > 1) {
       if (cli_options->read_reduce_bit) {
         offset += num_rules;
       }
@@ -3507,7 +3507,7 @@ void init_parser_files(struct OutputFiles output_files, struct CLIOptions* cli_o
 }
 
 /// PT_STATS prints all the states of the parser.
-void ptstats(void) {
+void ptstats(struct CLIOptions* cli_options) {
   int max_size;
   int symbol;
   int number;
@@ -3590,7 +3590,7 @@ void ptstats(void) {
         }
       }
     }
-    if (default_opt > 0 && red.map[0].rule_number != OMEGA) {
+    if (cli_options->default_opt > 0 && red.map[0].rule_number != OMEGA) {
       fprintf(syslis, "\n\nDefault reduction to rule  %d", red.map[0].rule_number);
     }
   }
@@ -3652,7 +3652,7 @@ void ptstats(void) {
         number = red.map[ii].rule_number;
         fprintf(syslis, "\n%-*s    Reduce %d", max_size, line, number);
       }
-      if (default_opt > 0 && red.map[0].rule_number != OMEGA) {
+      if (cli_options->default_opt > 0 && red.map[0].rule_number != OMEGA) {
         fprintf(syslis, "\n\nDefault reduction to rule  %d", red.map[0].rule_number);
       }
     }

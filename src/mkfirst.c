@@ -992,7 +992,7 @@ void mkbasic(struct CLIOptions* cli_options) {
       item_table[item_no].rule_number = rule_no;
       item_table[item_no].symbol = symbol;
       item_table[item_no].dot = j;
-      if (lalr_level > 1 ||
+      if (cli_options->lalr_level > 1 ||
           IS_A_NON_TERMINAL(symbol) ||
           symbol == error_image) {
         if (i == k) {
@@ -1097,15 +1097,12 @@ void mkbasic(struct CLIOptions* cli_options) {
   /* themselves. In order to compute RMPSELF, the map PRODUCES   */
   /* must be constructed which identifies for each nonterminal   */
   /* the set of nonterminals that it can right-most produce.     */
-  if (lalr_level > 1) {
-    produces = (SET_PTR)
-        calloc(num_non_terminals,
-               non_term_set_size * sizeof(BOOLEAN_CELL));
+  if (cli_options->lalr_level > 1) {
+    produces = (SET_PTR) calloc(num_non_terminals, non_term_set_size * sizeof(BOOLEAN_CELL));
     if (produces == NULL)
       nospace(__FILE__, __LINE__);
     produces -= (num_terminals + 1) * non_term_set_size;
-    direct_produces = (struct node **)
-        calloc(num_non_terminals, sizeof(struct node *));
+    direct_produces = (struct node **) calloc(num_non_terminals, sizeof(struct node *));
     if (direct_produces == NULL)
       nospace(__FILE__, __LINE__);
     direct_produces -= num_terminals + 1;

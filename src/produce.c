@@ -590,7 +590,7 @@ void produce(struct CLIOptions* cli_options) {
   gd_index[num_states + 1] = n + 1;
   /* Remove names assigned to nonterminals that are never used as   */
   /* error candidates.                                              */
-  if (names_opt == OPTIMIZE_PHRASES) {
+  if (cli_options->names_opt == OPTIMIZE_PHRASES) {
     /* In addition to nonterminals that are never used as candidates,*/
     /* if a nullable nonterminal was assigned a name by default      */
     /* (nonterminals that were "named" by default are identified     */

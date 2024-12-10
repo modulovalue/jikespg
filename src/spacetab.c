@@ -240,7 +240,7 @@ void overlap_nt_rows(struct CLIOptions* cli_options) {
 /* addition,  there must not exist a terminal symbol "t" such that:  */
 /* REDUCE(S1, t) and REDUCE(S2, t) are defined, and                  */
 /* REDUCE(S1, t) ^= REDUCE(S2, t)                                    */
-void merge_similar_t_rows(void) {
+void merge_similar_t_rows(struct CLIOptions* cli_options) {
   struct reduce_header_type red;
   unsigned long hash_address;
   struct node *q;
@@ -295,7 +295,7 @@ void merge_similar_t_rows(void) {
     if (state_no > num_states) {
       hash_address = lastats[state_no].shift_number;
     } else {
-      if (default_opt == 5) {
+      if (cli_options->default_opt == 5) {
         const struct shift_header_type sh = shift[statset[state_no].shift_number];
         for (int j = 1; j <= sh.size && !shift_on_error_symbol[state_no]; j++)
           shift_on_error_symbol[state_no] = sh.map[j].symbol == error_image;
@@ -1204,7 +1204,7 @@ void print_tables(struct CLIOptions* cli_options) {
   field(accept_act, 5);
   field(error_act, 5);
   field(la_state_offset, 5);
-  field(lalr_level, 5);
+  field(cli_options->lalr_level, 5);
   *output_ptr++ = '\n';
   /* We write the terminal symbols map.                    */
   for ALL_TERMINALS3(symbol) {
@@ -1644,7 +1644,7 @@ void cmprspa(const struct OutputFiles output_files, struct CLIOptions* cli_optio
   }
   remap_non_terminals(cli_options);
   overlap_nt_rows(cli_options);
-  merge_similar_t_rows();
+  merge_similar_t_rows(cli_options);
   overlay_sim_t_rows(cli_options);
   overlap_t_rows(cli_options);
   if (cli_options->c_bit || cli_options->cpp_bit || cli_options->java_bit) {

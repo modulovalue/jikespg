@@ -511,7 +511,6 @@ void remove_single_productions(bool slr_bit) {
   int rule_head;
   int sp_rule_count;
   int sp_action_count;
-  int rule_no;
   int symbol;
   int lhs_symbol;
   int action;
@@ -606,7 +605,7 @@ void remove_single_productions(bool slr_bit) {
   }
   if (rule_root != NIL) {
     /* make rule_list non-circular */
-    rule_no = rule_root;
+    int rule_no = rule_root;
     rule_root = rule_list[rule_no];
     rule_list[rule_no] = NIL;
   }
@@ -620,7 +619,7 @@ void remove_single_productions(bool slr_bit) {
     sp_rules[i] = NIL;
   }
   top = 0;
-  for (rule_no = rule_root; rule_no != NIL; rule_no = rule_list[rule_no]) {
+  for (int rule_no = rule_root; rule_no != NIL; rule_no = rule_list[rule_no]) {
     top++;
     int i = rhs_sym[rules[rule_no].rhs];
     sp_rules[i] = OMEGA;
@@ -707,7 +706,7 @@ void remove_single_productions(bool slr_bit) {
       /* and for each rule that was introduced through closure  */
       /* in the state (there is an action on both the left and */
       /* right-hand side)...                                    */
-      for (rule_no = rule_root; rule_no != NIL; rule_no = rule_list[rule_no]) {
+      for (int rule_no = rule_root; rule_no != NIL; rule_no = rule_list[rule_no]) {
         symbol = rhs_sym[rules[rule_no].rhs];
         if (symbol_list[symbol] != OMEGA) {
           lhs_symbol = rules[rule_no].lhs;
@@ -765,6 +764,7 @@ void remove_single_productions(bool slr_bit) {
           /* processed as the case of read-reduce above. If     */
           /* not, we invoke compute_update_actions to update    */
           /* the relevant actions.                              */
+          int rule_no;
           if (action > num_states) {
             /* lookahead shift */
             rule_no = OMEGA;

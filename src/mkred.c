@@ -66,7 +66,7 @@ static void trace_lalr_path(const int state_no, const int goto_indx, struct CLIO
   const struct goto_header_type go_to = statset[state_no].go_to;
   const int state = go_to.map[goto_indx].action;
   if (state > 0) {
-    if (la_base[state] != OMEGA && lalr_level == 1 && !cli_options->single_productions_bit) {
+    if (la_base[state] != OMEGA && cli_options->lalr_level == 1 && !cli_options->single_productions_bit) {
       go_to.map[goto_indx].laptr = la_base[state];
       return;
     }
@@ -125,7 +125,7 @@ static void compute_read(struct CLIOptions* cli_options) {
   struct node *q;
   struct node *s;
   struct node *v;
-  if (lalr_level > 1 ||  cli_options->single_productions_bit) {
+  if (cli_options->lalr_level > 1 ||  cli_options->single_productions_bit) {
     read_set = (SET_PTR)
         calloc(num_states + 1,
                sizeof(BOOLEAN_CELL) * term_set_size);
@@ -157,7 +157,7 @@ static void compute_read(struct CLIOptions* cli_options) {
     la_base[state_no] = OMEGA;
   }
   for ALL_STATES3(state_no) {
-    for (const struct node *p = lalr_level <= 1 && single_complete_item[state_no]
+    for (const struct node *p = cli_options->lalr_level <= 1 && single_complete_item[state_no]
                                   ? NULL
                                   : statset[state_no].complete_items;
          p != NULL; p = p->next) {
@@ -189,7 +189,7 @@ static void compute_read(struct CLIOptions* cli_options) {
     /* rule that either ends up in a reduction, a shift-reduce, or another */
     /* goto-reduce. It will therefore be taken care of automatically by    */
     /* transitive closure.                                                 */
-    if (lalr_level > 1 || cli_options->single_productions_bit) {
+    if (cli_options->lalr_level > 1 || cli_options->single_productions_bit) {
       const struct shift_header_type sh = shift[statset[state_no].shift_number];
       for (int j = 1; j <= sh.size; j++) {
         if (sh.map[j].action < 0) {
@@ -211,7 +211,7 @@ static void compute_read(struct CLIOptions* cli_options) {
       }
       /* We also need to compute the set of terminal symbols that can be */
       /* read in a state entered via a terminal transition.              */
-      if (lalr_level > 1 && state_no != 1) {
+      if (cli_options->lalr_level > 1 && state_no != 1) {
         q = statset[state_no].kernel_items;
         item_no = q->value - 1;
         if (IS_A_TERMINAL(item_table[item_no].symbol)) {
@@ -271,7 +271,7 @@ static void compute_read(struct CLIOptions* cli_options) {
           } else {
             la_index[la_ptr] = INFINITY;
           }
-          if (lalr_level > 1 || cli_options->single_productions_bit) {
+          if (cli_options->lalr_level > 1 || cli_options->single_productions_bit) {
             if (state > 0) {
               ASSIGN_SET(read_set, state, la_set, la_ptr);
             }
@@ -447,7 +447,7 @@ void mkrdcts(struct CLIOptions* cli_options) {
   /* INIT_LALRK_PROCESS sets up the necessary environment for the       */
   /* computation of multiple lookahead.                                 */
   reset_temporary_space();
-  init_lalrk_process();
+  init_lalrk_process(cli_options);
   /* IN_STAT is used to construct a reverse transition map. See         */
   /* BUILD_IN_STAT for more detail.                                     */
   /*                                                                    */
@@ -509,7 +509,7 @@ void mkrdcts(struct CLIOptions* cli_options) {
   build_in_stat();
   for ALL_STATES3(state_no) {
     no_shift_on_error_sym[state_no] = true;
-    if (default_opt == 5) {
+    if (cli_options->default_opt == 5) {
       int n = statset[state_no].shift_number;
       const struct shift_header_type sh = shift[n];
       for (int i = 1; i <= sh.size; ++i) {
@@ -528,9 +528,9 @@ void mkrdcts(struct CLIOptions* cli_options) {
     single_complete_item[state_no] =
         !cli_options->read_reduce_bit &&
         !cli_options->single_productions_bit &&
-        table_opt != OPTIMIZE_TIME &&
-        table_opt != OPTIMIZE_SPACE &&
-        default_opt > 0 &&
+        cli_options->table_opt != OPTIMIZE_TIME &&
+        cli_options->table_opt != OPTIMIZE_SPACE &&
+        cli_options->default_opt > 0 &&
         item_ptr->next == NULL &&
         item_table[item_no].symbol == empty;
     /* If a state has a complete item, and more than one kernel item      */
@@ -700,22 +700,22 @@ void mkrdcts(struct CLIOptions* cli_options) {
       /* if the level of the default option requested permits  */
       /* default actions, and compute how many reduce actions  */
       /* can be eliminated as a result.                        */
-      if (default_opt == 0) {
+      if (cli_options->default_opt == 0) {
         default_rule = OMEGA;
-      } else if (table_opt != OPTIMIZE_TIME &&
-                 table_opt != OPTIMIZE_SPACE &&
+      } else if (cli_options->table_opt != OPTIMIZE_TIME &&
+                 cli_options->table_opt != OPTIMIZE_SPACE &&
                  !cli_options->single_productions_bit) {
         q = statset[state_no].complete_items;
         if (q->next == NULL) {
           const int item_no = q->value;
           const int rule_no = item_table[item_no].rule_number;
-          if (default_opt > 2 || /* No empty rule defined */
-              (default_opt == 2 && RHS_SIZE(rule_no) != 0)) {
+          if (cli_options->default_opt > 2 || /* No empty rule defined */
+              (cli_options->default_opt == 2 && RHS_SIZE(rule_no) != 0)) {
             reduce_size -= n;
           } else {
             default_rule = OMEGA;
           }
-        } else if (default_opt > 3)
+        } else if (cli_options->default_opt > 3)
           reduce_size -= n;
       }
       num_reductions += reduce_size;
@@ -732,8 +732,8 @@ void mkrdcts(struct CLIOptions* cli_options) {
       if (action[symbol] != NULL) {
         const int rule_no = item_table[action[symbol]->value].rule_number;
         if (rule_no != default_rule ||
-            table_opt == OPTIMIZE_SPACE ||
-            table_opt == OPTIMIZE_TIME ||
+            cli_options->table_opt == OPTIMIZE_SPACE ||
+            cli_options->table_opt == OPTIMIZE_TIME ||
             cli_options->single_productions_bit) {
           red.map[reduce_size].symbol = symbol;
           red.map[reduce_size].rule_number = rule_no;
@@ -760,9 +760,9 @@ void mkrdcts(struct CLIOptions* cli_options) {
   /* automaton. Clear all temporary space that was used in that   */
   /* process and calculate the maximum lookahead level that was   */
   /* needed.                                                      */
-  exit_lalrk_process();
+  exit_lalrk_process(cli_options);
   free_conflict_space();
-  lalr_level = highest_level;
+  cli_options->lalr_level = highest_level;
   /* If the removal of single productions is requested, do that.  */
   if (cli_options->single_productions_bit) {
     remove_single_productions(cli_options->slr_bit);
@@ -771,7 +771,7 @@ void mkrdcts(struct CLIOptions* cli_options) {
   /* of single productions was requested, the automaton was       */
   /* transformed with the addition of new states and new          */
   /* transitions. In such a case, we reconstruct the IN_STAT map. */
-  if (lalr_level > 1 || cli_options->single_productions_bit) {
+  if (cli_options->lalr_level > 1 || cli_options->single_productions_bit) {
     for ALL_STATES3(state_no) {
       /* First, clear out the previous map */
       if (in_stat[state_no] != NULL) {

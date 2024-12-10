@@ -274,9 +274,9 @@ void process_tables(char *tab_file, const struct OutputFiles output_files, struc
       exit(12);
     }
   }
-  if (table_opt == OPTIMIZE_SPACE) {
+  if (cli_options->table_opt == OPTIMIZE_SPACE) {
     cmprspa(output_files, cli_options);
-  } else if (table_opt == OPTIMIZE_TIME) {
+  } else if (cli_options->table_opt == OPTIMIZE_TIME) {
     cmprtim(output_files, cli_options);
   }
   if (!cli_options->c_bit && !cli_options->cpp_bit && !cli_options->java_bit) {

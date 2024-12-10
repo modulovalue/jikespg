@@ -240,7 +240,7 @@ void options(char *file_prefix, struct CLIOptions* cli_options) {
         cli_options->single_productions_bit = flag;
       } else if (memcmp("SLR", token, token_len) == 0) {
         cli_options->slr_bit = flag;
-        lalr_level = 1;
+        cli_options->lalr_level = 1;
       } else if (memcmp("STATES", token, token_len) == 0) {
         cli_options->states_bit = flag;
       } else if (memcmp("VERBOSE", token, token_len) == 0) {
@@ -274,7 +274,7 @@ void options(char *file_prefix, struct CLIOptions* cli_options) {
         strcpy(blocke, temp);
       } else if (memcmp("DEFAULT", token, token_len) == 0) {
         if (verify_is_digit(temp)) {
-          default_opt = MIN(atoi(temp), 5);
+          cli_options->default_opt = MIN(atoi(temp), 5);
         } else {
           PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
         }
@@ -312,37 +312,37 @@ void options(char *file_prefix, struct CLIOptions* cli_options) {
         }
         if (verify_is_digit(temp)) {
           cli_options->slr_bit = false;
-          lalr_level = atoi(temp);
-          if (lalr_level > MAXIMUM_LA_LEVEL) {
+          cli_options->lalr_level = atoi(temp);
+          if (cli_options->lalr_level > MAXIMUM_LA_LEVEL) {
             PRNTWNG2(msg_line, "\"%s\" exceeds maximum value of %d allowed for %s", temp, MAXIMUM_LA_LEVEL, token);
-            lalr_level = MAXIMUM_LA_LEVEL;
+            cli_options->lalr_level = MAXIMUM_LA_LEVEL;
           }
         } else if (memcmp(translate(temp, token_len), "MAXIMUM", token_len) != 0) {
           PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
         } else if (memcmp("MAXIMUM", translate(temp, token_len), token_len) == 0) {
           cli_options->slr_bit = false;
-          lalr_level = MAXIMUM_LA_LEVEL;
+          cli_options->lalr_level = MAXIMUM_LA_LEVEL;
         }
       } else if (memcmp(token, "MAXDISTANCE", token_len) == 0) {
         if (verify_is_digit(temp)) {
-          maximum_distance = atoi(temp);
+          cli_options->maximum_distance = atoi(temp);
         } else {
           PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
         }
       } else if (memcmp(token, "MINDISTANCE", token_len) == 0) {
         if (verify_is_digit(temp)) {
-          minimum_distance = atoi(temp);
+          cli_options->minimum_distance = atoi(temp);
         } else {
           PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
         }
       } else if (memcmp("NAMES", token, token_len) == 0) {
         register int token_len = strlen(temp);
         if (memcmp("MAXIMUM", translate(temp, token_len), token_len) == 0) {
-          names_opt = MAXIMUM_NAMES;
+          cli_options->names_opt = MAXIMUM_NAMES;
         } else if (memcmp("MINIMUM", translate(temp, token_len), token_len) == 0) {
-          names_opt = MINIMUM_NAMES;
+          cli_options->names_opt = MINIMUM_NAMES;
         } else if (memcmp(translate(temp, token_len), "OPTIMIZED", token_len) == 0) {
-          names_opt = OPTIMIZE_PHRASES;
+          cli_options->names_opt = OPTIMIZE_PHRASES;
         } else {
           PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
         }
@@ -352,7 +352,7 @@ void options(char *file_prefix, struct CLIOptions* cli_options) {
         strcpy(prefix, temp);
       } else if (memcmp(token, "STACKSIZE", token_len) == 0) {
         if (verify_is_digit(temp)) {
-          stack_size = atoi(temp);
+          cli_options->stack_size = atoi(temp);
         } else {
           PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
         }
@@ -364,9 +364,9 @@ void options(char *file_prefix, struct CLIOptions* cli_options) {
           temp[MAX_PARM_SIZE - 1] = '\0';
         }
         if (memcmp("SPACE", translate(temp, token_len), token_len) == 0) {
-          table_opt = OPTIMIZE_SPACE;
+          cli_options->table_opt = OPTIMIZE_SPACE;
         } else if (memcmp(translate(temp, token_len), "TIME", token_len) == 0) {
-          table_opt = OPTIMIZE_TIME;
+          cli_options->table_opt = OPTIMIZE_TIME;
         } else {
           PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
         }
@@ -376,11 +376,11 @@ void options(char *file_prefix, struct CLIOptions* cli_options) {
           temp[MAX_PARM_SIZE - 1] = '\0';
         }
         if (memcmp("CONFLICTS", translate(temp, token_len), token_len) == 0) {
-          trace_opt = TRACE_CONFLICTS;
+          cli_options->trace_opt = TRACE_CONFLICTS;
         } else if (memcmp(translate(temp, token_len), "FULL", token_len) == 0) {
-          trace_opt = TRACE_FULL;
+          cli_options->trace_opt = TRACE_FULL;
         } else if (memcmp(translate(temp, token_len), "NO", token_len) == 0) {
-          trace_opt = NOTRACE;
+          cli_options->trace_opt = NOTRACE;
         } else {
           PRNTERR2(msg_line, "\"%s\" is an invalid value for %s", temp, token);
         }
@@ -497,10 +497,10 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
   } else {
     strcpy(opt_string[++top], "NOCONFLICTS");
   }
-  if (default_opt == 0) {
+  if (cli_options->default_opt == 0) {
     strcpy(opt_string[++top], "NODEFAULT");
   } else {
-    sprintf(opt_string[++top], "DEFAULT=%d", default_opt);
+    sprintf(opt_string[++top], "DEFAULT=%d", cli_options->default_opt);
   }
   if (cli_options->debug_bit) {
     strcpy(opt_string[++top], "DEBUG");
@@ -557,18 +557,18 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
   if (cli_options->slr_bit) {
     // Do nothing.
   } else {
-    sprintf(opt_string[++top], "LALR=%d", lalr_level);
+    sprintf(opt_string[++top], "LALR=%d", cli_options->lalr_level);
   }
   if (cli_options->list_bit) {
     strcpy(opt_string[++top], "LIST");
   } else {
     strcpy(opt_string[++top], "NOLIST");
   }
-  sprintf(opt_string[++top], "MAX-DISTANCE=%d", maximum_distance);
-  sprintf(opt_string[++top], "MIN-DISTANCE=%d", minimum_distance);
-  if (names_opt == MAXIMUM_NAMES) {
+  sprintf(opt_string[++top], "MAX-DISTANCE=%d", cli_options->maximum_distance);
+  sprintf(opt_string[++top], "MIN-DISTANCE=%d", cli_options->minimum_distance);
+  if (cli_options->names_opt == MAXIMUM_NAMES) {
     strcpy(opt_string[++top], "NAMES=MAXIMUM");
-  } else if (names_opt == MINIMUM_NAMES) {
+  } else if (cli_options->names_opt == MINIMUM_NAMES) {
     strcpy(opt_string[++top], "NAMES=MINIMUM");
   } else {
     strcpy(opt_string[++top], "NAMES=OPTIMIZED");
@@ -603,23 +603,23 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
   if (cli_options->slr_bit) {
     strcpy(opt_string[++top], "SLR");
   }
-  sprintf(opt_string[++top], "STACK-SIZE=%d", stack_size);
+  sprintf(opt_string[++top], "STACK-SIZE=%d", cli_options->stack_size);
   if (cli_options->states_bit) {
     strcpy(opt_string[++top], "STATES");
   } else {
     strcpy(opt_string[++top], "NOSTATES");
   }
   sprintf(opt_string[++top], "SUFFIX=%s", suffix);
-  if (table_opt == 0) {
+  if (cli_options->table_opt == 0) {
     strcpy(opt_string[++top], "NOTABLE");
-  } else if (table_opt == OPTIMIZE_SPACE) {
+  } else if (cli_options->table_opt == OPTIMIZE_SPACE) {
     strcpy(opt_string[++top], "TABLE=SPACE");
   } else {
     strcpy(opt_string[++top], "TABLE=TIME");
   }
-  if (trace_opt == NOTRACE) {
+  if (cli_options->trace_opt == NOTRACE) {
     strcpy(opt_string[++top], "NOTRACE");
-  } else if (trace_opt == TRACE_CONFLICTS) {
+  } else if (cli_options->trace_opt == TRACE_CONFLICTS) {
     strcpy(opt_string[++top], "TRACE=CONFLICTS");
   } else {
     strcpy(opt_string[++top], "TRACE=FULL");
@@ -654,8 +654,8 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
   PRNT(output_line);
   PRNT("");
   if (cli_options->warnings_bit) {
-    if (table_opt == OPTIMIZE_SPACE) {
-      if (default_opt < 4) {
+    if (cli_options->table_opt == OPTIMIZE_SPACE) {
+      if (cli_options->default_opt < 4) {
         PRNTWNG("DEFAULT_OPTion requested must be >= 4");
       }
     } else if (cli_options->shift_default_bit) {
@@ -664,11 +664,11 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
   }
   /* Check if there are any conflicts in the options.                  */
   temp[0] = '\0';
-  if (minimum_distance <= 1) {
+  if (cli_options->minimum_distance <= 1) {
     PRNT("MIN_DISTANCE must be > 1");
     exit(12);
   }
-  if (maximum_distance <= minimum_distance + 1) {
+  if (cli_options->maximum_distance <= cli_options->minimum_distance + 1) {
     PRNT("MAX_DISTANCE must be > MIN_DISTANCE + 1");
     exit(12);
   }
@@ -1256,10 +1256,10 @@ struct line_elemt *find_macro(char *name) {
 }
 
 /* PROCESS_ACTION_LINE takes as arguments a line of text from an action      */
-/* block and the rule number with which thwe block is associated.            */
+/* block and the rule number with which the block is associated.             */
 /* It first scans the text for predefined macro names and then for           */
-/* user defined macro names. If one is found, the macro definition is sub-   */
-/* stituted for the name. The modified action text is then printed out in    */
+/* user defined macro names. If one is found, the macro definition is        */
+/* substituted for the name. The modified action text is then printed out in */
 /* the action file.                                                          */
 void process_action_line(FILE *sysout, char *text, const int line_no, const int rule_no, char *grm_file) {
   char temp1[MAX_LINE_SIZE + 1];
@@ -1880,9 +1880,9 @@ void accept_action(char *grm_file, struct CLIOptions *cli_options) {
       }
       for ALL_NON_TERMINALS3(symbol) {
         if (symno[symbol].name_index == OMEGA) {
-          if (names_opt == MAXIMUM_NAMES) {
+          if (cli_options->names_opt == MAXIMUM_NAMES) {
             symno[symbol].name_index = name_map(RETRIEVE_STRING(symbol));
-          } else if (names_opt == OPTIMIZE_PHRASES) {
+          } else if (cli_options->names_opt == OPTIMIZE_PHRASES) {
             symno[symbol].name_index = -name_map(RETRIEVE_STRING(symbol));
           } else {
             symno[symbol].name_index = symno[error_image].name_index;

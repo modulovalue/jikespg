@@ -494,7 +494,7 @@ void mkstats(struct CLIOptions* cli_options) {
   no_shifts_ptr.size = 0; /* For states with no SHIFTs */
   no_shifts_ptr.map = NULL;
   mklr0(cli_options);
-  if (error_maps_bit && (table_opt == OPTIMIZE_TIME || table_opt == OPTIMIZE_SPACE)) {
+  if (error_maps_bit && (cli_options->table_opt == OPTIMIZE_TIME || cli_options->table_opt == OPTIMIZE_SPACE)) {
     produce(cli_options);
   }
   /* Free space trapped by the CLOSURE and CLITEMS maps.                */

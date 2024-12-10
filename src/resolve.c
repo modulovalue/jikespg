@@ -478,7 +478,7 @@ static void print_root_path(const int item_no) {
 /* to a state where the conflict symbol can be read. If a path is      */
 /* found, all items along the path are printed and SUCCESS is returned.*/
 /*  Otherwise, FAILURE is returned.                                    */
-static bool lalr_path_retraced(const int state_no, const int goto_indx, const int conflict_symbol) {
+static bool lalr_path_retraced(const int state_no, const int goto_indx, const int conflict_symbol, struct CLIOptions* cli_options) {
   struct node *q;
   struct node *tail;
   struct goto_header_type go_to = statset[state_no].go_to;
@@ -486,14 +486,11 @@ static bool lalr_path_retraced(const int state_no, const int goto_indx, const in
   bool found = false;
   const int state = go_to.map[goto_indx].action;
   int item;
-  for (const struct node *p = state > 0
-                                ? statset[state].kernel_items
-                                : adequate_item[-state];
-       p != NULL && !found; p = p->next) {
+  for (const struct node *p = state > 0 ? statset[state].kernel_items : adequate_item[-state]; p != NULL && !found; p = p->next) {
     item = p->value - 1;
     if (IS_IN_SET(first, item_table[item].suffix_index, conflict_symbol)) {
       /* Conflict_symbol can be read in state? */
-      if (trace_opt == TRACE_FULL)
+      if (cli_options->trace_opt == TRACE_FULL)
         print_root_path(item);
       found = true;
     } else if (IS_IN_SET(first, item_table[item].suffix_index, empty)) {
@@ -505,7 +502,7 @@ static bool lalr_path_retraced(const int state_no, const int goto_indx, const in
         for (ii = 1; go_to.map[ii].symbol != symbol; ii++) {
         }
         if (!lalr_visited[go_to.map[ii].laptr]) {
-          if (lalr_path_retraced(q->value, ii, conflict_symbol)) {
+          if (lalr_path_retraced(q->value, ii, conflict_symbol, cli_options)) {
             found = true;
             break;
           }
@@ -525,7 +522,7 @@ static bool lalr_path_retraced(const int state_no, const int goto_indx, const in
 /*   In this procedure, we attempt to retrace an LALR conflict path    */
 /* (there may be more than one) of CONFLICT_SYMBOL in the state        */
 /* automaton that led to ITEM_NO in state STATE_NO.                    */
-static void print_relevant_lalr_items(const int state_no, const int item_no, const int conflict_symbol) {
+static void print_relevant_lalr_items(const int state_no, const int item_no, const int conflict_symbol, struct CLIOptions* cli_options) {
   struct node *p;
   struct node *tail;
   const int lhs_symbol = rules[item_table[item_no].rule_number].lhs;
@@ -539,7 +536,7 @@ static void print_relevant_lalr_items(const int state_no, const int item_no, con
     int ii;
     for (ii = 1; go_to.map[ii].symbol != lhs_symbol; ii++) {
     }
-    if (lalr_path_retraced(p->value, ii, conflict_symbol)) {
+    if (lalr_path_retraced(p->value, ii, conflict_symbol, cli_options)) {
       break;
     }
   }
@@ -552,7 +549,7 @@ static void print_relevant_lalr_items(const int state_no, const int item_no, con
 /* The procedure below is invoked to retrace a path that may have      */
 /* introduced the CONFLICT_SYMBOL in the FOLLOW set of the nonterminal */
 /* that produces ITEM_NO.  Note that such a path must exist.           */
-static bool slr_trace(const int lhs_symbol, const int conflict_symbol) {
+static bool slr_trace(const int lhs_symbol, const int conflict_symbol, struct CLIOptions* cli_options) {
   int item;
   if (slr_visited[lhs_symbol]) {
     return false;
@@ -560,14 +557,13 @@ static bool slr_trace(const int lhs_symbol, const int conflict_symbol) {
   slr_visited[lhs_symbol] = true;
   for (item = nt_items[lhs_symbol]; item != NIL; item = item_list[item]) {
     if (IS_IN_SET(first, item_table[item].suffix_index, conflict_symbol)) {
-      if (trace_opt == TRACE_FULL) {
+      if (cli_options->trace_opt == TRACE_FULL) {
         print_root_path(item);
       }
       break;
     }
     if (IS_IN_SET(first, item_table[item].suffix_index, empty)) {
-      if (slr_trace(rules[item_table[item].rule_number].lhs,
-                    conflict_symbol)) {
+      if (slr_trace(rules[item_table[item].rule_number].lhs, conflict_symbol, cli_options)) {
         break;
       }
     }
@@ -582,10 +578,10 @@ static bool slr_trace(const int lhs_symbol, const int conflict_symbol) {
 
 /* This procedure is invoked to print an SLR path of items that leads  */
 /* to the conflict symbol.                                             */
-static void print_relevant_slr_items(const int item_no, const int conflict_symbol) {
+static void print_relevant_slr_items(const int item_no, const int conflict_symbol, struct CLIOptions* cli_options) {
   slr_visited = Allocate_boolean_array(num_non_terminals);
   slr_visited -= num_terminals + 1;
-  if (slr_trace(rules[item_table[item_no].rule_number].lhs, conflict_symbol)) {
+  if (slr_trace(rules[item_table[item_no].rule_number].lhs, conflict_symbol, cli_options)) {
   }
   slr_visited += num_terminals + 1;
   ffree(slr_visited);
@@ -938,7 +934,7 @@ static bool stack_was_seen(struct stack_element **stack_seen, struct stack_eleme
 /* conflicts by doing more look-ahead.  If the conflict resolution     */
 /* is successful, then a new state is created and returned; otherwise, */
 /* the NULL pointer is returned.                                       */
-static struct state_element *state_to_resolve_conflicts(struct sources_element sources, int la_symbol, int level) {
+static struct state_element *state_to_resolve_conflicts(struct sources_element sources, int la_symbol, int level, struct CLIOptions* cli_options) {
   struct sources_element new_sources;
   struct node **action;
   struct node *p;
@@ -1033,7 +1029,7 @@ static struct state_element *state_to_resolve_conflicts(struct sources_element s
         if (action[symbol] == NULL) {
           symbol_list[symbol] = symbol_root;
           symbol_root = symbol;
-        } else if (level == lalr_level) {
+        } else if (level == cli_options->lalr_level) {
           goto clean_up_and_return;
         }
         p = Allocate_node();
@@ -1077,7 +1073,7 @@ static struct state_element *state_to_resolve_conflicts(struct sources_element s
       }
       free_nodes(action[symbol], tail);
       action[symbol] = NULL;
-      state = state_to_resolve_conflicts(new_sources, symbol, level + 1);
+      state = state_to_resolve_conflicts(new_sources, symbol, level + 1, cli_options);
       if (state == NULL) {
         goto clean_up_and_return;
       }
@@ -1212,25 +1208,25 @@ static struct state_element *state_to_resolve_conflicts(struct sources_element s
 Build_reduce_map: {
     struct reduce_header_type red;
     if (default_rule != OMEGA &&
-        table_opt != OPTIMIZE_TIME &&
-        table_opt != OPTIMIZE_SPACE &&
-        default_opt != 0)
+        cli_options->table_opt != OPTIMIZE_TIME &&
+        cli_options->table_opt != OPTIMIZE_SPACE &&
+        cli_options->default_opt != 0)
       num_reduce_actions -= rule_count[default_rule];
     num_reductions += num_reduce_actions;
     red = Allocate_reduce_map(num_reduce_actions);
     state->reduce = red;
     for (int symbol = reduce_root, i_inner = 1; symbol != NIL; symbol = action_list[symbol]) {
-      if (default_opt == 0 ||
+      if (cli_options->default_opt == 0 ||
           action[symbol]->value != default_rule ||
-          table_opt == OPTIMIZE_TIME ||
-          table_opt == OPTIMIZE_SPACE) {
+          cli_options->table_opt == OPTIMIZE_TIME ||
+          cli_options->table_opt == OPTIMIZE_SPACE) {
         red.map[i_inner].symbol = symbol;
         red.map[i_inner].rule_number = action[symbol]->value;
         i_inner++;
       }
     }
     red.map[0].symbol = DEFAULT_SYMBOL;
-    if (default_opt > 0) {
+    if (cli_options->default_opt > 0) {
       red.map[0].rule_number = default_rule;
     } else {
       red.map[0].rule_number = OMEGA;
@@ -1287,9 +1283,9 @@ void init_rmpself(const SET_PTR produces) {
 /* states that can enter a cycle via transitions on nullable           */
 /* nonterminals. If such a cyle exists, the grammar can also be        */
 /* claimed to be not LR(k) for any k.                                  */
-void init_lalrk_process(void) {
+void init_lalrk_process(struct CLIOptions* cli_options) {
   not_lrk = false;
-  if (lalr_level > 1) {
+  if (cli_options->lalr_level > 1) {
     shift_table = (struct state_element **) calloc(SHIFT_TABLE_SIZE, sizeof(struct state_element *));
     if (shift_table == NULL)
       nospace(__FILE__, __LINE__);
@@ -1323,8 +1319,8 @@ void init_lalrk_process(void) {
 
 /* Free all support structures that were allocated to help compute     */
 /* additional lookahead.                                               */
-void exit_lalrk_process(void) {
-  if (lalr_level > 1) {
+void exit_lalrk_process(struct CLIOptions* cli_options) {
+  if (cli_options->lalr_level > 1) {
     rmpself += num_terminals + 1;
     ffree(rmpself);
     ffree(shift_table);
@@ -1369,7 +1365,7 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
     if (cli_options->single_productions_bit && action[symbol] != NULL) {
       add_conflict_symbol(state_no, symbol);
     }
-    if (lalr_level > 1 && action[symbol] != NULL) {
+    if (cli_options->lalr_level > 1 && action[symbol] != NULL) {
       sources = clear_sources(sources);
       q = allocate_stack_element();
       q->state_number = state_no;
@@ -1411,7 +1407,7 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
       /* the conflicts.  In any case, STATE_TO_RESOLVE_CONFLICTS     */
       /* frees the space that is used by the action map headed by    */
       /* ACTION_ROOT.                                                */
-      state = state_to_resolve_conflicts(sources, symbol, 2);
+      state = state_to_resolve_conflicts(sources, symbol, 2, cli_options);
       if (state != NULL) {
         state->in_state = state_no;
         free_nodes(action[symbol], tail);
@@ -1451,7 +1447,7 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
       if (cli_options->single_productions_bit && action[symbol]->next != NULL) {
         add_conflict_symbol(state_no, symbol);
       }
-      if (lalr_level > 1 && action[symbol]->next != NULL) {
+      if (cli_options->lalr_level > 1 && action[symbol]->next != NULL) {
         sources = clear_sources(sources);
         for (p = action[symbol]; p != NULL; tail = p, p = p->next) {
           item_no = p->value;
@@ -1478,7 +1474,7 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
         /*     STATE_TO_RESOLVE_CONFLICTS will return a pointer to a   */
         /* STATE_ELEMENT if the conflicts were resolvable with more    */
         /* lookaheads, otherwise, it returns NULL.                     */
-        state = state_to_resolve_conflicts(sources, symbol, 2);
+        state = state_to_resolve_conflicts(sources, symbol, 2, cli_options);
         if (state != NULL) {
           state->in_state = state_no;
           free_nodes(action[symbol], tail);
@@ -1533,11 +1529,11 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
         restore_symbol(temp, RETRIEVE_STRING(symbol));
         printf("*** Shift/reduce conflict on \"%s\" with rule %d\n", temp, rule_no);
         fprintf(syslis, "\n*** Shift/reduce conflict on \"%s\" with rule %d\n", temp, rule_no);
-        if (trace_opt != NOTRACE) {
+        if (cli_options->trace_opt != NOTRACE) {
           if (cli_options->slr_bit) {
-            print_relevant_slr_items(p->item, symbol);
+            print_relevant_slr_items(p->item, symbol, cli_options);
           } else {
-            print_relevant_lalr_items(state_no, p->item, symbol);
+            print_relevant_lalr_items(state_no, p->item, symbol, cli_options);
           }
           print_item(p->item);
         }
@@ -1554,19 +1550,19 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
         restore_symbol(temp, RETRIEVE_STRING(symbol));
         printf("*** Reduce/reduce conflict on \"%s\" between rule %d and %d\n", temp, n, rule_no);
         fprintf(syslis, "\n*** Reduce/reduce conflict on \"%s\" between rule %d and %d\n", temp, n, rule_no);
-        if (trace_opt != NOTRACE) {
+        if (cli_options->trace_opt != NOTRACE) {
           if (cli_options->slr_bit) {
-            print_relevant_slr_items(p->item1, symbol);
+            print_relevant_slr_items(p->item1, symbol, cli_options);
           } else {
-            print_relevant_lalr_items(state_no, p->item1, symbol);
+            print_relevant_lalr_items(state_no, p->item1, symbol, cli_options);
           }
           print_item(p->item1);
           fill_in(msg_line, PRINT_LINE_SIZE - 3, '-');
           fprintf(syslis, "\n%s", msg_line);
           if (cli_options->slr_bit) {
-            print_relevant_slr_items(p->item2, symbol);
+            print_relevant_slr_items(p->item2, symbol, cli_options);
           } else {
-            print_relevant_lalr_items(state_no, p->item2, symbol);
+            print_relevant_lalr_items(state_no, p->item2, symbol, cli_options);
           }
           print_item(p->item2);
         }
