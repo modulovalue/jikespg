@@ -620,7 +620,6 @@ void insert_string(struct hash_type *q, const char *string) {
   long string_size = 0;
   if (string_offset + strlen(string) >= string_size) {
     string_size += STRING_BUFFER_SIZE;
-    INT_CHECK(string_size);
     string_table = (char *) (string_table == (char *) NULL
        ? malloc(string_size * sizeof(char))
        : realloc(string_table, string_size * sizeof(char)));
@@ -1787,7 +1786,6 @@ void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *sysgrm)
     calloc0(rules, num_rules + 2, struct ruletab_type);
     rhs_sym = Allocate_short_array(num_items + 1);
     num_items += num_rules + 1;
-    SHORT_CHECK(num_items);
     register int ii = 0;
     // Put starting rules from start symbol linked list in rule and rhs table
     if (start_symbol_root != NULL) {

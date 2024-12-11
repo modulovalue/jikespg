@@ -320,7 +320,6 @@ static void act63(void)
     start_symbol_root = q;
     num_rules++;
     num_items++;
-    SHORT_CHECK(num_items);
 }
 
 /// start_symbol ::= OR
@@ -463,7 +462,6 @@ static void act82(void)
     register struct node *q = Allocate_node();
     q -> value = error_image;
     num_items++;
-    SHORT_CHECK(num_items);
     if (rulehdr[num_rules].rhs_root == NULL)
         q -> next = q;
     else
@@ -490,7 +488,6 @@ static void act83(void)
         register struct node *q = Allocate_node();
         q -> value = sym;
         num_items++;
-        SHORT_CHECK(num_items);
         if (rulehdr[num_rules].rhs_root == NULL)
             q -> next = q;
         else

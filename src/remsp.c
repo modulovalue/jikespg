@@ -816,7 +816,6 @@ void remove_single_productions() {
   }
   lastats -= max_sp_state - num_states;
   max_la_state += max_sp_state - num_states;
-  SHORT_CHECK(max_la_state);
   // We now permanently construct all the new SP states.
   for (struct sp_state_element *state = sp_state_root; state != NULL; state = state->next) {
     struct action_element *actionp;

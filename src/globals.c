@@ -1,6 +1,8 @@
+#include "bitset.h"
 static char hostfile[] = __FILE__;
 
-#include "common.h"
+#include <stdlib.h>
+#include <stdbool.h>
 
 long num_items = 0;
 long num_states = 0;

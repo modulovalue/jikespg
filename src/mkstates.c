@@ -63,7 +63,6 @@ struct state_element *lr0_state_map(struct node *kernel) {
   struct state_element *ptr;
   talloc0(ptr, struct state_element);
   num_states++;
-  SHORT_CHECK(num_states);
   ptr->queue = NULL;
   ptr->kernel_items = kernel;
   ptr->complete_items = NULL;

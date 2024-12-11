@@ -205,7 +205,6 @@ void partset(const SET_PTR collection, const long *element_size, const long *lis
       }
       int size = element_size[base_set] + 1;
       offset += size;
-      SHORT_CHECK(offset);
       // Now, assign offset values to each subset of the
       // BASE_SET. Once again, we mark them as sharing elements
       // by using the negative value of the OFFSET.
