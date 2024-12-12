@@ -1573,3 +1573,39 @@ void create_lastats(void) {
   ffree(shift_count);
   ffree(state_list);
 }
+
+struct node **direct_produces;
+SET_PTR produces;
+
+/// For a given symbol, complete the computation of
+/// PRODUCES[symbol].
+///
+/// This procedure is used to compute the transitive closure of
+/// the PRODUCES, LEFT_PRODUCES and RIGHT_MOST_PRODUCES maps.
+void compute_produces(const int symbol) {
+  stack[++top] = symbol;
+  const int indx = top;
+  index_of[symbol] = indx;
+  struct node *q;
+  for (struct node *p = direct_produces[symbol]; p != NULL; q = p, p = p->next) {
+    int new_symbol = p->value;
+    /* first time seen? */
+    if (index_of[new_symbol] == OMEGA) {
+      compute_produces(new_symbol);
+    }
+    index_of[symbol] = MIN(index_of[symbol], index_of[new_symbol]);
+    NTSET_UNION(produces, symbol, produces, new_symbol);
+  }
+  if (direct_produces[symbol] != NULL) {
+    free_nodes(direct_produces[symbol], q);
+  }
+  /* symbol is SCC root */
+  if (index_of[symbol] == indx) {
+    for (int new_symbol = stack[top]; new_symbol != symbol; new_symbol = stack[--top]) {
+      ASSIGN_NTSET(produces, new_symbol, produces, symbol);
+      index_of[new_symbol] = INFINITY;
+    }
+    index_of[symbol] = INFINITY;
+    top--;
+  }
+}
