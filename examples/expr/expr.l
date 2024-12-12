@@ -18,14 +18,14 @@ Options in effect:
     TRACE=CONFLICTS  
 
 
+
+This grammar is LALR(1).
+
+
 Number of Terminals: 9
 Number of Nonterminals: 4
 Number of Productions: 12
 Number of Items: 34
-
-
-This grammar is LALR(1).
-
 Number of States: 13
 Number of Shift actions: 22
 Number of Goto actions: 7

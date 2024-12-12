@@ -477,8 +477,8 @@ short sp_state_map(const int rule_head, const int item_no, const int sp_rule_cou
   return state->state_number;
 }
 
-/// This program is invoked to remove as many single production actions as
-/// possible for a conflict-free automaton.
+/// This program is invoked to remove as many single production
+/// actions as possible for a conflict-free automaton.
 void remove_single_productions() {
   // Set up a pool of temporary space.
   reset_temporary_space();
@@ -794,7 +794,7 @@ void remove_single_productions() {
       gd_index[state_no] = gd_index[state_no - 1];
     }
   }
-  realloc0(in_stat, (max_sp_state + 1), struct node*);
+  realloc0(in_stat, max_sp_state + 1, struct node*);
   for (int state_no = num_states + 1; state_no <= max_sp_state; state_no++) {
     in_stat[state_no] = NULL;
   }
@@ -816,7 +816,6 @@ void remove_single_productions() {
   }
   lastats -= max_sp_state - num_states;
   max_la_state += max_sp_state - num_states;
-  SHORT_CHECK(max_la_state);
   // We now permanently construct all the new SP states.
   for (struct sp_state_element *state = sp_state_root; state != NULL; state = state->next) {
     struct action_element *actionp;

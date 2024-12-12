@@ -14,35 +14,6 @@ struct node *stack_root = NULL;
 bool *single_complete_item;
 int *la_base;
 
-/// Given a STATE_NO and an ITEM_NO, ACCESS computes the set of states where
-/// the rule from which ITEM_NO is derived was introduced through closure.
-struct node *lpgaccess(const int state_no, const int item_no) {
-  // Build a list pointed to by ACCESS_ROOT originally consisting
-  // only of STATE_NO.
-  struct node *access_root = Allocate_node();
-  access_root->value = state_no;
-  access_root->next = NULL;
-  for (int i = item_table[item_no].dot; i > 0; i--) /*distance to travel is DOT */
-  {
-    struct node *head = access_root; /* Save old ACCESS_ROOT */
-    access_root = NULL; /* Initialize ACCESS_ROOT for new list */
-    struct node *tail;
-    for (struct node *p = head; p != NULL; tail = p, p = p->next) {
-      // Compute set of states with transition into p->value.
-      struct node *s;
-      for (bool end_node = (s = in_stat[p->value]) == NULL; !end_node; end_node = s == in_stat[p->value]) {
-        s = s->next;
-        struct node *q = Allocate_node();
-        q->value = s->value;
-        q->next = access_root;
-        access_root = q;
-      }
-    }
-    free_nodes(head, tail); /* free previous list */
-  }
-  return access_root;
-}
-
 /// Given an item of the form: [x .A y], where x and y are arbitrary strings,
 /// and A is a non-terminal, we pretrace the path(s) in the automaton  that
 /// will be followed in computing the look-ahead set for that item in
@@ -77,7 +48,6 @@ void trace_lalr_path(const int state_no, const int goto_indx, struct CLIOptions 
   // look-ahead follow sets that may be needed, and signal this fact
   // using the variable CONTAINS_EMPTY.
   la_top++; /* allocate new slot */
-  INT_CHECK(la_top);
   go_to.map[goto_indx].laptr = la_top;
   bool contains_empty = false;
   for (; r != NULL; r = r->next) {
@@ -266,77 +236,6 @@ void compute_read(struct CLIOptions *cli_options) {
   ffree(la_base);
 }
 
-/// LA_TRAVERSE takes two major arguments: STATE_NO, and an index (GOTO_INDX)
-/// that points to the GOTO_ELEMENT array in STATE_NO for the non-terminal
-/// left hand side of an item for which look-ahead is to be computed. The
-/// look-ahead of an item of the form [x. A y] in state STATE_NO is the set
-/// of terminals that can appear immediately after A in the context summarized
-/// by STATE_NO. When a look-ahead set is computed, the result is placed in
-/// an allocation of LA_ELEMENT pointed to by the LA_PTR field of the
-/// GOTO_ELEMENT array.
-///
-/// The same digraph algorithm used in MKFIRST is used for this computation.
-void la_traverse(const int state_no, const int goto_indx, int *stack_top) {
-  const struct goto_header_type go_to = statset[state_no].go_to;
-  const int la_ptr = go_to.map[goto_indx].laptr;
-  struct node *s = Allocate_node(); /* Push LA_PTR down the stack */
-  s->value = la_ptr;
-  s->next = stack_root;
-  stack_root = s;
-  const int indx = ++*stack_top; /* one element was pushed into the stack */
-  la_index[la_ptr] = indx;
-  // Compute STATE, action to perform on Goto symbol in question. If
-  // STATE is positive, it denotes a state to which to shift. If it is
-  // negative, it is a rule on which to perform a Goto-Reduce.
-  const int state = go_to.map[goto_indx].action;
-  struct node *r;
-  /* Not a Goto-Reduce action */
-  if (state > 0) {
-    r = statset[state].kernel_items;
-  } else {
-    r = adequate_item[-state];
-  }
-  for (; r != NULL; r = r->next) {
-    // loop over items [A -> x LHS_SYMBOL . y]
-    const int item = r->value - 1;
-    if (IS_IN_SET(first, item_table[item].suffix_index, empty)) {
-      const int symbol = rules[item_table[item].rule_number].lhs;
-      struct node *w = lpgaccess(state_no, item); /* states where RULE was  */
-      // introduced through closure
-      for (struct node *t = w; t != NULL; s = t, t = t->next) {
-        // Search for GOTO action in access-state after reducing
-        // RULE to its left hand side (SYMBOL). Q points to the
-        // GOTO_ELEMENT in question.
-        const struct goto_header_type go_to_inner = statset[t->value].go_to;
-        int ii;
-        for (ii = 1; go_to_inner.map[ii].symbol != symbol; ii++) {
-        }
-        if (la_index[go_to_inner.map[ii].laptr] == OMEGA) {
-          la_traverse(t->value, ii, stack_top);
-        }
-        SET_UNION(la_set, la_ptr, la_set, go_to_inner.map[ii].laptr);
-        la_index[la_ptr] = MIN(la_index[la_ptr], la_index[go_to_inner.map[ii].laptr]);
-      }
-      free_nodes(w, s);
-    }
-  }
-  if (la_index[la_ptr] == indx) /* Top of a SCC */
-  {
-    s = stack_root;
-    for (int ii = stack_root->value; ii != la_ptr;
-         stack_root = stack_root->next, ii = stack_root->value) {
-      ASSIGN_SET(la_set, ii, la_set, la_ptr);
-      la_index[ii] = INFINITY;
-      (*stack_top)--; /* one element was popped from the stack; */
-    }
-    la_index[la_ptr] = INFINITY;
-    r = stack_root; /* mark last element that is popped and ... */
-    stack_root = stack_root->next; /* ... pop it! */
-    (*stack_top)--; /* one element was popped from the stack; */
-    free_nodes(s, r);
-  }
-}
-
 /// COMPUTE_LA takes as argument a state number (STATE_NO), an item number
 /// (ITEM_NO), and a set (LOOK_AHEAD).  It computes the look-ahead set of
 /// terminals for the given item in the given state and places the answer in
@@ -411,6 +310,106 @@ void build_in_stat(void) {
         in_stat[n] = q;
       }
     }
+  }
+}
+
+/// Given a STATE_NO and an ITEM_NO, ACCESS computes the set of states where
+/// the rule from which ITEM_NO is derived was introduced through closure.
+struct node *lpgaccess(const int state_no, const int item_no) {
+  // Build a list pointed to by ACCESS_ROOT originally consisting
+  // only of STATE_NO.
+  struct node *access_root = Allocate_node();
+  access_root->value = state_no;
+  access_root->next = NULL;
+  for (int i = item_table[item_no].dot; i > 0; i--) /*distance to travel is DOT */
+  {
+    struct node *head = access_root; /* Save old ACCESS_ROOT */
+    access_root = NULL; /* Initialize ACCESS_ROOT for new list */
+    struct node *tail;
+    for (struct node *p = head; p != NULL; tail = p, p = p->next) {
+      // Compute set of states with transition into p->value.
+      struct node *s;
+      for (bool end_node = (s = in_stat[p->value]) == NULL; !end_node; end_node = s == in_stat[p->value]) {
+        s = s->next;
+        struct node *q = Allocate_node();
+        q->value = s->value;
+        q->next = access_root;
+        access_root = q;
+      }
+    }
+    free_nodes(head, tail); /* free previous list */
+  }
+  return access_root;
+}
+
+/// LA_TRAVERSE takes two major arguments: STATE_NO, and an index (GOTO_INDX)
+/// that points to the GOTO_ELEMENT array in STATE_NO for the non-terminal
+/// left hand side of an item for which look-ahead is to be computed. The
+/// look-ahead of an item of the form [x. A y] in state STATE_NO is the set
+/// of terminals that can appear immediately after A in the context summarized
+/// by STATE_NO. When a look-ahead set is computed, the result is placed in
+/// an allocation of LA_ELEMENT pointed to by the LA_PTR field of the
+/// GOTO_ELEMENT array.
+///
+/// The same digraph algorithm used in MKFIRST is used for this computation.
+void la_traverse(const int state_no, const int goto_indx, int *stack_top) {
+  const struct goto_header_type go_to = statset[state_no].go_to;
+  const int la_ptr = go_to.map[goto_indx].laptr;
+  struct node *s = Allocate_node(); /* Push LA_PTR down the stack */
+  s->value = la_ptr;
+  s->next = stack_root;
+  stack_root = s;
+  const int indx = ++*stack_top; /* one element was pushed into the stack */
+  la_index[la_ptr] = indx;
+  // Compute STATE, action to perform on Goto symbol in question. If
+  // STATE is positive, it denotes a state to which to shift. If it is
+  // negative, it is a rule on which to perform a Goto-Reduce.
+  const int state = go_to.map[goto_indx].action;
+  struct node *r;
+  /* Not a Goto-Reduce action */
+  if (state > 0) {
+    r = statset[state].kernel_items;
+  } else {
+    r = adequate_item[-state];
+  }
+  for (; r != NULL; r = r->next) {
+    // loop over items [A -> x LHS_SYMBOL . y]
+    const int item = r->value - 1;
+    if (IS_IN_SET(first, item_table[item].suffix_index, empty)) {
+      const int symbol = rules[item_table[item].rule_number].lhs;
+      struct node *w = lpgaccess(state_no, item); /* states where RULE was  */
+      // introduced through closure
+      for (struct node *t = w; t != NULL; s = t, t = t->next) {
+        // Search for GOTO action in access-state after reducing
+        // RULE to its left hand side (SYMBOL). Q points to the
+        // GOTO_ELEMENT in question.
+        const struct goto_header_type go_to_inner = statset[t->value].go_to;
+        int ii;
+        for (ii = 1; go_to_inner.map[ii].symbol != symbol; ii++) {
+        }
+        if (la_index[go_to_inner.map[ii].laptr] == OMEGA) {
+          la_traverse(t->value, ii, stack_top);
+        }
+        SET_UNION(la_set, la_ptr, la_set, go_to_inner.map[ii].laptr);
+        la_index[la_ptr] = MIN(la_index[la_ptr], la_index[go_to_inner.map[ii].laptr]);
+      }
+      free_nodes(w, s);
+    }
+  }
+  if (la_index[la_ptr] == indx) /* Top of a SCC */
+  {
+    s = stack_root;
+    for (int ii = stack_root->value; ii != la_ptr;
+         stack_root = stack_root->next, ii = stack_root->value) {
+      ASSIGN_SET(la_set, ii, la_set, la_ptr);
+      la_index[ii] = INFINITY;
+      (*stack_top)--; /* one element was popped from the stack; */
+    }
+    la_index[la_ptr] = INFINITY;
+    r = stack_root; /* mark last element that is popped and ... */
+    stack_root = stack_root->next; /* ... pop it! */
+    (*stack_top)--; /* one element was popped from the stack; */
+    free_nodes(s, r);
   }
 }
 
@@ -661,9 +660,7 @@ void mkrdcts(struct CLIOptions *cli_options) {
       // can be eliminated as a result.
       if (cli_options->default_opt == 0) {
         default_rule = OMEGA;
-      } else if (cli_options->table_opt != OPTIMIZE_TIME &&
-                 cli_options->table_opt != OPTIMIZE_SPACE &&
-                 !cli_options->single_productions_bit) {
+      } else if (cli_options->table_opt != OPTIMIZE_TIME && cli_options->table_opt != OPTIMIZE_SPACE && !cli_options->single_productions_bit) {
         struct node *q = statset[state_no].complete_items;
         if (q->next == NULL) {
           const int item_no = q->value;

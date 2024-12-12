@@ -488,13 +488,15 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
   sprintf(opt_string[++top], "HBLOCKB=%s", hblockb);
   sprintf(opt_string[++top], "HBLOCKE=%s", hblocke);
   sprintf(opt_string[++top], "LALR=%d", cli_options->lalr_level);
-  strcpy(opt_string[++top], cli_options->list_bit ? "LIST" : "NOLIST"); {
+  strcpy(opt_string[++top], cli_options->list_bit ? "LIST" : "NOLIST");
+  {
     sprintf(opt_string[++top], "MIN-DISTANCE=%d", cli_options->minimum_distance);
     if (cli_options->minimum_distance <= 1) {
       PRNT("MIN_DISTANCE must be > 1");
       exit(12);
     }
-  } {
+  }
+  {
     sprintf(opt_string[++top], "MAX-DISTANCE=%d", cli_options->maximum_distance);
     if (cli_options->maximum_distance <= cli_options->minimum_distance + 1) {
       PRNT("MAX_DISTANCE must be > MIN_DISTANCE + 1");
@@ -614,13 +616,12 @@ int hash(const char *symbl) {
 }
 
 /// INSERT_STRING takes as an argument a pointer to a ht_elemt structure and
-/// a character string.  It inserts the string into the string table and sets
+/// a character string. It inserts the string into the string table and sets
 /// the value of node to the index into the string table.
 void insert_string(struct hash_type *q, const char *string) {
   long string_size = 0;
   if (string_offset + strlen(string) >= string_size) {
     string_size += STRING_BUFFER_SIZE;
-    INT_CHECK(string_size);
     string_table = (char *) (string_table == (char *) NULL
        ? malloc(string_size * sizeof(char))
        : realloc(string_table, string_size * sizeof(char)));
@@ -671,7 +672,7 @@ void assign_symbol_no(const char *string_ptr, const int image) {
   hash_table[i] = p;
 }
 
-/// ALIAS_MAP takes as input a symbol and an image. It searcheds the hash
+/// ALIAS_MAP takes as input a symbol and an image. It searches the hash
 /// table for stringptr and if it finds it, it turns it into an alias of the
 /// symbol whose number is IMAGE. Otherwise, it invokes PROCESS_SYMBOL and
 /// ASSIGN SYMBOL_NO to enter stringptr into the table and then we alias it.
@@ -1103,8 +1104,7 @@ struct line_elemt *find_macro(char *name) {
       return root;
     }
   }
-  // Make phony definition for macro so as to avoid future
-  // errors.
+  // Make phony definition for macro to avoid future errors.
   if (num_defs >= (int) defelmt_size) {
     defelmt_size += DEFELMT_INCREMENT;
     defelmt = (struct defelmt_type *)
@@ -1146,8 +1146,8 @@ next_line: {
     if (text[k] == escape) {
       // character
       // 12 is length of %rule_number and
+      // %num_symbols.
       if (k + 12 <= text_len) {
-        // %num_symbols.
         if (strxeq(text + k, krule_number)) {
           strcpy(temp1, text + k + 12);
           if (k + 12 != text_len)
@@ -1360,8 +1360,8 @@ next_line: {
     }
     ++k;
   }
-  // If text is greater than output size, print error message and truncate
-  // line.
+  // If text is greater than output size,
+  // print error message and truncate line.
   const unsigned long l = strlen(text);
   if (l > output_size) {
     for (int j = l - 1; j >= output_size; j--) {
@@ -1787,7 +1787,6 @@ void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *sysgrm)
     calloc0(rules, num_rules + 2, struct ruletab_type);
     rhs_sym = Allocate_short_array(num_items + 1);
     num_items += num_rules + 1;
-    SHORT_CHECK(num_items);
     register int ii = 0;
     // Put starting rules from start symbol linked list in rule and rhs table
     if (start_symbol_root != NULL) {
@@ -1870,6 +1869,7 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
   }
 
   FILE *sysgrm;
+
   // Prepare.
   {
     // Open input grammar file. If the file cannot be opened and that file name
@@ -1898,7 +1898,7 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
     //                Open listing file for output.
     syslis = fopen(lis_file, "w");
     if (syslis == (FILE *) NULL) {
-      fprintf(stderr, "***ERROR: Listing file \"%s\" cannot be openned.\n", lis_file);
+      fprintf(stderr, "***ERROR: Listing file \"%s\" cannot be opened.\n", lis_file);
       exit(12);
     }
     // Complete the initialization of the code array used to replace the

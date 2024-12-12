@@ -144,112 +144,6 @@ void prnt_longs(const char *title, const int init, const int bound, const int pe
   }
 }
 
-/// FIELD takes as arguments two integers: NUM and LEN.  NUM is an integer
-/// containing at most LEN digits which is converted into a character
-/// string and placed in the iobuffer.
-/// Leading zeros are replaced by blanks and if the number is negative,  a
-/// leading "-" is added.
-void field(const long num, const int len) {
-  register int val = ABS(num);
-  register char *p = output_ptr + len;
-  do {
-    p--;
-    *p = digits[val % 10];
-    val /= 10;
-  } while (val > 0 && p > output_ptr);
-  if (num < 0 && p > output_ptr) {
-    p--;
-    *p = '-';
-  }
-  while (p > output_ptr) {
-    p--;
-    *p = ' ';
-  }
-  output_ptr += len;
-}
-
-///  SORTDES sorts the elements of ARRAY and COUNT in the range LOW..HIGH
-/// based on the values of the elements of COUNT. Knowing that the maximum
-/// value of the elements of count cannot exceed MAX and cannot be lower
-/// than zero, we can use a bucket sort technique.
-void sortdes(long array[], long count[], const long low, const long high, const long max) {
-  // BUCKET is used to hold the roots of lists that contain the
-  // elements of each bucket.  LIST is used to hold these lists.
-  long *bucket = Allocate_long_array(max + 1);
-  long *list = Allocate_long_array(high - low + 1);
-  for (register int i = 0; i <= max; i++) {
-    bucket[i] = NIL;
-  }
-  // We now partition the elements to be sorted and place them in their
-  // respective buckets.  We iterate backward over ARRAY and COUNT to
-  // keep the sorting stable since elements are inserted in the buckets
-  // in stack-fashion.
-  //
-  //   NOTE that it is known that the values of the elements of ARRAY
-  // also lie in the range LOW..HIGH.
-  for (register long i = high; i >= low; i--) {
-    long k = count[i];
-    long element = array[i];
-    list[element - low] = bucket[k];
-    bucket[k] = element;
-  }
-  // Iterate over each bucket, and place elements in ARRAY and COUNT
-  // in sorted order.  The iteration is done backward because we want
-  // the arrays sorted in descending order.
-  long k = low;
-  for (register long i = max; i >= 0; i--) {
-    for (long element = bucket[i]; element != NIL; element = list[element - low], k++) {
-      array[k] = element;
-      count[k] = i;
-    }
-  }
-  ffree(bucket);
-  ffree(list);
-}
-
-/// This procedure is invoked when the TABLE being used is not large
-/// enough.  A new table is allocated, the information from the old table
-/// is copied, and the old space is released.
-void reallocate(struct CLIOptions *cli_options) {
-  if (table_size == MAX_TABLE_SIZE) {
-    PRNTERR2("Table has exceeded maximum limit of %ld", MAX_TABLE_SIZE);
-    exit(12);
-  }
-  const register int old_size = table_size;
-  table_size = MIN(table_size + increment_size, MAX_TABLE_SIZE);
-  if (cli_options->table_opt == OPTIMIZE_TIME) {
-    PRNT3("Reallocating storage for TIME table, adding %ld entries", table_size - old_size);
-  } else {
-    PRNT3("Reallocating storage for SPACE table, adding %ld entries", table_size - old_size);
-  }
-  long *n = Allocate_long_array(table_size + 1);
-  long *p = Allocate_long_array(table_size + 1);
-  // Copy old information
-  for (register int i = 1; i <= old_size; i++) {
-    n[i] = next[i];
-    p[i] = previous[i];
-  }
-  ffree(next);
-  ffree(previous);
-  next = n;
-  previous = p;
-  if (first_index == NIL) {
-    first_index = old_size + 1;
-    previous[first_index] = NIL;
-  } else {
-    next[last_index] = old_size + 1;
-    previous[old_size + 1] = last_index;
-  }
-  next[old_size + 1] = old_size + 2;
-  for (register int i = old_size + 2; i < (int) table_size; i++) {
-    next[i] = i + 1;
-    previous[i] = i - 1;
-  }
-  last_index = table_size;
-  next[last_index] = NIL;
-  previous[last_index] = last_index - 1;
-}
-
 /// This procedure computes the range of the ACTION_SYMBOLS map after
 /// Optimal Partitioning has been used to compress that map.  Its
 /// first argument is an array, STATE_START, that indicates the
@@ -1836,6 +1730,112 @@ void common(const bool byte_check_bit, struct CLIOptions *cli_options) {
     exit_file(&sysdef, def_tag, cli_options);
     exit_file(&sysprs, prs_tag, cli_options);
   }
+}
+
+/// FIELD takes as arguments two integers: NUM and LEN.  NUM is an integer
+/// containing at most LEN digits which is converted into a character
+/// string and placed in the iobuffer.
+/// Leading zeros are replaced by blanks and if the number is negative,  a
+/// leading "-" is added.
+void field(const long num, const int len) {
+  register int val = ABS(num);
+  register char *p = output_ptr + len;
+  do {
+    p--;
+    *p = digits[val % 10];
+    val /= 10;
+  } while (val > 0 && p > output_ptr);
+  if (num < 0 && p > output_ptr) {
+    p--;
+    *p = '-';
+  }
+  while (p > output_ptr) {
+    p--;
+    *p = ' ';
+  }
+  output_ptr += len;
+}
+
+///  SORTDES sorts the elements of ARRAY and COUNT in the range LOW..HIGH
+/// based on the values of the elements of COUNT. Knowing that the maximum
+/// value of the elements of count cannot exceed MAX and cannot be lower
+/// than zero, we can use a bucket sort technique.
+void sortdes(long array[], long count[], const long low, const long high, const long max) {
+  // BUCKET is used to hold the roots of lists that contain the
+  // elements of each bucket.  LIST is used to hold these lists.
+  long *bucket = Allocate_long_array(max + 1);
+  long *list = Allocate_long_array(high - low + 1);
+  for (register int i = 0; i <= max; i++) {
+    bucket[i] = NIL;
+  }
+  // We now partition the elements to be sorted and place them in their
+  // respective buckets.  We iterate backward over ARRAY and COUNT to
+  // keep the sorting stable since elements are inserted in the buckets
+  // in stack-fashion.
+  //
+  //   NOTE that it is known that the values of the elements of ARRAY
+  // also lie in the range LOW..HIGH.
+  for (register long i = high; i >= low; i--) {
+    long k = count[i];
+    long element = array[i];
+    list[element - low] = bucket[k];
+    bucket[k] = element;
+  }
+  // Iterate over each bucket, and place elements in ARRAY and COUNT
+  // in sorted order.  The iteration is done backward because we want
+  // the arrays sorted in descending order.
+  long k = low;
+  for (register long i = max; i >= 0; i--) {
+    for (long element = bucket[i]; element != NIL; element = list[element - low], k++) {
+      array[k] = element;
+      count[k] = i;
+    }
+  }
+  ffree(bucket);
+  ffree(list);
+}
+
+/// This procedure is invoked when the TABLE being used is not large
+/// enough.  A new table is allocated, the information from the old table
+/// is copied, and the old space is released.
+void reallocate(struct CLIOptions *cli_options) {
+  if (table_size == MAX_TABLE_SIZE) {
+    PRNTERR2("Table has exceeded maximum limit of %ld", MAX_TABLE_SIZE);
+    exit(12);
+  }
+  const register int old_size = table_size;
+  table_size = MIN(table_size + increment_size, MAX_TABLE_SIZE);
+  if (cli_options->table_opt == OPTIMIZE_TIME) {
+    PRNT3("Reallocating storage for TIME table, adding %ld entries", table_size - old_size);
+  } else {
+    PRNT3("Reallocating storage for SPACE table, adding %ld entries", table_size - old_size);
+  }
+  long *n = Allocate_long_array(table_size + 1);
+  long *p = Allocate_long_array(table_size + 1);
+  // Copy old information
+  for (register int i = 1; i <= old_size; i++) {
+    n[i] = next[i];
+    p[i] = previous[i];
+  }
+  ffree(next);
+  ffree(previous);
+  next = n;
+  previous = p;
+  if (first_index == NIL) {
+    first_index = old_size + 1;
+    previous[first_index] = NIL;
+  } else {
+    next[last_index] = old_size + 1;
+    previous[old_size + 1] = last_index;
+  }
+  next[old_size + 1] = old_size + 2;
+  for (register int i = old_size + 2; i < (int) table_size; i++) {
+    next[i] = i + 1;
+    previous[i] = i - 1;
+  }
+  last_index = table_size;
+  next[last_index] = NIL;
+  previous[last_index] = last_index - 1;
 }
 
 /// if ERROR_MAPS are requested, we print them out in the following order:

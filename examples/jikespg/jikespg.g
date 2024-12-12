@@ -1,4 +1,87 @@
-#line 85 "jikespg.g"
+%Options NOGOTODEFAULT
+%Options ESC=$
+%Options ACTFILENAME=lpgact.c
+%Options FILEPREFIX=lpg
+%Options GENERATEPARSER=c
+%Options NODEFER
+%Options SUFFIX=_TK
+%Options STACKSIZE=21
+%Options HACTFILENAME=lpgact.h
+
+$Define ----------------------------------------------------------------
+
+$offset /.    ./
+
+$location
+/.
+
+/// $rule_text
+#line $next_line "$input_file"./
+
+$action
+/.act$rule_number, /* $rule_number */./
+
+$null_action
+/.$offset null_action, /* $rule_number */./
+
+$no_action
+/.$offset null_action, /* $rule_number */./
+
+------------------------------------------------------------------------
+
+$Terminals
+    DEFINE_KEY TERMINALS_KEY ALIAS_KEY START_KEY RULES_KEY
+    NAMES_KEY END_KEY
+
+    EQUIVALENCE ARROW OR
+
+    EMPTY_SYMBOL ERROR_SYMBOL EOL_SYMBOL EOF_SYMBOL
+
+    MACRO_NAME SYMBOL BLOCK HBLOCK
+
+    EOF
+
+------------------------------------------------------------------------
+
+$Alias
+
+    '::=' ::= EQUIVALENCE
+    '->'  ::= ARROW
+    '|'   ::= OR
+    $EOF  ::= EOF
+
+------------------------------------------------------------------------
+
+$Rules
+/:#pragma once:/
+
+/:
+
+/// BUILD_SYMNO constructs the SYMNO table which is a mapping from each
+/// symbol number into that symbol.
+void build_symno(void) {
+  const long symno_size = num_symbols + 1;
+  calloc0(symno, symno_size, struct symno_type);
+  // Go through entire hash table. For each non_empty bucket, go through
+  // linked list in that bucket.
+  for (register int i = 0; i < HT_SIZE; ++i) {
+    for (const register struct hash_type *p = hash_table[i]; p != NULL; p = p->link) {
+      const register int symbol = p->number;
+      // Not an alias
+      if (symbol >= 0) {
+        symno[symbol].name_index = OMEGA;
+        symno[symbol].ptr = p->st_ptr;
+      }
+    }
+  }
+}
+
+:/
+
+/:static void (*rule_action[]) (void) = {NULL,:/
+
+/.
+#line $next_line "$input_file"
 #define SYM1 terminal[stack_top + 1]
 #define SYM2 terminal[stack_top + 2]
 #define SYM3 terminal[stack_top + 3]
@@ -50,102 +133,183 @@ static void add_block_definition(const struct terminal_type *term)
     actelmt[num_acts].header_block = term->kind == HBLOCK_TK;
     num_acts++;
 }
+./
+    LPG_INPUT ::= [define_block]
+                  [terminals_block]
+                  [alias_block]
+                  [start_block]
+                  [rules_block]
+                  [names_block]
+                  [%END]
+/:$no_action:/
+                | bad_symbol
+/:$no_action:/
 
-/// bad_symbol ::= EQUIVALENCE
-#line 151 "jikespg.g"
+    bad_symbol ::= EQUIVALENCE
+/:$offset bad_first_symbol, /* $rule_number */:/
+/.$location
 static void bad_first_symbol(void)
 {
     PRNTERR2("First symbol: \"%s\" found in file is illegal. Line %ld, column %d", SYM1.name, SYM1.start_line, SYM1.start_column);
     exit(12);
 }
-
-/// bad_symbol ::= BLOCK
-#line 172 "jikespg.g"
-static void act10(void)
+./
+                 | ARROW
+/:$offset bad_first_symbol, /* $rule_number */:/
+                 | OR
+/:$offset bad_first_symbol, /* $rule_number */:/
+                 | EMPTY_SYMBOL
+/:$offset bad_first_symbol, /* $rule_number */:/
+                 | ERROR_SYMBOL
+/:$offset bad_first_symbol, /* $rule_number */:/
+                 | MACRO_NAME
+/:$offset bad_first_symbol, /* $rule_number */:/
+                 | SYMBOL
+/:$offset bad_first_symbol, /* $rule_number */:/
+                 | BLOCK
+/:$offset $action:/
+/.$location
+static void act$rule_number(void)
 {
     PRNTERR2("Action block cannot be first object in file. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
+./
 
-/// macro_list ::= macro_name_symbol macro_block
-#line 187 "jikespg.g"
-static void act13(void)
+    define_block ::= DEFINE_KEY
+/:$no_action:/
+                   | DEFINE_KEY macro_list
+/:$no_action:/
+
+    macro_list ::= macro_name_symbol macro_block
+/:$offset $action:/
+/.$location
+static void act$rule_number(void)
 {
     add_macro_definition(SYM1.name, &(SYM2));
 }
-
-/// macro_list ::= macro_list macro_name_symbol macro_block
-#line 195 "jikespg.g"
-static void act14(void)
+./
+                 | macro_list macro_name_symbol macro_block
+/:$offset $action:/
+/.$location
+static void act$rule_number(void)
 {
     add_macro_definition(SYM2.name, &(SYM3));
 }
+./
 
-/// macro_name_symbol ::= SYMBOL
-#line 206 "jikespg.g"
-static void act16(void)
+    macro_name_symbol ::= MACRO_NAME
+/:$no_action:/
+                        | SYMBOL          -- Warning, Escape missing !
+/:$offset $action:/
+/.$location
+static void act$rule_number(void)
 {
     PRNTWNG2("Macro name \"%s\" does not start with the escape character. Line %ld, column %d", SYM1.name, SYM1.start_line, SYM1.start_column);
 }
-
-/// macro_name_symbol ::= OR
-#line 214 "jikespg.g"
+./
+                        | '|'             -- No Good !!!
+/:$offset bad_macro_name, /* $rule_number */:/
+/.$location
 static void bad_macro_name(void)
 {
     PRNTERR2("Reserved symbol cannot be used as macro name. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
-
-/// macro_name_symbol ::= BLOCK
-#line 229 "jikespg.g"
-static void act21(void)
+./
+                        | EMPTY_SYMBOL    -- No good !!!
+/:$offset bad_macro_name, /* $rule_number */:/
+                        | ERROR_SYMBOL    -- No good !!!
+/:$offset bad_macro_name, /* $rule_number */:/
+                        | produces        -- No good !!!
+/:$offset bad_macro_name, /* $rule_number */:/
+                        | BLOCK           -- No good !!!
+/:$offset $action:/
+/.$location
+static void act$rule_number(void)
 {
     PRNTERR2("Macro name not supplied for macro definition. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
-
-/// macro_name_symbol ::= DEFINE_KEY
-#line 238 "jikespg.g"
-static void act22(void)
+./
+                        | DEFINE_KEY         -- No good !!!
+/:$offset $action:/
+/.$location
+static void act$rule_number(void)
 {
     PRNTERR2("Macro keyword misplaced. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
+./
 
-/// macro_block ::= OR
-#line 250 "jikespg.g"
+    macro_block ::= BLOCK
+/:$no_action:/
+                  | '|'            -- No Good !!!
+/:$offset definition_expected, /* $rule_number */:/
+/.$location
 static void definition_expected(void)
 {
     PRNTERR2("Definition block expected where symbol found. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
+./
+                  | EMPTY_SYMBOL   -- No good !!!
+/:$offset definition_expected, /* $rule_number */:/
+                  | ERROR_SYMBOL   -- No good !!!
+/:$offset definition_expected, /* $rule_number */:/
+                  | produces       -- No good !!!
+/:$offset definition_expected, /* $rule_number */:/
+                  | SYMBOL         -- No good !!!
+/:$offset definition_expected, /* $rule_number */:/
+                  | keyword        -- No good !!!
+/:$offset definition_expected, /* $rule_number */:/
+                  | END_KEY        -- No good !
+/:$offset definition_expected, /* $rule_number */:/
 
-/// terminal_symbol ::= SYMBOL
-#line 276 "jikespg.g"
+
+    terminals_block ::= TERMINALS_KEY {terminal_symbol}
+/:$no_action:/
+
+    terminal_symbol ::= SYMBOL
+/:$offset process_terminal, /* $rule_number */:/
+/.$location
 static void process_terminal(void)
 {
     assign_symbol_no(SYM1.name, OMEGA);
 }
-
-/// terminal_symbol ::= DEFINE_KEY
-#line 288 "jikespg.g"
+./
+                      | '|'
+/:$offset process_terminal, /* $rule_number */:/
+                      | produces
+/:$offset process_terminal, /* $rule_number */:/
+                      | DEFINE_KEY         -- No Good !!!
+/:$offset bad_terminal, /* $rule_number */:/
+/.$location
 static void bad_terminal(void)
 {
     PRNTERR2("Keyword  has been misplaced in Terminal section.  Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
-
-/// terminal_symbol ::= BLOCK
-#line 299 "jikespg.g"
-static void act37(void)
+./
+                      | TERMINALS_KEY      -- No Good !!!
+/:$offset bad_terminal, /* $rule_number */:/
+                      | BLOCK           -- No good !!!
+/:$offset $action:/
+/.$location
+static void act$rule_number(void)
 {
     PRNTERR2("Misplaced block found in TERMINALS section.  Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
+./
 
-/// alias_definition ::= alias_lhs produces alias_rhs
-#line 312 "jikespg.g"
-static void act39(void)
+    alias_block ::= ALIAS_KEY {alias_definition}
+/:$no_action:/
+
+   alias_definition ::= alias_lhs produces alias_rhs
+/:$offset $action:/
+/.$location
+static void act$rule_number(void)
 {
     register int image;
     char tok_string[SYMBOL_SIZE + 1];
@@ -270,42 +434,93 @@ static void act39(void)
             break;
     }
 }
+./
+                       | bad_alias_lhs
+/:$no_action:/
+                       | alias_lhs bad_alias_rhs
+/:$no_action:/
+                       | alias_lhs produces bad_alias_rhs
+/:$no_action:/
 
-/// bad_alias_rhs ::= DEFINE_KEY
-#line 472 "jikespg.g"
+    alias_lhs ::= SYMBOL
+/:$no_action:/
+                | ERROR_SYMBOL
+/:$no_action:/
+                | EOL_SYMBOL
+/:$no_action:/
+                | EOF_SYMBOL
+/:$no_action:/
+
+    alias_rhs ::= SYMBOL
+/:$no_action:/
+                | ERROR_SYMBOL
+/:$no_action:/
+                | EOL_SYMBOL
+/:$no_action:/
+                | EOF_SYMBOL
+/:$no_action:/
+                | EMPTY_SYMBOL
+/:$no_action:/
+                | '|'
+/:$no_action:/
+                | produces
+/:$no_action:/
+
+    bad_alias_rhs ::= DEFINE_KEY
+/:$offset bad_alias_rhs, /* $rule_number */:/
+/.$location
 static void bad_alias_rhs(void)
 {
     PRNTERR2("Misplaced keyword found in Alias section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
-
-/// bad_alias_rhs ::= BLOCK
-#line 485 "jikespg.g"
-static void act57(void)
+./
+                    | TERMINALS_KEY
+/:$offset bad_alias_rhs, /* $rule_number */:/
+                    | ALIAS_KEY
+/:$offset bad_alias_rhs, /* $rule_number */:/
+                    | BLOCK
+/:$offset $action:/
+/.$location
+static void act$rule_number(void)
 {
     PRNTERR2("Misplaced block found in Alias section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
+./
 
-/// bad_alias_lhs ::= EMPTY_SYMBOL
-#line 498 "jikespg.g"
-static void act59(void)
+
+    bad_alias_lhs ::= bad_alias_rhs
+/:$no_action:/
+                    | EMPTY_SYMBOL
+/:$offset $action:/
+/.$location
+static void act$rule_number(void)
 {
     PRNTERR2("Empty symbol cannot be aliased. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
-
-/// bad_alias_lhs ::= produces
-#line 507 "jikespg.g"
+./
+                    | produces
+/:$offset missing_quote, /* $rule_number */:/
+/.$location
 static void missing_quote(void)
 {
     PRNTERR2("Symbol must be quoted when used as a grammar symbol. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
+./
+                    | '|'
+/:$offset missing_quote, /* $rule_number */:/
 
-/// start_symbol ::= SYMBOL
-#line 523 "jikespg.g"
-static void act63(void)
+
+    start_block ::= START_KEY {start_symbol}
+/:$no_action:/
+
+    start_symbol ::= SYMBOL
+/:$offset $action:/
+/.$location
+static void act$rule_number(void)
 {
     assign_symbol_no(SYM1.name, OMEGA);
     register struct node *q = Allocate_node();
@@ -321,34 +536,51 @@ static void act63(void)
     num_rules++;
     num_items++;
 }
-
-/// start_symbol ::= OR
-#line 544 "jikespg.g"
+./
+                  | '|'            -- No Good !!!
+/:$offset bad_start_symbol, /* $rule_number */:/
+/.$location
 static void bad_start_symbol(void)
 {
     PRNTERR2("Symbol cannot be used as Start symbol. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
-
-/// start_symbol ::= BLOCK
-#line 559 "jikespg.g"
-static void act68(void)
+./
+                  | EMPTY_SYMBOL   -- No good !!!
+/:$offset bad_start_symbol, /* $rule_number */:/
+                  | ERROR_SYMBOL   -- No good !!!
+/:$offset bad_start_symbol, /* $rule_number */:/
+                  | produces       -- No good !!!
+/:$offset bad_start_symbol, /* $rule_number */:/
+                  | BLOCK          -- No good !!!
+/:$offset $action:/
+/.$location
+static void act$rule_number(void)
 {
     PRNTERR2("Misplaced block found in Start section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
-
-/// start_symbol ::= DEFINE_KEY
-#line 568 "jikespg.g"
+./
+                  | DEFINE_KEY        -- No good !!!
+/:$offset misplaced_keyword_found_in_START_section, /* $rule_number */:/
+/.$location
 static void misplaced_keyword_found_in_START_section(void)
 {
     PRNTERR2("Misplaced keyword found in START section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
+./
+                  | TERMINALS_KEY     -- No good !!!
+/:$offset misplaced_keyword_found_in_START_section, /* $rule_number */:/
+                  | ALIAS_KEY         -- No good !!!
+/:$offset misplaced_keyword_found_in_START_section, /* $rule_number */:/
+                  | START_KEY         -- No good !!!
+/:$offset misplaced_keyword_found_in_START_section, /* $rule_number */:/
 
-/// rules_block ::= RULES_KEY
-#line 584 "jikespg.g"
-static void act73(void)
+    rules_block ::= RULES_KEY
+/:$offset $action:/
+/.$location
+static void act$rule_number(void)
 {
 
     if (start_symbol_root == NULL)
@@ -362,17 +594,25 @@ static void act73(void)
     }
     build_symno();
 }
-
-/// rules_block ::= RULES_KEY rule_list
-#line 602 "jikespg.g"
-static void act74(void)
+./
+                  | RULES_KEY rule_list
+/:$offset $action:/
+/.$location
+static void act$rule_number(void)
 {
     build_symno();
 }
+./
 
-/// rule_list ::= {action_block} SYMBOL produces
-#line 616 "jikespg.g"
-static void act77(void)
+    produces ::= '::='
+/:$no_action:/
+               | '->'
+/:$no_action:/
+
+    rule_list ::= {action_block} SYMBOL produces
+/:$offset $action:/
+/.$location
+static void act$rule_number(void)
 {
     assign_symbol_no(SYM2.name, OMEGA);
     if (start_symbol_root == NULL)
@@ -406,10 +646,12 @@ static void act77(void)
     rulehdr[num_rules].lhs = symbol_image(SYM2.name);
     rulehdr[num_rules].rhs_root = NULL;
 }
+./
 
-/// rule_list ::= rule_list OR
-#line 655 "jikespg.g"
-static void act78(void)
+                | rule_list '|'
+/:$offset $action:/
+/.$location
+static void act$rule_number(void)
 {
     num_rules++;
     if (num_rules >= (int)rulehdr_size)
@@ -426,10 +668,11 @@ static void act78(void)
     rulehdr[num_rules].lhs = OMEGA;
     rulehdr[num_rules].rhs_root = NULL;
 }
-
-/// rule_list ::= rule_list SYMBOL produces
-#line 676 "jikespg.g"
-static void act79(void)
+./
+                | rule_list SYMBOL produces
+/:$offset $action:/
+/.$location
+static void act$rule_number(void)
 {
     num_rules++;
     if (num_rules >= (int)rulehdr_size)
@@ -447,10 +690,16 @@ static void act79(void)
     rulehdr[num_rules].lhs = symbol_image(SYM2.name);
     rulehdr[num_rules].rhs_root = NULL;
 }
+./
 
-/// rule_list ::= rule_list ERROR_SYMBOL
-#line 703 "jikespg.g"
-static void act82(void)
+                | rule_list EMPTY_SYMBOL
+/:$no_action:/
+                | rule_list action_block
+/:$no_action:/
+                | rule_list ERROR_SYMBOL
+/:$offset $action:/
+/.$location
+static void act$rule_number(void)
 {
     if (error_image == DEFAULT_SYMBOL)
     {
@@ -471,10 +720,11 @@ static void act82(void)
     }
     rulehdr[num_rules].rhs_root = q;
 }
-
-/// rule_list ::= rule_list SYMBOL
-#line 729 "jikespg.g"
-static void act83(void)
+./
+                | rule_list SYMBOL
+/:$offset $action:/
+/.$location
+static void act$rule_number(void)
 {
     assign_symbol_no(SYM2.name, OMEGA);
     register int sym = symbol_image(SYM2.name);
@@ -498,56 +748,87 @@ static void act83(void)
         rulehdr[num_rules].rhs_root = q;
     }
 }
-
-/// rule_list ::= OR
-#line 758 "jikespg.g"
+./
+                | '|'                    -- can't be first SYMBOL
+/:$offset bad_first_symbol_in_RULES_section, /* $rule_number */:/
+/.$location
 static void bad_first_symbol_in_RULES_section(void)
 {
     PRNTERR2("First symbol in Rules section is not a valid left-hand side.\n Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
-
-/// rule_list ::= rule_list OR produces
-#line 773 "jikespg.g"
+./
+                | EMPTY_SYMBOL           -- can't be first SYMBOL
+/:$offset bad_first_symbol_in_RULES_section, /* $rule_number */:/
+                | ERROR_SYMBOL           -- can't be first SYMBOL
+/:$offset bad_first_symbol_in_RULES_section, /* $rule_number */:/
+                | keyword                -- keyword out of place
+/:$offset bad_first_symbol_in_RULES_section, /* $rule_number */:/
+                | rule_list '|' produces            -- No good !!!
+/:$offset rule_without_left_hand_side, /* $rule_number */:/
+/.$location
 static void rule_without_left_hand_side(void)
 {
     PRNTERR2("Rule without left-hand-side.  Line %ld, column %d", SYM3.start_line, SYM3.start_column);
     exit(12);
 }
-
-/// rule_list ::= rule_list keyword produces
-#line 786 "jikespg.g"
-static void act91(void)
+./
+                | rule_list action_block produces          -- No good !!!
+/:$offset rule_without_left_hand_side, /* $rule_number */:/
+                | rule_list EMPTY_SYMBOL produces   -- No good !!!
+/:$offset rule_without_left_hand_side, /* $rule_number */:/
+                | rule_list keyword produces        -- No good !!!
+/:$offset $action:/
+/.$location
+static void act$rule_number(void)
 {
     PRNTWNG2("Misplaced keyword found in Rules section Line %ld, column %d",  SYM2.start_line, SYM2.start_column);
     exit(12);
 }
+./
 
-/// action_block ::= BLOCK
-#line 796 "jikespg.g"
-static void act92(void)
+    action_block ::= BLOCK
+/:$offset $action:/
+/.$location
+static void act$rule_number(void)
 {
     add_block_definition(&(SYM1));
 }
-
-/// action_block ::= HBLOCK
-#line 804 "jikespg.g"
-static void act93(void)
+./
+                   | HBLOCK
+/:$offset $action:/
+/.$location
+static void act$rule_number(void)
 {
     add_block_definition(&(SYM1));
 }
+./
 
-/// keyword ::= DEFINE_KEY
-#line 813 "jikespg.g"
+    keyword ::= DEFINE_KEY
+/:$offset misplaced_keyword_found_in_RULES_section, /* $rule_number */:/
+/.$location
 static void misplaced_keyword_found_in_RULES_section(void)
 {
     PRNTWNG2("Misplaced keyword found in RULES section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
+./
+              | TERMINALS_KEY
+/:$offset misplaced_keyword_found_in_RULES_section, /* $rule_number */:/
+              | ALIAS_KEY
+/:$offset misplaced_keyword_found_in_RULES_section, /* $rule_number */:/
+              | START_KEY
+/:$offset misplaced_keyword_found_in_RULES_section, /* $rule_number */:/
+              | RULES_KEY
+/:$offset misplaced_keyword_found_in_RULES_section, /* $rule_number */:/
 
-/// names_definition ::= name produces name
-#line 834 "jikespg.g"
-static void act100(void)
+    names_block ::= NAMES_KEY {names_definition}
+/:$no_action:/
+
+    names_definition ::= name produces name
+/:$offset $action:/
+/.$location
+static void act$rule_number(void)
 {
     if (error_maps_bit)
     {
@@ -590,33 +871,75 @@ static void act100(void)
          symno[symbol].name_index = name_map(SYM3.name);
      }
 }
+./
+                       | bad_name produces name
+/:$no_action:/
+                       | name produces bad_name
+/:$no_action:/
 
-/// bad_name ::= DEFINE_KEY
-#line 901 "jikespg.g"
+    name ::= SYMBOL
+/:$no_action:/
+           | EMPTY_SYMBOL
+/:$no_action:/
+           | ERROR_SYMBOL
+/:$no_action:/
+           | EOL_SYMBOL
+/:$no_action:/
+           | EOF_SYMBOL
+/:$no_action:/
+           | '|'
+/:$no_action:/
+           | produces
+/:$no_action:/
+
+      bad_name ::= DEFINE_KEY
+/:$offset misplaced_keyword_found_in_NAMES_section, /* $rule_number */:/
+/.$location
 static void misplaced_keyword_found_in_NAMES_section(void)
 {
     PRNTERR2("Keyword  has been misplaced in NAMES section.  Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
-
-/// bad_name ::= BLOCK
-#line 920 "jikespg.g"
-static void act116(void)
+./
+                 | TERMINALS_KEY
+/:$offset misplaced_keyword_found_in_NAMES_section, /* $rule_number */:/
+                 | ALIAS_KEY
+/:$offset misplaced_keyword_found_in_NAMES_section, /* $rule_number */:/
+                 | START_KEY
+/:$offset misplaced_keyword_found_in_NAMES_section, /* $rule_number */:/
+                 | RULES_KEY
+/:$offset misplaced_keyword_found_in_NAMES_section, /* $rule_number */:/
+                 | NAMES_KEY
+/:$offset misplaced_keyword_found_in_NAMES_section, /* $rule_number */:/
+                 | BLOCK
+/:$offset $action:/
+/.$location
+static void act$rule_number(void)
 {
     PRNTERR2("Misplaced action block found in NAMES section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
-
-/// bad_name ::= MACRO_NAME
-#line 929 "jikespg.g"
-static void act117(void)
+./
+                 | MACRO_NAME
+/:$offset $action:/
+/.$location
+static void act$rule_number(void)
 {
     PRNTERR2("Misplaced macro name found in NAMES section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
 }
+./
 
-/// [terminals_block] ::=
-#line 946 "jikespg.g"
+------------------------------------------------------------------------
+
+[define_block] ::= $EMPTY
+/:$no_action:/
+                 | define_block
+/:$no_action:/
+
+[terminals_block] ::= $EMPTY
+/:$offset process_TERMINALS_section, /* $rule_number */:/
+/.$location
 static void process_TERMINALS_section(void)
 {
     num_terminals = num_symbols;
@@ -633,9 +956,13 @@ static void process_TERMINALS_section(void)
     assign_symbol_no(kaccept, OMEGA);
     accept_image = symbol_image(kaccept);
 }
+./
+                    | terminals_block
+/:$offset process_TERMINALS_section, /* $rule_number */:/
 
-/// [alias_block] ::=
-#line 969 "jikespg.g"
+[alias_block] ::= $EMPTY
+/:$offset process_ALIAS_section, /* $rule_number */:/
+/.$location
 static void process_ALIAS_section(void)
 {
 
@@ -679,11 +1006,63 @@ static void process_ALIAS_section(void)
     if (error_image == DEFAULT_SYMBOL)
         alias_map(kerror, DEFAULT_SYMBOL);
 }
+./
+                | alias_block
+/:$offset process_ALIAS_section, /* $rule_number */:/
 
-/// {terminal_symbol} ::=
-#line 1041 "jikespg.g"
-static void act132(void)
+[start_block] ::= $EMPTY
+/:$no_action:/
+                | start_block
+/:$no_action:/
+
+[rules_block] ::= $EMPTY
+/:$no_action:/
+                | rules_block
+/:$no_action:/
+
+[names_block] ::= $EMPTY
+/:$no_action:/
+                | names_block
+/:$no_action:/
+
+[%END] ::= $EMPTY
+/:$no_action:/
+         | END_KEY
+/:$no_action:/
+
+------------------------------------------------------------------------
+
+{terminal_symbol} ::= $EMPTY
+/:$offset $action:/
+/.$location
+static void act$rule_number(void)
 {
     assign_symbol_no(kempty, OMEGA);
     empty = symbol_image(kempty);
 }
+./
+                    | {terminal_symbol} terminal_symbol
+/:$no_action:/
+
+{start_symbol} ::= $EMPTY
+/:$no_action:/
+                 | {start_symbol} start_symbol
+/:$no_action:/
+
+{alias_definition} ::= $EMPTY
+/:$no_action:/
+                     | {alias_definition} alias_definition
+/:$no_action:/
+
+{names_definition} ::= $EMPTY
+/:$no_action:/
+                     | {names_definition} names_definition
+/:$no_action:/
+
+{action_block} ::= $EMPTY
+/:$no_action:/
+                 | {action_block} action_block
+/:$no_action:/
+
+/:$offset NULL};:/
+$End

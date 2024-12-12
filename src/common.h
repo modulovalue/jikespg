@@ -101,6 +101,10 @@ static const int IOBUFFER_SIZE = 655360;
 
 extern const long MAX_TABLE_SIZE;
 
+struct node **direct_produces;
+
+extern SET_PTR produces;
+
 struct node {
   struct node *next;
   int value;
@@ -225,7 +229,7 @@ static struct CLIOptions init_cli_options() {
     .default_opt = 5,
     .trace_opt = TRACE_CONFLICTS,
     .names_opt = OPTIMIZE_PHRASES,
-    .table_opt = 0,
+    .table_opt = OPTIMIZE_NO_TABLE,
     .maximum_distance = 30,
     .minimum_distance = 3,
     .stack_size = 128,
@@ -398,7 +402,6 @@ extern long error_act;
 extern long first_index;
 extern long last_index;
 extern long last_symbol;
-extern long max_name_length;
 
 extern SET_PTR naction_symbols;
 extern SET_PTR action_symbols;
@@ -497,6 +500,10 @@ void resolve_conflicts(int state_no, struct node **action, const short *symbol_l
 
 void restore_symbol(char *out, const char *in);
 
+void *galloc(long size);
+
+extern struct node *node_pool;
+
 /// This function allocates an array of size "size" of int integers.
 static long *Allocate_long_array(const long n) {
   long *p;
@@ -517,10 +524,6 @@ static bool *Allocate_boolean_array(const long n) {
   calloc0(p, n, bool);
   return &p[0];
 }
-
-void *galloc(long size);
-
-extern struct node *node_pool;
 
 /// This function allocates a node structure and returns a pointer to it.
 /// If there are nodes in the free pool, one of them is returned. Otherwise,
@@ -622,27 +625,6 @@ static void PRNTERR(char *msg) {
 #define PRNTERR2(...) \
   snprintf(msg_line, MAX_MSG_SIZE, __VA_ARGS__); \
   PRNTERR(msg_line);
-
-/// The following two macros check whether the value of an
-/// integer variable exceeds the maximum limit for a short or a long
-/// integer, respectively. Note that the user should declare the
-/// variable in question as a long integer. In the case of INT_CHECK,
-/// this check is meaningful only if INT and SHORT are the same size.
-/// Otherwise, if INT and LONG are of the same size, as is usually the
-/// case on large systems, this check is meaningless - too late !!!
-static void SHORT_CHECK(const long var) {
-  if (var > SHRT_MAX) {
-    PRNTERR("The limit of a short int value has been exceeded by");
-    exit(12);
-  }
-}
-
-static void INT_CHECK(const long var) {
-  if (var > INT_MAX) {
-    PRNTERR("The limit of an int value has been exceeded by var");
-    exit(12);
-  }
-}
 
 /// The following macro definitions are used only in processing the output.
 static void BUFFER_CHECK(FILE *file) {

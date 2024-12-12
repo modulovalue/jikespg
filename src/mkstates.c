@@ -8,9 +8,9 @@ static char hostfile[] = __FILE__;
 /// STATE_ELEMENT is used to represent states. Each state is mapped into a
 /// unique number. The components QUEUE and LINK are auxiliary:
 struct state_element {
-  //   LINK is used to resolve collisions in hashing the states.
+  // LINK is used to resolve collisions in hashing the states.
   struct state_element *link;
-  //   QUEUE is used to form a sequential linked-list of the states ordered
+  // QUEUE is used to form a sequential linked-list of the states ordered
   struct state_element *queue;
   // NEXT_SHIFT is used to resolve collisions in hashing SHIFT maps.
   struct state_element *next_shift;
@@ -28,8 +28,6 @@ struct state_element **shift_table;
 struct state_element *state_root;
 struct state_element *state_tail;
 
-short *shift_action;
-
 struct goto_header_type no_gotos_ptr;
 struct shift_header_type no_shifts_ptr;
 
@@ -39,7 +37,7 @@ struct shift_header_type no_shifts_ptr;
 /// the KERNEL is returned.
 struct state_element *lr0_state_map(struct node *kernel) {
   unsigned long hash_address = 0;
-  //Compute the hash address.
+  // Compute the hash address.
   struct node *p;
   for (p = kernel; p != NULL; p = p->next) {
     hash_address += p->value;
@@ -60,10 +58,9 @@ struct state_element *lr0_state_map(struct node *kernel) {
     }
   }
   // Add a new state based on the KERNEL set.
+  num_states++;
   struct state_element *ptr;
   talloc0(ptr, struct state_element);
-  num_states++;
-  SHORT_CHECK(num_states);
   ptr->queue = NULL;
   ptr->kernel_items = kernel;
   ptr->complete_items = NULL;
@@ -99,7 +96,7 @@ void mklr0(struct CLIOptions *cli_options) {
   // Set up a pool of temporary space.
   reset_temporary_space();
   short *list = Allocate_short_array(num_symbols + 1);
-  shift_action = Allocate_short_array(num_terminals + 1);
+  short *shift_action = Allocate_short_array(num_terminals + 1);
   short *shift_list = Allocate_short_array(num_terminals + 1);
   short *nt_list = Allocate_short_array(num_non_terminals);
   nt_list -= num_terminals + 1;
@@ -159,8 +156,8 @@ void mklr0(struct CLIOptions *cli_options) {
         }
       }
     }
-    //   We now construct lists of all start items that the closure
-    // non-terminals produce.  A map from each non-terminal to its set
+    // We now construct lists of all start items that the closure
+    // non-terminals produce. A map from each non-terminal to its set
     // start items has previously been computed in MKFIRST. (CLITEMS)
     // Empty items are placed directly in the state, whereas non_empty
     // items are placed in a temporary list rooted at CLOSURE_ROOT.
@@ -195,11 +192,11 @@ void mklr0(struct CLIOptions *cli_options) {
       // construct list of them and kernel items
       closure_tail->next = state->kernel_items;
       item_ptr = closure_root;
-    } else /* else just consider kernel items */
-    {
+    } else {
+      /* else just consider kernel items */
       item_ptr = state->kernel_items;
     }
-    //   In this loop, the PARTITION map is constructed. At this point,
+    // In this loop, the PARTITION map is constructed. At this point,
     // ITEM_PTR points to all the non_complete items in the closure of
     // the state, plus all the kernel items.  We note that the kernel
     // items may still contain complete-items, and if any is found, the
@@ -223,9 +220,7 @@ void mklr0(struct CLIOptions *cli_options) {
           }
         }
         struct node *tail;
-        for (p = partition[symbol];
-             p != NULL;
-             tail = p, p = p->next) {
+        for (p = partition[symbol]; p != NULL; tail = p, p = p->next) {
           if (p->value > next_item_no) {
             break;
           }
@@ -239,8 +234,8 @@ void mklr0(struct CLIOptions *cli_options) {
         } else {
           tail->next = r;
         }
-      } else /* Update complete item set with item from kernel */
-      {
+      } else {
+        /* Update complete item set with item from kernel */
         p = Allocate_node();
         p->value = item_no;
         p->next = state->complete_items;
@@ -299,8 +294,8 @@ void mklr0(struct CLIOptions *cli_options) {
       // Since the lookahead set computation is based on the GOTO maps,
       // all these maps and their element maps should be kept as
       // separate entities.
-      if (IS_A_TERMINAL(symbol)) /* terminal? add to SHIFT map */
-      {
+      if (IS_A_TERMINAL(symbol)) {
+        /* terminal? add to SHIFT map */
         shift_action[symbol] = action;
         shift_list[symbol] = shift_root;
         shift_root = symbol;
@@ -339,18 +334,18 @@ void mklr0(struct CLIOptions *cli_options) {
     // STATE_ELEMENTs, because once the states have been constructed,
     // they are not kept, whereas the SHIFT_ELEMENTs are kept.
     //    One could have also threaded through the states that contain
-    // original shift maps so as to avoid duplicate assignments in
+    // original shift maps to avoid duplicate assignments in
     // creating the SHIFT map later. However, this would have
     // increased the storage requirement, and would probably have saved
     // (at most) a totally insignificant amount of time.
   update_shift_maps: {
       unsigned long hash_address;
-      struct shift_header_type sh;
-      struct state_element *p_inner;
       hash_address = shift_size;
       for (int symbol = shift_root; symbol != NIL; symbol = shift_list[symbol]) {
         hash_address += ABS(shift_action[symbol]);
       }
+      struct shift_header_type sh;
+      struct state_element *p_inner;
       hash_address %= SHIFT_TABLE_SIZE;
       for (p_inner = shift_table[hash_address];
            p_inner != NULL; /* Search has table for shift map */
@@ -400,11 +395,11 @@ void mklr0(struct CLIOptions *cli_options) {
   // Construct STATSET, a "compact" and final representation of
   // State table, and SHIFT which is a set of all shift maps needed.
   // NOTE that assignments to elements of SHIFT may occur more than
-  // once, but that's ok. It is probably faster to  do that than to
+  // once, but that's ok. It is probably faster to do that than to
   // set up an elaborate scheme to avoid the multiple assignment which
-  // may in fact cost more.  Look at it this way: it is only a pointer
+  // may in fact cost more. Look at it this way: it is only a pointer
   // assignment, namely a Load and a Store.
-  // Release all NODEs used by  the maps CLITEMS and CLOSURE.
+  // Release all NODEs used by the maps CLITEMS and CLOSURE.
   {
     int state_no;
     struct state_element *p_inner;
