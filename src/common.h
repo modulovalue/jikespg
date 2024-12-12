@@ -10,7 +10,7 @@
 static char hostfile[];
 
 #define galloc0(into, x, times) \
-  into = (x *) galloc(times * sizeof(x)); \
+  into = (x *) galloc((times) * sizeof(x)); \
   if (into == (x *) NULL) \
     nospace(hostfile, __LINE__);
 
@@ -19,8 +19,8 @@ static char hostfile[];
   if (into == (x *) NULL) \
     nospace(hostfile, __LINE__);
 
-#define realloc0(into, size, times, t) \
-  into = (t *) realloc(size, sizeof(t)); \
+#define realloc0(into, times, t) \
+  into = (t *) realloc(into, (times) * sizeof(t)); \
   if (into == (t *) NULL) \
     nospace(hostfile, __LINE__);
 
@@ -35,7 +35,7 @@ static char hostfile[];
     nospace(hostfile, __LINE__);
 
 #define calloc0_set(into, size, l) \
-  into = (SET_PTR) calloc(size, l * sizeof(BOOLEAN_CELL)); \
+  into = (SET_PTR) calloc(size, (l) * sizeof(BOOLEAN_CELL)); \
   if (into == (SET_PTR) NULL) \
     nospace(hostfile, __LINE__);
 

@@ -1472,7 +1472,7 @@ void create_lastats(void) {
   // new shift maps.
   calloc0(lastats, max_la_state - num_states, struct lastats_type);
   lastats -= num_states + 1;
-  realloc0(shift, shift, max_la_state + 1, struct shift_header_type);
+  realloc0(shift, max_la_state + 1, struct shift_header_type);
   // Allocate temporary space used to construct final lookahead
   // states.
   struct state_element **new_shift_actions;

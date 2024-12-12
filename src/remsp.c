@@ -779,11 +779,11 @@ void remove_single_productions() {
   }
   // We are now ready to extend all global maps based on states and
   // permanently install the new states.
-  realloc0(statset, statset, (max_sp_state + 1), struct statset_type);
-  realloc0(reduce, reduce, max_sp_state + 1, struct reduce_header_type);
+  realloc0(statset, (max_sp_state + 1), struct statset_type);
+  realloc0(reduce, max_sp_state + 1, struct reduce_header_type);
   // see routine PRODUCE
   if (gd_index != NULL) {
-    realloc0(gd_index, gd_index, (max_sp_state + 2), short);
+    realloc0(gd_index, (max_sp_state + 2), short);
     // Each element gd_index[i] points to the starting location
     // of a slice in another array. The last element of the slice
     // can be computed as (gd_index[i+1] - 1). After extending
@@ -794,7 +794,7 @@ void remove_single_productions() {
       gd_index[state_no] = gd_index[state_no - 1];
     }
   }
-  realloc0(in_stat, in_stat, (max_sp_state + 1), struct node*);
+  realloc0(in_stat, (max_sp_state + 1), struct node*);
   for (int state_no = num_states + 1; state_no <= max_sp_state; state_no++) {
     in_stat[state_no] = NULL;
   }
@@ -878,7 +878,7 @@ void remove_single_productions() {
   // At most, the shift array contains 1..num_states elements. As,
   // each of these elements might be (theoretically) replaced by a
   // new one, we need to double its size.
-  realloc0(shift, shift, 2 * (num_states + 1), struct shift_header_type);
+  realloc0(shift, 2 * (num_states + 1), struct shift_header_type);
   // For each state with updates or new actions, take appropriate
   // actions.
   for ALL_STATES3(state_no) {
