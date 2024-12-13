@@ -866,14 +866,18 @@ static void common(const bool byte_check_bit, struct CLIOptions *cli_options, st
     if (error_maps_bit) {
       print_error_maps(cli_options, toutput, dss, ctp, of);
     }
-    if (!byte_check_bit) {
+    if (byte_check_bit) {
+      // Do nothing.
+    } else {
       if (cli_options->java_bit) {
         PRNT("\n***Warning: Base Check vector contains value > 127. 16-bit words used.");
       } else {
         PRNT("\n***Warning: Base Check vector contains value > 255. 16-bit words used.");
       }
     }
-    if (!byte_terminal_range) {
+    if (byte_terminal_range) {
+      // Do nothing.
+    } else {
       if (cli_options->java_bit) {
         PRNT("***Warning: Terminal symbol > 127. 16-bit words used.");
       } else {
@@ -2670,153 +2674,4 @@ void populate_start_file(FILE **file, char *file_tag, struct CLIOptions *cli_opt
     fprintf(*file, "#ifndef %s_INCLUDED\n", file_tag);
     fprintf(*file, "#define %s_INCLUDED\n\n", file_tag);
   }
-}
-
-/// PT_STATS prints all the states of the parser.
-void ptstats(struct CLIOptions *cli_options, struct OutputFiles* of) {
-  char temp[SYMBOL_SIZE + 1];
-  char line[MAX_LINE_SIZE + 1];
-  printf("Shift STATES: ");
-  // iterate over the states
-  for ALL_STATES3(state_no) {
-    print_state(state_no, cli_options);
-    int max_size = 0;
-    // Compute the size of the largest symbol.  The MAX_SIZE cannot
-    // be larger than PRINT_LINE_SIZE - 17 to allow for printing of
-    // headers for actions to be taken on the symbols.
-    struct shift_header_type sh = shift[statset[state_no].shift_number];
-    for (int i = 1; i <= sh.size; i++) {
-      int symbol = sh.map[i].symbol;
-      restore_symbol(temp, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
-      max_size = MAX(max_size, strlen(temp));
-    }
-    const struct goto_header_type go_to = statset[state_no].go_to;
-    for (int i = 1; i <= go_to.size; i++) {
-      int symbol = go_to.map[i].symbol;
-      restore_symbol(temp, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
-      max_size = MAX(max_size, strlen(temp));
-    }
-    struct reduce_header_type red = reduce[state_no];
-    for (int i = 1; i <= red.size; i++) {
-      int symbol = red.map[i].symbol;
-      restore_symbol(temp, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
-      max_size = MAX(max_size, strlen(temp));
-    }
-    max_size = MIN(max_size, PRINT_LINE_SIZE - 17);
-    // 1) Print all Shift actions.
-    // 2) Print all Goto actions.
-    // 3) Print all reduce actions.
-    // 4) If there is a default then print it.
-    if (sh.size > 0) {
-      printf("\n");
-      for (int i = 1; i <= sh.size; i++) {
-        int symbol = sh.map[i].symbol;
-        restore_symbol(temp, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
-        print_large_token(line, temp, "", max_size);
-        int number = ABS(sh.map[i].action);
-        if (sh.map[i].action > (short) num_states) {
-          printf("\n%-*s    La/Sh  %d", max_size, line, number);
-        } else if (sh.map[i].action > 0) {
-          printf("\n%-*s    Shift  %d", max_size, line, number);
-        } else {
-          printf("\n%-*s    Sh/Rd  %d", max_size, line, number);
-        }
-      }
-    }
-    if (go_to.size > 0) {
-      printf("\n");
-      for (int i = 1; i <= go_to.size; i++) {
-        int symbol = go_to.map[i].symbol;
-        restore_symbol(temp, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
-        print_large_token(line, temp, "", max_size);
-        int number = ABS(go_to.map[i].action);
-        if (go_to.map[i].action > 0) {
-          printf("\n%-*s    Goto   %d", max_size, line, number);
-        } else {
-          printf("\n%-*s    Gt/Rd  %d", max_size, line, number);
-        }
-      }
-    }
-    if (red.size != 0) {
-      printf("\n");
-      for (int i = 1; i <= red.size; i++) {
-        int symbol = red.map[i].symbol;
-        restore_symbol(temp, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
-        print_large_token(line, temp, "", max_size);
-        int number = red.map[i].rule_number;
-        if (rules[number].lhs != accept_image) {
-          printf("\n%-*s    Reduce %d", max_size, line, number);
-        } else {
-          printf("\n%-*s    Accept", max_size, line);
-        }
-      }
-    }
-    if (cli_options->default_opt > 0 && red.map[0].rule_number != OMEGA) {
-      printf("\n\nDefault reduction to rule  %d", red.map[0].rule_number);
-    }
-  }
-  if (max_la_state > num_states) {
-    printf("Look-Ahead STATES:");
-  }
-  for ALL_LA_STATES3(state_no) {
-    char buffer[PRINT_LINE_SIZE + 1];
-    int ii = number_len(state_no) + 8; /* 8 = length of "STATE" */
-    // + 2 spaces + newline
-    fill_in(buffer, PRINT_LINE_SIZE - ii, '-');
-    printf("\n\n\nSTATE %d %s", state_no, buffer);
-    // Print the set of states that have transitions to STATE_NO.
-    if (lastats[state_no].in_state == state_no) {
-      printf("\n(Unreachable State)\n");
-    } else {
-      printf("\n(%d)\n", lastats[state_no].in_state);
-      int max_size = 0;
-      // Compute the size of the largest symbol.  The MAX_SIZE
-      // cannot be larger than PRINT_LINE_SIZE - 17 to allow
-      // for printing of headers for actions to be taken on
-      // the symbols.
-      struct shift_header_type sh = shift[lastats[state_no].shift_number];
-      for (ii = 1; ii <= sh.size; ii++) {
-        int symbol = sh.map[ii].symbol;
-        restore_symbol(temp, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
-        max_size = MAX(max_size, strlen(temp));
-      }
-      struct reduce_header_type red = lastats[state_no].reduce;
-      for (ii = 1; ii <= red.size; ii++) {
-        int symbol = red.map[ii].symbol;
-        restore_symbol(temp, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
-        max_size = MAX(max_size, strlen(temp));
-      }
-      max_size = MIN(max_size, PRINT_LINE_SIZE - 17);
-      // 1) Print all Shift actions.
-      // 2) Print all Goto actions.
-      // 3) Print all reduce actions.
-      // 4) If there is a default then print it.
-      printf("\n");
-      for (ii = 1; ii <= sh.size; ii++) {
-        int symbol = sh.map[ii].symbol;
-        restore_symbol(temp, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
-        print_large_token(line, temp, "", max_size);
-        int number = ABS(sh.map[ii].action);
-        if (sh.map[ii].action > (short) num_states) {
-          printf("\n%-*s    La/Sh  %d", max_size, line, number);
-        } else if (sh.map[ii].action > 0) {
-          printf("\n%-*s    Shift  %d", max_size, line, number);
-        } else {
-          printf("\n%-*s    Sh/Rd  %d", max_size, line, number);
-        }
-      }
-      printf("\n");
-      for (ii = 1; ii <= red.size; ii++) {
-        int symbol = red.map[ii].symbol;
-        restore_symbol(temp, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
-        print_large_token(line, temp, "", max_size);
-        int number = red.map[ii].rule_number;
-        printf("\n%-*s    Reduce %d", max_size, line, number);
-      }
-      if (cli_options->default_opt > 0 && red.map[0].rule_number != OMEGA) {
-        printf("\n\nDefault reduction to rule  %d", red.map[0].rule_number);
-      }
-    }
-  }
-  printf("\n");
 }

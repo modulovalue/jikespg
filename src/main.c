@@ -75,7 +75,6 @@ int main(const int argc, char *argv[]) {
     // Process input.
     {
       char grm_file[80];
-      char lis_file[80];
       // Create file names for output files
       strcpy(grm_file, argv[argc - 1]);
       const char *slash = strrchr(grm_file, '/');
@@ -89,7 +88,6 @@ int main(const int argc, char *argv[]) {
       // if filename has no extension, copy it.
       char file_prefix[80] = "";
       if (dot == NULL) {
-        strcpy(lis_file, tmpbuf);
         strcpy(tab_file, tmpbuf);
         int ii;
         for (ii = 0; ii < 5; ii++) {
@@ -103,14 +101,11 @@ int main(const int argc, char *argv[]) {
           file_prefix[ii] = tmpbuf[ii];
         }
         file_prefix[ii] = '\0';
-        memcpy(lis_file, tmpbuf, dot - tmpbuf);
         memcpy(tab_file, tmpbuf, dot - tmpbuf);
-        lis_file[dot - tmpbuf] = '\0';
         tab_file[dot - tmpbuf] = '\0';
       }
-      strcat(lis_file, ".l"); /* add .l extension for listing file */
       strcat(tab_file, ".t"); /* add .t extension for table file */
-      process_input(grm_file, lis_file, &of, argc, argv, file_prefix, &cli_options, &of);
+      process_input(grm_file, &of, argc, argv, file_prefix, &cli_options, &of);
     }
 
     struct DetectedSetSizes dss = mkbasic(&cli_options);
@@ -144,10 +139,6 @@ int main(const int argc, char *argv[]) {
       PRNT3("Number of Reduce actions: %ld", num_reductions);
       PRNT3("Number of Shift-Reduce conflicts: %ld", num_sr_conflicts);
       PRNT3("Number of Reduce-Reduce conflicts: %ld", num_rr_conflicts);
-    }
-
-    if (cli_options.states_bit) {
-      ptstats(&cli_options, &of);
     }
 
     if (cli_options.table_opt.value != OPTIMIZE_NO_TABLE.value) {

@@ -284,13 +284,4 @@ void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLI
   if (!cli_options->c_bit && !cli_options->cpp_bit && !cli_options->java_bit) {
     fclose(systab);
   }
-  // If printing of the states was requested,  print the new mapping
-  // of the states.
-  if (cli_options->states_bit) {
-    printf("\nMapping of new state numbers into original numbers:\n");
-    for ALL_STATES3(state_no) {
-      printf("\n%5ld  ==>>  %5ld", toutput.ordered_state[state_no], toutput.state_list[state_no]);
-    }
-    printf("\n");
-  }
 }

@@ -224,8 +224,6 @@ static void options(char *file_prefix, struct CLIOptions *cli_options) {
         cli_options->shift_default_bit = flag;
       } else if (memcmp("SINGLEPRODUCTIONS", token, token_len) == 0) {
         cli_options->single_productions_bit = flag;
-      } else if (memcmp("STATES", token, token_len) == 0) {
-        cli_options->states_bit = flag;
       } else {
         PRNTERR2("\"%s\" is an invalid option", temp);
       }
@@ -509,7 +507,6 @@ static void process_options_lines(char *grm_file, struct OutputFiles *of, char *
   strcpy(opt_string[++top], cli_options->shift_default_bit ? "SHIFT-DEFAULT" : "NOSHIFT-DEFAULT");
   strcpy(opt_string[++top], cli_options->single_productions_bit ? "SINGLE-PRODUCTIONS" : "NOSINGLE-PRODUCTIONS");
   sprintf(opt_string[++top], "STACK-SIZE=%d", cli_options->stack_size);
-  strcpy(opt_string[++top], cli_options->states_bit ? "STATES" : "NOSTATES");
   sprintf(opt_string[++top], "SUFFIX=%s", cli_options->suffix);
   if (cli_options->table_opt.value == OPTIMIZE_NO_TABLE.value) {
     strcpy(opt_string[++top], "NOTABLE");
@@ -1403,146 +1400,6 @@ static void mapmacro(const int def_index) {
 
 static struct hash_type *alias_root = NULL;
 
-static const char *EXTRACT_STRING(const int indx) {
-  return &string_table[indx];
-}
-
-/// If a listing is requested, this prints all the macros(if any), followed
-/// by the aliases(if any), followed by the terminal symbols, followed by the
-/// rules.
-/// This grammar information is printed on lines no longer than
-/// PRINT_LINE_SIZE characters long.  If all the symbols in a rule cannot fit
-/// on one line, it is continued on a subsequent line beginning at the
-/// position after the equivalence symbol (::= or ->) or the middle of the
-/// print_line, whichever is smaller.  If a symbol cannot fit on a line
-/// beginning at the proper offset, it is laid out on successive lines,
-/// beginning at the proper offset.
-static void display_input(struct CLIOptions* cli_options, struct OutputFiles* of) {
-  char line[PRINT_LINE_SIZE + 1];
-  char temp[SYMBOL_SIZE + 1];
-  // Print the Macro definitions, if any.
-  if (num_defs > 0) {
-    printf("\nDefined Symbols:\n\n");
-    for (int j = 0; j < num_defs; j++) {
-      fill_in(line, PRINT_LINE_SIZE - (strlen(cli_options->blockb) + 1), '-');
-      printf("\n\n%s\n%s%s\n", defelmt[j].name, cli_options->blockb, line);
-      for (const char *ptr = defelmt[j].macro; *ptr != '\0'; ptr++) {
-        for (; *ptr != '\n'; ptr++) {
-          printf("%c", *ptr);
-        }
-        printf("%c", *ptr);
-      }
-      fill_in(line, PRINT_LINE_SIZE - (strlen(cli_options->blocke) + 1), '-');
-      printf("%s%s\n", cli_options->blocke, line);
-    }
-  }
-  register int offset;
-  //   Print the Aliases, if any.
-  if (alias_root != NULL) {
-    if (alias_root->link == NULL) {
-      printf("\nAlias:\n\n");
-    } else {
-      printf("\nAliases:\n\n");
-    }
-    for (const struct hash_type *p = alias_root; p != NULL; p = p->link) {
-      restore_symbol(temp, EXTRACT_STRING(p->st_ptr), cli_options->ormark, cli_options->escape);
-      int len = PRINT_LINE_SIZE - 5;
-      print_large_token(line, temp, "", len);
-      strcat(line, " ::= ");
-      int symb = -p->number;
-      restore_symbol(temp, RETRIEVE_STRING(symb), cli_options->ormark, cli_options->escape);
-      if (strlen(line) + strlen(temp) > PRINT_LINE_SIZE) {
-        printf("%s\n", line);
-        len = PRINT_LINE_SIZE - 4;
-        print_large_token(line, temp, "    ", len);
-      } else {
-        strcat(line, temp);
-      }
-      printf("%s\n", line);
-    }
-  }
-  //   Print the terminals.
-  //   The first symbol (#1) represents the empty string.  The last terminal
-  // declared by the user is followed by EOFT which may be followed by the
-  // ERROR symbol.  See LPG GRAMMAR for more details.
-  printf("\nTerminals:\n\n");
-  strcpy(line, "        "); /* 8 spaces */
-  int len = PRINT_LINE_SIZE - 4;
-  for (int symb = 2; symb <= num_terminals; symb++) {
-    restore_symbol(temp, RETRIEVE_STRING(symb), cli_options->ormark, cli_options->escape);
-    if (strlen(line) + strlen(temp) > PRINT_LINE_SIZE) {
-      printf("\n%s", line);
-      print_large_token(line, temp, "    ", len);
-    } else {
-      strcat(line, temp);
-    }
-    if (strlen(line) < PRINT_LINE_SIZE) {
-      strcat(line, " ");
-    }
-  }
-  printf("\n%s", line);
-  //    Print the Rules
-  printf("\nRules:\n\n");
-  for (register int rule_no = 0; rule_no <= num_rules; rule_no++) {
-    int symb = rules[rule_no].lhs;
-    sprintf(line, "%-4d  ", rule_no);
-    if (symb != OMEGA) {
-      restore_symbol(temp, RETRIEVE_STRING(symb), cli_options->ormark, cli_options->escape);
-      if (strlen(temp) > PRINT_LINE_SIZE - 12) {
-        strncat(line, temp, PRINT_LINE_SIZE - 12);
-        printf("\n%s", line);
-        memmove(temp, temp + (PRINT_LINE_SIZE - 12), sizeof(temp) - (PRINT_LINE_SIZE - 12));
-        print_large_token(line, temp, "       ", PRINT_LINE_SIZE - 12);
-      } else {
-        strcat(line, temp);
-      }
-      if (rules[rule_no].sp) {
-        strcat(line, " -> ");
-      } else {
-        strcat(line, " ::= ");
-      }
-      offset = MIN(strlen(line) - 1, PRINT_LINE_SIZE / 2 + 1);
-      len = PRINT_LINE_SIZE - offset - 1;
-    } else {
-      symb = rules[rule_no - 1].lhs;
-      rules[rule_no].lhs = symb; /* update rules map */
-      if (rules[rule_no].sp) {
-        restore_symbol(temp, RETRIEVE_STRING(symb), cli_options->ormark, cli_options->escape);
-        if (strlen(temp) > PRINT_LINE_SIZE - 12) {
-          strncat(line, temp, PRINT_LINE_SIZE - 12);
-          printf("\n%s", line);
-          memmove(temp, temp + (PRINT_LINE_SIZE - 12), sizeof(temp) - (PRINT_LINE_SIZE - 12));
-          print_large_token(line, temp, "       ", PRINT_LINE_SIZE - 12);
-        } else {
-          strcat(line, temp);
-        }
-        strcat(line, "  -> ");
-      } else {
-        for (int i = 1; i <= offset - 7; i++) {
-          strcat(line, " ");
-        }
-        strcat(line, "| ");
-      }
-    }
-    for ENTIRE_RHS3(i, rule_no) {
-      restore_symbol(temp, RETRIEVE_STRING(rhs_sym[i]), cli_options->ormark, cli_options->escape);
-      if (strlen(temp) + strlen(line) > PRINT_LINE_SIZE - 1) {
-        char tempbuffer1[SYMBOL_SIZE + 1];
-        printf("\n%s", line);
-        strcpy(tempbuffer1, " ");
-        for (int j = 1; j < offset + 1; j++) {
-          strcat(tempbuffer1, " ");
-        }
-        print_large_token(line, temp, tempbuffer1, len);
-      } else {
-        strcat(line, temp);
-      }
-      strcat(line, " ");
-    }
-    printf("\n%s", line);
-  }
-}
-
 /// Process all semantic actions and generate action file.
 static void process_actions(char *grm_file, struct CLIOptions *cli_options, struct OutputFiles* of) {
   register char *p;
@@ -1615,10 +1472,6 @@ static void process_actions(char *grm_file, struct CLIOptions *cli_options, stru
       *p = isupper(*p) ? tolower(*p) : *p;
     }
     mapmacro(i);
-  }
-  // If LISTING was requested, invoke listing procedure.
-  if (cli_options->list_bit) {
-    display_input(cli_options, of);
   }
   // Read in all the action blocks and process them.
   for (int i = 0; i < num_acts; i++) {
@@ -1831,13 +1684,10 @@ static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *
   }
   fclose(sysgrm); /* Close grammar input file. */
   process_actions(grm_file, cli_options, of);
-  if (cli_options->list_bit) {
-    display_input(cli_options, of);
-  }
 }
 
 /// This procedure opens all relevant files and processes the input grammar.
-void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_files, const int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options, struct OutputFiles* of) {
+void process_input(char *grm_file, struct OutputFiles *output_files, const int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options, struct OutputFiles* of) {
   // Parse args.
   {
     // If options are passed to the program, copy them into "parm".

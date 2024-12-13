@@ -199,7 +199,6 @@ struct CLIOptions {
   bool list_bit;
   bool first_bit;
   bool follow_bit;
-  bool states_bit;
   bool nt_check_bit;
   bool conflicts_bit;
   // TODO • have a union for c/cpp/java/unknown.
@@ -242,7 +241,6 @@ static struct CLIOptions init_cli_options() {
     .list_bit = false,
     .first_bit = false,
     .follow_bit = false,
-    .states_bit = false,
     .nt_check_bit = false,
     .conflicts_bit = true,
     .c_bit = false,
@@ -278,11 +276,11 @@ static struct CLIOptions init_cli_options() {
   };
 }
 
-void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_files, int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options, struct OutputFiles* of);
+void process_input(char *grm_file, struct OutputFiles *output_files, int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options, struct OutputFiles* of);
 
 extern char msg_line[];
 
-///  The variables below are global counters.
+/// The variables below are global counters.
 extern long num_items;
 
 /// NUM_STATES, the actual number of elements used in it is indicated
@@ -620,8 +618,6 @@ void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutp
 void populate_start_file(FILE **file, char *file_tag, struct CLIOptions *cli_options);
 
 void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of);
-
-void ptstats(struct CLIOptions *cli_options, struct OutputFiles* of);
 
 void sortdes(long array[], long count[], long low, long high, long max);
 
