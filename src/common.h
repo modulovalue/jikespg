@@ -402,6 +402,20 @@ extern struct scope_type {
   short state_set;
 } *scope;
 
+struct CTabsProps {
+  int shift_domain_count;
+  int num_terminal_states;
+  int check_size;
+  int term_check_size;
+  int term_action_size;
+  int shift_check_size;
+  long last_non_terminal;
+  long last_terminal;
+  long table_size;
+  long action_size;
+  long increment_size;
+};
+
 extern long *scope_right_side;
 extern short *scope_state;
 
@@ -410,13 +424,6 @@ extern char *output_buffer;
 
 extern long *next;
 extern long *previous;
-
-extern long table_size;
-extern long action_size;
-extern long increment_size;
-
-extern long last_non_terminal;
-extern long last_terminal;
 
 extern long accept_act;
 extern long error_act;
@@ -538,18 +545,6 @@ struct new_state_type {
   short image;
 };
 
-extern struct new_state_type *new_state_element;
-
-extern short *shift_image;
-extern short *real_shift_number;
-
-extern int shift_domain_count;
-extern int num_terminal_states;
-extern int check_size;
-extern int term_check_size;
-extern int term_action_size;
-extern int shift_check_size;
-
 /// CONFLICT_SYMBOLS is a mapping from each state into a set of terminal
 /// symbols on which an LALR(1) conflict was detected in the state in
 /// question.
@@ -580,9 +575,9 @@ extern short *la_index;
 
 extern int increment;
 
-void cmprtim(struct OutputFiles *output_files, struct CLIOptions *cli_options, FILE *systab, struct TableOutput* toutput, struct DetectedSetSizes* dss);
+void cmprtim(struct OutputFiles *output_files, struct CLIOptions *cli_options, FILE *systab, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp);
 
-void cmprspa(struct OutputFiles *output_files, struct CLIOptions *cli_options, FILE *systab, struct TableOutput* toutput, struct DetectedSetSizes* dss);
+void cmprspa(struct OutputFiles *output_files, struct CLIOptions *cli_options, FILE *systab, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp);
 
 void init_rmpself(JBitset produces);
 
@@ -612,21 +607,23 @@ void print_large_token(char *line, char *token, const char *indent, int len);
 
 void print_state(int state_no, struct CLIOptions* cli_options);
 
-void process_error_maps(struct CLIOptions *cli_options, FILE *systab, struct TableOutput* toutput, struct DetectedSetSizes* dss);
+void process_error_maps(struct CLIOptions *cli_options, FILE *systab, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp);
 
-void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, long *term_state_index, long *shift_check_index);
+void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, long *term_state_index, long *shift_check_index, struct CTabsProps* ctp, struct new_state_type *new_state_element, short *shift_image, short *real_shift_number);
 
-void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss);
+void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp);
 
-void init_parser_files(struct OutputFiles *output_files, struct CLIOptions *cli_options);
+void init_file(FILE **file, char *file_name, char *file_tag);
 
-void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options, struct DetectedSetSizes* dss);
+void populate_start_to_file(FILE **file, char *file_tag, struct CLIOptions *cli_options);
+
+void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct CTabsProps* ctp);
 
 void ptstats(struct CLIOptions *cli_options);
 
 void sortdes(long array[], long count[], long low, long high, long max);
 
-void reallocate(struct CLIOptions *cli_options);
+void reallocate(struct CLIOptions *cli_options, struct CTabsProps* ctp);
 
 /// This function allocates an array of size "size" of int integers.
 static long *Allocate_long_array(const long n) {
@@ -707,3 +704,13 @@ static struct TableOutput init_table_output() {
     .state_list = Allocate_long_array(max_la_state + 1),
   };
 }
+
+extern FILE *sysdcl;
+extern FILE *syssym;
+extern FILE *sysprs;
+extern FILE *sysdef;
+
+extern char dcl_tag[SYMBOL_SIZE];
+extern char sym_tag[SYMBOL_SIZE];
+extern char def_tag[SYMBOL_SIZE];
+extern char prs_tag[SYMBOL_SIZE];

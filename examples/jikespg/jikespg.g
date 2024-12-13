@@ -3,7 +3,6 @@
 %Options ACTFILENAME=lpgact.c
 %Options FILEPREFIX=lpg
 %Options GENERATEPARSER=c
-%Options NODEFER
 %Options SUFFIX=_TK
 %Options STACKSIZE=21
 %Options HACTFILENAME=lpgact.h

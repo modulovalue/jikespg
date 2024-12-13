@@ -274,7 +274,8 @@ static void options(char *file_prefix, struct CLIOptions *cli_options) {
           cli_options->cpp_bit = false;
           cli_options->java_bit = true;
         } else {
-          PRNTERR2("\"%s\" is an invalid language for %s", temp, token);
+          PRNTERR2("\"%s\" is an invalid language for %s. You need to set a language: C|CPP|JAVA, Not doing so is deprecated", temp, token);
+
         }
       } else if (memcmp(token, "HACTFILENAME", token_len) == 0) {
         strcpy(cli_options->hact_file, temp);

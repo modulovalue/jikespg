@@ -174,7 +174,7 @@ static void compute_goto_default(void) {
 
 /// Remap symbols, apply transition default actions  and call
 /// appropriate table compression routine.
-void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
+void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct CTabsProps* ctp) {
   //        First, we decrease by 1 the constants NUM_SYMBOLS
   // and NUM_TERMINALS, remove the EMPTY symbol(1) and remap the
   // other symbols beginning at 1.  If default reduction is
@@ -259,9 +259,9 @@ void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLI
   }
   struct TableOutput toutput = init_table_output();
   if (cli_options->table_opt.value == OPTIMIZE_SPACE.value) {
-    cmprspa(output_files, cli_options, systab, &toutput, dss);
+    cmprspa(output_files, cli_options, systab, &toutput, dss, ctp);
   } else if (cli_options->table_opt.value == OPTIMIZE_TIME.value) {
-    cmprtim(output_files, cli_options, systab, &toutput, dss);
+    cmprtim(output_files, cli_options, systab, &toutput, dss, ctp);
   } else {
     exit(999);
   }

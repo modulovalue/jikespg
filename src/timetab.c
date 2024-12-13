@@ -163,27 +163,27 @@ struct DefaultSaves {
 /// compute the starting position in a vector where each of its rows
 /// may be placed without clobbering elements in another row.
 /// The starting positions are stored in the vector STATE_INDEX.
-static void overlap_tables(struct CLIOptions *cli_options, struct TableOutput* toutput, bool* is_terminal, struct DefaultSaves default_saves) {
+static void overlap_tables(struct CLIOptions *cli_options, struct TableOutput* toutput, bool* is_terminal, struct DefaultSaves default_saves, struct CTabsProps* ctp) {
   long *symbol_list = Allocate_long_array(num_symbols + 1);
   num_entries -= default_saves.default_saves;
-  increment_size = MAX(num_entries * increment / 100, num_symbols + 1);
-  table_size = MIN(num_entries + increment_size, MAX_TABLE_SIZE);
+  ctp->increment_size = MAX(num_entries * increment / 100, num_symbols + 1);
+  ctp->table_size = MIN(num_entries + ctp->increment_size, MAX_TABLE_SIZE);
   // Allocate space for table, and initialize the AVAIL_POOL list.
   // The variable FIRST_INDEX keeps track of the first element in the
   // doubly-linked list, and LAST_ELEMENT keeps track of the last
   // element in the list.
   // The variable MAX_INDX is used to keep track of the maximum
   // starting position for a row that has been used.
-  next = Allocate_long_array(table_size + 1);
-  previous = Allocate_long_array(table_size + 1);
+  next = Allocate_long_array(ctp->table_size + 1);
+  previous = Allocate_long_array(ctp->table_size + 1);
   first_index = 1;
   next[first_index] = first_index + 1; /* Should be constant-folded */
   previous[first_index] = NIL;
-  for (long indx = 2; indx < (int) table_size; indx++) {
+  for (long indx = 2; indx < (int) ctp->table_size; indx++) {
     next[indx] = indx + 1;
     previous[indx] = indx - 1;
   }
-  last_index = table_size;
+  last_index = ctp->table_size;
   previous[last_index] = last_index - 1;
   next[last_index] = NIL;
   long max_indx = first_index;
@@ -232,10 +232,10 @@ static void overlap_tables(struct CLIOptions *cli_options, struct TableOutput* t
     long indx = first_index;
   look_for_match_in_table:
     if (indx == NIL) {
-      indx = table_size + 1;
+      indx = ctp->table_size + 1;
     }
-    if (indx + num_symbols > (int) table_size) {
-      reallocate(cli_options);
+    if (indx + num_symbols > (int) ctp->table_size) {
+      reallocate(cli_options, ctp);
     }
     for (int symbol = root_symbol; symbol != NIL; symbol = symbol_list[symbol]) {
       if (next[indx + symbol] == OMEGA) {
@@ -271,33 +271,33 @@ static void overlap_tables(struct CLIOptions *cli_options, struct TableOutput* t
   }
   // Update all global counters, and compute ACCEPT_ACTION and
   // ERROR_ACTION.
-  table_size = max_indx + num_symbols;
+  ctp->table_size = max_indx + num_symbols;
   accept_act = max_indx + num_rules + 1;
   error_act = accept_act + 1;
-  for (action_size = table_size; action_size >= max_indx; action_size--) {
-    if (next[action_size] == OMEGA) {
+  for (ctp->action_size = ctp->table_size; ctp->action_size >= max_indx; ctp->action_size--) {
+    if (next[ctp->action_size] == OMEGA) {
       break;
     }
   }
   printf("\n");
-  PRNT3("Length of Check table: %ld", table_size);
-  PRNT3("Length of Action table: %ld", action_size);
+  PRNT3("Length of Check table: %ld", ctp->table_size);
+  PRNT3("Length of Action table: %ld", ctp->action_size);
   PRNT3("Number of entries in Action Table: %ld", num_entries);
-  const long percentage = (action_size - num_entries) * 1000 / num_entries;
+  const long percentage = (ctp->action_size - num_entries) * 1000 / num_entries;
   PRNT3("Percentage of increase: %ld.%ld%%", percentage / 10, percentage % 10);
   long num_bytes;
   if (cli_options->byte_bit) {
-    num_bytes = 2 * action_size + table_size;
+    num_bytes = 2 * ctp->action_size + ctp->table_size;
     if (!cli_options->goto_default_bit && !cli_options->nt_check_bit) {
       for (; last_symbol >= 1 && !is_terminal[last_symbol]; last_symbol--) {
       }
     }
     PRNT3("Highest symbol in Check Table: %ld", last_symbol);
     if (last_symbol > 255) {
-      num_bytes += table_size;
+      num_bytes += ctp->table_size;
     }
   } else {
-    num_bytes = 2 * (action_size + table_size);
+    num_bytes = 2 * (ctp->action_size + ctp->table_size);
   }
   if (cli_options->goto_default_bit) {
     num_bytes += (long) 2 * num_symbols;
@@ -315,7 +315,7 @@ static void overlap_tables(struct CLIOptions *cli_options, struct TableOutput* t
 }
 
 /// We now write out the tables to the SYSTAB file.
-static void print_tables_time(struct CLIOptions *cli_options, FILE *systab, struct TableOutput* toutput, bool* is_terminal, struct DetectedSetSizes* dss) {
+static void print_tables_time(struct CLIOptions *cli_options, FILE *systab, struct TableOutput* toutput, bool* is_terminal, struct DetectedSetSizes* dss, struct CTabsProps* ctp) {
   int la_shift_count = 0;
   int shift_count = 0;
   int goto_count = 0;
@@ -336,12 +336,12 @@ static void print_tables_time(struct CLIOptions *cli_options, FILE *systab, stru
   }
   // Initialize all unfilled slots with default values.
   long indx = first_index;
-  for (long i = indx; i != NIL && i <= (int) action_size; i = indx) {
+  for (long i = indx; i != NIL && i <= (int) ctp->action_size; i = indx) {
     indx = next[i];
     check[i] = DEFAULT_SYMBOL;
     action[i] = error_act;
   }
-  for (int i = (int) action_size + 1; i <= (int) table_size; i++) {
+  for (int i = (int) ctp->action_size + 1; i <= (int) ctp->table_size; i++) {
     check[i] = DEFAULT_SYMBOL;
   }
   // We set the rest of the table with the proper table entries.
@@ -466,8 +466,8 @@ static void print_tables_time(struct CLIOptions *cli_options, FILE *systab, stru
   field(num_symbols, 5);
   field(num_rules, 5);
   field(num_states, 5);
-  field(table_size, 5);
-  field(action_size, 5);
+  field(ctp->table_size, 5);
+  field(ctp->action_size, 5);
   field(toutput->state_index[1] + num_rules, 5);
   field(eoft_image, 5);
   field(accept_act, 5);
@@ -478,8 +478,8 @@ static void print_tables_time(struct CLIOptions *cli_options, FILE *systab, stru
   // We write the terminal symbols map.
   for (int symbol = 1; symbol <= num_symbols; symbol++) {
     if (is_terminal[toutput->symbol_map[symbol]]) {
-      if (last_terminal < toutput->symbol_map[symbol]) {
-        last_terminal = toutput->symbol_map[symbol];
+      if (ctp->last_terminal < toutput->symbol_map[symbol]) {
+        ctp->last_terminal = toutput->symbol_map[symbol];
       }
       char *tok = RETRIEVE_STRING(symbol);
       // We're dealing with special symbol?
@@ -515,8 +515,8 @@ static void print_tables_time(struct CLIOptions *cli_options, FILE *systab, stru
   // We write the non-terminal symbols map.
   for (int symbol = 1; symbol <= num_symbols; symbol++) {
     if (!is_terminal[toutput->symbol_map[symbol]]) {
-      if (last_non_terminal < toutput->symbol_map[symbol]) {
-        last_non_terminal = toutput->symbol_map[symbol];
+      if (ctp->last_non_terminal < toutput->symbol_map[symbol]) {
+        ctp->last_non_terminal = toutput->symbol_map[symbol];
       }
       char *tok = RETRIEVE_STRING(symbol);
       // we're dealing with special symbol?
@@ -559,7 +559,7 @@ static void print_tables_time(struct CLIOptions *cli_options, FILE *systab, stru
       k = 0;
     }
   }
-  for (int i = 1; i <= (int) table_size; i++) {
+  for (int i = 1; i <= (int) ctp->table_size; i++) {
     field(check[i], 4);
     k++;
     if (k == 18) {
@@ -583,7 +583,7 @@ static void print_tables_time(struct CLIOptions *cli_options, FILE *systab, stru
       k = 0;
     }
   }
-  for (int i = 1; i <= (int) action_size; i++) {
+  for (int i = 1; i <= (int) ctp->action_size; i++) {
     field(action[i], 6);
     k++;
     if (k == 12) {
@@ -670,7 +670,7 @@ static void print_tables_time(struct CLIOptions *cli_options, FILE *systab, stru
   //       question: TRANSITION_STATES
   //
   if (error_maps_bit) {
-    process_error_maps(cli_options, systab, toutput, dss);
+    process_error_maps(cli_options, systab, toutput, dss, ctp);
   }
   fwrite(output_buffer, sizeof(char), output_ptr - &output_buffer[0], systab);
 }
@@ -681,14 +681,21 @@ static void print_tables_time(struct CLIOptions *cli_options, FILE *systab, stru
 /// together, to achieve maximum speed efficiency.
 /// Otherwise, the compression technique used in this table is
 /// analogous to the technique used in the routine CMPRSPA.
-void cmprtim(struct OutputFiles *output_files, struct CLIOptions *cli_options, FILE *systab, struct TableOutput* toutput, struct DetectedSetSizes* dss) {
+void cmprtim(struct OutputFiles *output_files, struct CLIOptions *cli_options, FILE *systab, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp) {
   bool *is_terminal = Allocate_boolean_array(num_symbols + 1);
   struct DefaultSaves default_saves = remap_symbols(toutput, is_terminal);
-  overlap_tables(cli_options, toutput, is_terminal, default_saves);
+  overlap_tables(cli_options, toutput, is_terminal, default_saves, ctp);
   if (cli_options->c_bit || cli_options->cpp_bit || cli_options->java_bit) {
-    init_parser_files(output_files, cli_options);
-    print_time_parser(cli_options, toutput, dss);
+    init_file(&sysdcl, output_files->dcl_file, dcl_tag);
+    init_file(&syssym, output_files->sym_file, sym_tag);
+    init_file(&sysdef, output_files->def_file, def_tag);
+    init_file(&sysprs, output_files->prs_file, prs_tag);
+    populate_start_to_file(&sysdcl, dcl_tag, cli_options);
+    populate_start_to_file(&syssym, sym_tag, cli_options);
+    populate_start_to_file(&sysdef, def_tag, cli_options);
+    populate_start_to_file(&sysprs, prs_tag, cli_options);
+    print_time_parser(cli_options, toutput, dss, ctp);
   } else {
-    print_tables_time(cli_options, systab, toutput, is_terminal, dss);
+    print_tables_time(cli_options, systab, toutput, is_terminal, dss, ctp);
   }
 }

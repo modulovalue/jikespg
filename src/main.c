@@ -192,8 +192,11 @@ int main(const int argc, char *argv[]) {
             }
           }
         }
-
-        process_tables(tab_file, &output_files, &cli_options, &dss);
+        struct CTabsProps ctp = (struct CTabsProps) {
+          .last_non_terminal = 0,
+          .last_terminal = 0,
+        };
+        process_tables(tab_file, &output_files, &cli_options, &dss, &ctp);
       }
       fclose(syslis);
     }
