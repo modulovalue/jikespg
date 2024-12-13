@@ -50,7 +50,7 @@ bool IS_SP_RULE(const long rule_no) {
 
 bool *is_conflict_symbol;
 
-SET_PTR look_ahead;
+JBitset look_ahead;
 
 int top;
 int rule_root;
@@ -779,11 +779,11 @@ void remove_single_productions() {
   }
   // We are now ready to extend all global maps based on states and
   // permanently install the new states.
-  realloc0(statset, (max_sp_state + 1), struct statset_type);
+  realloc0(statset, max_sp_state + 1, struct statset_type);
   realloc0(reduce, max_sp_state + 1, struct reduce_header_type);
   // see routine PRODUCE
   if (gd_index != NULL) {
-    realloc0(gd_index, (max_sp_state + 2), short);
+    realloc0(gd_index, max_sp_state + 2, short);
     // Each element gd_index[i] points to the starting location
     // of a slice in another array. The last element of the slice
     // can be computed as (gd_index[i+1] - 1). After extending
@@ -1008,7 +1008,7 @@ void remove_single_productions() {
   ffree(shift_transition);
   ffree(rule_count);
   ffree(new_shift);
-  ffree(look_ahead);
+  ffree(look_ahead.raw);
   for ALL_SYMBOLS3(symbol) {
     if (sp_action[symbol] != NULL) {
       ffree(sp_action[symbol]);

@@ -240,7 +240,7 @@ void compute_read(struct CLIOptions *cli_options) {
 /// (ITEM_NO), and a set (LOOK_AHEAD).  It computes the look-ahead set of
 /// terminals for the given item in the given state and places the answer in
 /// the set LOOK_AHEAD.
-void compute_la(const int state_no, const int item_no, const SET_PTR look_ahead) {
+void compute_la(const int state_no, const int item_no, const JBitset look_ahead) {
   stack_root = NULL;
   const int lhs_symbol = rules[item_table[item_no].rule_number].lhs;
   if (lhs_symbol == accept_image) {
@@ -457,7 +457,7 @@ void mkrdcts(struct CLIOptions *cli_options) {
   single_complete_item = Allocate_boolean_array(num_states + 1);
   struct node **action;
   calloc0(action, num_terminals + 1, struct node *);
-  SET_PTR look_ahead;
+  JBitset look_ahead;
   calloc0_set(look_ahead, 1, term_set_size);
   // If we will be removing single productions, we need to keep
   // track of all (state, symbol) pairs on which a conflict is
@@ -767,17 +767,17 @@ void mkrdcts(struct CLIOptions *cli_options) {
   ffree(symbol_list);
   ffree(single_complete_item);
   ffree(action);
-  ffree(look_ahead);
+  ffree(look_ahead.raw);
   if (conflict_symbols != NULL) {
     ffree(conflict_symbols);
   }
-  if (read_set != NULL) {
-    ffree(read_set);
+  if (read_set.raw != NULL) {
+    ffree(read_set.raw);
   }
   if (la_index != NULL) {
     ffree(la_index);
   }
-  if (la_set != NULL) {
-    ffree(la_set);
+  if (la_set.raw != NULL) {
+    ffree(la_set.raw);
   }
 }

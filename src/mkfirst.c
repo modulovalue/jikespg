@@ -6,9 +6,9 @@ static char hostfile[] = __FILE__;
 #include <string.h>
 #include "common.h"
 
-SET_PTR nt_first = NULL;
-SET_PTR first = NULL;
-SET_PTR follow = NULL;
+JBitset nt_first = {.raw = NULL};
+JBitset first = {.raw = NULL};
+JBitset follow = {.raw = NULL};
 
 int const LEN = PRINT_LINE_SIZE - 4;
 
@@ -22,7 +22,7 @@ int LAST_RHS_INDEX(const int rule_no) {
 
 void INIT_FIRST(const int nt) {
   for (register int k = 0; k < term_set_size; k++) {
-    first[nt * term_set_size + k] = 0;
+    first.raw[nt * term_set_size + k] = 0;
   }
 }
 
@@ -330,7 +330,7 @@ bool is_nullable_rhs(short *rhs_start, const int rule_no) {
 /// FIRST(NT) is the set of all terminals Ti that may start a string generated
 /// by NT. That is, NT *::= Ti X where X is an arbitrary string.
 void compute_first(const int nt) {
-  SET_PTR temp_set;
+  JBitset temp_set;
   calloc0_set(temp_set, 1, term_set_size)
   stack[++top] = nt;
   const int indx = top;
@@ -379,7 +379,7 @@ void compute_first(const int nt) {
     index_of[nt] = INFINITY;
     top--;
   }
-  ffree(temp_set);
+  ffree(temp_set.raw);
 }
 
 ///  FIRST_MAP takes as arguments two pointers, ROOT and TAIL, to a sequence
@@ -416,7 +416,7 @@ short first_map(const int root, const int tail) {
 /// then X Ti is a valid substring of a class of strings that may be
 /// recognized by the language.
 void compute_follow(const int nt) {
-  SET_PTR temp_set;
+  JBitset temp_set;
   calloc0_set(temp_set, 1, term_set_size);
   // FOLLOW[NT] was initialized to 0 for all non-terminals.
   stack[++top] = nt;
@@ -445,7 +445,7 @@ void compute_follow(const int nt) {
     index_of[nt] = INFINITY;
     top--;
   }
-  ffree(temp_set);
+  ffree(temp_set.raw);
 }
 
 /// MKFIRST constructs the FIRST and FOLLOW maps, the CLOSURE map,
@@ -465,7 +465,7 @@ void mkbasic(const struct CLIOptions* cli_options) {
   // set of terminals that may appear first in a string derived from
   // the non-terminal.
   calloc0_set(nt_first, num_non_terminals, term_set_size);
-  nt_first -= (num_terminals + 1) * term_set_size;
+  nt_first.raw -= (num_terminals + 1) * term_set_size;
   next_item = Allocate_short_array(num_items + 1);
   nt_items = Allocate_short_array(num_non_terminals);
   nt_items -= num_terminals + 1;
@@ -726,7 +726,7 @@ void mkbasic(const struct CLIOptions* cli_options) {
   // the set of nonterminals that it can right-most produce.
   if (cli_options->lalr_level > 1) {
     calloc0_set(produces, num_non_terminals, non_term_set_size);
-    produces -= (num_terminals + 1) * non_term_set_size;
+    produces.raw -= (num_terminals + 1) * non_term_set_size;
     calloc0(direct_produces, num_non_terminals, struct node *);
     direct_produces -= num_terminals + 1;
     for ALL_NON_TERMINALS3(nt) {
@@ -737,8 +737,8 @@ void mkbasic(const struct CLIOptions* cli_options) {
         int symbol = item_table[item_no].symbol;
         if (IS_A_NON_TERMINAL(symbol)) {
           const int i = item_table[item_no].suffix_index;
-          if (IS_IN_SET(first, i, empty) && !IS_IN_NTSET(produces, nt, symbol - num_terminals)) {
-            NTSET_BIT_IN(produces, nt, symbol - num_terminals);
+          if (IS_IN_SET(first, i, empty) && !IS_IN_SET(produces, nt, symbol - num_terminals)) {
+            SET_BIT_IN(produces, nt, symbol - num_terminals);
             struct node *q = Allocate_node();
             q->value = symbol;
             q->next = direct_produces[nt];
@@ -759,8 +759,8 @@ void mkbasic(const struct CLIOptions* cli_options) {
       }
     }
     init_rmpself(produces);
-    produces += (num_terminals + 1) * non_term_set_size;
-    ffree(produces);
+    produces.raw += (num_terminals + 1) * non_term_set_size;
+    ffree(produces.raw);
     direct_produces += num_terminals + 1;
     ffree(direct_produces);
   }
@@ -771,7 +771,7 @@ void mkbasic(const struct CLIOptions* cli_options) {
   //   - There are more than one starting symbol.
   if (cli_options->follow_bit || error_maps_bit || next_rule[lhs_rule[accept_image]] != lhs_rule[accept_image]) {
     calloc0_set(follow, num_non_terminals, term_set_size);
-    follow -= (num_terminals + 1) * term_set_size;
+    follow.raw -= (num_terminals + 1) * term_set_size;
     SET_BIT_IN(follow, accept_image, eoft_image);
     for ALL_NON_TERMINALS3(symbol) {
       index_of[symbol] = OMEGA;
@@ -967,8 +967,8 @@ void mkbasic(const struct CLIOptions* cli_options) {
   }
 
   // Free allocated arrays.
-  nt_first += (num_terminals + 1) * term_set_size;
-  ffree(nt_first);
+  nt_first.raw += (num_terminals + 1) * term_set_size;
+  ffree(nt_first.raw);
   nt_list += num_terminals + 1;
   ffree(nt_list);
   ffree(first_table);

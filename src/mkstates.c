@@ -449,9 +449,9 @@ struct scope_elmt {
 
 bool *symbol_seen;
 
-SET_PTR produces;
-SET_PTR right_produces;
-SET_PTR left_produces;
+JBitset produces;
+JBitset right_produces;
+JBitset left_produces;
 
 int top;
 
@@ -491,8 +491,8 @@ void print_name_map(const int symbol) {
 ///                     SOURCE ->rm+ TARGET
 bool scope_check(const int lhs_symbol, const int target, const int source) {
   symbol_seen[source] = true;
-  if (IS_IN_NTSET(right_produces, target, source - num_terminals) &&
-      IS_IN_NTSET(right_produces, lhs_symbol, source - num_terminals)) {
+  if (IS_IN_SET(right_produces, target, source - num_terminals) &&
+      IS_IN_SET(right_produces, lhs_symbol, source - num_terminals)) {
     return false;
   }
   for (int item_no = item_of[source];
@@ -535,7 +535,7 @@ bool is_scope(const int item_no) {
   }
   const int lhs_symbol = rules[item_table[item_no].rule_number].lhs;
   const int target = item_table[item_no].symbol;
-  if (IS_IN_NTSET(left_produces, target, lhs_symbol - num_terminals)) {
+  if (IS_IN_SET(left_produces, target, lhs_symbol - num_terminals)) {
     return false;
   }
   if (item_table[item_no].dot > 0) {
@@ -808,10 +808,10 @@ void produce(struct CLIOptions *cli_options) {
   item_list = Allocate_short_array(num_items + 1);
   nt_list = Allocate_short_array(num_non_terminals + 1);
   nt_list -= num_terminals + 1;
-  SET_PTR set;
+  JBitset set;
   calloc0_set(set, 1, non_term_set_size);
   calloc0_set(produces, num_non_terminals, non_term_set_size);
-  produces -= (num_terminals + 1) * non_term_set_size;
+  produces.raw -= (num_terminals + 1) * non_term_set_size;
   calloc0(direct_produces, num_non_terminals, struct node *);
   direct_produces -= num_terminals + 1;
   struct node **goto_domain;
@@ -834,8 +834,8 @@ void produce(struct CLIOptions *cli_options) {
       if (IS_A_NON_TERMINAL(symbol)) {
         const int i = item_table[item_no].suffix_index;
         if (IS_IN_SET(first, i, empty) &&
-            !IS_IN_NTSET(produces, symbol, nt - num_terminals)) {
-          NTSET_BIT_IN(produces, symbol, nt - num_terminals);
+            !IS_IN_SET(produces, symbol, nt - num_terminals)) {
+          SET_BIT_IN(produces, symbol, nt - num_terminals);
           struct node *q = Allocate_node();
           q->value = nt;
           q->next = direct_produces[symbol];
@@ -890,7 +890,7 @@ void produce(struct CLIOptions *cli_options) {
     if (index_of[nt] == OMEGA) {
       compute_produces(nt);
     }
-    NTRESET_BIT_IN(produces, nt, nt - num_terminals);
+    RESET_BIT_IN(produces, nt, nt - num_terminals);
   }
   // Construct the minimum subset of the domain of the GOTO map
   // needed for automatic secondary level error recovery.   For each
@@ -914,7 +914,7 @@ void produce(struct CLIOptions *cli_options) {
   for ALL_STATES3(state_no) {
     const struct goto_header_type go_to = statset[state_no].go_to;
     int nt_root = NIL;
-    INIT_NTSET(set);
+    INIT_SET(set);
     for (int i = 1; i <= go_to.size; i++) {
       const int symbol = go_to.map[i].symbol;
       const int state = go_to.map[i].action;
@@ -933,7 +933,7 @@ void produce(struct CLIOptions *cli_options) {
       if (rule_no == 0 || RHS_SIZE(rule_no) != 1) {
         nt_list[symbol] = nt_root;
         nt_root = symbol;
-        NTSET_UNION(set, 0, produces, symbol);
+        SET_UNION(set, 0, produces, symbol);
       }
     }
     goto_domain[state_no] = NULL;
@@ -1066,10 +1066,10 @@ void produce(struct CLIOptions *cli_options) {
       // in the linked list).
       right_produces = produces;
       calloc0_set(produces, num_non_terminals, non_term_set_size);
-      produces -= (num_terminals + 1) * non_term_set_size;
+      produces.raw -= (num_terminals + 1) * non_term_set_size;
       for ALL_NON_TERMINALS3(nt) {
-        NTSET_BIT_IN(right_produces, nt, nt - num_terminals);
-        NTSET_BIT_IN(produces, nt, nt - num_terminals);
+        SET_BIT_IN(right_produces, nt, nt - num_terminals);
+        SET_BIT_IN(produces, nt, nt - num_terminals);
         direct_produces[nt] = NULL;
         for (end_node = (p = clitems[nt]) == NULL;
              !end_node; end_node = p == clitems[nt]) {
@@ -1078,8 +1078,8 @@ void produce(struct CLIOptions *cli_options) {
                IS_A_NON_TERMINAL(item_table[item_no].symbol);
                item_no++) {
             int symbol = item_table[item_no].symbol;
-            if (!IS_IN_NTSET(produces, nt, symbol - num_terminals)) {
-              NTSET_BIT_IN(produces, nt, symbol - num_terminals);
+            if (!IS_IN_SET(produces, nt, symbol - num_terminals)) {
+              SET_BIT_IN(produces, nt, symbol - num_terminals);
               q = Allocate_node();
               q->value = symbol;
               q->next = direct_produces[nt];
@@ -1108,9 +1108,9 @@ void produce(struct CLIOptions *cli_options) {
       // Since A ->* A for all A,  we insert A in PRODUCES(A)  (but not
       // in the linked list).
       calloc0_set(produces, num_non_terminals, non_term_set_size);
-      produces -= (num_terminals + 1) * non_term_set_size;
+      produces.raw -= (num_terminals + 1) * non_term_set_size;
       for ALL_NON_TERMINALS3(nt) {
-        NTSET_BIT_IN(produces, nt, nt - num_terminals);
+        SET_BIT_IN(produces, nt, nt - num_terminals);
         direct_produces[nt] = NULL;
         for (end_node = (p = clitems[nt]) == NULL;
              !end_node; end_node = p == clitems[nt]) {
@@ -1119,8 +1119,8 @@ void produce(struct CLIOptions *cli_options) {
                item_table[item_no].symbol != empty; item_no++) {
             int symbol = item_table[item_no].symbol;
             if (IS_A_NON_TERMINAL(symbol)) {
-              if (!IS_IN_NTSET(produces, nt, symbol - num_terminals)) {
-                NTSET_BIT_IN(produces, nt, symbol - num_terminals);
+              if (!IS_IN_SET(produces, nt, symbol - num_terminals)) {
+                SET_BIT_IN(produces, nt, symbol - num_terminals);
                 q = Allocate_node();
                 q->value = symbol;
                 q->next = direct_produces[nt];
@@ -1180,7 +1180,7 @@ void produce(struct CLIOptions *cli_options) {
         } else if (IS_A_NON_TERMINAL(dot_symbol)) {
           int symbol = rules[item_table[item_no].rule_number].lhs;
           if (!IS_IN_SET(first, item_table[item_no].suffix_index, empty) &&
-              IS_IN_NTSET(produces, dot_symbol, symbol - num_terminals)) {
+              IS_IN_SET(produces, dot_symbol, symbol - num_terminals)) {
             if (is_scope(item_no)) {
               int ii;
               for (ii = item_no + 1; ; ii++) {
@@ -1252,10 +1252,10 @@ void produce(struct CLIOptions *cli_options) {
           }
         }
       }
-      right_produces += (num_terminals + 1) * non_term_set_size;
-      ffree(right_produces);
-      left_produces += (num_terminals + 1) * non_term_set_size;
-      ffree(left_produces);
+      right_produces.raw += (num_terminals + 1) * non_term_set_size;
+      ffree(right_produces.raw);
+      left_produces.raw += (num_terminals + 1) * non_term_set_size;
+      ffree(left_produces.raw);
       // Next, we used the optimal partition procedure to compress the
       // space used by the sets of states, allocate the SCOPE structure
       // and store the compressed sets of states in it.
@@ -1264,7 +1264,7 @@ void produce(struct CLIOptions *cli_options) {
       // If a longer prefix matches prior to a shorter one, the parsing
       // will terminate quicker.
     process_scope_states: {
-        SET_PTR collection;
+        JBitset collection;
         long *element_size;
         long *list;
         long *start;
@@ -1290,7 +1290,7 @@ void produce(struct CLIOptions *cli_options) {
           element_size[i] = 0;
           for (p = states_of[symbol]; p != NULL; p = p->next) {
             element_size[i]++;
-            SET_COLLECTION_BIT(collection, i, p->value);
+            SET_BIT_IN(collection, i, p->value);
           }
         }
         partset(collection, element_size, list, start, stack, num_state_sets, 1);
@@ -1378,7 +1378,7 @@ void produce(struct CLIOptions *cli_options) {
             item_root = item_no;
           }
         }
-        ffree(collection);
+        ffree(collection.raw);
         ffree(element_size);
         ffree(start);
         ffree(stack);
@@ -1456,9 +1456,9 @@ void produce(struct CLIOptions *cli_options) {
   ffree(name_used);
   nt_list += num_terminals + 1;
   ffree(nt_list);
-  ffree(set);
-  produces += (num_terminals + 1) * non_term_set_size;
-  ffree(produces);
+  ffree(set.raw);
+  produces.raw += (num_terminals + 1) * non_term_set_size;
+  ffree(produces.raw);
   direct_produces += num_terminals + 1;
   ffree(direct_produces);
   ffree(goto_domain);

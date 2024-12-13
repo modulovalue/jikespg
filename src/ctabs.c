@@ -57,8 +57,8 @@ long last_index;
 long last_symbol;
 long max_name_length = 0;
 
-SET_PTR naction_symbols = NULL;
-SET_PTR action_symbols = NULL;
+JBitset naction_symbols = {.raw = NULL};
+JBitset action_symbols = {.raw = NULL};
 
 const char digits[] = "0123456789";
 
@@ -325,7 +325,7 @@ void print_error_maps(struct CLIOptions *cli_options) {
     }
   }
   partset(action_symbols, as_size, state_list, state_start, state_stack, num_terminals, 0);
-  ffree(action_symbols);
+  ffree(action_symbols.raw);
   // Compute and write out the base of the ACTION_SYMBOLS map.
   long *action_symbols_base = Allocate_long_array(num_states + 1);
   for ALL_STATES3(state_no) {
@@ -376,12 +376,12 @@ void print_error_maps(struct CLIOptions *cli_options) {
     as_size[state_no] = gd_index[state_no + 1] - gd_index[state_no];
     for (int i = gd_index[state_no]; i <= gd_index[state_no + 1] - 1; i++) {
       int symbol = gd_range[i] - num_terminals;
-      NTSET_BIT_IN(naction_symbols, state_no, symbol);
+      SET_BIT_IN(naction_symbols, state_no, symbol);
     }
   }
   partset(naction_symbols, as_size, state_list, state_start, state_stack, num_non_terminals, 0);
   ffree(as_size);
-  ffree(naction_symbols);
+  ffree(naction_symbols.raw);
   // Remap non-terminals
   for (int i = 1; i <= gotodom_size; i++) {
     if (cli_options->table_opt == OPTIMIZE_SPACE) {
@@ -2028,7 +2028,7 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
   }
   partset(action_symbols, as_size, state_list, state_start,
           state_stack, num_terminals, 0);
-  ffree(action_symbols);
+  ffree(action_symbols.raw);
   // We now write the starting location for each state in the domain
   // of the ACTION_SYMBOL map.
   // The starting locations are contained in the STATE_START vector.
@@ -2080,13 +2080,13 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
     as_size[state_no] = gd_index[state_no + 1] - gd_index[state_no];
     for (int i = gd_index[i]; i < gd_index[i + 1]; i++) {
       int symbol = gd_range[i] - num_terminals;
-      NTSET_BIT_IN(naction_symbols, state_no, symbol);
+      SET_BIT_IN(naction_symbols, state_no, symbol);
     }
   }
   partset(naction_symbols, as_size, state_list, state_start,
           state_stack, num_non_terminals, 0);
   ffree(as_size);
-  ffree(naction_symbols);
+  ffree(naction_symbols.raw);
   for (int i = 1; i <= gotodom_size; i++) {
     // Remap non-terminals
     if (cli_options->table_opt == OPTIMIZE_TIME) {

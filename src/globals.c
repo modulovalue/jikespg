@@ -85,8 +85,8 @@ char *output_ptr = NULL;
 char *output_buffer = NULL;
 
 struct node **conflict_symbols = NULL;
-SET_PTR la_set = NULL;
-SET_PTR read_set = NULL;
+JBitset la_set = {.raw = NULL};
+JBitset read_set = {.raw = NULL};
 int highest_level = 0;
 long la_top = 0;
 short *la_index = NULL;

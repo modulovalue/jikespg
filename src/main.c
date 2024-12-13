@@ -182,13 +182,13 @@ int main(const int argc, char *argv[]) {
             }
           }
           ffree(in_stat);
-          ffree(first);
+          ffree(first.raw);
           null_nt += num_terminals + 1;
           ffree(null_nt);
-          if (follow != NULL) {
+          if (follow.raw != NULL) {
             if (!error_maps_bit || cli_options.c_bit || cli_options.cpp_bit || cli_options.java_bit) {
-              follow += (num_terminals + 1) * term_set_size;
-              ffree(follow);
+              follow.raw += (num_terminals + 1) * term_set_size;
+              ffree(follow.raw);
             }
           }
         }

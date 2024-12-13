@@ -1605,7 +1605,7 @@ void process_actions(char *grm_file, struct CLIOptions *cli_options) {
     p1 = linestart + defelmt[i].start_column;
     for (register int j = 0; j < defelmt[i].length; j++) {
       defelmt[i].macro[j] = *p1;
-      if (*(p1++) == '\n') {
+      if (*p1++ == '\n') {
         if (bufend == input_buffer + IOBUFFER_SIZE) {
           int k = bufend - p1;
           if (k < MAX_LINE_SIZE) {
@@ -1659,7 +1659,7 @@ void process_actions(char *grm_file, struct CLIOptions *cli_options) {
       p = line;
       p1 = linestart + actelmt[i].start_column;
       while (*p1 != '\n') {
-        *(p++) = *(p1++);
+        *p++ = *p1++;
       }
       *p = '\0';
     }
@@ -1685,7 +1685,7 @@ void process_actions(char *grm_file, struct CLIOptions *cli_options) {
         if (line_no < actelmt[i].end_line) {
           p = line;
           while (*p1 != '\n') {
-            *(p++) = *(p1++);
+            *p++ = *p1++;
           }
           *p = '\0';
           if (actelmt[i].header_block) {

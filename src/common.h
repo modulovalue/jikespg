@@ -9,6 +9,10 @@
 
 static char hostfile[];
 
+extern long term_set_size;
+extern long non_term_set_size;
+extern long state_set_size;
+
 #define galloc0(into, x, times) \
   into = (x *) galloc((times) * sizeof(x)); \
   if (into == (x *) NULL) \
@@ -32,11 +36,6 @@ static char hostfile[];
 #define calloc0(into, size, x) \
   into = (x *) calloc(size, sizeof(x)); \
   if (into == (x *) NULL) \
-    nospace(hostfile, __LINE__);
-
-#define calloc0_set(into, size, l) \
-  into = (SET_PTR) calloc(size, (l) * sizeof(BOOLEAN_CELL)); \
-  if (into == (SET_PTR) NULL) \
     nospace(hostfile, __LINE__);
 
 static const int MAX_PARM_SIZE = 22;
@@ -103,7 +102,7 @@ extern const long MAX_TABLE_SIZE;
 
 struct node **direct_produces;
 
-extern SET_PTR produces;
+extern JBitset produces;
 
 struct node {
   struct node *next;
@@ -336,10 +335,10 @@ extern struct itemtab {
 /// non-terminal is nullable.
 extern bool *null_nt;
 
-extern SET_PTR first;
+extern JBitset first;
 /// FOLLOW is a mapping from non-terminals to a set of terminals that
 /// may appear immediately after the non-terminal.
-extern SET_PTR follow;
+extern JBitset follow;
 
 /// SHIFT is an array used to hold the complete set of all shift maps
 /// needed to construct the state automaton. Though its size is
@@ -403,8 +402,8 @@ extern long first_index;
 extern long last_index;
 extern long last_symbol;
 
-extern SET_PTR naction_symbols;
-extern SET_PTR action_symbols;
+extern JBitset naction_symbols;
+extern JBitset action_symbols;
 
 extern bool byte_terminal_range;
 
@@ -444,7 +443,7 @@ void exit_lalrk_process(struct CLIOptions *cli_options);
 
 void init_lalrk_process(struct CLIOptions *cli_options);
 
-void init_rmpself(SET_PTR produces);
+void init_rmpself(JBitset produces);
 
 void field(long num, int len);
 
@@ -470,7 +469,7 @@ void nospace(char *, long);
 
 int number_len(int state_no);
 
-void partset(SET_PTR collection, const long *element_size, const long *list, long *start, long *stack, long set_size, long from_process_scopes);
+void partset(JBitset collection, const long *element_size, const long *list, long *start, long *stack, long set_size, long from_process_scopes);
 
 void print_item(int item_no);
 
@@ -570,7 +569,7 @@ static struct shift_header_type Allocate_shift_map(const long n) {
 /// a reduce map is used for the default reduction.
 static struct reduce_header_type Allocate_reduce_map(const long n) {
   struct reduce_header_type red;
-  galloc0(red.map, struct reduce_type, (n + 1));
+  galloc0(red.map, struct reduce_type, n + 1);
   red.size = n;
   return red;
 }
@@ -680,8 +679,8 @@ extern int shift_check_size;
 /// grammar. If we can detect that the grammar is not LALR(k), we set
 /// HIGHEST_LEVEL to INFINITY.
 extern struct node **conflict_symbols;
-extern BOOLEAN_CELL *read_set;
-extern BOOLEAN_CELL *la_set;
+extern JBitset read_set;
+extern JBitset la_set;
 extern int highest_level;
 extern long la_top;
 extern short *la_index;

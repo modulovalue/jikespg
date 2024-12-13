@@ -46,7 +46,7 @@ static char hostfile[] = __FILE__;
 ///    which is a subset of the subset on top of the stack, currently
 ///    being constructed, remove it from the partition, and push it
 ///    into the stack. Repeat step 2 until the partition is empty.
-void partset(const SET_PTR collection, const long *element_size, const long *list, long *start, long *stack, long set_size, const long from_process_scopes) {
+void partset(const JBitset collection, const long *element_size, const long *list, long *start, long *stack, long set_size, const long from_process_scopes) {
   int collection_size = num_states;
   int bctype;
   if (from_process_scopes) {
@@ -66,7 +66,7 @@ void partset(const SET_PTR collection, const long *element_size, const long *lis
   short *head = Allocate_short_array(collection_size + 1);
   short *next = Allocate_short_array(collection_size + 1);
   bool *is_a_base = Allocate_boolean_array(collection_size + 1);
-  SET_PTR temp_set;
+  JBitset temp_set;
   calloc0_set(temp_set, 1, bctype);
   // DOMAIN_TABLE is the base of a hash table used to compute the set
   // of unique subsets in COLLECTION. Collisions are resolved by links
@@ -86,7 +86,7 @@ void partset(const SET_PTR collection, const long *element_size, const long *lis
   for (int index = 1; index <= collection_size; index++) {
     unsigned long hash_address = 0;
     for (int i = 0; i < bctype; i++) {
-      hash_address += collection[index * bctype + i];
+      hash_address += collection.raw[index * bctype + i];
     }
     hash_address %= STATE_TABLE_SIZE;
     //  Next, we search the hash table to see if the subset was
@@ -230,5 +230,5 @@ void partset(const SET_PTR collection, const long *element_size, const long *lis
   ffree(head);
   ffree(next);
   ffree(is_a_base);
-  ffree(temp_set);
+  ffree(temp_set.raw);
 }

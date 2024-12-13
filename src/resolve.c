@@ -746,7 +746,7 @@ struct stack_element *follow_sources(struct stack_element *stack, int symbol, co
 /// outside, LOOK_AHEAD is assumed to be initialized to the empty set.
 /// NEXT_LA first executes the transition on SYMBOL and thereafter, all
 /// terminal symbols that can be read are added to LOOKAHEAD.
-void next_la(struct stack_element *stack, const int symbol, const SET_PTR look_ahead) {
+void next_la(struct stack_element *stack, const int symbol, const JBitset look_ahead) {
   // The only symbol that can follow the end-of-file symbol is the
   // end-of-file symbol.
   if (symbol == eoft_image) {
@@ -879,7 +879,7 @@ struct state_element *state_to_resolve_conflicts(struct sources_element sources,
   short *symbol_list = Allocate_short_array(num_terminals + 1);
   short *action_list = Allocate_short_array(num_terminals + 1);
   short *rule_count = Allocate_short_array(num_rules + 1);
-  SET_PTR look_ahead;
+  JBitset look_ahead;
   calloc0_set(look_ahead, 1, term_set_size);
   struct state_element **la_shift_state;
   calloc0(la_shift_state, num_terminals + 1, struct state_element *);
@@ -1157,7 +1157,7 @@ clean_up_and_return:
   ffree(symbol_list);
   ffree(action_list);
   ffree(rule_count);
-  ffree(look_ahead);
+  ffree(look_ahead.raw);
   ffree(la_shift_state);
   return state;
 }
@@ -1167,7 +1167,7 @@ clean_up_and_return:
 /// produce themselves. It takes as argumen the map PRODUCES which
 /// identifies for each nonterminal the set of nonterminals that it can
 /// right-most produce.
-void init_rmpself(const SET_PTR produces) {
+void init_rmpself(const JBitset produces) {
   rmpself = Allocate_boolean_array(num_non_terminals);
   rmpself -= num_terminals + 1;
   // Note that each element of the map produces is a boolean vector
@@ -1176,7 +1176,7 @@ void init_rmpself(const SET_PTR produces) {
   // it from the terminals),it must therefore be adjusted accordingly
   // when dereferencing an element in the range of the produces map.
   for ALL_NON_TERMINALS3(nt) {
-    rmpself[nt] = IS_IN_NTSET(produces, nt, nt - num_terminals);
+    rmpself[nt] = IS_IN_SET(produces, nt, nt - num_terminals);
   }
 }
 
@@ -1575,7 +1575,7 @@ void create_lastats(void) {
 }
 
 struct node **direct_produces;
-SET_PTR produces;
+JBitset produces;
 
 /// For a given symbol, complete the computation of
 /// PRODUCES[symbol].
@@ -1594,7 +1594,7 @@ void compute_produces(const int symbol) {
       compute_produces(new_symbol);
     }
     index_of[symbol] = MIN(index_of[symbol], index_of[new_symbol]);
-    NTSET_UNION(produces, symbol, produces, new_symbol);
+    SET_UNION(produces, symbol, produces, new_symbol);
   }
   if (direct_produces[symbol] != NULL) {
     free_nodes(direct_produces[symbol], q);
@@ -1602,7 +1602,7 @@ void compute_produces(const int symbol) {
   /* symbol is SCC root */
   if (index_of[symbol] == indx) {
     for (int new_symbol = stack[top]; new_symbol != symbol; new_symbol = stack[--top]) {
-      ASSIGN_NTSET(produces, new_symbol, produces, symbol);
+      ASSIGN_SET(produces, new_symbol, produces, symbol);
       index_of[new_symbol] = INFINITY;
     }
     index_of[symbol] = INFINITY;
