@@ -872,7 +872,7 @@ bool stack_was_seen(struct stack_element **stack_seen, struct stack_element *sta
 /// conflicts by doing more look-ahead.  If the conflict resolution
 /// is successful, then a new state is created and returned; otherwise,
 /// the NULL pointer is returned.
-struct state_element *state_to_resolve_conflicts(struct sources_element sources, int la_symbol, int level, struct CLIOptions *cli_options) {
+struct state_element *state_to_resolve_conflicts(struct sources_element sources, int la_symbol, int level, struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
   struct sources_element new_sources = allocate_sources();
   struct node **action;
   calloc0(action, num_terminals + 1, struct node *);
@@ -880,7 +880,7 @@ struct state_element *state_to_resolve_conflicts(struct sources_element sources,
   short *action_list = Allocate_short_array(num_terminals + 1);
   short *rule_count = Allocate_short_array(num_rules + 1);
   JBitset look_ahead;
-  calloc0_set(look_ahead, 1, term_set_size);
+  calloc0_set(look_ahead, 1, dss->term_set_size);
   struct state_element **la_shift_state;
   calloc0(la_shift_state, num_terminals + 1, struct state_element *);
   // Initialize new lookahead state. Initialize counters. Check and
@@ -986,7 +986,7 @@ struct state_element *state_to_resolve_conflicts(struct sources_element sources,
       }
       free_nodes(action[symbol], tail);
       action[symbol] = NULL;
-      state = state_to_resolve_conflicts(new_sources, symbol, level + 1, cli_options);
+      state = state_to_resolve_conflicts(new_sources, symbol, level + 1, cli_options, dss);
       if (state == NULL) {
         goto clean_up_and_return;
       }
@@ -1193,7 +1193,7 @@ void init_rmpself(const JBitset produces) {
 /// states that can enter a cycle via transitions on nullable
 /// nonterminals. If such a cyle exists, the grammar can also be
 /// claimed to be not LR(k) for any k.
-void init_lalrk_process(struct CLIOptions *cli_options) {
+void init_lalrk_process(const struct CLIOptions *cli_options) {
   not_lrk = false;
   if (cli_options->lalr_level > 1) {
     calloc0(shift_table, SHIFT_TABLE_SIZE, struct state_element *);
@@ -1224,7 +1224,7 @@ void init_lalrk_process(struct CLIOptions *cli_options) {
 
 /// Free all support structures that were allocated to help compute
 /// additional lookahead.
-void exit_lalrk_process(struct CLIOptions *cli_options) {
+void exit_lalrk_process(const struct CLIOptions *cli_options) {
   if (cli_options->lalr_level > 1) {
     rmpself += num_terminals + 1;
     ffree(rmpself);
@@ -1250,7 +1250,7 @@ void free_conflict_space(void) {
 /// where k > 1, then we attempt to resolve the conflicts by computing
 /// more lookaheads. Shift-Reduce conflicts are processed first,
 /// followed by Reduce-Reduce conflicts.
-void resolve_conflicts(const int state_no, struct node **action, const short *symbol_list, const int reduce_root, struct CLIOptions *cli_options) {
+void resolve_conflicts(const int state_no, struct node **action, const short *symbol_list, const int reduce_root, struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
   // Note that a shift action to a state "S" is encoded with the
   // value (S+NUM_RULES) to help distinguish it from reduce actions.
   // Reduce actions lie in the range [0..NUM_RULES]. Shift-reduce
@@ -1305,7 +1305,7 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
       // the conflicts.  In any case, STATE_TO_RESOLVE_CONFLICTS
       // frees the space that is used by the action map headed by
       // ACTION_ROOT.
-      struct state_element *state = state_to_resolve_conflicts(sources, symbol, 2, cli_options);
+      struct state_element *state = state_to_resolve_conflicts(sources, symbol, 2, cli_options, dss);
       if (state != NULL) {
         state->in_state = state_no;
         free_nodes(action[symbol], tail);
@@ -1374,7 +1374,7 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
         //     STATE_TO_RESOLVE_CONFLICTS will return a pointer to a
         // STATE_ELEMENT if the conflicts were resolvable with more
         // lookaheads, otherwise, it returns NULL.
-        struct state_element *state = state_to_resolve_conflicts(sources, symbol, 2, cli_options);
+        struct state_element *state = state_to_resolve_conflicts(sources, symbol, 2, cli_options, dss);
         if (state != NULL) {
           state->in_state = state_no;
           free_nodes(action[symbol], tail);

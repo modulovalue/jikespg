@@ -86,9 +86,9 @@ void trace_lalr_path(const int state_no, const int goto_indx, struct CLIOptions 
 /// follow a non-terminal in a given state.
 ///  These sets are initialized to the set of terminals that can immediately
 /// follow the non-terminal in the state to which it can shift (READ set).
-void compute_read(struct CLIOptions *cli_options) {
+void compute_read(struct CLIOptions *cli_options, const struct DetectedSetSizes* dss) {
   if (cli_options->lalr_level > 1 || cli_options->single_productions_bit) {
-    calloc0_set(read_set, num_states + 1, term_set_size);
+    calloc0_set(read_set, num_states + 1, dss->term_set_size);
   }
   //  We traverse all the states and for all complete items that requires
   // a look-ahead set, we retrace the state digraph (with the help of the
@@ -188,7 +188,7 @@ void compute_read(struct CLIOptions *cli_options) {
     la_base[state_no] = OMEGA;
   }
   la_index = Allocate_short_array(la_top + 1);
-  calloc0_set(la_set, la_top + 1, term_set_size);
+  calloc0_set(la_set, la_top + 1, dss->term_set_size);
   for ALL_STATES3(state_no) {
     const struct goto_header_type go_to = statset[state_no].go_to;
     for (int i = 1; i <= go_to.size; i++) {
@@ -421,7 +421,7 @@ void la_traverse(const int state_no, const int goto_indx, int *stack_top) {
 ///
 /// For a complete description of the lookahead algorithm used in this
 /// program, see Charles, PhD thesis, NYU 1991.
-void mkrdcts(struct CLIOptions *cli_options) {
+void mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
   // Set up a pool of temporary space. If LALR(k), k > 1 is requested,
   // INIT_LALRK_PROCESS sets up the necessary environment for the
   // computation of multiple lookahead.
@@ -458,7 +458,7 @@ void mkrdcts(struct CLIOptions *cli_options) {
   struct node **action;
   calloc0(action, num_terminals + 1, struct node *);
   JBitset look_ahead;
-  calloc0_set(look_ahead, 1, term_set_size);
+  calloc0_set(look_ahead, 1, dss->term_set_size);
   // If we will be removing single productions, we need to keep
   // track of all (state, symbol) pairs on which a conflict is
   // detected. The structure conflict_symbols is used as a base
@@ -519,7 +519,7 @@ void mkrdcts(struct CLIOptions *cli_options) {
   // We call COMPUTE_READ to perform the following tasks:
   // 1) Count how many elements are needed in LA_ELEMENT: LA_TOP
   // 2) Allocate space for and initialize LA_SET and LA_INDEX
-  compute_read(cli_options);
+  compute_read(cli_options, dss);
   // Allocate space for REDUCE which will be used to map each
   // into its reduce map. We also initialize RULE_COUNT which
   // will be used to count the number of reduce actions on each
@@ -616,7 +616,7 @@ void mkrdcts(struct CLIOptions *cli_options) {
       // element (if the conflicts were reduce-reduce conflicts, only
       // the first element in the ACTION(t) list is returned).
       if (symbol_root != NIL) {
-        resolve_conflicts(state_no, action, symbol_list, symbol_root, cli_options);
+        resolve_conflicts(state_no, action, symbol_list, symbol_root, cli_options, dss);
         for (symbol = symbol_root;
              symbol != NIL; symbol = symbol_list[symbol]) {
           if (action[symbol] != NULL) {
@@ -721,7 +721,7 @@ void mkrdcts(struct CLIOptions *cli_options) {
   cli_options->lalr_level = highest_level;
   // If the removal of single productions is requested, do that.
   if (cli_options->single_productions_bit) {
-    remove_single_productions();
+    remove_single_productions(dss);
   }
   // If either more than one lookahead was needed or the removal
   // of single productions was requested, the automaton was

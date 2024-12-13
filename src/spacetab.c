@@ -23,7 +23,7 @@ bool *shift_on_error_symbol;
 
 ///  REMAP_NON_TERMINALS remaps the non-terminal symbols and states based on
 /// frequency of entries.
-void remap_non_terminals(struct CLIOptions *cli_options) {
+void remap_non_terminals(const struct CLIOptions *cli_options) {
   //   The variable FREQUENCY_SYMBOL is used to hold the non-terminals
   // in the grammar, and  FREQUENCY_COUNT is used correspondingly to
   // hold the number of actions defined on each non-terminal.
@@ -68,7 +68,7 @@ void remap_non_terminals(struct CLIOptions *cli_options) {
   // were eliminated as a result, and adjust the GOTO-DEFAULT map,
   // based on the new mapping of the non-terminals.
   if (cli_options->goto_default_bit) {
-    short *temp_goto_default = Allocate_short_array(num_non_terminals);
+    long *temp_goto_default = Allocate_long_array(num_non_terminals);
     temp_goto_default -= num_terminals + 1;
     for (last_symbol = num_symbols; last_symbol > num_terminals; last_symbol--) {
       if (frequency_count[last_symbol] != 0) {
@@ -238,7 +238,7 @@ void overlap_nt_rows(struct CLIOptions *cli_options) {
 /// addition,  there must not exist a terminal symbol "t" such that:
 /// REDUCE(S1, t) and REDUCE(S2, t) are defined, and
 /// REDUCE(S1, t) ^= REDUCE(S2, t)
-void merge_similar_t_rows(struct CLIOptions *cli_options) {
+void merge_similar_t_rows(const struct CLIOptions *cli_options) {
   short *table = Allocate_short_array(num_shift_maps + 1);
   empty_root = NIL;
   single_root = NIL;
@@ -631,10 +631,8 @@ void overlay_sim_t_rows(struct CLIOptions *cli_options) {
   int num_shifts_saved = 0;
   int num_reductions_saved = 0;
   int default_saves = 0;
-
   short *rule_count = Allocate_short_array(num_rules + 1);
   short *reduce_action = Allocate_short_array(num_terminals + 1);
-
   //     We first iterate over the groups of similar states in the
   // MULTI_ROOT list.  These states have been grouped together,
   // because they have the same Shift map, and reduce to the same

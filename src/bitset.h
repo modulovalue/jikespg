@@ -8,15 +8,15 @@
 typedef unsigned int BOOLEAN_CELL;
 
 struct jbitset {
-  BOOLEAN_CELL * raw;
+  BOOLEAN_CELL *raw;
   long size;
 };
 
 #define JBitset struct jbitset
 
 #define calloc0_set(into, s, l) \
-  into = (JBitset) {.raw = calloc(s, (l) * sizeof(BOOLEAN_CELL)), .size = l}; \
-  if (into.raw == NULL) \
+  into = (JBitset) {.raw = calloc(s, (l) * sizeof(BOOLEAN_CELL)), .size = (l)}; \
+  if ((into).raw == NULL) \
     nospace(hostfile, __LINE__);
 
 /// The following macros are used to define operations on sets that
@@ -72,15 +72,15 @@ static bool IS_IN_SET(const JBitset set, const int i, const int b) {
 /// set[i] union set2[j]
 static void SET_UNION(const JBitset set1, const int i, const JBitset set2, const int j) {
   if (set1.size != set2.size) exit(666);
-  int size = set1.size;
-  for (register int kji = 0; kji < size; kji++) {
+  const long size = set1.size;
+  for (register long kji = 0; kji < size; kji++) {
     set1.raw[i * size + kji] |= set2.raw[j * size + kji];
   }
 }
 
 /// set = {}
 static void INIT_SET(const JBitset set) {
-  for (register int kji = 0; kji < set.size; kji++) {
+  for (register long kji = 0; kji < set.size; kji++) {
     set.raw[kji] = 0;
   }
 }
@@ -88,8 +88,8 @@ static void INIT_SET(const JBitset set) {
 /// set1[i] = set2[j]
 static void ASSIGN_SET(const JBitset set1, const int i, const JBitset set2, const int j) {
   if (set1.size != set2.size) exit(666);
-  int size = set1.size;
-  for (register int kji = 0; kji < size; kji++) {
+  const long size = set1.size;
+  for (register long kji = 0; kji < size; kji++) {
     set1.raw[i * size + kji] = set2.raw[j * size + kji];
   }
 }
@@ -106,9 +106,9 @@ static void RESET_BIT_IN(const JBitset set, const int i, const int b) {
       ~((b + BC_OFFSET) % SIZEOF_BC ? (BOOLEAN_CELL) 1 << (b + BC_OFFSET) % SIZEOF_BC : (BOOLEAN_CELL) 1);
 }
 
-static void EMPTY_COLLECTION_SET(const JBitset collection, const int i) {
-  for (register int kji = 0; kji < collection.size; kji++) {
-    collection.raw[i * collection.size + kji] = 0;
+static void INIT_BITSET(const JBitset collection, const int i) {
+  for (register long j = 0; j < collection.size; j++) {
+    collection.raw[i * collection.size + j] = 0;
   }
 }
 
@@ -143,7 +143,7 @@ static void B_SET_UNION(const JBitset s1, const int dest, const JBitset s2, cons
 
 /// EQUAL_SETS checks to see if two sets are equal and returns True or False
 static bool equal_sets(const JBitset set1, const int indx1, const JBitset set2, const int indx2, const int bound) {
-  for (register int i = 0; i < bound; i++) {
+  for (register long i = 0; i < bound; i++) {
     if (set1.raw[indx1 * bound + i] != set2.raw[indx2 * bound + i])
       return false;
   }

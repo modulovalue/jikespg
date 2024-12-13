@@ -113,11 +113,11 @@ int main(const int argc, char *argv[]) {
       process_input(grm_file, lis_file, &output_files, argc, argv, file_prefix, &cli_options);
     }
 
-    mkbasic(&cli_options);
+    struct DetectedSetSizes dss = mkbasic(&cli_options);
 
-    mkstats(&cli_options);
+    mkstats(&cli_options, &dss);
 
-    mkrdcts(&cli_options);
+    mkrdcts(&cli_options, &dss);
 
     // Output more basic statistics.
     {
@@ -187,13 +187,13 @@ int main(const int argc, char *argv[]) {
           ffree(null_nt);
           if (follow.raw != NULL) {
             if (!error_maps_bit || cli_options.c_bit || cli_options.cpp_bit || cli_options.java_bit) {
-              follow.raw += (num_terminals + 1) * term_set_size;
+              follow.raw += (num_terminals + 1) * dss.term_set_size;
               ffree(follow.raw);
             }
           }
         }
 
-        process_tables(tab_file, &output_files, &cli_options);
+        process_tables(tab_file, &output_files, &cli_options, &dss);
       }
       fclose(syslis);
     }

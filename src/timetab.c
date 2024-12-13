@@ -339,7 +339,7 @@ void print_tables_time(struct CLIOptions *cli_options, FILE *systab) {
     exit(12);
   }
   // Initialize all unfilled slots with default values.
-  int indx = first_index;
+  long indx = first_index;
   for (long i = indx; i != NIL && i <= (int) action_size; i = indx) {
     indx = next[i];
     check[i] = DEFAULT_SYMBOL;

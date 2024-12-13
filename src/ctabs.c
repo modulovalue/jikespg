@@ -118,7 +118,7 @@ void mystrcpy(const char *str) {
   BUFFER_CHECK(syssym);
 }
 
-void prnt_longs(const char *title, const int init, const int bound, const int perline, const long *array, struct CLIOptions *cli_options) {
+void prnt_longs(const char *title, const int init, const int bound, const int perline, const long *array, const struct CLIOptions *cli_options) {
   mystrcpy(title);
   padline();
   int k = 0;
@@ -253,7 +253,7 @@ char sym_tag[SYMBOL_SIZE];
 char def_tag[SYMBOL_SIZE];
 char prs_tag[SYMBOL_SIZE];
 
-void init_file(FILE **file, char *file_name, char *file_tag, struct CLIOptions *cli_options) {
+void init_file(FILE **file, char *file_name, char *file_tag, const struct CLIOptions *cli_options) {
   const char *p = strrchr(file_name, '.');
   if ((*file = fopen(file_name, "w")) == NULL) {
     fprintf(stderr, "***ERROR: Symbol file \"%s\" cannot be opened\n", file_name);
@@ -268,7 +268,7 @@ void init_file(FILE **file, char *file_name, char *file_tag, struct CLIOptions *
   }
 }
 
-void exit_file(FILE **file, char *file_tag, struct CLIOptions *cli_options) {
+void exit_file(FILE **file, char *file_tag, const struct CLIOptions *cli_options) {
   if (cli_options->c_bit || cli_options->cpp_bit) {
     fprintf(*file, "\n#endif /* %s_INCLUDED */\n", file_tag);
   }
@@ -324,7 +324,7 @@ void print_error_maps(struct CLIOptions *cli_options) {
       SET_BIT_IN(action_symbols, state_no, symbol);
     }
   }
-  partset(action_symbols, as_size, state_list, state_start, state_stack, num_terminals, 0);
+  partset(action_symbols, as_size, state_list, state_start, state_stack, num_terminals, false);
   ffree(action_symbols.raw);
   // Compute and write out the base of the ACTION_SYMBOLS map.
   long *action_symbols_base = Allocate_long_array(num_states + 1);
@@ -379,7 +379,7 @@ void print_error_maps(struct CLIOptions *cli_options) {
       SET_BIT_IN(naction_symbols, state_no, symbol);
     }
   }
-  partset(naction_symbols, as_size, state_list, state_start, state_stack, num_non_terminals, 0);
+  partset(naction_symbols, as_size, state_list, state_start, state_stack, num_non_terminals, false);
   ffree(as_size);
   ffree(naction_symbols.raw);
   // Remap non-terminals
@@ -1798,7 +1798,7 @@ void sortdes(long array[], long count[], const long low, const long high, const 
 /// This procedure is invoked when the TABLE being used is not large
 /// enough.  A new table is allocated, the information from the old table
 /// is copied, and the old space is released.
-void reallocate(struct CLIOptions *cli_options) {
+void reallocate(const struct CLIOptions *cli_options) {
   if (table_size == MAX_TABLE_SIZE) {
     PRNTERR2("Table has exceeded maximum limit of %ld", MAX_TABLE_SIZE);
     exit(12);
@@ -2026,8 +2026,7 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
       SET_BIT_IN(action_symbols, state_no, symbol);
     }
   }
-  partset(action_symbols, as_size, state_list, state_start,
-          state_stack, num_terminals, 0);
+  partset(action_symbols, as_size, state_list, state_start, state_stack, num_terminals, false);
   ffree(action_symbols.raw);
   // We now write the starting location for each state in the domain
   // of the ACTION_SYMBOL map.
@@ -2083,8 +2082,7 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
       SET_BIT_IN(naction_symbols, state_no, symbol);
     }
   }
-  partset(naction_symbols, as_size, state_list, state_start,
-          state_stack, num_non_terminals, 0);
+  partset(naction_symbols, as_size, state_list, state_start, state_stack, num_non_terminals, false);
   ffree(as_size);
   ffree(naction_symbols.raw);
   for (int i = 1; i <= gotodom_size; i++) {
@@ -3453,7 +3451,7 @@ void init_parser_files(struct OutputFiles *output_files, struct CLIOptions *cli_
 }
 
 /// PT_STATS prints all the states of the parser.
-void ptstats(struct CLIOptions *cli_options) {
+void ptstats(const struct CLIOptions *cli_options) {
   char temp[SYMBOL_SIZE + 1];
   char line[MAX_LINE_SIZE + 1];
   fprintf(syslis, "Shift STATES: ");

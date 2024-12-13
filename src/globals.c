@@ -61,14 +61,13 @@ bool *null_nt = NULL;
 
 long term_set_size;
 long non_term_set_size;
-long state_set_size;
 
 struct shift_header_type *shift = NULL;
 
 struct reduce_header_type *reduce = NULL;
 
 short *shiftdf = NULL;
-short *gotodef = NULL;
+long *gotodef = NULL;
 short *gd_index = NULL;
 short *gd_range = NULL;
 

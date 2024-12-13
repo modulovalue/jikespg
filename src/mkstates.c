@@ -782,7 +782,7 @@ int get_shift_symbol(const int lhs_symbol) {
 /// that are required as candidates for secondary error recovery.  If the
 /// option NAMES=OPTIMIZED is requested, the NAME map is optimized and SYMNO
 /// is updated accordingly.
-void produce(struct CLIOptions *cli_options) {
+void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
   // TOP, STACK, and INDEX are used for the digraph algorithm
   // in the routines COMPUTE_PRODUCES.
   //
@@ -809,9 +809,9 @@ void produce(struct CLIOptions *cli_options) {
   nt_list = Allocate_short_array(num_non_terminals + 1);
   nt_list -= num_terminals + 1;
   JBitset set;
-  calloc0_set(set, 1, non_term_set_size);
-  calloc0_set(produces, num_non_terminals, non_term_set_size);
-  produces.raw -= (num_terminals + 1) * non_term_set_size;
+  calloc0_set(set, 1, dss->non_term_set_size);
+  calloc0_set(produces, num_non_terminals, dss->non_term_set_size);
+  produces.raw -= (num_terminals + 1) * dss->non_term_set_size;
   calloc0(direct_produces, num_non_terminals, struct node *);
   direct_produces -= num_terminals + 1;
   struct node **goto_domain;
@@ -1065,8 +1065,8 @@ void produce(struct CLIOptions *cli_options) {
       // Since A ->* A for all A,  we insert A in PRODUCES(A)  (but not
       // in the linked list).
       right_produces = produces;
-      calloc0_set(produces, num_non_terminals, non_term_set_size);
-      produces.raw -= (num_terminals + 1) * non_term_set_size;
+      calloc0_set(produces, num_non_terminals, dss->non_term_set_size);
+      produces.raw -= (num_terminals + 1) * dss->non_term_set_size;
       for ALL_NON_TERMINALS3(nt) {
         SET_BIT_IN(right_produces, nt, nt - num_terminals);
         SET_BIT_IN(produces, nt, nt - num_terminals);
@@ -1107,8 +1107,8 @@ void produce(struct CLIOptions *cli_options) {
       // PRODUCES map.  After allocation, CALLOC sets all sets to empty.
       // Since A ->* A for all A,  we insert A in PRODUCES(A)  (but not
       // in the linked list).
-      calloc0_set(produces, num_non_terminals, non_term_set_size);
-      produces.raw -= (num_terminals + 1) * non_term_set_size;
+      calloc0_set(produces, num_non_terminals, dss->non_term_set_size);
+      produces.raw -= (num_terminals + 1) * dss->non_term_set_size;
       for ALL_NON_TERMINALS3(nt) {
         SET_BIT_IN(produces, nt, nt - num_terminals);
         direct_produces[nt] = NULL;
@@ -1252,9 +1252,9 @@ void produce(struct CLIOptions *cli_options) {
           }
         }
       }
-      right_produces.raw += (num_terminals + 1) * non_term_set_size;
+      right_produces.raw += (num_terminals + 1) * dss->non_term_set_size;
       ffree(right_produces.raw);
-      left_produces.raw += (num_terminals + 1) * non_term_set_size;
+      left_produces.raw += (num_terminals + 1) * dss->non_term_set_size;
       ffree(left_produces.raw);
       // Next, we used the optimal partition procedure to compress the
       // space used by the sets of states, allocate the SCOPE structure
@@ -1274,7 +1274,7 @@ void produce(struct CLIOptions *cli_options) {
         short *bucket;
         int state_root;
         int state_no_inner;
-        state_set_size = num_states / SIZEOF_BC + (num_states % SIZEOF_BC ? 1 : 0);
+        long state_set_size = num_states / SIZEOF_BC + (num_states % SIZEOF_BC ? 1 : 0);
         calloc0_set(collection, num_state_sets + 1, state_set_size);
         element_size = Allocate_long_array(num_state_sets + 1);
         start = Allocate_long_array(num_state_sets + 2);
@@ -1286,14 +1286,14 @@ void produce(struct CLIOptions *cli_options) {
         for (int symbol = nt_root, i = 1; symbol != NIL; symbol = nt_list[symbol], i++) {
           list[i] = i;
           ordered_symbol[i] = symbol;
-          EMPTY_COLLECTION_SET(collection, i);
+          INIT_BITSET(collection, i);
           element_size[i] = 0;
           for (p = states_of[symbol]; p != NULL; p = p->next) {
             element_size[i]++;
             SET_BIT_IN(collection, i, p->value);
           }
         }
-        partset(collection, element_size, list, start, stack, num_state_sets, 1);
+        partset(collection, element_size, list, start, stack, num_state_sets, true);
         for (int i = 1; i <= num_state_sets; i++) {
           int symbol = ordered_symbol[i];
           state_index[symbol] = ABS(start[i]);
@@ -1457,7 +1457,7 @@ void produce(struct CLIOptions *cli_options) {
   nt_list += num_terminals + 1;
   ffree(nt_list);
   ffree(set.raw);
-  produces.raw += (num_terminals + 1) * non_term_set_size;
+  produces.raw += (num_terminals + 1) * dss->non_term_set_size;
   ffree(produces.raw);
   direct_produces += num_terminals + 1;
   ffree(direct_produces);
@@ -1467,14 +1467,14 @@ void produce(struct CLIOptions *cli_options) {
 // === Produce End ===
 
 /// In this procedure, we first construct the LR(0) automaton.
-void mkstats(struct CLIOptions *cli_options) {
+void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
   no_gotos_ptr.size = 0; /* For states with no GOTOs */
   no_gotos_ptr.map = NULL;
   no_shifts_ptr.size = 0; /* For states with no SHIFTs */
   no_shifts_ptr.map = NULL;
   mklr0(cli_options);
   if (error_maps_bit && (cli_options->table_opt == OPTIMIZE_TIME || cli_options->table_opt == OPTIMIZE_SPACE)) {
-    produce(cli_options);
+    produce(cli_options, dss);
   }
   // Free space trapped by the CLOSURE and CLITEMS maps.
   for ALL_NON_TERMINALS3(j) {

@@ -19,7 +19,7 @@ void process_shift_actions(struct action_element **action_count, const int shift
   const struct shift_header_type sh = shift[shift_no];
   for (int i = 1; i <= sh.size; i++) {
     const int symbol = sh.map[i].symbol;
-    const int act = sh.map[i].action;
+    const short act = sh.map[i].action;
     struct action_element *q;
     for (q = action_count[symbol]; q != NULL; q = q->next) {
       if (q->action == act)
@@ -60,7 +60,7 @@ void compute_shift_default(void) {
   // frequently defined on t.
   for ALL_TERMINALS3(symbol) {
     int max_count = 0;
-    int default_action = 0;
+    short default_action = 0;
     for (const struct action_element *q = action_count[symbol]; q != NULL; q = q->next) {
       if (q->count > max_count) {
         max_count = q->count;
@@ -92,7 +92,7 @@ void compute_goto_default(void) {
   reset_temporary_space();
   int goto_count = 0;
   int goto_reduce_count = 0;
-  gotodef = Allocate_short_array(num_non_terminals);
+  gotodef = Allocate_long_array(num_non_terminals);
   gotodef -= num_terminals + 1;
   struct action_element **action_count;
   calloc0(action_count, num_non_terminals, struct action_element *);
@@ -109,7 +109,7 @@ void compute_goto_default(void) {
     struct goto_header_type go_to = statset[state_no].go_to;
     for (int i = 1; i <= go_to.size; i++) {
       const int symbol = go_to.map[i].symbol;
-      const int act = go_to.map[i].action;
+      const short act = go_to.map[i].action;
       struct action_element *q;
       for (q = action_count[symbol]; q != NULL; q = q->next) {
         if (q->action == act) {
@@ -174,7 +174,7 @@ void compute_goto_default(void) {
 
 /// Remap symbols, apply transition default actions  and call
 /// appropriate table compression routine.
-void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options) {
+void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options, const struct DetectedSetSizes* dss) {
   //        First, we decrease by 1 the constants NUM_SYMBOLS
   // and NUM_TERMINALS, remove the EMPTY symbol(1) and remap the
   // other symbols beginning at 1.  If default reduction is
@@ -252,8 +252,8 @@ void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLI
   // We allocate the necessary structures, open the appropriate
   // output file and call the appropriate compression routine.
   if (error_maps_bit) {
-    calloc0_set(naction_symbols, num_states + 1, non_term_set_size);
-    calloc0_set(action_symbols, num_states + 1, term_set_size);
+    calloc0_set(naction_symbols, num_states + 1, dss->non_term_set_size);
+    calloc0_set(action_symbols, num_states + 1, dss->term_set_size);
   }
   calloc0(output_buffer, IOBUFFER_SIZE, char);
   FILE *systab;

@@ -46,20 +46,16 @@ static char hostfile[] = __FILE__;
 ///    which is a subset of the subset on top of the stack, currently
 ///    being constructed, remove it from the partition, and push it
 ///    into the stack. Repeat step 2 until the partition is empty.
-void partset(const JBitset collection, const long *element_size, const long *list, long *start, long *stack, long set_size, const long from_process_scopes) {
-  int collection_size = num_states;
-  int bctype;
+void partset(const JBitset collection, const long *element_size, const long *list, long *start, long *stack, long set_size, const bool from_process_scopes) {
+  int collection_size;
+  // TODO • remove this unnecessary indirection.
   if (from_process_scopes) {
-    bctype = num_states / SIZEOF_BC + (num_states % SIZEOF_BC ? 1 : 0);
     collection_size = set_size;
     set_size = num_states;
-  } else if (set_size == num_terminals) {
-    bctype = term_set_size;
-    collection_size = num_states;
-  } else if (set_size == num_non_terminals) {
-    bctype = non_term_set_size;
+  } else {
     collection_size = num_states;
   }
+  const int bctype = collection.size;
   short *size_list = Allocate_short_array(set_size + 1);
   short *partition = Allocate_short_array(set_size + 1);
   short *domain_link = Allocate_short_array(collection_size + 1);

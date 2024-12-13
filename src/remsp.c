@@ -479,7 +479,7 @@ short sp_state_map(const int rule_head, const int item_no, const int sp_rule_cou
 
 /// This program is invoked to remove as many single production
 /// actions as possible for a conflict-free automaton.
-void remove_single_productions() {
+void remove_single_productions(struct DetectedSetSizes* dss) {
   // Set up a pool of temporary space.
   reset_temporary_space();
   // Allocate all other necessary temporary objects.
@@ -496,7 +496,7 @@ void remove_single_productions() {
     short shift_number;
   } *new_shift;
   calloc0(new_shift, max_la_state + 1, struct new_shift_element);
-  calloc0_set(look_ahead, 1, term_set_size);
+  calloc0_set(look_ahead, 1, dss->term_set_size);
   calloc0(sp_action, num_symbols + 1, short *);
   calloc0(is_conflict_symbol, num_symbols + 1, bool);
   calloc0(sp_table, STATE_TABLE_SIZE, struct sp_state_element *);

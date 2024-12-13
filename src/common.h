@@ -9,33 +9,29 @@
 
 static char hostfile[];
 
-extern long term_set_size;
-extern long non_term_set_size;
-extern long state_set_size;
-
 #define galloc0(into, x, times) \
   into = (x *) galloc((times) * sizeof(x)); \
-  if (into == (x *) NULL) \
+  if ((into) == (x *) NULL) \
     nospace(hostfile, __LINE__);
 
 #define talloc0(into, x) \
   into = (x *) talloc(sizeof(x)); \
-  if (into == (x *) NULL) \
+  if ((into) == (x *) NULL) \
     nospace(hostfile, __LINE__);
 
 #define realloc0(into, times, t) \
   into = (t *) realloc(into, (times) * sizeof(t)); \
-  if (into == (t *) NULL) \
+  if ((into) == (t *) NULL) \
     nospace(hostfile, __LINE__);
 
 #define talloc0_raw(into, xyz, s) \
   into = (xyz *) talloc(s); \
-  if (into == (xyz *) NULL) \
+  if ((into) == (xyz *) NULL) \
     nospace(hostfile, __LINE__);
 
 #define calloc0(into, size, x) \
   into = (x *) calloc(size, sizeof(x)); \
-  if (into == (x *) NULL) \
+  if ((into) == (x *) NULL) \
     nospace(hostfile, __LINE__);
 
 static const int MAX_PARM_SIZE = 22;
@@ -76,27 +72,27 @@ static const int DEFELMT_INCREMENT = 16;
 
 static const int IOBUFFER_SIZE = 655360;
 
-#define ALL_TERMINALS3(x) (int x = 1; x <= num_terminals; x++)
+#define ALL_TERMINALS3(x) (int (x) = 1; (x) <= num_terminals; (x)++)
 
-#define ALL_TERMINALS_BACKWARDS3(x) (int x = num_terminals; x >= 1; x--)
+#define ALL_TERMINALS_BACKWARDS3(x) (int (x) = num_terminals; (x) >= 1; (x)--)
 
-#define ALL_NON_TERMINALS3(x) (int x = num_terminals + 1; x <= num_symbols; x++)
+#define ALL_NON_TERMINALS3(x) (int (x) = num_terminals + 1; (x) <= num_symbols; (x)++)
 
-#define ALL_NON_TERMINALS_BACKWARDS3(x) (int x = num_symbols; x >= num_terminals + 1; x--)
+#define ALL_NON_TERMINALS_BACKWARDS3(x) (int (x) = num_symbols; (x) >= num_terminals + 1; (x)--)
 
-#define ALL_SYMBOLS3(x) (int x = 1; x <= num_symbols; x++)
+#define ALL_SYMBOLS3(x) (int (x) = 1; (x) <= num_symbols; (x)++)
 
-#define ALL_LA_STATES3(x) (int x = num_states + 1; x <= max_la_state; x++)
+#define ALL_LA_STATES3(x) (int (x) = num_states + 1; (x) <= max_la_state; (x)++)
 
-#define ALL_STATES3(x) (int x = 1; x <= num_states; x++)
+#define ALL_STATES3(x) (int (x) = 1; (x) <= num_states; (x)++)
 
-#define ALL_ITEMS3(x) (int x = 1; x <= num_items; x++)
+#define ALL_ITEMS3(x) (int (x) = 1; (x) <= num_items; (x)++)
 
-#define ALL_RULES3(x) (int x = 0; x <= num_rules; x++)
+#define ALL_RULES3(x) (int (x) = 0; (x) <= num_rules; (x)++)
 
-#define ALL_RULES_BACKWARDS3(x) (int x = num_rules; x >= 0; x--)
+#define ALL_RULES_BACKWARDS3(x) (int (x) = num_rules; (x) >= 0; (x)--)
 
-#define ENTIRE_RHS3(x, rule_no) (int x = rules[rule_no].rhs; x < rules[(rule_no) + 1].rhs; x++)
+#define ENTIRE_RHS3(x, rule_no) (int (x) = rules[rule_no].rhs; (x) < rules[(rule_no) + 1].rhs; (x)++)
 
 extern const long MAX_TABLE_SIZE;
 
@@ -153,7 +149,7 @@ struct goto_type {
 
 struct goto_header_type {
   struct goto_type *map;
-  short size;
+  int size;
 };
 
 struct lastats_type {
@@ -347,7 +343,7 @@ extern struct shift_header_type *shift;
 /// REDUCE is a mapping from each state to reduce actions in that state.
 extern struct reduce_header_type *reduce;
 
-extern short *gotodef;
+extern long *gotodef;
 extern short *shiftdf;
 extern short *gd_index;
 extern short *gd_range;
@@ -439,9 +435,9 @@ void create_lastats(void);
 
 void dump_tables(void);
 
-void exit_lalrk_process(struct CLIOptions *cli_options);
+void exit_lalrk_process(const struct CLIOptions *cli_options);
 
-void init_lalrk_process(struct CLIOptions *cli_options);
+void init_lalrk_process(const struct CLIOptions *cli_options);
 
 void init_rmpself(JBitset produces);
 
@@ -455,21 +451,24 @@ void free_nodes(struct node *head, struct node *tail);
 
 struct node *lpgaccess(int state_no, int item_no);
 
-void mkbasic(const struct CLIOptions *cli_options);
+struct DetectedSetSizes {
+  long term_set_size;
+  long non_term_set_size;
+} mkbasic(const struct CLIOptions *cli_options);
 
-void mkrdcts(struct CLIOptions *cli_options);
+void mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss);
 
 void la_traverse(int state_no, int goto_indx, int *stack_top);
 
-void remove_single_productions();
+void remove_single_productions(struct DetectedSetSizes* dss);
 
-void mkstats(struct CLIOptions *cli_options);
+void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss);
 
 void nospace(char *, long);
 
 int number_len(int state_no);
 
-void partset(JBitset collection, const long *element_size, const long *list, long *start, long *stack, long set_size, long from_process_scopes);
+void partset(JBitset collection, const long *element_size, const long *list, long *start, long *stack, long set_size, bool from_process_scopes);
 
 void print_item(int item_no);
 
@@ -485,17 +484,17 @@ void print_time_parser(struct CLIOptions *cli_options);
 
 void init_parser_files(struct OutputFiles *output_files, struct CLIOptions *cli_options);
 
-void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options);
+void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options, const struct DetectedSetSizes* dss);
 
-void ptstats(struct CLIOptions *cli_options);
+void ptstats(const struct CLIOptions *cli_options);
 
 void remvsp(void);
 
 void sortdes(long array[], long count[], long low, long high, long max);
 
-void reallocate(struct CLIOptions *cli_options);
+void reallocate(const struct CLIOptions *cli_options);
 
-void resolve_conflicts(int state_no, struct node **action, const short *symbol_list, int reduce_root, struct CLIOptions *cli_options);
+void resolve_conflicts(int state_no, struct node **action, const short *symbol_list, int reduce_root, struct CLIOptions *cli_options, struct DetectedSetSizes* dss);
 
 void restore_symbol(char *out, const char *in);
 
