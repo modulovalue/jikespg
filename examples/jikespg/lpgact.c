@@ -164,7 +164,7 @@ static void act39(void)
         case ERROR_SYMBOL_TK:
             if (error_image > num_terminals)
             {
-                restore_symbol(tok_string, kerror);
+                restore_symbol(tok_string, kerror, ormark, escape);
                 PRNTERR2("Illegal aliasing to %s prior to its definition.  Line %ld, column %d", tok_string, SYM3.start_line, SYM3.start_column);
                 exit(12);
             }
@@ -174,7 +174,7 @@ static void act39(void)
         case EOF_SYMBOL_TK:
             if (eoft_image > num_terminals)
             {
-                restore_symbol(tok_string, keoft);
+                restore_symbol(tok_string, keoft, ormark, escape);
                 PRNTERR2("Illegal aliasing to %s prior to its definition. Line %ld, column %d", tok_string, SYM3.start_line, SYM3.start_column);
                 exit(12);
             }
@@ -200,7 +200,7 @@ static void act39(void)
         case SYMBOL_TK:
             if (symbol_image(SYM1.name) != OMEGA)
             {
-                restore_symbol(tok_string, SYM1.name);
+                restore_symbol(tok_string, SYM1.name, ormark, escape);
                 PRNTERR2("Symbol %s was previously defined. Line %ld, column %d", tok_string, SYM1.start_line, SYM1.start_column);
                 exit(12);
             }
@@ -213,7 +213,7 @@ static void act39(void)
                 if (image == empty      || image == eolt_image ||
                     image == eoft_image || image > num_terminals)
                 {
-                    restore_symbol(tok_string, kerror);
+                    restore_symbol(tok_string, kerror, ormark, escape);
                     PRNTERR2("Illegal alias for symbol %s. Line %ld, column %d.", tok_string, SYM1.start_line, SYM1.start_column);
                     exit(12);
                 }
@@ -222,7 +222,7 @@ static void act39(void)
             }
             else
             {
-                restore_symbol(tok_string, kerror);
+                restore_symbol(tok_string, kerror, ormark, escape);
                 PRNTERR2("Symbol %s was previously defined. Line %ld, column %d", tok_string, SYM1.start_line, SYM1.start_column);
                 exit(12);
             }
@@ -234,7 +234,7 @@ static void act39(void)
                 if (image == empty       || image == eolt_image  ||
                     image == error_image || image > num_terminals)
                 {
-                    restore_symbol(tok_string, keoft);
+                    restore_symbol(tok_string, keoft, ormark, escape);
                     PRNTERR2("Illegal alias for symbol %s. Line %ld, column %d.", tok_string, SYM1.start_line, SYM1.start_column);
                     exit(12);
                 }
@@ -243,7 +243,7 @@ static void act39(void)
             }
             else
             {
-                restore_symbol(tok_string, keoft);
+                restore_symbol(tok_string, keoft, ormark, escape);
                 PRNTERR2("Symbol %s was previously defined.  %ld, column %d", tok_string, SYM1.start_line, SYM1.start_column);
                 exit(12);
             }
@@ -455,7 +455,7 @@ static void act82(void)
     if (error_image == DEFAULT_SYMBOL)
     {
         char tok_string[SYMBOL_SIZE + 1];
-        restore_symbol(tok_string, kerror);
+        restore_symbol(tok_string, kerror, ormark, escape);
         PRNTERR2("%s not declared or aliased to terminal symbol. Line %ld, column %d", tok_string, SYM2.start_line, SYM2.start_column);
         exit(12);
     }

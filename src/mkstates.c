@@ -456,14 +456,14 @@ int top;
 /// This procedure prints the name associated with a given symbol.
 /// The same format that was used in the procedure DISPLAY_INPUT
 /// to print aliases is used to print name mappings.
-void print_name_map(const int symbol) {
+void print_name_map(const int symbol, struct CLIOptions* cli_options) {
   char line[PRINT_LINE_SIZE];
   char tok[SYMBOL_SIZE + 1];
-  restore_symbol(tok, RETRIEVE_STRING(symbol));
+  restore_symbol(tok, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
   int len = PRINT_LINE_SIZE - 5;
   print_large_token(line, tok, "", len);
   strcat(line, " ::= ");
-  restore_symbol(tok, RETRIEVE_NAME(symno[symbol].name_index));
+  restore_symbol(tok, RETRIEVE_NAME(symno[symbol].name_index), cli_options->ormark, cli_options->escape);
   if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 1) {
     fprintf(syslis, "\n%s", line);
     len = PRINT_LINE_SIZE - 4;
@@ -698,14 +698,14 @@ int insert_suffix(const int item_no) {
 }
 
 /// This procedure is similar to the global procedure PTITEM.
-void print_scopes(void) {
+void print_scopes(struct CLIOptions* cli_options) {
   fprintf(syslis, "\nScopes:\n");
   for (int k = 1; k <= num_scopes; k++) {
     char tmp[PRINT_LINE_SIZE];
     char tok[SYMBOL_SIZE + 1];
     char line[PRINT_LINE_SIZE + 1];
     int symbol = scope[k].lhs_symbol;
-    restore_symbol(tok, RETRIEVE_STRING(symbol));
+    restore_symbol(tok, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
     int len = PRINT_LINE_SIZE - 5;
     print_large_token(line, tok, "", len);
     strcat(line, " ::= ");
@@ -718,7 +718,7 @@ void print_scopes(void) {
     // symbols before dot
     for (ii = ii - 1; ii >= scope[k].prefix; ii--) {
       symbol = scope_right_side[ii];
-      restore_symbol(tok, RETRIEVE_STRING(symbol));
+      restore_symbol(tok, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
       if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 4) {
         fprintf(syslis, "\n%s", line);
         fill_in(tmp, offset, ' ');
@@ -734,7 +734,7 @@ void print_scopes(void) {
     len = PRINT_LINE_SIZE - (offset + 1);
     for (ii = scope[k].suffix; scope_right_side[ii] != 0; ii++) {
       symbol = scope_right_side[ii];
-      restore_symbol(tok, RETRIEVE_STRING(symbol));
+      restore_symbol(tok, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
       if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 1) {
         fprintf(syslis, "\n%s", line);
         fill_in(tmp, offset, ' ');
@@ -872,7 +872,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
       fprintf(syslis, "*** These error rules are not in manual format:\n\n");
     }
     for (int item_no = item_root; item_no != NIL; item_no = item_list[item_no]) {
-      print_item(item_no);
+      print_item(item_no, cli_options);
     }
   }
   // Complete the construction of the RIGHT_MOST_PRODUCES map for
@@ -1004,12 +1004,12 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
     fprintf(syslis, "\nName map:\n");
     for ALL_SYMBOLS3(symbol) {
       if (symno[symbol].name_index != symno[accept_image].name_index) {
-        print_name_map(symbol);
+        print_name_map(symbol, cli_options);
       }
     }
     for ALL_SYMBOLS3(symbol) {
       if (symbol != accept_image && symno[symbol].name_index == symno[accept_image].name_index) {
-        print_name_map(symbol);
+        print_name_map(symbol, cli_options);
       }
     }
   }
@@ -1432,7 +1432,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
         scope_right_side[n] = 0;
       }
       if (cli_options->list_bit) {
-        print_scopes();
+        print_scopes(cli_options);
       }
       ffree(prefix_index);
       ffree(suffix_index);

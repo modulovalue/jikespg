@@ -427,7 +427,7 @@ void compute_cyclic(const short state_no) {
 /// array, SLR_VISITED, indexable by non-terminals, is used.  For
 /// trace-backs to the root item, the boolean array SYMBOL_SEEN, also
 /// also indexable by non-terminals, is used.
-bool trace_root(const int lhs_symbol) {
+bool trace_root(const int lhs_symbol, struct CLIOptions* cli_options) {
   if (lhs_symbol == accept_image) {
     return true;
   }
@@ -436,8 +436,8 @@ bool trace_root(const int lhs_symbol) {
   }
   symbol_seen[lhs_symbol] = true;
   for (int item = nt_items[lhs_symbol]; item != NIL; item = item_list[item]) {
-    if (trace_root(rules[item_table[item].rule_number].lhs)) {
-      print_item(item);
+    if (trace_root(rules[item_table[item].rule_number].lhs, cli_options)) {
+      print_item(item, cli_options);
       return true;
     }
   }
@@ -446,10 +446,10 @@ bool trace_root(const int lhs_symbol) {
 
 /// The procedure below is invoked to retrace a path from the initial
 /// item to a given item (ITEM_NO) passed to it as argument.
-void print_root_path(const int item_no) {
+void print_root_path(const int item_no, struct CLIOptions* cli_options) {
   bool *symbol_seen = Allocate_boolean_array(num_non_terminals);
   symbol_seen -= num_terminals + 1;
-  if (trace_root(rules[item_table[item_no].rule_number].lhs)) {
+  if (trace_root(rules[item_table[item_no].rule_number].lhs, cli_options)) {
     fprintf(syslis, "\n"); /* Leave one blank line after root trace. */
   }
   symbol_seen += num_terminals + 1;
@@ -474,7 +474,7 @@ bool lalr_path_retraced(const int state_no, const int goto_indx, const int confl
     if (IS_IN_SET(first, item_table[item].suffix_index, conflict_symbol)) {
       // Conflict_symbol can be read in state?
       if (cli_options->trace_opt == TRACE_FULL)
-        print_root_path(item);
+        print_root_path(item, cli_options);
       found = true;
     } else if (IS_IN_SET(first, item_table[item].suffix_index, empty)) {
       const int symbol = rules[item_table[item].rule_number].lhs;
@@ -499,7 +499,7 @@ bool lalr_path_retraced(const int state_no, const int goto_indx, const int confl
     }
   }
   if (found) {
-    print_item(item);
+    print_item(item, cli_options);
   }
   return found;
 }
@@ -1420,19 +1420,19 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
     if (nt_items == NULL) {
       conflicts_initialization();
     }
-    print_state(state_no); /* Print state containing conflicts */
+    print_state(state_no, cli_options); /* Print state containing conflicts */
     // Process shift-reduce conflicts.
     if (sr_conflict_root != NULL) {
       struct sr_conflict_element *tail;
       for (struct sr_conflict_element *p = sr_conflict_root; p != NULL; tail = p, p = p->next) {
         symbol = p->symbol;
         rule_no = item_table[p->item].rule_number;
-        restore_symbol(temp, RETRIEVE_STRING(symbol));
+        restore_symbol(temp, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
         printf("*** Shift/reduce conflict on \"%s\" with rule %d\n", temp, rule_no);
         fprintf(syslis, "\n*** Shift/reduce conflict on \"%s\" with rule %d\n", temp, rule_no);
         if (cli_options->trace_opt != NOTRACE) {
           print_relevant_lalr_items(state_no, p->item, symbol, cli_options);
-          print_item(p->item);
+          print_item(p->item, cli_options);
         }
       }
       free_conflict_elements(sr_conflict_root, tail);
@@ -1444,16 +1444,16 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
         symbol = p->symbol;
         const int n = item_table[p->item1].rule_number;
         rule_no = item_table[p->item2].rule_number;
-        restore_symbol(temp, RETRIEVE_STRING(symbol));
+        restore_symbol(temp, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
         printf("*** Reduce/reduce conflict on \"%s\" between rule %d and %d\n", temp, n, rule_no);
         fprintf(syslis, "\n*** Reduce/reduce conflict on \"%s\" between rule %d and %d\n", temp, n, rule_no);
         if (cli_options->trace_opt != NOTRACE) {
           print_relevant_lalr_items(state_no, p->item1, symbol, cli_options);
-          print_item(p->item1);
+          print_item(p->item1, cli_options);
           fill_in(msg_line, PRINT_LINE_SIZE - 3, '-');
           fprintf(syslis, "\n%s", msg_line);
           print_relevant_lalr_items(state_no, p->item2, symbol, cli_options);
-          print_item(p->item2);
+          print_item(p->item2, cli_options);
         }
       }
       free_conflict_elements(rr_conflict_root, tail);

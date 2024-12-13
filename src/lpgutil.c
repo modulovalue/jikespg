@@ -226,7 +226,7 @@ int number_len(int state_no) {
 /// it needs to be quoted. If so, the necessary quotes are added
 /// as IN is copied into the space identified by OUT.
 /// NOTE that it is assumed that IN and OUT do not overlap each other.
-void restore_symbol(char *out, const char *in) {
+void restore_symbol(char *out, const char *in, char ormark, char escape) {
   const int len = strlen(in);
   if (len > 0) {
     if ((len == 1 && in[0] == ormark) ||
@@ -285,7 +285,7 @@ void print_large_token(char *line, char *token, const char *indent, int len) {
 }
 
 /// PRINT_ITEM takes as parameter an ITEM_NO which it prints.
-void print_item(const int item_no) {
+void print_item(const int item_no, struct CLIOptions* cli_options) {
   char tempstr[PRINT_LINE_SIZE + 1];
   char line[PRINT_LINE_SIZE + 1];
   char tok[SYMBOL_SIZE + 1];
@@ -296,7 +296,7 @@ void print_item(const int item_no) {
   // the dot symbol.
   const int rule_no = item_table[item_no].rule_number;
   int symbol = rules[rule_no].lhs;
-  restore_symbol(tok, RETRIEVE_STRING(symbol));
+  restore_symbol(tok, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
   int len = PRINT_LINE_SIZE - 5;
   print_large_token(line, tok, "", len);
   strcat(line, " ::= ");
@@ -305,7 +305,7 @@ void print_item(const int item_no) {
   int sbd = rules[rule_no].rhs; /* symbols before dot */
   for (const int k = rules[rule_no].rhs + item_table[item_no].dot - 1; sbd <= k; sbd++) {
     symbol = rhs_sym[sbd];
-    restore_symbol(tok, RETRIEVE_STRING(symbol));
+    restore_symbol(tok, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
     if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE - 4) {
       fprintf(syslis, "\n%s", line);
       fill_in(tempstr, offset, ' ');
@@ -329,7 +329,7 @@ void print_item(const int item_no) {
                item_table[item_no].dot; /* symbols after dot*/
        i <= rules[rule_no + 1].rhs - 1; i++) {
     symbol = rhs_sym[i];
-    restore_symbol(tok, RETRIEVE_STRING(symbol));
+    restore_symbol(tok, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
     if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE - 1) {
       fprintf(syslis, "\n%s", line);
       fill_in(tempstr, offset, ' ');
@@ -358,7 +358,7 @@ void print_item(const int item_no) {
 /// replaced by say the GOTO or GOTO_REDUCE of A, the item above can no longer
 /// be retrieved, since transitions in a given state are reconstructed from
 /// the KERNEL and ADEQUATE items of the actions in the GOTO and SHIFT maps.
-void print_state(const int state_no) {
+void print_state(const int state_no, struct CLIOptions* cli_options) {
   char buffer[PRINT_LINE_SIZE + 1];
   char line[PRINT_LINE_SIZE + 1];
   // ITEM_SEEN is used to construct sets of items, to help avoid
@@ -480,13 +480,13 @@ void print_state(const int state_no) {
   // line, sort then, then print them.  The kernel items are in sorted
   // order.
   for (int item_no = 1; item_no <= kernel_size; item_no++) {
-    print_item(item_list[item_no]);
+    print_item(item_list[item_no], cli_options);
   }
   if (kernel_size < n) {
     fprintf(syslis, "\n");
     qcksrt(item_list, kernel_size + 1, n);
     for (int item_no = kernel_size + 1; item_no <= n; item_no++) {
-      print_item(item_list[item_no]);
+      print_item(item_list[item_no], cli_options);
     }
   }
   ffree(item_list);

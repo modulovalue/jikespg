@@ -86,7 +86,7 @@ bool is_terminal_rhs(short *rhs_start, const bool *produces_terminals, const int
 /// and Xi, for all i, is a terminal or a non-terminal that can generate a
 /// string of terminals.
 /// This routine is structurally identical to COMPUTE_NULLABLES.
-void check_non_terminals(void) {
+void check_non_terminals(struct CLIOptions* cli_options) {
   bool changed = true;
   short *rhs_start = Allocate_short_array(NEXT_RULE_SIZE());
   bool *produces_terminals = Allocate_boolean_array(num_non_terminals);
@@ -157,7 +157,7 @@ void check_non_terminals(void) {
     }
     for (int symbol = nt_root; symbol != NIL; symbol = nt_list[symbol]) {
       char tok[SYMBOL_SIZE + 1];
-      restore_symbol(tok, RETRIEVE_STRING(symbol));
+      restore_symbol(tok, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
       if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 1) {
         PRNT(line);
         print_large_token(line, tok, "    ", LEN);
@@ -173,7 +173,7 @@ void check_non_terminals(void) {
   ffree(rhs_start);
 }
 
-void no_rules_produced(void) {
+void no_rules_produced(struct CLIOptions* cli_options) {
   // Build a list of all non-terminals that do not produce any rules.
   int nt_root = NIL;
   int nt_last;
@@ -200,7 +200,7 @@ void no_rules_produced(void) {
     strcpy(line, "        ");
     for (int symbol = nt_root; symbol != NIL; symbol = nt_list[symbol]) {
       char tok[SYMBOL_SIZE + 1];
-      restore_symbol(tok, RETRIEVE_STRING(symbol));
+      restore_symbol(tok, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
       if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE) {
         PRNT(line);
         print_large_token(line, tok, "    ", LEN);
@@ -444,7 +444,7 @@ void compute_follow(const int nt, struct DetectedSetSizes* dss) {
 
 /// MKFIRST constructs the FIRST and FOLLOW maps, the CLOSURE map,
 /// ADEQUATE_ITEM and ITEM_TABLE maps and all other basic maps.
-struct DetectedSetSizes mkbasic(const struct CLIOptions* cli_options) {
+struct DetectedSetSizes mkbasic(struct CLIOptions* cli_options) {
   struct DetectedSetSizes dss = {
     .non_term_set_size = num_non_terminals / SIZEOF_BC + (num_non_terminals % SIZEOF_BC ? 1 : 0),
     .term_set_size = num_terminals / SIZEOF_BC + (num_terminals % SIZEOF_BC ? 1 : 0),
@@ -486,7 +486,7 @@ struct DetectedSetSizes mkbasic(const struct CLIOptions* cli_options) {
   }
   // Check if there are any non-terminals that do not produce
   // any rules.
-  no_rules_produced();
+  no_rules_produced(cli_options);
   // Construct the CLOSURE map of non-terminals.
   calloc0(closure, num_non_terminals, struct node *);
   closure -= num_terminals + 1;
@@ -575,7 +575,7 @@ struct DetectedSetSizes mkbasic(const struct CLIOptions* cli_options) {
   }
   // Check whether there are any non-terminals that do not
   // generate any terminal strings. If so, signal error and stop.
-  check_non_terminals();
+  check_non_terminals(cli_options);
   // Construct the ITEM_TABLE, FIRST_ITEM_OF, and NT_ITEMS maps.
   first_table = Allocate_short_array(num_symbols + 1);
   /* Initialize FIRST_TABLE to NIL */
@@ -861,7 +861,7 @@ struct DetectedSetSizes mkbasic(const struct CLIOptions* cli_options) {
         strcpy(line, "*** The following Terminal is useless: ");
       }
       for (int symbol = t_root; symbol != NIL; symbol = symbol_list[symbol]) {
-        restore_symbol(tok, RETRIEVE_STRING(symbol));
+        restore_symbol(tok, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
         if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE) {
           PRNT(line);
           print_large_token(line, tok, "    ", LEN);
@@ -893,7 +893,7 @@ struct DetectedSetSizes mkbasic(const struct CLIOptions* cli_options) {
         strcpy(line, "*** The following Non-Terminal is useless: ");
       }
       for (int symbol = nt_root; symbol != NIL; symbol = symbol_list[symbol]) {
-        restore_symbol(tok, RETRIEVE_STRING(symbol));
+        restore_symbol(tok, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
         if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE) {
           PRNT(line);
           print_large_token(line, tok, "    ", LEN);
@@ -914,12 +914,12 @@ struct DetectedSetSizes mkbasic(const struct CLIOptions* cli_options) {
       for ALL_NON_TERMINALS3(nt) {
         char tok[SYMBOL_SIZE + 1];
         char line[PRINT_LINE_SIZE + 1];
-        restore_symbol(tok, RETRIEVE_STRING(nt));
+        restore_symbol(tok, RETRIEVE_STRING(nt), cli_options->ormark, cli_options->escape);
         print_large_token(line, tok, "", PRINT_LINE_SIZE - 7);
         strcat(line, "  ==>> ");
         for ALL_TERMINALS3(t) {
           if (IS_IN_SET(nt_first, nt, t)) {
-            restore_symbol(tok, RETRIEVE_STRING(t));
+            restore_symbol(tok, RETRIEVE_STRING(t), cli_options->ormark, cli_options->escape);
             if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 1) {
               fprintf(syslis, "\n%s", line);
               print_large_token(line, tok, "    ", LEN);
@@ -942,12 +942,12 @@ struct DetectedSetSizes mkbasic(const struct CLIOptions* cli_options) {
       for ALL_NON_TERMINALS3(nt) {
         char tok[SYMBOL_SIZE + 1];
         char line[PRINT_LINE_SIZE + 1];
-        restore_symbol(tok, RETRIEVE_STRING(nt));
+        restore_symbol(tok, RETRIEVE_STRING(nt), cli_options->ormark, cli_options->escape);
         print_large_token(line, tok, "", PRINT_LINE_SIZE - 7);
         strcat(line, "  ==>> ");
         for ALL_TERMINALS3(t) {
           if (IS_IN_SET(follow, nt, t)) {
-            restore_symbol(tok, RETRIEVE_STRING(t));
+            restore_symbol(tok, RETRIEVE_STRING(t), cli_options->ormark, cli_options->escape);
             if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 2) {
               fprintf(syslis, "\n%s", line);
               print_large_token(line, tok, "    ", LEN);

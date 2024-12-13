@@ -266,7 +266,7 @@ void options(char *file_prefix, struct CLIOptions *cli_options) {
           PRNTERR2("\"%s\" is an invalid value for %s", temp, token);
         }
       } else if (memcmp(token, "ESCAPE", token_len) == 0) {
-        escape = temp[0];
+        cli_options->escape = temp[0];
       } else if (memcmp(token, "FILEPREFIX", token_len) == 0) {
         memcpy(file_prefix, temp, 5);
         file_prefix[MIN(5, strlen(temp))] = '\0';
@@ -332,7 +332,7 @@ void options(char *file_prefix, struct CLIOptions *cli_options) {
           PRNTERR2("\"%s\" is an invalid value for %s", temp, token);
         }
       } else if (memcmp(token, "ORMARK", token_len) == 0) {
-        ormark = temp[0];
+        cli_options->ormark = temp[0];
       } else if (memcmp(token, "PREFIX", token_len) == 0) {
         strcpy(prefix, temp);
       } else if (memcmp(token, "STACKSIZE", token_len) == 0) {
@@ -392,7 +392,7 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
   int top = 0;
   strcpy(old_parm, parm); /* Save new options passed to program */
   static char ooptions[9] = " OPTIONS";
-  ooptions[0] = escape; /* "ooptions" always uses default escape symbol */
+  ooptions[0] = cli_options->escape; /* "ooptions" always uses default escape symbol */
   // Until end-of-file is reached, process
   while (p1 != NULL) {
     // all comment and %options lines.
@@ -470,7 +470,7 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
   }
   strcpy(opt_string[++top], cli_options->debug_bit ? "DEBUG" : "NODEBUG");
   strcpy(opt_string[++top], error_maps_bit ? "ERROR-MAPS" : "NOERROR-MAPS");
-  sprintf(opt_string[++top], "ESCAPE=%c", escape);
+  sprintf(opt_string[++top], "ESCAPE=%c", cli_options->escape);
   sprintf(opt_string[++top], "FILE-PREFIX=%s", file_prefix);
   strcpy(opt_string[++top], cli_options->first_bit ? "FIRST" : "NOFIRST");
   strcpy(opt_string[++top], cli_options->follow_bit ? "FOLLOW" : "NOFOLLOW");
@@ -511,7 +511,7 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
     strcpy(opt_string[++top], "NAMES=OPTIMIZED");
   }
   strcpy(opt_string[++top], cli_options->nt_check_bit ? "NTCHECK" : "NONTCHECK");
-  sprintf(opt_string[++top], "ORMARK=%c", ormark);
+  sprintf(opt_string[++top], "ORMARK=%c", cli_options->ormark);
   sprintf(opt_string[++top], "PREFIX=%s", prefix);
   strcpy(opt_string[++top], cli_options->read_reduce_bit ? "READREDUCE" : "NOREADREDUCE");
   strcpy(opt_string[++top], cli_options->scopes_bit ? "SCOPES" : "NOSCOPES");
@@ -567,25 +567,25 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
   temp[0] = '\0';
   if (strcmp(blockb, blocke) == 0) {
     strcpy(temp, "BLOCKB and BLOCKE");
-  } else if (strlen(blockb) == 1 && blockb[0] == escape) {
+  } else if (strlen(blockb) == 1 && blockb[0] == cli_options->escape) {
     strcpy(temp, "BLOCKB and ESCAPE");
-  } else if (strlen(blockb) == 1 && blockb[0] == ormark) {
+  } else if (strlen(blockb) == 1 && blockb[0] == cli_options->ormark) {
     strcpy(temp, "BLOCKB and ORMARK");
-  } else if (strlen(blocke) == 1 && blocke[0] == escape) {
+  } else if (strlen(blocke) == 1 && blocke[0] == cli_options->escape) {
     strcpy(temp, "ESCAPE and BLOCKE");
-  } else if (strlen(blocke) == 1 && blocke[0] == ormark) {
+  } else if (strlen(blocke) == 1 && blocke[0] == cli_options->ormark) {
     strcpy(temp, "ORMARK and BLOCKE");
   } else if (strcmp(hblockb, hblocke) == 0) {
     strcpy(temp, "HBLOCKB and HBLOCKE");
-  } else if (strlen(hblockb) == 1 && hblockb[0] == escape) {
+  } else if (strlen(hblockb) == 1 && hblockb[0] == cli_options->escape) {
     strcpy(temp, "HBLOCKB and ESCAPE");
-  } else if (strlen(hblockb) == 1 && hblockb[0] == ormark) {
+  } else if (strlen(hblockb) == 1 && hblockb[0] == cli_options->ormark) {
     strcpy(temp, "HBLOCKB and ORMARK");
-  } else if (strlen(hblocke) == 1 && hblocke[0] == escape) {
+  } else if (strlen(hblocke) == 1 && hblocke[0] == cli_options->escape) {
     strcpy(temp, "ESCAPE and HBLOCKE");
-  } else if (strlen(hblocke) == 1 && hblocke[0] == ormark) {
+  } else if (strlen(hblocke) == 1 && hblocke[0] == cli_options->ormark) {
     strcpy(temp, "ORMARK and HBLOCKE");
-  } else if (ormark == escape) {
+  } else if (cli_options->ormark == cli_options->escape) {
     strcpy(temp, "ORMARK and ESCAPE");
   }
   if (temp[0] != '\0') {
@@ -726,7 +726,7 @@ static int name_map(const char *symb) {
 }
 
 /// SCANNER scans the input stream and returns the next input token.
-void scanner(char *grm_file, FILE *sysgrm) {
+void scanner(char *grm_file, FILE *sysgrm, struct CLIOptions* cli_options) {
   char tok_string[SYMBOL_SIZE + 1];
 scan_token:
   // Skip "blank" spaces.
@@ -918,11 +918,11 @@ scan_token:
       return;
 
     default:
-      if (*p1 == ormark && IsSpace(*p2)) {
+      if (*p1 == cli_options->ormark && IsSpace(*p2)) {
         ct = OR_TK;
         ct_length = 1;
         return;
-      } else if (*p1 == escape) /* escape character? */
+      } else if (*p1 == cli_options->escape) /* escape character? */
       {
         register char *p3 = p2 + 1;
         switch (*p2) {
@@ -1129,7 +1129,7 @@ struct line_elemt *find_macro(char *name) {
 /// user defined macro names. If one is found, the macro definition is
 /// substituted for the name. The modified action text is then printed out in
 /// the action file.
-void process_action_line(FILE *sysout, char *text, const int line_no, const int rule_no, char *grm_file) {
+void process_action_line(FILE *sysout, char *text, const int line_no, const int rule_no, char *grm_file, struct CLIOptions* cli_options) {
   char temp1[MAX_LINE_SIZE + 1];
   char suffix[MAX_LINE_SIZE + 1];
   char symbol[SYMBOL_SIZE + 1];
@@ -1143,7 +1143,7 @@ next_line: {
   register int k = 0; /* k is the cursor */
   while (k < text_len) {
     // all macro names begin with the ESCAPE
-    if (text[k] == escape) {
+    if (text[k] == cli_options->escape) {
       // character
       // 12 is length of %rule_number and
       // %num_symbols.
@@ -1200,7 +1200,7 @@ next_line: {
             jj = 0;
           }
           const register int max_len = output_size - k - jj;
-          restore_symbol(temp2, RETRIEVE_STRING(rules[rule_no].lhs));
+          restore_symbol(temp2, RETRIEVE_STRING(rules[rule_no].lhs), cli_options->ormark, cli_options->escape);
           // if a single production
           if (rules[rule_no].sp) {
             strcat(temp2, " ->");
@@ -1212,7 +1212,7 @@ next_line: {
           } else /* Copy right-hand-side symbols to temp2 */
           {
             for ENTIRE_RHS3(j, rule_no) {
-              restore_symbol(symbol, RETRIEVE_STRING(rhs_sym[j]));
+              restore_symbol(symbol, RETRIEVE_STRING(rhs_sym[j]), cli_options->ormark, cli_options->escape);
               if (strlen(temp2) + strlen(symbol) + 1 < max_len) {
                 strcat(temp2, " ");
                 strcat(temp2, symbol);
@@ -1427,7 +1427,7 @@ const char *EXTRACT_STRING(const int indx) {
 /// print_line, whichever is smaller.  If a symbol cannot fit on a line
 /// beginning at the proper offset, it is laid out on successive lines,
 /// beginning at the proper offset.
-void display_input(void) {
+void display_input(struct CLIOptions* cli_options) {
   char line[PRINT_LINE_SIZE + 1];
   char temp[SYMBOL_SIZE + 1];
   // Print the Macro definitions, if any.
@@ -1455,12 +1455,12 @@ void display_input(void) {
       fprintf(syslis, "\nAliases:\n\n");
     }
     for (const struct hash_type *p = alias_root; p != NULL; p = p->link) {
-      restore_symbol(temp, EXTRACT_STRING(p->st_ptr));
+      restore_symbol(temp, EXTRACT_STRING(p->st_ptr), cli_options->ormark, cli_options->escape);
       int len = PRINT_LINE_SIZE - 5;
       print_large_token(line, temp, "", len);
       strcat(line, " ::= ");
       int symb = -p->number;
-      restore_symbol(temp, RETRIEVE_STRING(symb));
+      restore_symbol(temp, RETRIEVE_STRING(symb), cli_options->ormark, cli_options->escape);
       if (strlen(line) + strlen(temp) > PRINT_LINE_SIZE) {
         fprintf(syslis, "%s\n", line);
         len = PRINT_LINE_SIZE - 4;
@@ -1479,7 +1479,7 @@ void display_input(void) {
   strcpy(line, "        "); /* 8 spaces */
   int len = PRINT_LINE_SIZE - 4;
   for (int symb = 2; symb <= num_terminals; symb++) {
-    restore_symbol(temp, RETRIEVE_STRING(symb));
+    restore_symbol(temp, RETRIEVE_STRING(symb), cli_options->ormark, cli_options->escape);
     if (strlen(line) + strlen(temp) > PRINT_LINE_SIZE) {
       fprintf(syslis, "\n%s", line);
       print_large_token(line, temp, "    ", len);
@@ -1497,7 +1497,7 @@ void display_input(void) {
     int symb = rules[rule_no].lhs;
     sprintf(line, "%-4d  ", rule_no);
     if (symb != OMEGA) {
-      restore_symbol(temp, RETRIEVE_STRING(symb));
+      restore_symbol(temp, RETRIEVE_STRING(symb), cli_options->ormark, cli_options->escape);
       if (strlen(temp) > PRINT_LINE_SIZE - 12) {
         strncat(line, temp, PRINT_LINE_SIZE - 12);
         fprintf(syslis, "\n%s", line);
@@ -1517,7 +1517,7 @@ void display_input(void) {
       symb = rules[rule_no - 1].lhs;
       rules[rule_no].lhs = symb; /* update rules map */
       if (rules[rule_no].sp) {
-        restore_symbol(temp, RETRIEVE_STRING(symb));
+        restore_symbol(temp, RETRIEVE_STRING(symb), cli_options->ormark, cli_options->escape);
         if (strlen(temp) > PRINT_LINE_SIZE - 12) {
           strncat(line, temp, PRINT_LINE_SIZE - 12);
           fprintf(syslis, "\n%s", line);
@@ -1535,7 +1535,7 @@ void display_input(void) {
       }
     }
     for ENTIRE_RHS3(i, rule_no) {
-      restore_symbol(temp, RETRIEVE_STRING(rhs_sym[i]));
+      restore_symbol(temp, RETRIEVE_STRING(rhs_sym[i]), cli_options->ormark, cli_options->escape);
       if (strlen(temp) + strlen(line) > PRINT_LINE_SIZE - 1) {
         char tempbuffer1[SYMBOL_SIZE + 1];
         fprintf(syslis, "\n%s", line);
@@ -1628,7 +1628,7 @@ void process_actions(char *grm_file, struct CLIOptions *cli_options) {
   }
   // If LISTING was requested, invoke listing procedure.
   if (cli_options->list_bit) {
-    display_input();
+    display_input(cli_options);
   }
   // Read in all the action blocks and process them.
   for (int i = 0; i < num_acts; i++) {
@@ -1664,9 +1664,9 @@ void process_actions(char *grm_file, struct CLIOptions *cli_options) {
       *p = '\0';
     }
     if (actelmt[i].header_block) {
-      process_action_line(syshact, line, line_no, actelmt[i].rule_number, grm_file);
+      process_action_line(syshact, line, line_no, actelmt[i].rule_number, grm_file, cli_options);
     } else {
-      process_action_line(sysact, line, line_no, actelmt[i].rule_number, grm_file);
+      process_action_line(sysact, line, line_no, actelmt[i].rule_number, grm_file, cli_options);
     }
     if (line_no != actelmt[i].end_line) {
       while (line_no < actelmt[i].end_line) {
@@ -1689,9 +1689,9 @@ void process_actions(char *grm_file, struct CLIOptions *cli_options) {
           }
           *p = '\0';
           if (actelmt[i].header_block) {
-            process_action_line(syshact, line, line_no, actelmt[i].rule_number, grm_file);
+            process_action_line(syshact, line, line_no, actelmt[i].rule_number, grm_file, cli_options);
           } else {
-            process_action_line(sysact, line, line_no, actelmt[i].rule_number, grm_file);
+            process_action_line(sysact, line, line_no, actelmt[i].rule_number, grm_file, cli_options);
           }
         }
       }
@@ -1700,9 +1700,9 @@ void process_actions(char *grm_file, struct CLIOptions *cli_options) {
         memcpy(line, p1, len);
         line[len] = '\0';
         if (actelmt[i].header_block) {
-          process_action_line(syshact, line, line_no, actelmt[i].rule_number, grm_file);
+          process_action_line(syshact, line, line_no, actelmt[i].rule_number, grm_file, cli_options);
         } else {
-          process_action_line(sysact, line, line_no, actelmt[i].rule_number, grm_file);
+          process_action_line(sysact, line, line_no, actelmt[i].rule_number, grm_file, cli_options);
         }
       }
     }
@@ -1833,7 +1833,7 @@ void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *sysgrm)
         }
       } else if (IS_A_TERMINAL(rulehdr[ii].lhs)) {
         char temp[SYMBOL_SIZE + 1];
-        restore_symbol(temp, RETRIEVE_STRING(rulehdr[ii].lhs));
+        restore_symbol(temp, RETRIEVE_STRING(rulehdr[ii].lhs), cli_options->ormark, cli_options->escape);
         PRNTERR2("In rule %d: terminal \"%s\" used as left hand side", ii, temp);
         PRNTERR("Processing terminated due to input errors.");
         exit(12);
@@ -1844,7 +1844,7 @@ void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *sysgrm)
   fclose(sysgrm); /* Close grammar input file. */
   process_actions(grm_file, cli_options);
   if (cli_options->list_bit) {
-    display_input();
+    display_input(cli_options);
   }
 }
 
@@ -1956,25 +1956,25 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
     hblockb_len = strlen(hblockb);
     hblocke_len = strlen(hblocke);
     // Keywords, Reserved symbols, and predefined macros
-    kdefine[0] = escape; /*Set empty first space to the default */
-    kterminals[0] = escape; /* escape symbol.                      */
-    kalias[0] = escape;
-    kstart[0] = escape;
-    krules[0] = escape;
-    knames[0] = escape;
-    kend[0] = escape;
-    krule_number[0] = escape;
-    krule_text[0] = escape;
-    krule_size[0] = escape;
-    knum_rules[0] = escape;
-    knum_terminals[0] = escape;
-    knum_non_terminals[0] = escape;
-    knum_symbols[0] = escape;
-    kinput_file[0] = escape;
-    kcurrent_line[0] = escape;
-    knext_line[0] = escape;
-    kstart_nt[0] = escape;
-    keolt[0] = escape;
+    kdefine[0] = cli_options->escape; /*Set empty first space to the default */
+    kterminals[0] = cli_options->escape; /* escape symbol.                      */
+    kalias[0] = cli_options->escape;
+    kstart[0] = cli_options->escape;
+    krules[0] = cli_options->escape;
+    knames[0] = cli_options->escape;
+    kend[0] = cli_options->escape;
+    krule_number[0] = cli_options->escape;
+    krule_text[0] = cli_options->escape;
+    krule_size[0] = cli_options->escape;
+    knum_rules[0] = cli_options->escape;
+    knum_terminals[0] = cli_options->escape;
+    knum_non_terminals[0] = cli_options->escape;
+    knum_symbols[0] = cli_options->escape;
+    kinput_file[0] = cli_options->escape;
+    kcurrent_line[0] = cli_options->escape;
+    knext_line[0] = cli_options->escape;
+    kstart_nt[0] = cli_options->escape;
+    keolt[0] = cli_options->escape;
   }
 
   // Process grammar.
@@ -1983,7 +1983,7 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
     // LALR(1) parser table generated by LPG to recognize the grammar which it
     // places in the rulehdr structure.
     short state_stack[STACK_SIZE];
-    scanner(grm_file, sysgrm); /* Get first token */
+    scanner(grm_file, sysgrm, cli_options); /* Get first token */
     register int act = START_STATE;
   process_terminal:
     // Note that this driver assumes that the tables are LPG SPACE
@@ -2018,7 +2018,7 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
           }
         }
       }
-      scanner(grm_file, sysgrm);
+      scanner(grm_file, sysgrm, cli_options);
       if (act < ACCEPT_ACTION) {
         goto process_terminal;
       }
@@ -2037,7 +2037,7 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
           PRNTERR2("Misplaced macro name \"%s\" found in line %d, column %d", ct_ptr, line_no, ct_start_col);
         } else if (ct == SYMBOL_TK) {
           char tok_string[SYMBOL_SIZE + 1];
-          restore_symbol(tok_string, ct_ptr);
+          restore_symbol(tok_string, ct_ptr, cli_options->ormark, cli_options->escape);
           PRNTERR2("Misplaced symbol \"%s\" found in line %d, column %d", tok_string, line_no, ct_start_col);
         } else {
           PRNTERR2("Misplaced keyword \"%s\" found in line %d, column %d", ct_ptr, line_no, ct_start_col);

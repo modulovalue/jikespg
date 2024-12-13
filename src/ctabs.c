@@ -118,7 +118,7 @@ void mystrcpy(const char *str) {
   BUFFER_CHECK(syssym);
 }
 
-void prnt_longs(const char *title, const int init, const int bound, const int perline, const long *array, const struct CLIOptions *cli_options) {
+void prnt_longs(const char *title, const int init, const int bound, const int perline, const long *array, struct CLIOptions *cli_options) {
   mystrcpy(title);
   padline();
   int k = 0;
@@ -253,7 +253,7 @@ char sym_tag[SYMBOL_SIZE];
 char def_tag[SYMBOL_SIZE];
 char prs_tag[SYMBOL_SIZE];
 
-void init_file(FILE **file, char *file_name, char *file_tag, const struct CLIOptions *cli_options) {
+void init_file(FILE **file, char *file_name, char *file_tag, struct CLIOptions *cli_options) {
   const char *p = strrchr(file_name, '.');
   if ((*file = fopen(file_name, "w")) == NULL) {
     fprintf(stderr, "***ERROR: Symbol file \"%s\" cannot be opened\n", file_name);
@@ -268,7 +268,7 @@ void init_file(FILE **file, char *file_name, char *file_tag, const struct CLIOpt
   }
 }
 
-void exit_file(FILE **file, char *file_tag, const struct CLIOptions *cli_options) {
+void exit_file(FILE **file, char *file_tag, struct CLIOptions *cli_options) {
   if (cli_options->c_bit || cli_options->cpp_bit) {
     fprintf(*file, "\n#endif /* %s_INCLUDED */\n", file_tag);
   }
@@ -548,7 +548,7 @@ void print_error_maps(struct CLIOptions *cli_options) {
           *output_ptr++ = '\\';
         }
         if (tok[j] == '\n') {
-          *output_ptr++ = escape;
+          *output_ptr++ = cli_options->escape;
         } else {
           *output_ptr++ = tok[j];
         }
@@ -601,7 +601,7 @@ void print_error_maps(struct CLIOptions *cli_options) {
           *output_ptr++ = '\\';
         }
         if (tok[k] == '\n') {
-          *output_ptr++ = escape;
+          *output_ptr++ = cli_options->escape;
         } else {
           *output_ptr++ = tok[k];
         }
@@ -975,8 +975,8 @@ void common(const bool byte_check_bit, struct CLIOptions *cli_options) {
     for ALL_TERMINALS3(symbol) {
       char *tok = RETRIEVE_STRING(symbol);
       fprintf(syssym, "%s", line);
-      if (tok[0] == '\n' || tok[0] == escape) {
-        tok[0] = escape;
+      if (tok[0] == '\n' || tok[0] == cli_options->escape) {
+        tok[0] = cli_options->escape;
         PRNT4(line, line_size, "Escaped symbol %s is an invalid C variable.\n", tok);
       } else if (strpbrk(tok, "!%^&*()-+={}[];:\"`~|\\,.<>/?\'") != NULL) {
         PRNT4(line, line_size, "%s may be an invalid variable name.\n", tok);
@@ -1798,7 +1798,7 @@ void sortdes(long array[], long count[], const long low, const long high, const 
 /// This procedure is invoked when the TABLE being used is not large
 /// enough.  A new table is allocated, the information from the old table
 /// is copied, and the old space is released.
-void reallocate(const struct CLIOptions *cli_options) {
+void reallocate(struct CLIOptions *cli_options) {
   if (table_size == MAX_TABLE_SIZE) {
     PRNTERR2("Table has exceeded maximum limit of %ld", MAX_TABLE_SIZE);
     exit(12);
@@ -2283,7 +2283,7 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab) {
     int name_len;
     strcpy(tok, RETRIEVE_NAME(state_no));
     if (tok[0] == '\n') /* we're dealing with special symbol?  */
-      tok[0] = escape; /* replace initial marker with escape. */
+      tok[0] = cli_options->escape; /* replace initial marker with escape. */
     name_len = strlen(tok);
     num_bytes += name_len;
     if (max_len < name_len) {
@@ -3451,13 +3451,13 @@ void init_parser_files(struct OutputFiles *output_files, struct CLIOptions *cli_
 }
 
 /// PT_STATS prints all the states of the parser.
-void ptstats(const struct CLIOptions *cli_options) {
+void ptstats(struct CLIOptions *cli_options) {
   char temp[SYMBOL_SIZE + 1];
   char line[MAX_LINE_SIZE + 1];
   fprintf(syslis, "Shift STATES: ");
   // iterate over the states
   for ALL_STATES3(state_no) {
-    print_state(state_no);
+    print_state(state_no, cli_options);
     int max_size = 0;
     // Compute the size of the largest symbol.  The MAX_SIZE cannot
     // be larger than PRINT_LINE_SIZE - 17 to allow for printing of
@@ -3465,19 +3465,19 @@ void ptstats(const struct CLIOptions *cli_options) {
     struct shift_header_type sh = shift[statset[state_no].shift_number];
     for (int i = 1; i <= sh.size; i++) {
       int symbol = sh.map[i].symbol;
-      restore_symbol(temp, RETRIEVE_STRING(symbol));
+      restore_symbol(temp, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
       max_size = MAX(max_size, strlen(temp));
     }
     const struct goto_header_type go_to = statset[state_no].go_to;
     for (int i = 1; i <= go_to.size; i++) {
       int symbol = go_to.map[i].symbol;
-      restore_symbol(temp, RETRIEVE_STRING(symbol));
+      restore_symbol(temp, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
       max_size = MAX(max_size, strlen(temp));
     }
     struct reduce_header_type red = reduce[state_no];
     for (int i = 1; i <= red.size; i++) {
       int symbol = red.map[i].symbol;
-      restore_symbol(temp, RETRIEVE_STRING(symbol));
+      restore_symbol(temp, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
       max_size = MAX(max_size, strlen(temp));
     }
     max_size = MIN(max_size, PRINT_LINE_SIZE - 17);
@@ -3489,7 +3489,7 @@ void ptstats(const struct CLIOptions *cli_options) {
       fprintf(syslis, "\n");
       for (int i = 1; i <= sh.size; i++) {
         int symbol = sh.map[i].symbol;
-        restore_symbol(temp, RETRIEVE_STRING(symbol));
+        restore_symbol(temp, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
         print_large_token(line, temp, "", max_size);
         int number = ABS(sh.map[i].action);
         if (sh.map[i].action > (short) num_states) {
@@ -3505,7 +3505,7 @@ void ptstats(const struct CLIOptions *cli_options) {
       fprintf(syslis, "\n");
       for (int i = 1; i <= go_to.size; i++) {
         int symbol = go_to.map[i].symbol;
-        restore_symbol(temp, RETRIEVE_STRING(symbol));
+        restore_symbol(temp, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
         print_large_token(line, temp, "", max_size);
         int number = ABS(go_to.map[i].action);
         if (go_to.map[i].action > 0) {
@@ -3519,7 +3519,7 @@ void ptstats(const struct CLIOptions *cli_options) {
       fprintf(syslis, "\n");
       for (int i = 1; i <= red.size; i++) {
         int symbol = red.map[i].symbol;
-        restore_symbol(temp, RETRIEVE_STRING(symbol));
+        restore_symbol(temp, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
         print_large_token(line, temp, "", max_size);
         int number = red.map[i].rule_number;
         if (rules[number].lhs != accept_image) {
@@ -3555,13 +3555,13 @@ void ptstats(const struct CLIOptions *cli_options) {
       struct shift_header_type sh = shift[lastats[state_no].shift_number];
       for (ii = 1; ii <= sh.size; ii++) {
         int symbol = sh.map[ii].symbol;
-        restore_symbol(temp, RETRIEVE_STRING(symbol));
+        restore_symbol(temp, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
         max_size = MAX(max_size, strlen(temp));
       }
       struct reduce_header_type red = lastats[state_no].reduce;
       for (ii = 1; ii <= red.size; ii++) {
         int symbol = red.map[ii].symbol;
-        restore_symbol(temp, RETRIEVE_STRING(symbol));
+        restore_symbol(temp, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
         max_size = MAX(max_size, strlen(temp));
       }
       max_size = MIN(max_size, PRINT_LINE_SIZE - 17);
@@ -3572,7 +3572,7 @@ void ptstats(const struct CLIOptions *cli_options) {
       fprintf(syslis, "\n");
       for (ii = 1; ii <= sh.size; ii++) {
         int symbol = sh.map[ii].symbol;
-        restore_symbol(temp, RETRIEVE_STRING(symbol));
+        restore_symbol(temp, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
         print_large_token(line, temp, "", max_size);
         int number = ABS(sh.map[ii].action);
         if (sh.map[ii].action > (short) num_states) {
@@ -3586,7 +3586,7 @@ void ptstats(const struct CLIOptions *cli_options) {
       fprintf(syslis, "\n");
       for (ii = 1; ii <= red.size; ii++) {
         int symbol = red.map[ii].symbol;
-        restore_symbol(temp, RETRIEVE_STRING(symbol));
+        restore_symbol(temp, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
         print_large_token(line, temp, "", max_size);
         int number = red.map[ii].rule_number;
         fprintf(syslis, "\n%-*s    Reduce %d", max_size, line, number);

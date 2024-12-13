@@ -198,6 +198,8 @@ struct CLIOptions {
   int stack_size;
   char act_file[80];
   char hact_file[80];
+  char escape;
+  char ormark;
 };
 
 static struct CLIOptions init_cli_options() {
@@ -226,6 +228,8 @@ static struct CLIOptions init_cli_options() {
     .maximum_distance = 30,
     .minimum_distance = 3,
     .stack_size = 128,
+    .escape = '%',
+    .ormark = '|',
   };
 }
 
@@ -268,9 +272,6 @@ static bool IS_A_NON_TERMINAL(const int i) {
 }
 
 extern bool error_maps_bit;
-
-extern char escape;
-extern char ormark;
 
 // The variables below are used to hold information about special grammar symbols.
 extern int accept_image;
@@ -452,7 +453,7 @@ struct node *lpgaccess(int state_no, int item_no);
 struct DetectedSetSizes {
   long term_set_size;
   long non_term_set_size;
-} mkbasic(const struct CLIOptions *cli_options);
+} mkbasic(struct CLIOptions *cli_options);
 
 void mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss);
 
@@ -468,11 +469,11 @@ int number_len(int state_no);
 
 void partset(JBitset collection, const long *element_size, const long *list, long *start, long *stack, long set_size, bool from_process_scopes);
 
-void print_item(int item_no);
+void print_item(int item_no, struct CLIOptions* cli_options);
 
 void print_large_token(char *line, char *token, const char *indent, int len);
 
-void print_state(int state_no);
+void print_state(int state_no, struct CLIOptions* cli_options);
 
 void process_error_maps(struct CLIOptions *cli_options, FILE *systab);
 
@@ -484,17 +485,20 @@ void init_parser_files(struct OutputFiles *output_files, struct CLIOptions *cli_
 
 void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options, const struct DetectedSetSizes* dss);
 
-void ptstats(const struct CLIOptions *cli_options);
+void ptstats(struct CLIOptions *cli_options);
 
 void remvsp(void);
 
 void sortdes(long array[], long count[], long low, long high, long max);
 
-void reallocate(const struct CLIOptions *cli_options);
+void reallocate(struct CLIOptions *cli_options);
 
 void resolve_conflicts(int state_no, struct node **action, const short *symbol_list, int reduce_root, struct CLIOptions *cli_options, struct DetectedSetSizes* dss);
 
-void restore_symbol(char *out, const char *in);
+extern char ormark;
+extern char escape;
+
+void restore_symbol(char *out, const char *in, char ormark, char escape);
 
 void *galloc(long size);
 

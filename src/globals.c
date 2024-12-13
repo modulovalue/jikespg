@@ -44,8 +44,8 @@ bool error_maps_bit = false;
 
 int increment = 30;
 
-char escape = '%';
-char ormark = '|';
+char ormark;
+char escape;
 
 short *rhs_sym = NULL;
 
@@ -60,7 +60,6 @@ struct itemtab *item_table = NULL;
 bool *null_nt = NULL;
 
 long term_set_size;
-long non_term_set_size;
 
 struct shift_header_type *shift = NULL;
 
