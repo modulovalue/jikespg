@@ -174,7 +174,7 @@ static void compute_goto_default(void) {
 
 /// Remap symbols, apply transition default actions  and call
 /// appropriate table compression routine.
-void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options, const struct DetectedSetSizes* dss) {
+void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
   //        First, we decrease by 1 the constants NUM_SYMBOLS
   // and NUM_TERMINALS, remove the EMPTY symbol(1) and remap the
   // other symbols beginning at 1.  If default reduction is
@@ -249,12 +249,6 @@ void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLI
   }
   // Release the pool of temporary space.
   free_temporary_space();
-  // We allocate the necessary structures, open the appropriate
-  // output file and call the appropriate compression routine.
-  if (error_maps_bit) {
-    calloc0_set(naction_symbols, num_states + 1, dss->non_term_set_size);
-    calloc0_set(action_symbols, num_states + 1, dss->term_set_size);
-  }
   calloc0(output_buffer, IOBUFFER_SIZE, char);
   FILE *systab;
   if (!cli_options->c_bit && !cli_options->cpp_bit && !cli_options->java_bit) {
@@ -265,9 +259,9 @@ void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLI
   }
   struct TableOutput toutput = init_table_output();
   if (cli_options->table_opt == OPTIMIZE_SPACE) {
-    cmprspa(output_files, cli_options, systab, &toutput);
+    cmprspa(output_files, cli_options, systab, &toutput, dss);
   } else if (cli_options->table_opt == OPTIMIZE_TIME) {
-    cmprtim(output_files, cli_options, systab, &toutput);
+    cmprtim(output_files, cli_options, systab, &toutput, dss);
   } else {
     exit(999);
   }

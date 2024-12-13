@@ -52,10 +52,15 @@ long last_index;
 long last_symbol;
 long max_name_length = 0;
 
-JBitset naction_symbols = {.raw = NULL};
-JBitset action_symbols = {.raw = NULL};
-
 const char digits[] = "0123456789";
+
+FILE *sysprs;
+FILE *sysdef;
+
+char dcl_tag[SYMBOL_SIZE];
+char sym_tag[SYMBOL_SIZE];
+char def_tag[SYMBOL_SIZE];
+char prs_tag[SYMBOL_SIZE];
 
 /// ITOC takes as arguments an integer NUM. NUM is an integer containing at
 /// most 11 digits which is converted into a character string and placed in
@@ -240,14 +245,6 @@ void compute_naction_symbols_range(const long *state_start, const long *state_st
   ffree(symbol_list);
 }
 
-FILE *sysprs;
-FILE *sysdef;
-
-char dcl_tag[SYMBOL_SIZE];
-char sym_tag[SYMBOL_SIZE];
-char def_tag[SYMBOL_SIZE];
-char prs_tag[SYMBOL_SIZE];
-
 void init_file(FILE **file, char *file_name, char *file_tag, struct CLIOptions *cli_options) {
   const char *p = strrchr(file_name, '.');
   if ((*file = fopen(file_name, "w")) == NULL) {
@@ -270,7 +267,7 @@ void exit_file(FILE **file, char *file_tag, struct CLIOptions *cli_options) {
   fclose(*file);
 }
 
-void print_error_maps(struct CLIOptions *cli_options, struct TableOutput* toutput) {
+void print_error_maps(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss) {
   long *state_start = Allocate_long_array(num_states + 2);
   long *state_stack = Allocate_long_array(num_states + 1);
   PRNT("\nError maps storage:");
@@ -292,6 +289,10 @@ void print_error_maps(struct CLIOptions *cli_options, struct TableOutput* toutpu
     for ALL_TERMINALS3(symbol) {
       original[toutput->symbol_map[symbol]] = symbol;
     }
+  }
+  JBitset action_symbols;
+  if (error_maps_bit) {
+    calloc0_set(action_symbols, num_states + 1, dss->term_set_size);
   }
   for ALL_STATES3(state_no) {
     struct shift_header_type sh;
@@ -366,6 +367,10 @@ void print_error_maps(struct CLIOptions *cli_options, struct TableOutput* toutpu
   }
   PRNT3("    Storage required for ACTION_SYMBOLS_RANGE map: %ld Bytes", num_bytes);
   ffree(action_symbols_range);
+  JBitset naction_symbols;
+  if (error_maps_bit) {
+    calloc0_set(naction_symbols, num_states + 1, dss->non_term_set_size);
+  }
   // We now repeat the same process for the domain of the GOTO table.
   for ALL_STATES3(state_no) {
     as_size[state_no] = gd_index[state_no + 1] - gd_index[state_no];
@@ -926,11 +931,11 @@ void print_error_maps(struct CLIOptions *cli_options, struct TableOutput* toutpu
   }
 }
 
-void common(const bool byte_check_bit, struct CLIOptions *cli_options, struct TableOutput* toutput) {
+void common(const bool byte_check_bit, struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss) {
   // Write table common.
   {
     if (error_maps_bit) {
-      print_error_maps(cli_options, toutput);
+      print_error_maps(cli_options, toutput, dss);
     }
     if (!byte_check_bit) {
       if (cli_options->java_bit) {
@@ -1843,11 +1848,13 @@ void reallocate(struct CLIOptions *cli_options) {
 ///   5) The map from each symbol into the set of staes that can
 ///      possibly be reached after a transition on the symbol in
 ///      question: TRANSITION_STATES
-void process_error_maps(struct CLIOptions *cli_options, FILE *systab, struct TableOutput* toutput) {
+void process_error_maps(struct CLIOptions *cli_options, FILE *systab, struct TableOutput* toutput, struct DetectedSetSizes* dss) {
   long *original = NULL;
   char tok[SYMBOL_SIZE + 1];
   long terminal_ubound = cli_options->table_opt == OPTIMIZE_TIME ? num_symbols : num_terminals;
   long non_terminal_ubound = cli_options->table_opt == OPTIMIZE_TIME ? num_symbols : num_non_terminals;
+  // We allocate the necessary structures, open the appropriate
+  // output file and call the appropriate compression routine.
   long *symbol_root = Allocate_long_array(num_symbols + 1);
   long *symbol_count = Allocate_long_array(num_symbols + 1);
   long *state_start = Allocate_long_array(num_states + 2);
@@ -1992,6 +1999,10 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab, struct Tab
       original[toutput->symbol_map[symbol]] = symbol;
     }
   }
+  JBitset action_symbols;
+  if (error_maps_bit) {
+    calloc0_set(action_symbols, num_states + 1, dss->term_set_size);
+  }
   // NOTE that the arrays ACTION_SYMBOLS and NACTION_SYMBOLS are global
   // variables that are allocated in the procedure PROCESS_TABLES by
   // calloc which automatically initializes them to 0.
@@ -2070,6 +2081,10 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab, struct Tab
   PRNT3("    Storage required for ACTION_SYMBOLS map: %ld Bytes", num_bytes);
   ffree(action_symbols_range);
   // We now repeat the same process for the domain of the GOTO table.
+  JBitset naction_symbols;
+  if (error_maps_bit) {
+    calloc0_set(naction_symbols, num_states + 1, dss->non_term_set_size);
+  }
   for ALL_STATES3(state_no) {
     as_size[state_no] = gd_index[state_no + 1] - gd_index[state_no];
     for (int i = gd_index[i]; i < gd_index[i + 1]; i++) {
@@ -2548,7 +2563,7 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab, struct Tab
   ffree(term_list);
 }
 
-void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* toutput) {
+void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss) {
   bool byte_check_bit = true; {
     int default_count = 0;
     int goto_count = 0;
@@ -3077,10 +3092,10 @@ void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* tout
     ffree(check);
     ffree(action);
   }
-  common(byte_check_bit, cli_options, toutput);
+  common(byte_check_bit, cli_options, toutput, dss);
 }
 
-void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutput) {
+void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss) {
   bool byte_check_bit = true; {
     int la_shift_count = 0;
     int shift_count = 0;
@@ -3434,7 +3449,7 @@ void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutp
     ffree(next);
     ffree(previous);
   }
-  common(byte_check_bit, cli_options, toutput);
+  common(byte_check_bit, cli_options, toutput, dss);
 }
 
 void init_parser_files(struct OutputFiles *output_files, struct CLIOptions *cli_options) {

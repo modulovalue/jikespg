@@ -391,9 +391,6 @@ extern long first_index;
 extern long last_index;
 extern long last_symbol;
 
-extern JBitset naction_symbols;
-extern JBitset action_symbols;
-
 extern bool byte_terminal_range;
 
 void compute_produces(int symbol);
@@ -539,9 +536,9 @@ extern bool not_lrk;
 
 extern int increment;
 
-void cmprtim(struct OutputFiles *output_files, struct CLIOptions *cli_options, FILE *systab, struct TableOutput* toutput);
+void cmprtim(struct OutputFiles *output_files, struct CLIOptions *cli_options, FILE *systab, struct TableOutput* toutput, struct DetectedSetSizes* dss);
 
-void cmprspa(struct OutputFiles *output_files, struct CLIOptions *cli_options, FILE *systab, struct TableOutput* toutput);
+void cmprspa(struct OutputFiles *output_files, struct CLIOptions *cli_options, FILE *systab, struct TableOutput* toutput, struct DetectedSetSizes* dss);
 
 void init_rmpself(JBitset produces);
 
@@ -571,15 +568,15 @@ void print_large_token(char *line, char *token, const char *indent, int len);
 
 void print_state(int state_no, struct CLIOptions* cli_options);
 
-void process_error_maps(struct CLIOptions *cli_options, FILE *systab, struct TableOutput* toutput);
+void process_error_maps(struct CLIOptions *cli_options, FILE *systab, struct TableOutput* toutput, struct DetectedSetSizes* dss);
 
-void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* toutput);
+void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss);
 
-void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutput);
+void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss);
 
 void init_parser_files(struct OutputFiles *output_files, struct CLIOptions *cli_options);
 
-void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options, const struct DetectedSetSizes* dss);
+void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options, struct DetectedSetSizes* dss);
 
 void ptstats(struct CLIOptions *cli_options);
 

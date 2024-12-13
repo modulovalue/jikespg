@@ -315,7 +315,7 @@ static void overlap_tables(struct CLIOptions *cli_options, struct TableOutput* t
 }
 
 /// We now write out the tables to the SYSTAB file.
-static void print_tables_time(struct CLIOptions *cli_options, FILE *systab, struct TableOutput* toutput, bool* is_terminal) {
+static void print_tables_time(struct CLIOptions *cli_options, FILE *systab, struct TableOutput* toutput, bool* is_terminal, struct DetectedSetSizes* dss) {
   int la_shift_count = 0;
   int shift_count = 0;
   int goto_count = 0;
@@ -670,7 +670,7 @@ static void print_tables_time(struct CLIOptions *cli_options, FILE *systab, stru
   //       question: TRANSITION_STATES
   //
   if (error_maps_bit) {
-    process_error_maps(cli_options, systab, toutput);
+    process_error_maps(cli_options, systab, toutput, dss);
   }
   fwrite(output_buffer, sizeof(char), output_ptr - &output_buffer[0], systab);
 }
@@ -681,14 +681,14 @@ static void print_tables_time(struct CLIOptions *cli_options, FILE *systab, stru
 /// together, to achieve maximum speed efficiency.
 /// Otherwise, the compression technique used in this table is
 /// analogous to the technique used in the routine CMPRSPA.
-void cmprtim(struct OutputFiles *output_files, struct CLIOptions *cli_options, FILE *systab, struct TableOutput* toutput) {
+void cmprtim(struct OutputFiles *output_files, struct CLIOptions *cli_options, FILE *systab, struct TableOutput* toutput, struct DetectedSetSizes* dss) {
   bool *is_terminal = Allocate_boolean_array(num_symbols + 1);
   struct DefaultSaves default_saves = remap_symbols(toutput, is_terminal);
   overlap_tables(cli_options, toutput, is_terminal, default_saves);
   if (cli_options->c_bit || cli_options->cpp_bit || cli_options->java_bit) {
     init_parser_files(output_files, cli_options);
-    print_time_parser(cli_options, toutput);
+    print_time_parser(cli_options, toutput, dss);
   } else {
-    print_tables_time(cli_options, systab, toutput, is_terminal);
+    print_tables_time(cli_options, systab, toutput, is_terminal, dss);
   }
 }
