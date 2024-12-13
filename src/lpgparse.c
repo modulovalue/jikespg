@@ -81,11 +81,6 @@ const int OUTPUT_PARM_SIZE = MAX_PARM_SIZE + 7;
 const int MAXIMUM_LA_LEVEL = 100;
 const int STRING_BUFFER_SIZE = 8192;
 
-int blockb_len;
-int blocke_len;
-int hblockb_len;
-int hblocke_len;
-
 short *macro_table;
 
 /// READ_INPUT fills the buffer from p1 to the end.
@@ -334,7 +329,7 @@ void options(char *file_prefix, struct CLIOptions *cli_options) {
       } else if (memcmp(token, "ORMARK", token_len) == 0) {
         cli_options->ormark = temp[0];
       } else if (memcmp(token, "PREFIX", token_len) == 0) {
-        strcpy(prefix, temp);
+        strcpy(cli_options->prefix, temp);
       } else if (memcmp(token, "STACKSIZE", token_len) == 0) {
         if (verify_is_digit(temp)) {
           cli_options->stack_size = atoi(temp);
@@ -342,7 +337,7 @@ void options(char *file_prefix, struct CLIOptions *cli_options) {
           PRNTERR2("\"%s\" is an invalid value for %s", temp, token);
         }
       } else if (memcmp(token, "SUFFIX", token_len) == 0) {
-        strcpy(suffix, temp);
+        strcpy(cli_options->suffix, temp);
       } else if (memcmp(token, "TABLE", token_len) == 0) {
         register int token_len = strlen(temp);
         if (token_len > MAX_PARM_SIZE) {
@@ -512,14 +507,14 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
   }
   strcpy(opt_string[++top], cli_options->nt_check_bit ? "NTCHECK" : "NONTCHECK");
   sprintf(opt_string[++top], "ORMARK=%c", cli_options->ormark);
-  sprintf(opt_string[++top], "PREFIX=%s", prefix);
+  sprintf(opt_string[++top], "PREFIX=%s", cli_options->prefix);
   strcpy(opt_string[++top], cli_options->read_reduce_bit ? "READREDUCE" : "NOREADREDUCE");
   strcpy(opt_string[++top], cli_options->scopes_bit ? "SCOPES" : "NOSCOPES");
   strcpy(opt_string[++top], cli_options->shift_default_bit ? "SHIFT-DEFAULT" : "NOSHIFT-DEFAULT");
   strcpy(opt_string[++top], cli_options->single_productions_bit ? "SINGLE-PRODUCTIONS" : "NOSINGLE-PRODUCTIONS");
   sprintf(opt_string[++top], "STACK-SIZE=%d", cli_options->stack_size);
   strcpy(opt_string[++top], cli_options->states_bit ? "STATES" : "NOSTATES");
-  sprintf(opt_string[++top], "SUFFIX=%s", suffix);
+  sprintf(opt_string[++top], "SUFFIX=%s", cli_options->suffix);
   if (cli_options->table_opt == OPTIMIZE_NO_TABLE) {
     strcpy(opt_string[++top], "NOTABLE");
   } else if (cli_options->table_opt == OPTIMIZE_SPACE) {
@@ -746,9 +741,9 @@ scan_token:
       linestart = p1 - 1;
     }
   }
-  if (strncmp(p1, hblockb, hblockb_len) == 0) /* check block opener */
+  if (strncmp(p1, hblockb, cli_options->hblockb_len) == 0) /* check block opener */
   {
-    p1 = p1 + hblockb_len;
+    p1 = p1 + cli_options->hblockb_len;
     ct_length = 0;
     ct_ptr = p1;
     if (*p1 == '\n') {
@@ -761,7 +756,7 @@ scan_token:
       ct_start_col = p1 - linestart;
     }
 
-    while (strncmp(p1, hblocke, hblocke_len) != 0) {
+    while (strncmp(p1, hblocke, cli_options->hblocke_len) != 0) {
       if (*p1 == '\0') {
         PRNTERR2("End of file encountered while scanning header action block in rule %ld", num_rules);
         exit(12);
@@ -784,12 +779,12 @@ scan_token:
     ct = HBLOCK_TK;
     ct_end_line = line_no;
     ct_end_col = p1 - linestart - 1;
-    p2 = p1 + hblocke_len;
+    p2 = p1 + cli_options->hblocke_len;
 
     return;
-  } else if (strncmp(p1, blockb, blockb_len) == 0) /* check block  */
+  } else if (strncmp(p1, blockb, cli_options->blockb_len) == 0) /* check block  */
   {
-    p1 = p1 + blockb_len;
+    p1 = p1 + cli_options->blockb_len;
     ct_length = 0;
     ct_ptr = p1;
     if (*p1 == '\n') {
@@ -802,7 +797,7 @@ scan_token:
       ct_start_col = p1 - linestart;
     }
 
-    while (strncmp(p1, blocke, blocke_len) != 0) {
+    while (strncmp(p1, blocke, cli_options->blocke_len) != 0) {
       if (*p1 == '\0') {
         PRNTERR2("End of file encountered while scanning action block in rule %ld", num_rules);
         exit(12);
@@ -825,7 +820,7 @@ scan_token:
     ct = BLOCK_TK;
     ct_end_line = line_no;
     ct_end_col = p1 - linestart - 1;
-    p2 = p1 + blocke_len;
+    p2 = p1 + cli_options->blocke_len;
 
     return;
   }
@@ -1047,8 +1042,7 @@ check_symbol_length:
   }
 }
 
-///  This function allocates a line_elemt structure and returns a pointer
-/// to it.
+/// This function allocates a line_elemt structure and returns a pointer to it.
 struct line_elemt *alloc_line(void) {
   register struct line_elemt *p = line_pool_root;
   if (p != NULL) {
@@ -1059,8 +1053,7 @@ struct line_elemt *alloc_line(void) {
   return p;
 }
 
-///  This function frees a line_elemt structure which is returned to a free
-/// pool.
+/// This function frees a line_elemt structure which is returned to a free pool.
 void free_line(struct line_elemt *p) {
   p->link = line_pool_root;
   line_pool_root = p;
@@ -1553,7 +1546,7 @@ void display_input(struct CLIOptions* cli_options) {
   }
 }
 
-///     Process all semantic actions and generate action file.
+/// Process all semantic actions and generate action file.
 void process_actions(char *grm_file, struct CLIOptions *cli_options) {
   register char *p;
   char line[MAX_LINE_SIZE + 1];
@@ -1717,7 +1710,7 @@ void process_actions(char *grm_file, struct CLIOptions *cli_options) {
   fclose(syshact);
 }
 
-///          Actions to be taken if grammar is successfully parsed.
+/// Actions to be taken if grammar is successfully parsed.
 void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *sysgrm) {
   if (rulehdr == NULL) {
     printf("Informative: Empty grammar read in. Processing stopped.\n");
@@ -1951,10 +1944,10 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
     }
     process_options_lines(grm_file, output_files, file_prefix, cli_options, sysgrm);
     eolt_image = OMEGA;
-    blockb_len = strlen(blockb);
-    blocke_len = strlen(blocke);
-    hblockb_len = strlen(hblockb);
-    hblocke_len = strlen(hblocke);
+    cli_options->blockb_len = strlen(blockb);
+    cli_options->blocke_len = strlen(blocke);
+    cli_options->hblockb_len = strlen(hblockb);
+    cli_options->hblocke_len = strlen(hblocke);
     // Keywords, Reserved symbols, and predefined macros
     kdefine[0] = cli_options->escape; /*Set empty first space to the default */
     kterminals[0] = cli_options->escape; /* escape symbol.                      */

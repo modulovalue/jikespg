@@ -341,7 +341,7 @@ static void merge_similar_t_rows(const struct CLIOptions *cli_options, struct Ta
 /// If we can determine that there is a shift action on a pair (S, t)
 /// we can apply shift default to the Shift actions just like we did
 /// for the Goto actions.
-static void merge_shift_domains(struct CLIOptions *cli_options, struct TableOutput* toutput, long *row_size, long *frequency_symbol, long *frequency_count, struct NumTableEntries* nte) {
+static void merge_shift_domains(struct CLIOptions *cli_options, struct TableOutput* toutput, long *row_size, long *frequency_symbol, long *frequency_count, struct NumTableEntries* nte, long* shift_check_index) {
   // Some of the rows in the shift action map have already been merged
   // by the merging of compatible states... We simply need to increase
   // the size of the granularity by merging these new terminal states
@@ -370,7 +370,6 @@ static void merge_shift_domains(struct CLIOptions *cli_options, struct TableOutp
   shift_image = Allocate_short_array(max_la_state + 1);
   real_shift_number = Allocate_short_array(num_shift_maps + 1);
   bool *shift_symbols = Allocate_boolean_array(num_terminals + 1);
-  shift_check_index = Allocate_long_array(num_shift_maps + 1);
   short shift_domain_table[SHIFT_TABLE_SIZE];
   for (int i = 0; i <= SHIFT_TABLE_UBOUND; i++) {
     shift_domain_table[i] = NIL;
@@ -581,7 +580,7 @@ static void merge_shift_domains(struct CLIOptions *cli_options, struct TableOutp
 /// We iterate over each of these lists and construct new states out
 /// of these groups of similar states when they are compatible. Then,
 /// we remap the terminal symbols.
-static void overlay_sim_t_rows(struct CLIOptions *cli_options, struct TableOutput* toutput, bool *shift_on_error_symbol, struct node **new_state_element_reduce_nodes, struct TResult* tresult, struct NumTableEntries* nte) {
+static void overlay_sim_t_rows(struct CLIOptions *cli_options, struct TableOutput* toutput, bool *shift_on_error_symbol, struct node **new_state_element_reduce_nodes, struct TResult* tresult, struct NumTableEntries* nte, long* shift_check_index) {
   int num_shifts_saved = 0;
   int num_reductions_saved = 0;
   int default_saves = 0;
@@ -805,7 +804,7 @@ static void overlay_sim_t_rows(struct CLIOptions *cli_options, struct TableOutpu
   long *frequency_count = Allocate_long_array(num_terminals + 1);
   long *row_size = Allocate_long_array(max_la_state + 1);
   if (cli_options->shift_default_bit) {
-    merge_shift_domains(cli_options, toutput, row_size, frequency_symbol, frequency_count, nte);
+    merge_shift_domains(cli_options, toutput, row_size, frequency_symbol, frequency_count, nte, shift_check_index);
   }
   // We now reorder the terminal states based on the number of actions
   // in them, and remap the terminal symbols if they were not already
@@ -895,9 +894,8 @@ static void overlay_sim_t_rows(struct CLIOptions *cli_options, struct TableOutpu
 /// We now compute the starting position for each terminal state just
 /// as we did for the non-terminal states.
 /// The starting positions are stored in the vector TERM_STATE_INDEX.
-static void overlap_t_rows(struct CLIOptions *cli_options, struct TableOutput* toutput, struct NumTableEntries* nte) {
+static void overlap_t_rows(struct CLIOptions *cli_options, struct TableOutput* toutput, struct NumTableEntries* nte, long *term_state_index) {
   short *terminal_list = Allocate_short_array(num_terminals + 1);
-  term_state_index = Allocate_long_array(max_la_state + 1);
   increment_size = MAX(nte->value * increment / 100, num_terminals + 1);
   const long old_size = table_size;
   table_size = MIN(nte->value + increment_size, MAX_TABLE_SIZE);
@@ -1017,7 +1015,7 @@ static void overlap_t_rows(struct CLIOptions *cli_options, struct TableOutput* t
 }
 
 /// We now write out the tables to the SYSTAB file.
-static void print_tables_space(struct CLIOptions *cli_options, FILE *systab, struct TableOutput* toutput, struct DetectedSetSizes* dss) {
+static void print_tables_space(struct CLIOptions *cli_options, FILE *systab, struct TableOutput* toutput, struct DetectedSetSizes* dss, long* term_state_index, long* shift_check_index) {
   int default_count = 0;
   int goto_count = 0;
   int goto_reduce_count = 0;
@@ -1504,12 +1502,14 @@ void cmprspa(struct OutputFiles *output_files, struct CLIOptions *cli_options, F
     .empty_root = NIL,
   };
   merge_similar_t_rows(cli_options, toutput, shift_on_error_symbol, new_state_element_reduce_nodes, &tresult);
-  overlay_sim_t_rows(cli_options, toutput, shift_on_error_symbol, new_state_element_reduce_nodes, &tresult, &nte);
-  overlap_t_rows(cli_options, toutput, &nte);
+  long* shift_check_index = Allocate_long_array(num_shift_maps + 1);
+  overlay_sim_t_rows(cli_options, toutput, shift_on_error_symbol, new_state_element_reduce_nodes, &tresult, &nte, shift_check_index);
+  long *term_state_index = Allocate_long_array(max_la_state + 1);
+  overlap_t_rows(cli_options, toutput, &nte, term_state_index);
   if (cli_options->c_bit || cli_options->cpp_bit || cli_options->java_bit) {
     init_parser_files(output_files, cli_options);
-    print_space_parser(cli_options, toutput, dss);
+    print_space_parser(cli_options, toutput, dss, term_state_index, shift_check_index);
   } else {
-    print_tables_space(cli_options, systab, toutput, dss);
+    print_tables_space(cli_options, systab, toutput, dss, term_state_index, shift_check_index);
   }
 }

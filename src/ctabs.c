@@ -6,18 +6,15 @@ static char hostfile[] = __FILE__;
 #include "common.h"
 #include <stdlib.h>
 
-char prefix[MAX_PARM_SIZE] = "";
-char suffix[MAX_PARM_SIZE] = "";
 char msg_line[MAX_MSG_SIZE];
 
 FILE *syslis;
-FILE *syssym;
-FILE *sysdcl;
 
 const long MAX_TABLE_SIZE = (USHRT_MAX < INT_MAX ? USHRT_MAX : INT_MAX) - 1;
 
 struct scope_type *scope = NULL;
 
+// TODO • replace with struct.
 int shift_domain_count;
 int num_terminal_states;
 int check_size;
@@ -30,18 +27,15 @@ struct new_state_type *new_state_element;
 short *shift_image = NULL;
 short *real_shift_number = NULL;
 
-long *term_state_index = NULL;
-long *shift_check_index = NULL;
-
-bool byte_terminal_range = true;
-
 long *next = NULL;
 long *previous = NULL;
 
+// TODO • replace with struct.
 long table_size;
 long action_size;
 long increment_size;
 
+// TODO • replace with struct.
 long last_non_terminal = 0;
 long last_terminal = 0;
 
@@ -52,6 +46,8 @@ long last_index;
 long last_symbol;
 long max_name_length = 0;
 
+bool byte_terminal_range = true;
+
 const char digits[] = "0123456789";
 
 FILE *sysprs;
@@ -61,6 +57,9 @@ char dcl_tag[SYMBOL_SIZE];
 char sym_tag[SYMBOL_SIZE];
 char def_tag[SYMBOL_SIZE];
 char prs_tag[SYMBOL_SIZE];
+
+FILE *syssym;
+FILE *sysdcl;
 
 /// ITOC takes as arguments an integer NUM. NUM is an integer containing at
 /// most 11 digits which is converted into a character string and placed in
@@ -981,7 +980,7 @@ void common(const bool byte_check_bit, struct CLIOptions *cli_options, struct Ta
       } else if (strpbrk(tok, "!%^&*()-+={}[];:\"`~|\\,.<>/?\'") != NULL) {
         PRNT4(line, line_size, "%s may be an invalid variable name.\n", tok);
       }
-      snprintf(line, sizeof(line), "      %s%s%s = %li,\n", prefix, tok, suffix, toutput->symbol_map[symbol]);
+      snprintf(line, sizeof(line), "      %s%s%s = %li,\n", cli_options->prefix, tok, cli_options->suffix, toutput->symbol_map[symbol]);
       if (cli_options->c_bit || cli_options->cpp_bit) {
         while (strlen(line) > PARSER_LINE_SIZE) {
           fwrite(line, sizeof(char), PARSER_LINE_SIZE - 2, syssym);
@@ -2563,7 +2562,7 @@ void process_error_maps(struct CLIOptions *cli_options, FILE *systab, struct Tab
   ffree(term_list);
 }
 
-void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss) {
+void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, long *term_state_index, long *shift_check_index) {
   bool byte_check_bit = true; {
     int default_count = 0;
     int goto_count = 0;

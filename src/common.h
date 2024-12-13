@@ -200,6 +200,12 @@ struct CLIOptions {
   char hact_file[80];
   char escape;
   char ormark;
+  char prefix[MAX_PARM_SIZE];
+  char suffix[MAX_PARM_SIZE];
+  int blockb_len;
+  int blocke_len;
+  int hblockb_len;
+  int hblocke_len;
 };
 
 static struct CLIOptions init_cli_options() {
@@ -230,18 +236,20 @@ static struct CLIOptions init_cli_options() {
     .stack_size = 128,
     .escape = '%',
     .ormark = '|',
+    .prefix = "",
+    .suffix = "",
+    .blockb_len = -1,
+    .blocke_len = -1,
+    .hblockb_len = -1,
+    .hblocke_len = -1,
   };
 }
 
 void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_files, int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options);
 
-extern char prefix[];
-extern char suffix[];
 extern char msg_line[];
 
 extern FILE *syslis;
-extern FILE *syssym;
-extern FILE *sysdcl;
 
 ///  The variables below are global counters.
 extern long num_items;
@@ -391,8 +399,6 @@ extern long first_index;
 extern long last_index;
 extern long last_symbol;
 
-extern bool byte_terminal_range;
-
 void compute_produces(int symbol);
 
 void reset_temporary_space(void);
@@ -494,9 +500,6 @@ extern struct new_state_type *new_state_element;
 extern short *shift_image;
 extern short *real_shift_number;
 
-extern long *term_state_index;
-extern long *shift_check_index;
-
 extern int shift_domain_count;
 extern int num_terminal_states;
 extern int check_size;
@@ -570,7 +573,7 @@ void print_state(int state_no, struct CLIOptions* cli_options);
 
 void process_error_maps(struct CLIOptions *cli_options, FILE *systab, struct TableOutput* toutput, struct DetectedSetSizes* dss);
 
-void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss);
+void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, long *term_state_index, long *shift_check_index);
 
 void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss);
 
