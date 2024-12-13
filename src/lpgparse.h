@@ -2,14 +2,7 @@
 #include <stdbool.h>
 #include "common.h"
 
-/// macro definition & action variables
-static int num_acts = 0;
-static int num_defs = 0;
-
-/// macro definition & action vars
-static long defelmt_size = 0;
-static long actelmt_size = 0;
-static long rulehdr_size = 0;
+extern int stack_top;
 
 /// structure to store rule in first pass
 struct rulehdr_type {
@@ -57,28 +50,14 @@ extern struct symno_type {
 /// NAME is an array containing names to be associated with symbols.
 extern int *name;
 
-char *RETRIEVE_STRING(int indx);
+/// macro definition & action variables
+static int num_acts = 0;
+static int num_defs = 0;
 
-const char *RETRIEVE_NAME(int indx);
-
-/// structure used to hold token information
-struct terminal_type {
-  long start_line;
-  long end_line;
-  short start_column;
-  short end_column;
-  short length;
-  short kind;
-  char name[SYMBOL_SIZE + 1];
-};
-
-static struct rulehdr_type *rulehdr = NULL;
-static struct defelmt_type *defelmt = NULL;
-static struct actelmt_type *actelmt = NULL;
-
-static struct node *start_symbol_root;
-static struct hash_type **hash_table;
-static struct terminal_type *terminal;
+/// macro definition & action vars
+static long defelmt_size = 0;
+static long actelmt_size = 0;
+static long rulehdr_size = 0;
 
 /// The following variables hold the names
 /// of keywords and predefined macros.
@@ -114,12 +93,28 @@ static char kaccept[5] = "\nacc";
 static char kstart_nt[7] = " start";
 static char keolt[5] = " eol";
 
-static struct line_elemt {
-  struct line_elemt *link;
-  char line[MAX_LINE_SIZE + 1];
-} *line_pool_root = NULL;
+char *RETRIEVE_STRING(int indx);
 
-static int stack_top = -1;
+const char *RETRIEVE_NAME(int indx);
+
+/// structure used to hold token information
+struct terminal_type {
+  long start_line;
+  long end_line;
+  short start_column;
+  short end_column;
+  short length;
+  short kind;
+  char name[SYMBOL_SIZE + 1];
+};
+
+static struct rulehdr_type *rulehdr = NULL;
+static struct defelmt_type *defelmt = NULL;
+static struct actelmt_type *actelmt = NULL;
+
+static struct node *start_symbol_root;
+static struct hash_type **hash_table;
+static struct terminal_type *terminal;
 
 void assign_symbol_no(const char *string_ptr, int image);
 

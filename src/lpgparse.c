@@ -13,6 +13,13 @@ static char hostfile[] = __FILE__;
 #include "lpgact.h"
 #include "lpgprs.h"
 
+static struct line_elemt {
+  struct line_elemt *link;
+  char line[MAX_LINE_SIZE + 1];
+} *line_pool_root = NULL;
+
+int stack_top = -1;
+
 static char *string_table = NULL;
 
 /// SYMNO is an array that maps symbol numbers to actual symbols.
@@ -51,26 +58,25 @@ static bool IsAlpha(const int c) {
   return code[c] == ALPHA_CODE;
 }
 
-static int line_no = 0;
-
 /// The two character pointer variables, P1 and P2, are used in
 /// processing the io buffer, INPUT_BUFFER.
 static char *p1;
 static char *p2;
 static char *input_buffer;
 
-static char *linestart;
 static char *bufend;
 static char *ct_ptr;
 
-/// current token & related variables
-static short ct = 0;
-static short ct_start_col = 0;
-static short ct_end_col = 0;
-static short ct_length = 0;
-
-static long ct_start_line = 0;
-static long ct_end_line = 0;
+struct ScannerState {
+  short ct;
+  short ct_start_col;
+  short ct_end_col;
+  short ct_length;
+  long ct_start_line;
+  long ct_end_line;
+  char *linestart;
+  int line_no;
+};
 
 static const int OUTPUT_PARM_SIZE = MAX_PARM_SIZE + 7;
 static const int MAXIMUM_LA_LEVEL = 100;
@@ -364,7 +370,7 @@ static void options(char *file_prefix, struct CLIOptions *cli_options) {
 /// if they are (it is an) "options" line(s).  If so, the options are
 /// processed.  Then, we process user-supplied options if there are any.  In
 /// any case, the options in effect are printed.
-static void process_options_lines(char *grm_file, struct OutputFiles *of, char *file_prefix, struct CLIOptions *cli_options, FILE *sysgrm) {
+static void process_options_lines(char *grm_file, struct OutputFiles *of, char *file_prefix, struct CLIOptions *cli_options, FILE *sysgrm, struct ScannerState* ss) {
   char old_parm[MAX_LINE_SIZE + 1];
   char output_line[PRINT_LINE_SIZE + 1];
   char opt_string[60][OUTPUT_PARM_SIZE + 1];
@@ -380,8 +386,8 @@ static void process_options_lines(char *grm_file, struct OutputFiles *of, char *
     while (IsSpace(*p2)) {
       // skip all space symbols
       if (*p2 == '\n') {
-        line_no++;
-        linestart = p2;
+        ss->line_no++;
+        ss->linestart = p2;
         p1 = p2 + 1;
       }
       p2++;
@@ -416,8 +422,8 @@ static void process_options_lines(char *grm_file, struct OutputFiles *of, char *
         p1 = &input_buffer[0];
       }
     }
-    line_no++;
-    linestart = p1 - 1;
+    ss->line_no++;
+    ss->linestart = p1 - 1;
     p2 = p1;
   }
   printf("\n");
@@ -567,12 +573,12 @@ static void process_options_lines(char *grm_file, struct OutputFiles *of, char *
   }
   if (temp[0] != '\0') {
     PRNTERR2("The options %s cannot have the same value", temp);
-    PRNT3("Input process aborted at line %d ...", line_no);
+    PRNT3("Input process aborted at line %d ...", ss->line_no);
     exit(12);
   }
   if (strlen(cli_options->hblockb) <= strlen(cli_options->blockb) && memcmp(cli_options->hblockb, cli_options->blockb, strlen(cli_options->hblockb)) == 0) {
     PRNTERR2("Hblockb value, %s, cannot be a suffix of blockb: %s", cli_options->hblockb, cli_options->blockb);
-    PRNT3("Input process aborted at line %d ...", line_no);
+    PRNT3("Input process aborted at line %d ...", ss->line_no);
     exit(12);
   }
 }
@@ -703,7 +709,7 @@ int name_map(const char *symb) {
 }
 
 /// SCANNER scans the input stream and returns the next input token.
-static void scanner(char *grm_file, FILE *sysgrm, struct CLIOptions* cli_options) {
+static void scanner(char *grm_file, FILE *sysgrm, struct CLIOptions* cli_options, struct ScannerState* ss) {
   char tok_string[SYMBOL_SIZE + 1];
 scan_token:
   // Skip "blank" spaces.
@@ -719,23 +725,23 @@ scan_token:
           p1 = &input_buffer[0];
         }
       }
-      line_no++;
-      linestart = p1 - 1;
+      ss->line_no++;
+      ss->linestart = p1 - 1;
     }
   }
   if (strncmp(p1, cli_options->hblockb, cli_options->hblockb_len) == 0) /* check block opener */
   {
     p1 = p1 + cli_options->hblockb_len;
-    ct_length = 0;
+    ss->ct_length = 0;
     ct_ptr = p1;
     if (*p1 == '\n') {
       ct_ptr++;
-      ct_length--;
-      ct_start_line = line_no + 1;
-      ct_start_col = 1;
+      ss->ct_length--;
+      ss->ct_start_line = ss->line_no + 1;
+      ss->ct_start_col = 1;
     } else {
-      ct_start_line = line_no;
-      ct_start_col = p1 - linestart;
+      ss->ct_start_line = ss->line_no;
+      ss->ct_start_col = p1 - ss->linestart;
     }
 
     while (strncmp(p1, cli_options->hblocke, cli_options->hblocke_len) != 0) {
@@ -753,30 +759,30 @@ scan_token:
             p1 = &input_buffer[0];
           }
         }
-        line_no++;
-        linestart = p1 - 1;
+        ss->line_no++;
+        ss->linestart = p1 - 1;
       }
-      ct_length++;
+      ss->ct_length++;
     }
-    ct = HBLOCK_TK;
-    ct_end_line = line_no;
-    ct_end_col = p1 - linestart - 1;
+    ss->ct = HBLOCK_TK;
+    ss->ct_end_line = ss->line_no;
+    ss->ct_end_col = p1 - ss->linestart - 1;
     p2 = p1 + cli_options->hblocke_len;
 
     return;
   } else if (strncmp(p1, cli_options->blockb, cli_options->blockb_len) == 0) /* check block  */
   {
     p1 = p1 + cli_options->blockb_len;
-    ct_length = 0;
+    ss->ct_length = 0;
     ct_ptr = p1;
     if (*p1 == '\n') {
       ct_ptr++;
-      ct_length--;
-      ct_start_line = line_no + 1;
-      ct_start_col = 1;
+      ss->ct_length--;
+      ss->ct_start_line = ss->line_no + 1;
+      ss->ct_start_col = 1;
     } else {
-      ct_start_line = line_no;
-      ct_start_col = p1 - linestart;
+      ss->ct_start_line = ss->line_no;
+      ss->ct_start_col = p1 - ss->linestart;
     }
 
     while (strncmp(p1, cli_options->blocke, cli_options->blocke_len) != 0) {
@@ -794,22 +800,22 @@ scan_token:
             p1 = &input_buffer[0];
           }
         }
-        line_no++;
-        linestart = p1 - 1;
+        ss->line_no++;
+        ss->linestart = p1 - 1;
       }
-      ct_length++;
+      ss->ct_length++;
     }
-    ct = BLOCK_TK;
-    ct_end_line = line_no;
-    ct_end_col = p1 - linestart - 1;
+    ss->ct = BLOCK_TK;
+    ss->ct_end_line = ss->line_no;
+    ss->ct_end_col = p1 - ss->linestart - 1;
     p2 = p1 + cli_options->blocke_len;
 
     return;
   }
   // Scan the next token.
   ct_ptr = p1;
-  ct_start_line = line_no;
-  ct_start_col = p1 - linestart;
+  ss->ct_start_line = ss->line_no;
+  ss->ct_start_col = p1 - ss->linestart;
   p2 = p1 + 1;
   switch (*p1) {
     case '<':
@@ -817,52 +823,49 @@ scan_token:
         p2++;
         while (*p2 != '\n') {
           if (*p2++ == '>') {
-            ct = SYMBOL_TK;
-            ct_length = p2 - p1;
+            ss->ct = SYMBOL_TK;
+            ss->ct_length = p2 - p1;
             goto check_symbol_length;
           }
         }
         int i = SYMBOL_SIZE < p2 - p1 ? SYMBOL_SIZE : p2 - p1;
         memcpy(tok_string, p1, i);
         tok_string[i] = '\0';
-        PRNTERR2("Symbol \"%s\" has been referenced in line %ld without the closing \">\"", tok_string, ct_start_line);
+        PRNTERR2("Symbol \"%s\" has been referenced in line %ld without the closing \">\"", tok_string, ss->ct_start_line);
         exit(12);
       }
       break;
 
     case '\'':
       ct_ptr = p2;
-      ct = SYMBOL_TK;
+      ss->ct = SYMBOL_TK;
       while (*p2 != '\n') {
         if (*p2 == '\'') {
           p2++;
           if (*p2 != '\'') {
-            ct_length = p2 - p1 - 2;
+            ss->ct_length = p2 - p1 - 2;
             goto remove_quotes;
           }
         }
         p2++;
       }
-      ct_length = p2 - p1 - 1;
-      memcpy(tok_string, p1, ct_length);
-      tok_string[ct_length] = '\0';
-      PRNTWNG2("Symbol \"%s\" referenced in line %ld requires a closing quote", tok_string, ct_start_line);
+      ss->ct_length = p2 - p1 - 1;
+      memcpy(tok_string, p1, ss->ct_length);
+      tok_string[ss->ct_length] = '\0';
+      PRNTWNG2("Symbol \"%s\" referenced in line %ld requires a closing quote", tok_string, ss->ct_start_line);
 
     remove_quotes:
-      if (ct_length == 0) /* Empty symbol? disregard it */
+      if (ss->ct_length == 0) /* Empty symbol? disregard it */
         goto scan_token;
-
       int i = 0;
       p1 = ct_ptr;
       do {
         *p1++ = ct_ptr[i++];
         if (ct_ptr[i] == '\'')
           i++; /* skip next quote */
-      } while (i < ct_length);
-      ct_length = p1 - ct_ptr;
-
+      } while (i < ss->ct_length);
+      ss->ct_length = p1 - ct_ptr;
       goto check_symbol_length;
-
     case '-': /* scan possible comment  */
       if (*p2 == '-') {
         p2++;
@@ -870,34 +873,32 @@ scan_token:
           p2++;
         goto scan_token;
       } else if (*p2 == '>' && IsSpace(*(p2 + 1))) {
-        ct = ARROW_TK;
-        ct_length = 2;
+        ss->ct = ARROW_TK;
+        ss->ct_length = 2;
         p2++;
         return;
       }
       break;
-
     case ':':
       if (*p2 == ':' && *(p2 + 1) == '=' && IsSpace(*(p2 + 2))) {
-        ct = EQUIVALENCE_TK;
-        ct_length = 3;
+        ss->ct = EQUIVALENCE_TK;
+        ss->ct_length = 3;
         p2 = p1 + 3;
         return;
       }
       break;
-
     case '\0':
     case '\x1a': /* CTRL-Z • END-OF-FILE? */
-      ct = EOF_TK;
-      ct_length = 0;
+      ss->ct = EOF_TK;
+      ss->ct_length = 0;
       p2 = p1;
 
       return;
 
     default:
       if (*p1 == cli_options->ormark && IsSpace(*p2)) {
-        ct = OR_TK;
-        ct_length = 1;
+        ss->ct = OR_TK;
+        ss->ct_length = 1;
         return;
       } else if (*p1 == cli_options->escape) /* escape character? */
       {
@@ -906,8 +907,8 @@ scan_token:
           case 't':
           case 'T':
             if (strxeq(p3, "erminals") && IsSpace(*(p1 + 10))) {
-              ct = TERMINALS_KEY_TK;
-              ct_length = 10;
+              ss->ct = TERMINALS_KEY_TK;
+              ss->ct_length = 10;
               p2 = p1 + 10;
               return;
             }
@@ -916,8 +917,8 @@ scan_token:
           case 'd':
           case 'D':
             if (strxeq(p3, "efine") && IsSpace(*(p1 + 7))) {
-              ct = DEFINE_KEY_TK;
-              ct_length = 7;
+              ss->ct = DEFINE_KEY_TK;
+              ss->ct_length = 7;
               p2 = p1 + 7;
               return;
             }
@@ -926,32 +927,32 @@ scan_token:
           case 'e':
           case 'E':
             if (strxeq(p3, "mpty") && IsSpace(*(p1 + 6))) {
-              ct = EMPTY_SYMBOL_TK;
-              ct_length = 6;
+              ss->ct = EMPTY_SYMBOL_TK;
+              ss->ct_length = 6;
               p2 = p1 + 6;
               return;
             }
             if (strxeq(p3, "rror") && IsSpace(*(p1 + 6))) {
-              ct = ERROR_SYMBOL_TK;
-              ct_length = 6;
+              ss->ct = ERROR_SYMBOL_TK;
+              ss->ct_length = 6;
               p2 = p1 + 6;
               return;
             }
             if (strxeq(p3, "ol") && IsSpace(*(p1 + 4))) {
-              ct = EOL_SYMBOL_TK;
-              ct_length = 4;
+              ss->ct = EOL_SYMBOL_TK;
+              ss->ct_length = 4;
               p2 = p1 + 4;
               return;
             }
             if (strxeq(p3, "of") && IsSpace(*(p1 + 4))) {
-              ct = EOF_SYMBOL_TK;
-              ct_length = 4;
+              ss->ct = EOF_SYMBOL_TK;
+              ss->ct_length = 4;
               p2 = p1 + 4;
               return;
             }
             if (strxeq(p3, "nd") && IsSpace(*(p1 + 4))) {
-              ct = END_KEY_TK;
-              ct_length = 4;
+              ss->ct = END_KEY_TK;
+              ss->ct_length = 4;
               p2 = p1 + 4;
               return;
             }
@@ -960,8 +961,8 @@ scan_token:
           case 'r':
           case 'R':
             if (strxeq(p3, "ules") && IsSpace(*(p1 + 6))) {
-              ct = RULES_KEY_TK;
-              ct_length = 6;
+              ss->ct = RULES_KEY_TK;
+              ss->ct_length = 6;
               p2 = p1 + 6;
               return;
             }
@@ -970,8 +971,8 @@ scan_token:
           case 'a':
           case 'A':
             if (strxeq(p3, "lias") && IsSpace(*(p1 + 6))) {
-              ct = ALIAS_KEY_TK;
-              ct_length = 6;
+              ss->ct = ALIAS_KEY_TK;
+              ss->ct_length = 6;
               p2 = p1 + 6;
               return;
             }
@@ -980,8 +981,8 @@ scan_token:
           case 's':
           case 'S':
             if (strxeq(p3, "tart") && IsSpace(*(p1 + 6))) {
-              ct = START_KEY_TK;
-              ct_length = 6;
+              ss->ct = START_KEY_TK;
+              ss->ct_length = 6;
               p2 = p1 + 6;
               return;
             }
@@ -990,8 +991,8 @@ scan_token:
           case 'n':
           case 'N':
             if (strxeq(p3, "ames") && IsSpace(*(p1 + 6))) {
-              ct = NAMES_KEY_TK;
-              ct_length = 6;
+              ss->ct = NAMES_KEY_TK;
+              ss->ct_length = 6;
               p2 = p1 + 6;
               return;
             }
@@ -1001,25 +1002,26 @@ scan_token:
             break;
         }
 
-        ct = MACRO_NAME_TK;
-        while (!IsSpace(*p2))
+        ss->ct = MACRO_NAME_TK;
+        while (!IsSpace(*p2)) {
           p2++;
-        ct_length = p2 - p1;
+        }
+        ss->ct_length = p2 - p1;
         goto check_symbol_length;
       }
   }
-  ct = SYMBOL_TK;
+  ss->ct = SYMBOL_TK;
   while (!IsSpace(*p2)) {
     p2++;
   }
-  ct_length = p2 - p1;
+  ss->ct_length = p2 - p1;
 check_symbol_length:
-  if (ct_length > SYMBOL_SIZE) {
-    ct_length = SYMBOL_SIZE;
-    memcpy(tok_string, p1, ct_length);
-    tok_string[ct_length] = '\0';
+  if (ss->ct_length > SYMBOL_SIZE) {
+    ss->ct_length = SYMBOL_SIZE;
+    memcpy(tok_string, p1, ss->ct_length);
+    tok_string[ss->ct_length] = '\0';
     if (symbol_image(tok_string) == OMEGA) {
-      PRNTWNG2("Length of Symbol \"%s\" in line %d exceeds maximum of ", tok_string, line_no);
+      PRNTWNG2("Length of Symbol \"%s\" in line %d exceeds maximum of ", tok_string, ss->line_no);
     }
   }
 }
@@ -1386,10 +1388,8 @@ static void mapmacro(const int def_index) {
   }
 }
 
-static struct hash_type *alias_root = NULL;
-
 /// Process all semantic actions and generate action file.
-static void process_actions(char *grm_file, struct CLIOptions *cli_options, struct OutputFiles* of) {
+static void process_actions(char *grm_file, struct CLIOptions *cli_options, struct ScannerState* ss) {
   register char *p;
   char line[MAX_LINE_SIZE + 1];
   FILE *sysact = fopen(cli_options->act_file, "w");
@@ -1415,13 +1415,13 @@ static void process_actions(char *grm_file, struct CLIOptions *cli_options, stru
   bufend = &input_buffer[0];
   read_input(grm_file, sysgrm);
   p2 = &input_buffer[0];
-  linestart = p2 - 1;
+  ss->linestart = p2 - 1;
   p1 = p2;
-  line_no = 1;
+  ss->line_no = 1;
   // Read in all the macro definitions and insert them into macro_table.
   for (int i = 0; i < num_defs; i++) {
     calloc0(defelmt[i].macro, defelmt[i].length + 2, char);
-    for (; line_no < defelmt[i].start_line; line_no++) {
+    for (; ss->line_no < defelmt[i].start_line; ss->line_no++) {
       while (*p1 != '\n') {
         p1++;
       }
@@ -1435,9 +1435,9 @@ static void process_actions(char *grm_file, struct CLIOptions *cli_options, stru
           p1 = &input_buffer[0];
         }
       }
-      linestart = p1 - 1;
+      ss->linestart = p1 - 1;
     }
-    p1 = linestart + defelmt[i].start_column;
+    p1 = ss->linestart + defelmt[i].start_column;
     for (register int j = 0; j < defelmt[i].length; j++) {
       defelmt[i].macro[j] = *p1;
       if (*p1++ == '\n') {
@@ -1450,8 +1450,8 @@ static void process_actions(char *grm_file, struct CLIOptions *cli_options, stru
             p1 = &input_buffer[0];
           }
         }
-        line_no++;
-        linestart = p1 - 1;
+        ss->line_no++;
+        ss->linestart = p1 - 1;
       }
     }
     defelmt[i].macro[defelmt[i].length] = '\n';
@@ -1463,7 +1463,7 @@ static void process_actions(char *grm_file, struct CLIOptions *cli_options, stru
   }
   // Read in all the action blocks and process them.
   for (int i = 0; i < num_acts; i++) {
-    for (; line_no < actelmt[i].start_line; line_no++) {
+    for (; ss->line_no < actelmt[i].start_line; ss->line_no++) {
       while (*p1 != '\n') {
         p1++;
       }
@@ -1477,30 +1477,30 @@ static void process_actions(char *grm_file, struct CLIOptions *cli_options, stru
           p1 = &input_buffer[0];
         }
       }
-      linestart = p1 - 1;
+      ss->linestart = p1 - 1;
     }
     if (actelmt[i].start_line == actelmt[i].end_line) {
       int len = actelmt[i].end_column - actelmt[i].start_column + 1;
-      memcpy(line, linestart + actelmt[i].start_column, len);
+      memcpy(line, ss->linestart + actelmt[i].start_column, len);
       line[len] = '\0';
       while (*p1 != '\n') {
         p1++;
       }
     } else {
       p = line;
-      p1 = linestart + actelmt[i].start_column;
+      p1 = ss->linestart + actelmt[i].start_column;
       while (*p1 != '\n') {
         *p++ = *p1++;
       }
       *p = '\0';
     }
     if (actelmt[i].header_block) {
-      process_action_line(syshact, line, line_no, actelmt[i].rule_number, grm_file, cli_options);
+      process_action_line(syshact, line, ss->line_no, actelmt[i].rule_number, grm_file, cli_options);
     } else {
-      process_action_line(sysact, line, line_no, actelmt[i].rule_number, grm_file, cli_options);
+      process_action_line(sysact, line, ss->line_no, actelmt[i].rule_number, grm_file, cli_options);
     }
-    if (line_no != actelmt[i].end_line) {
-      while (line_no < actelmt[i].end_line) {
+    if (ss->line_no != actelmt[i].end_line) {
+      while (ss->line_no < actelmt[i].end_line) {
         p1++;
         if (bufend == input_buffer + IOBUFFER_SIZE) {
           int k = bufend - p1;
@@ -1511,18 +1511,18 @@ static void process_actions(char *grm_file, struct CLIOptions *cli_options, stru
             p1 = &input_buffer[0];
           }
         }
-        line_no++;
-        linestart = p1 - 1;
-        if (line_no < actelmt[i].end_line) {
+        ss->line_no++;
+        ss->linestart = p1 - 1;
+        if (ss->line_no < actelmt[i].end_line) {
           p = line;
           while (*p1 != '\n') {
             *p++ = *p1++;
           }
           *p = '\0';
           if (actelmt[i].header_block) {
-            process_action_line(syshact, line, line_no, actelmt[i].rule_number, grm_file, cli_options);
+            process_action_line(syshact, line, ss->line_no, actelmt[i].rule_number, grm_file, cli_options);
           } else {
-            process_action_line(sysact, line, line_no, actelmt[i].rule_number, grm_file, cli_options);
+            process_action_line(sysact, line, ss->line_no, actelmt[i].rule_number, grm_file, cli_options);
           }
         }
       }
@@ -1531,9 +1531,9 @@ static void process_actions(char *grm_file, struct CLIOptions *cli_options, stru
         memcpy(line, p1, len);
         line[len] = '\0';
         if (actelmt[i].header_block) {
-          process_action_line(syshact, line, line_no, actelmt[i].rule_number, grm_file, cli_options);
+          process_action_line(syshact, line, ss->line_no, actelmt[i].rule_number, grm_file, cli_options);
         } else {
-          process_action_line(sysact, line, line_no, actelmt[i].rule_number, grm_file, cli_options);
+          process_action_line(sysact, line, ss->line_no, actelmt[i].rule_number, grm_file, cli_options);
         }
       }
     }
@@ -1549,7 +1549,7 @@ static void process_actions(char *grm_file, struct CLIOptions *cli_options, stru
 }
 
 /// Actions to be taken if grammar is successfully parsed.
-static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *sysgrm, struct OutputFiles* of) {
+static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *sysgrm, struct ScannerState* ss) {
   if (rulehdr == NULL) {
     printf("Informative: Empty grammar read in. Processing stopped.\n");
     fclose(sysgrm);
@@ -1651,11 +1651,11 @@ static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *
     rules[num_rules + 1].rhs = rhs_ct; /* Fence !! */
   }
   fclose(sysgrm); /* Close grammar input file. */
-  process_actions(grm_file, cli_options, of);
+  process_actions(grm_file, cli_options, ss);
 }
 
 /// This procedure opens all relevant files and processes the input grammar.
-void process_input(char *grm_file, struct OutputFiles *output_files, const int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options, struct OutputFiles* of) {
+void process_input(char *grm_file, struct OutputFiles *output_files, const int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options) {
   // Parse args.
   {
     // If options are passed to the program, copy them into "parm".
@@ -1726,6 +1726,16 @@ void process_input(char *grm_file, struct OutputFiles *output_files, const int a
     code['\f'] = SPACE_CODE;
   }
 
+  struct ScannerState ss = {
+    .ct = 0,
+    .ct_start_col = 0,
+    .ct_end_col = 0,
+    .ct_length = 0,
+    .ct_start_line = 0,
+    .ct_end_line = 0,
+    .line_no = 0,
+  };
+
   // Init grammar.
   {
     // This routine is invoked to allocate space for the global structures
@@ -1742,14 +1752,14 @@ void process_input(char *grm_file, struct OutputFiles *output_files, const int a
     bufend = &input_buffer[0];
     read_input(grm_file, sysgrm);
     p2 = &input_buffer[0];
-    linestart = p2 - 1;
+    ss.linestart = p2 - 1;
     p1 = p2;
-    line_no++;
+    ss.line_no++;
     if (*p2 == '\0') {
       fprintf(stderr, "Input file \"%s\" containing grammar is empty, undefined, or invalid\n", grm_file);
       exit(12);
     }
-    process_options_lines(grm_file, output_files, file_prefix, cli_options, sysgrm);
+    process_options_lines(grm_file, output_files, file_prefix, cli_options, sysgrm, &ss);
     eolt_image = OMEGA;
     cli_options->blockb_len = strlen(cli_options->blockb);
     cli_options->blocke_len = strlen(cli_options->blocke);
@@ -1783,13 +1793,13 @@ void process_input(char *grm_file, struct OutputFiles *output_files, const int a
     // LALR(1) parser table generated by LPG to recognize the grammar which it
     // places in the rulehdr structure.
     short state_stack[STACK_SIZE];
-    scanner(grm_file, sysgrm, cli_options); /* Get first token */
+    scanner(grm_file, sysgrm, cli_options, &ss); /* Get first token */
     register int act = START_STATE;
   process_terminal:
     // Note that this driver assumes that the tables are LPG SPACE
     // tables with no GOTO-DEFAULTS.
     state_stack[++stack_top] = act;
-    act = t_action(act, ct, ?);
+    act = t_action(act, ss.ct, ?);
     // Reduce
     if (act <= NUM_RULES) {
       stack_top--;
@@ -1803,43 +1813,43 @@ void process_input(char *grm_file, struct OutputFiles *output_files, const int a
           // the token is not copied since blocks are processed separately on a
           // second pass.
           const register int top = stack_top + 1;
-          terminal[top].kind = ct;
-          terminal[top].start_line = ct_start_line;
-          terminal[top].start_column = ct_start_col;
-          terminal[top].end_line = ct_end_line;
-          terminal[top].end_column = ct_end_col;
-          terminal[top].length = ct_length;
-          if (ct != BLOCK_TK) {
-            memcpy(terminal[top].name, ct_ptr, ct_length);
-            terminal[top].name[ct_length] = '\0';
+          terminal[top].kind = ss.ct;
+          terminal[top].start_line = ss.ct_start_line;
+          terminal[top].start_column = ss.ct_start_col;
+          terminal[top].end_line = ss.ct_end_line;
+          terminal[top].end_column = ss.ct_end_col;
+          terminal[top].length = ss.ct_length;
+          if (ss.ct != BLOCK_TK) {
+            memcpy(terminal[top].name, ct_ptr, ss.ct_length);
+            terminal[top].name[ss.ct_length] = '\0';
           } else {
             terminal[top].name[0] = '\0';
           }
         }
       }
-      scanner(grm_file, sysgrm, cli_options);
+      scanner(grm_file, sysgrm, cli_options, &ss);
       if (act < ACCEPT_ACTION) {
         goto process_terminal;
       }
       act -= ERROR_ACTION;
     } else if (act == ACCEPT_ACTION) {
-      accept_action(grm_file, cli_options, sysgrm, of);
+      accept_action(grm_file, cli_options, sysgrm, &ss);
       goto end;
     } else {
       // error_action
       {
         // Error messages to be printed if an error is encountered during parsing.
-        ct_ptr[ct_length] = '\0';
-        if (ct == EOF_TK) {
+        ct_ptr[ss.ct_length] = '\0';
+        if (ss.ct == EOF_TK) {
           PRNTERR2("End-of file reached prematurely");
-        } else if (ct == MACRO_NAME_TK) {
-          PRNTERR2("Misplaced macro name \"%s\" found in line %d, column %d", ct_ptr, line_no, ct_start_col);
-        } else if (ct == SYMBOL_TK) {
+        } else if (ss.ct == MACRO_NAME_TK) {
+          PRNTERR2("Misplaced macro name \"%s\" found in line %d, column %d", ct_ptr, ss.line_no, ss.ct_start_col);
+        } else if (ss.ct == SYMBOL_TK) {
           char tok_string[SYMBOL_SIZE + 1];
           restore_symbol(tok_string, ct_ptr, cli_options->ormark, cli_options->escape);
-          PRNTERR2("Misplaced symbol \"%s\" found in line %d, column %d", tok_string, line_no, ct_start_col);
+          PRNTERR2("Misplaced symbol \"%s\" found in line %d, column %d", tok_string, ss.line_no, ss.ct_start_col);
         } else {
-          PRNTERR2("Misplaced keyword \"%s\" found in line %d, column %d", ct_ptr, line_no, ct_start_col);
+          PRNTERR2("Misplaced keyword \"%s\" found in line %d, column %d", ct_ptr, ss.line_no, ss.ct_start_col);
         }
         exit(12);
       }

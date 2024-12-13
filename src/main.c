@@ -105,7 +105,7 @@ int main(const int argc, char *argv[]) {
         tab_file[dot - tmpbuf] = '\0';
       }
       strcat(tab_file, ".t"); /* add .t extension for table file */
-      process_input(grm_file, &of, argc, argv, file_prefix, &cli_options, &of);
+      process_input(grm_file, &of, argc, argv, file_prefix, &cli_options);
     }
 
     struct DetectedSetSizes dss = mkbasic(&cli_options);

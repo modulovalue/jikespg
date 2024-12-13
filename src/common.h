@@ -268,7 +268,7 @@ static struct CLIOptions init_cli_options() {
   };
 }
 
-void process_input(char *grm_file, struct OutputFiles *output_files, int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options, struct OutputFiles* of);
+void process_input(char *grm_file, struct OutputFiles *output_files, int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options);
 
 extern char msg_line[];
 
