@@ -22,7 +22,6 @@ int eolt_image;
 int empty;
 int error_image;
 
-long num_first_sets;
 long num_shift_maps = 0;
 
 long num_shifts = 0;
@@ -59,8 +58,6 @@ struct node **adequate_item = NULL;
 struct itemtab *item_table = NULL;
 
 bool *null_nt = NULL;
-
-long term_set_size;
 
 struct shift_header_type *shift = NULL;
 

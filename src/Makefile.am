@@ -11,7 +11,6 @@ jikespg_SOURCES = ctabs.c \
                   partset.c \
                   ptables.c \
                   remsp.c \
-                  resolve.c \
                   spacetab.c \
                   timetab.c
 

@@ -25,7 +25,6 @@ add_executable(
         src/partset.c
         src/ptables.c
         src/remsp.c
-        src/resolve.c
         src/spacetab.c
         src/timetab.c
         src/main.c

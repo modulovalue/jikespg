@@ -94,7 +94,7 @@ static const int IOBUFFER_SIZE = 655360;
 
 extern const long MAX_TABLE_SIZE;
 
-struct node **direct_produces;
+extern struct node **direct_produces;
 
 extern JBitset produces;
 
@@ -280,7 +280,6 @@ extern int eolt_image;
 extern int empty;
 extern int error_image;
 
-extern long num_first_sets;
 extern long num_shift_maps;
 
 extern long num_shifts;
@@ -376,13 +375,8 @@ extern short *scope_state;
 extern char *output_ptr;
 extern char *output_buffer;
 
-extern long *symbol_map;
-extern long *ordered_state;
-extern long *state_list;
-
 extern long *next;
 extern long *previous;
-extern long *state_index;
 
 extern long table_size;
 extern long action_size;
@@ -410,90 +404,10 @@ void free_temporary_space(void);
 
 void *talloc(long size);
 
-struct node *allocate_node(char *file, long line);
-
-bool *allocate_boolean_array(long n, char *file, long line);
-
-int *allocate_int_array(long n, char *file, long line);
-
-long *allocate_long_array(long n, char *file, long line);
-
-short *allocate_short_array(long n, char *file, long line);
-
-struct goto_header_type allocate_goto_map(int n, char *file, long line);
-
-struct shift_header_type allocate_shift_map(int n, char *file, long line);
-
-struct reduce_header_type allocate_reduce_map(int n, char *file, long line);
-
-void cmprtim(struct OutputFiles *output_files, struct CLIOptions *cli_options, FILE *systab);
-
-void cmprspa(struct OutputFiles *output_files, struct CLIOptions *cli_options, FILE *systab);
-
-void create_lastats(void);
-
-void dump_tables(void);
-
-void exit_lalrk_process(const struct CLIOptions *cli_options);
-
-void init_lalrk_process(const struct CLIOptions *cli_options);
-
-void init_rmpself(JBitset produces);
-
-void field(long num, int len);
-
-void fill_in(char string[], int amount, char character);
-
-void free_conflict_space(void);
-
-void free_nodes(struct node *head, struct node *tail);
-
-struct node *lpgaccess(int state_no, int item_no);
-
 struct DetectedSetSizes {
   long term_set_size;
   long non_term_set_size;
 } mkbasic(struct CLIOptions *cli_options);
-
-void mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss);
-
-void la_traverse(int state_no, int goto_indx, int *stack_top);
-
-void remove_single_productions(struct DetectedSetSizes* dss);
-
-void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss);
-
-void nospace(char *, long);
-
-int number_len(int state_no);
-
-void partset(JBitset collection, const long *element_size, const long *list, long *start, long *stack, long set_size, bool from_process_scopes);
-
-void print_item(int item_no, struct CLIOptions* cli_options);
-
-void print_large_token(char *line, char *token, const char *indent, int len);
-
-void print_state(int state_no, struct CLIOptions* cli_options);
-
-void process_error_maps(struct CLIOptions *cli_options, FILE *systab);
-
-void print_space_parser(struct CLIOptions *cli_options);
-
-void print_time_parser(struct CLIOptions *cli_options);
-
-void init_parser_files(struct OutputFiles *output_files, struct CLIOptions *cli_options);
-
-void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options, const struct DetectedSetSizes* dss);
-
-void ptstats(struct CLIOptions *cli_options);
-
-void remvsp(void);
-
-void sortdes(long array[], long count[], long low, long high, long max);
-
-void reallocate(struct CLIOptions *cli_options);
-
-void resolve_conflicts(int state_no, struct node **action, const short *symbol_list, int reduce_root, struct CLIOptions *cli_options, struct DetectedSetSizes* dss);
 
 extern char ormark;
 extern char escape;
@@ -504,76 +418,12 @@ void *galloc(long size);
 
 extern struct node *node_pool;
 
-/// This function allocates an array of size "size" of int integers.
-static long *Allocate_long_array(const long n) {
-  long *p;
-  calloc0(p, n, long);
-  return &p[0];
-}
-
-/// This function allocates an array of size "size" of short integers.
-static short *Allocate_short_array(const long n) {
-  short *p;
-  calloc0(p, n, short);
-  return &p[0];
-}
-
-/// This function allocates an array of size "size" of type boolean.
-static bool *Allocate_boolean_array(const long n) {
-  bool *p;
-  calloc0(p, n, bool);
-  return &p[0];
-}
-
-/// This function allocates a node structure and returns a pointer to it.
-/// If there are nodes in the free pool, one of them is returned. Otherwise,
-/// a new node is allocated from the global storage pool.
-static struct node *Allocate_node() {
-  struct node *p = node_pool;
-  if (p != NULL) {
-    // Is free list not empty?
-    node_pool = p->next;
-  } else {
-    galloc0(p, struct node, 1);
-  }
-  return p;
-}
-
-/// This function allocates space for a goto map with "size" elements,
-/// initializes and returns a goto header for that map. NOTE that after the
-/// map is successfully allocated, it is offset by one element. This is
-/// to allow the array in question to be indexed from 1..size instead of
-/// 0..(size-1).
-static struct goto_header_type Allocate_goto_map(const long n) {
-  struct goto_header_type go_to;
-  go_to.size = n;
-  galloc0(go_to.map, struct goto_type, n);
-  go_to.map--; /* map will be indexed in range 1..size */
-  return go_to;
-}
-
-/// This function allocates space for a shift map with "size" elements,
-/// initializes and returns a shift header for that map. NOTE that after the
-/// map is successfully allocated, it is offset by one element. This is
-/// to allow the array in question to be indexed from 1..size instead of
-/// 0..(size-1).
-static struct shift_header_type Allocate_shift_map(const long n) {
-  struct shift_header_type sh;
-  sh.size = n;
-  galloc0(sh.map, struct shift_type, n)
-  sh.map--; /* map will be indexed in range 1..size */
-  return sh;
-}
-
-/// This function allocates space for a REDUCE map with "size"+1 elements,
-/// initializes and returns a REDUCE header for that map. The 0th element of
-/// a reduce map is used for the default reduction.
-static struct reduce_header_type Allocate_reduce_map(const long n) {
-  struct reduce_header_type red;
-  galloc0(red.map, struct reduce_type, n + 1);
-  red.size = n;
-  return red;
-}
+struct TableOutput {
+  long *ordered_state;
+  long *symbol_map;
+  long *state_index;
+  long *state_list;
+};
 
 static void ffree(void *y) {
   return free(y); /* { free(x); x = (void *) ULONG_MAX; } */
@@ -688,3 +538,131 @@ extern short *la_index;
 extern bool not_lrk;
 
 extern int increment;
+
+void cmprtim(struct OutputFiles *output_files, struct CLIOptions *cli_options, FILE *systab, struct TableOutput* toutput);
+
+void cmprspa(struct OutputFiles *output_files, struct CLIOptions *cli_options, FILE *systab, struct TableOutput* toutput);
+
+void init_rmpself(JBitset produces);
+
+void field(long num, int len);
+
+void fill_in(char string[], int amount, char character);
+
+void free_nodes(struct node *head, struct node *tail);
+
+void mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss);
+
+void la_traverse(int state_no, int goto_indx, int *stack_top);
+
+void remove_single_productions(struct DetectedSetSizes* dss);
+
+void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss);
+
+void nospace(char *, long);
+
+int number_len(int state_no);
+
+void partset(JBitset collection, const long *element_size, const long *list, long *start, long *stack, long set_size, bool from_process_scopes);
+
+void print_item(int item_no, struct CLIOptions* cli_options);
+
+void print_large_token(char *line, char *token, const char *indent, int len);
+
+void print_state(int state_no, struct CLIOptions* cli_options);
+
+void process_error_maps(struct CLIOptions *cli_options, FILE *systab, struct TableOutput* toutput);
+
+void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* toutput);
+
+void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutput);
+
+void init_parser_files(struct OutputFiles *output_files, struct CLIOptions *cli_options);
+
+void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options, const struct DetectedSetSizes* dss);
+
+void ptstats(struct CLIOptions *cli_options);
+
+void sortdes(long array[], long count[], long low, long high, long max);
+
+void reallocate(struct CLIOptions *cli_options);
+
+/// This function allocates an array of size "size" of int integers.
+static long *Allocate_long_array(const long n) {
+  long *p;
+  calloc0(p, n, long);
+  return &p[0];
+}
+
+/// This function allocates an array of size "size" of short integers.
+static short *Allocate_short_array(const long n) {
+  short *p;
+  calloc0(p, n, short);
+  return &p[0];
+}
+
+/// This function allocates an array of size "size" of type boolean.
+static bool *Allocate_boolean_array(const long n) {
+  bool *p;
+  calloc0(p, n, bool);
+  return &p[0];
+}
+
+/// This function allocates a node structure and returns a pointer to it.
+/// If there are nodes in the free pool, one of them is returned. Otherwise,
+/// a new node is allocated from the global storage pool.
+static struct node *Allocate_node() {
+  struct node *p = node_pool;
+  if (p != NULL) {
+    // Is free list not empty?
+    node_pool = p->next;
+  } else {
+    galloc0(p, struct node, 1);
+  }
+  return p;
+}
+
+/// This function allocates space for a goto map with "size" elements,
+/// initializes and returns a goto header for that map. NOTE that after the
+/// map is successfully allocated, it is offset by one element. This is
+/// to allow the array in question to be indexed from 1..size instead of
+/// 0..(size-1).
+static struct goto_header_type Allocate_goto_map(const long n) {
+  struct goto_header_type go_to;
+  go_to.size = n;
+  galloc0(go_to.map, struct goto_type, n);
+  go_to.map--; /* map will be indexed in range 1..size */
+  return go_to;
+}
+
+/// This function allocates space for a shift map with "size" elements,
+/// initializes and returns a shift header for that map. NOTE that after the
+/// map is successfully allocated, it is offset by one element. This is
+/// to allow the array in question to be indexed from 1..size instead of
+/// 0..(size-1).
+static struct shift_header_type Allocate_shift_map(const long n) {
+  struct shift_header_type sh;
+  sh.size = n;
+  galloc0(sh.map, struct shift_type, n)
+  sh.map--; /* map will be indexed in range 1..size */
+  return sh;
+}
+
+/// This function allocates space for a REDUCE map with "size"+1 elements,
+/// initializes and returns a REDUCE header for that map. The 0th element of
+/// a reduce map is used for the default reduction.
+static struct reduce_header_type Allocate_reduce_map(const long n) {
+  struct reduce_header_type red;
+  galloc0(red.map, struct reduce_type, n + 1);
+  red.size = n;
+  return red;
+}
+
+static struct TableOutput init_table_output() {
+  return (struct TableOutput) {
+    .ordered_state = Allocate_long_array(max_la_state + 1),
+    .state_index = Allocate_long_array(max_la_state + 1),
+    .symbol_map = Allocate_long_array(num_symbols + 1),
+    .state_list = Allocate_long_array(max_la_state + 1),
+  };
+}

@@ -635,7 +635,7 @@ struct DetectedSetSizes mkbasic(struct CLIOptions* cli_options) {
   // are placed in the FIRST table in the range 1..NUM_FIRST_SETS
   // The first element in the FIRST table contains the first sets
   // for the empty sequence.
-  num_first_sets = top;
+  long num_first_sets = top;
   int rule_no;
   for (bool end_node = (rule_no = lhs_rule[accept_image]) == NIL; !end_node; end_node = rule_no == lhs_rule[accept_image]) {
     rule_no = next_rule[rule_no];

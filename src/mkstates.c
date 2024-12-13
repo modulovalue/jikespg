@@ -37,8 +37,7 @@ struct shift_header_type no_shifts_ptr;
 struct state_element *lr0_state_map(struct node *kernel, struct state_element **state_table) {
   unsigned long hash_address = 0;
   // Compute the hash address.
-  struct node *p;
-  for (p = kernel; p != NULL; p = p->next) {
+  for (const struct node *p = kernel; p != NULL; p = p->next) {
     hash_address += p->value;
   }
   hash_address %= STATE_TABLE_SIZE;
@@ -46,6 +45,7 @@ struct state_element *lr0_state_map(struct node *kernel, struct state_element **
   for (struct state_element *state_ptr = state_table[hash_address];state_ptr != NULL; state_ptr = state_ptr->link) {
     struct node *q;
     struct node *r;
+    struct node *p;
     for (p = state_ptr->kernel_items, q = kernel; p != NULL && q != NULL; p = p->next, r = q, q = q->next) {
       if (p->value != q->value)
         break;

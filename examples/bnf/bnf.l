@@ -22,7 +22,6 @@ Options in effect:
 
 This grammar is LALR(2).
 
-
 Number of Terminals: 5
 Number of Nonterminals: 4
 Number of Productions: 8
@@ -39,8 +38,6 @@ Number of Reduce-Reduce conflicts: 0
 Length of base Action Table: 13
 Number of entries in base Action Table: 13
 Percentage of increase: 0.0%
-Storage required for base Tables: 26 Bytes, 1K
-Storage required for Rules: 14 Bytes
 Number of unique terminal states: 9
 Number of Shift actions saved by merging: 0
 Number of Reduce actions saved by merging: 3
@@ -50,8 +47,6 @@ Length of Terminal Check Table: 26
 Length of Terminal Action Table: 21
 Number of entries in Terminal Action Table: 19
 Percentage of increase: 10.5%
-Storage required for Terminal Tables: 68 Bytes, 1K
-Total storage required for Tables: 94 Bytes, 1K
 
 
 Actions in Compressed Tables:

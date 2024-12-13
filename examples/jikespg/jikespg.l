@@ -22,7 +22,6 @@ Options in effect:
 
 This grammar is LALR(1).
 
-
 Number of Terminals: 19
 Number of Nonterminals: 37
 Number of Productions: 142

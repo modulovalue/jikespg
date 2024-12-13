@@ -263,10 +263,13 @@ void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLI
       exit(12);
     }
   }
+  struct TableOutput toutput = init_table_output();
   if (cli_options->table_opt == OPTIMIZE_SPACE) {
-    cmprspa(output_files, cli_options, systab);
+    cmprspa(output_files, cli_options, systab, &toutput);
   } else if (cli_options->table_opt == OPTIMIZE_TIME) {
-    cmprtim(output_files, cli_options, systab);
+    cmprtim(output_files, cli_options, systab, &toutput);
+  } else {
+    exit(999);
   }
   if (!cli_options->c_bit && !cli_options->cpp_bit && !cli_options->java_bit) {
     fclose(systab);
@@ -276,7 +279,7 @@ void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLI
   if (cli_options->states_bit) {
     fprintf(syslis, "\nMapping of new state numbers into original numbers:\n");
     for ALL_STATES3(state_no) {
-      fprintf(syslis, "\n%5ld  ==>>  %5ld", ordered_state[state_no], state_list[state_no]);
+      fprintf(syslis, "\n%5ld  ==>>  %5ld", toutput.ordered_state[state_no], toutput.state_list[state_no]);
     }
     fprintf(syslis, "\n");
   }

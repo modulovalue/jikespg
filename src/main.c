@@ -121,7 +121,7 @@ int main(const int argc, char *argv[]) {
 
     // Output more basic statistics.
     {
-      PRNT3("\nNumber of Terminals: %ld", num_terminals - 1); /*-1 for %empty */
+      PRNT3("Number of Terminals: %ld", num_terminals - 1); /*-1 for %empty */
       PRNT3("Number of Nonterminals: %ld", num_non_terminals - 1); /* -1 for %ACC */
       PRNT3("Number of Productions: %ld", num_rules + 1);
       if (cli_options.single_productions_bit) {
