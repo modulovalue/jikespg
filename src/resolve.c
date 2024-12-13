@@ -447,7 +447,7 @@ bool trace_root(const int lhs_symbol) {
 /// The procedure below is invoked to retrace a path from the initial
 /// item to a given item (ITEM_NO) passed to it as argument.
 void print_root_path(const int item_no) {
-  symbol_seen = Allocate_boolean_array(num_non_terminals);
+  bool *symbol_seen = Allocate_boolean_array(num_non_terminals);
   symbol_seen -= num_terminals + 1;
   if (trace_root(rules[item_table[item_no].rule_number].lhs)) {
     fprintf(syslis, "\n"); /* Leave one blank line after root trace. */
@@ -1575,7 +1575,6 @@ void create_lastats(void) {
 }
 
 struct node **direct_produces;
-JBitset produces;
 
 /// For a given symbol, complete the computation of
 /// PRODUCES[symbol].

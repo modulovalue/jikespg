@@ -58,8 +58,6 @@ static const int SHIFT_TABLE_SIZE = SHIFT_TABLE_UBOUND + 1; /* 401 is a prime */
 static const int SCOPE_UBOUND = 100;
 static const int SCOPE_SIZE = SCOPE_UBOUND + 1; /* 101 is prime */
 
-static const char SPACE = ' ';
-static const char COMMA = ',';
 static const int INFINITY = (short) SHRT_MAX;
 static const int OMEGA = (short) SHRT_MIN;
 static const int NIL = (short) SHRT_MIN + 1;

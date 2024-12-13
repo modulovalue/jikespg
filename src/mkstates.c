@@ -447,8 +447,6 @@ struct scope_elmt {
   short index;
 } *scope_element;
 
-bool *symbol_seen;
-
 JBitset produces;
 JBitset right_produces;
 JBitset left_produces;
@@ -489,7 +487,7 @@ void print_name_map(const int symbol) {
 ///                               and
 ///
 ///                     SOURCE ->rm+ TARGET
-bool scope_check(const int lhs_symbol, const int target, const int source) {
+bool scope_check(const int lhs_symbol, const int target, const int source, bool* symbol_seen) {
   symbol_seen[source] = true;
   if (IS_IN_SET(right_produces, target, source - num_terminals) &&
       IS_IN_SET(right_produces, lhs_symbol, source - num_terminals)) {
@@ -504,7 +502,7 @@ bool scope_check(const int lhs_symbol, const int target, const int source) {
     const int symbol = rules[rule_no].lhs;
     if (!symbol_seen[symbol]) {
       // not yet processed
-      if (scope_check(lhs_symbol, target, symbol)) {
+      if (scope_check(lhs_symbol, target, symbol, symbol_seen)) {
         return 1;
       }
     }
@@ -523,7 +521,7 @@ bool scope_check(const int lhs_symbol, const int target, const int source) {
 /// 3) it is not the case that whenever A is introduced through
 ///    closure, it is introduced by a nonterminal C where C =>rm* A
 ///    and C =>rm+ B.
-bool is_scope(const int item_no) {
+bool is_scope(const int item_no, bool *symbol_seen) {
   for (int i = item_no - item_table[item_no].dot; i < item_no; i++) {
     const int symbol = item_table[i].symbol;
     if (IS_A_TERMINAL(symbol)) {
@@ -544,7 +542,7 @@ bool is_scope(const int item_no) {
   for ALL_NON_TERMINALS3(nt) {
     symbol_seen[nt] = false;
   }
-  return scope_check(lhs_symbol, target, lhs_symbol);
+  return scope_check(lhs_symbol, target, lhs_symbol, symbol_seen);
 }
 
 /// This boolean function takes two items as arguments and checks
@@ -754,7 +752,7 @@ void print_scopes(void) {
 /// determines whether there is a terminal symbol t such that
 /// LHS_SYMBOL can rightmost produce a string tX.  If so, t is
 /// returned, otherwise EMPTY is returned.
-int get_shift_symbol(const int lhs_symbol) {
+int get_shift_symbol(const int lhs_symbol, bool *symbol_seen) {
   if (!symbol_seen[lhs_symbol]) {
     struct node *p;
     symbol_seen[lhs_symbol] = true;
@@ -767,7 +765,7 @@ int get_shift_symbol(const int lhs_symbol) {
         if (IS_A_TERMINAL(symbol)) {
           return symbol;
         } else {
-          symbol = get_shift_symbol(symbol);
+          symbol = get_shift_symbol(symbol, symbol_seen);
           if (symbol != empty) {
             return symbol;
           }
@@ -1038,7 +1036,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
       item_of = Allocate_short_array(num_non_terminals);
       item_of -= num_terminals + 1;
       next_item = Allocate_short_array(num_items + 1);
-      symbol_seen = Allocate_boolean_array(num_non_terminals);
+      bool* symbol_seen = Allocate_boolean_array(num_non_terminals);
       symbol_seen -= num_terminals + 1;
       calloc0(states_of, num_non_terminals, struct node *);
       states_of -= num_terminals + 1;
@@ -1181,7 +1179,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
           int symbol = rules[item_table[item_no].rule_number].lhs;
           if (!IS_IN_SET(first, item_table[item_no].suffix_index, empty) &&
               IS_IN_SET(produces, dot_symbol, symbol - num_terminals)) {
-            if (is_scope(item_no)) {
+            if (is_scope(item_no, symbol_seen)) {
               int ii;
               for (ii = item_no + 1; ; ii++) {
                 symbol = item_table[ii].symbol;
@@ -1196,7 +1194,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
                 for ALL_NON_TERMINALS3(nt) {
                   symbol_seen[nt] = false;
                 }
-                symbol = get_shift_symbol(symbol);
+                symbol = get_shift_symbol(symbol, symbol_seen);
               }
               if (symbol != empty && item_list[ii] == OMEGA) {
                 item_list[ii] = item_root;
@@ -1400,7 +1398,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
         } else {
           for ALL_NON_TERMINALS3(j)
             symbol_seen[j] = false;
-          scope[i].look_ahead = get_shift_symbol(symbol);
+          scope[i].look_ahead = get_shift_symbol(symbol, symbol_seen);
         }
         scope[i].state_set = state_index[scope[i].lhs_symbol];
         item_no = item_list[item_no];

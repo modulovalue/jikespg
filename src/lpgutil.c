@@ -308,7 +308,7 @@ void print_item(const int item_no) {
     restore_symbol(tok, RETRIEVE_STRING(symbol));
     if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE - 4) {
       fprintf(syslis, "\n%s", line);
-      fill_in(tempstr, offset, SPACE);
+      fill_in(tempstr, offset, ' ');
       print_large_token(line, tok, tempstr, len);
     } else {
       strcat(line, tok);
@@ -332,7 +332,7 @@ void print_item(const int item_no) {
     restore_symbol(tok, RETRIEVE_STRING(symbol));
     if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE - 1) {
       fprintf(syslis, "\n%s", line);
-      fill_in(tempstr, offset, SPACE);
+      fill_in(tempstr, offset, ' ');
       print_large_token(line, tok, tempstr, len);
     } else {
       strcat(line, tok);
@@ -344,7 +344,7 @@ void print_item(const int item_no) {
     snprintf(tok, sizeof(tok), " (%d)", rule_no);
     if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE - 1) {
       fprintf(syslis, "\n%s", line);
-      fill_in(line, offset, SPACE);
+      fill_in(line, offset, ' ');
     }
     strcat(line, tok);
   }

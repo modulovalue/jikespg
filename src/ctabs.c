@@ -124,7 +124,7 @@ void prnt_longs(const char *title, const int init, const int bound, const int pe
   int k = 0;
   for (int i = init; i <= bound; i++) {
     itoc(array[i]);
-    *output_ptr++ = COMMA;
+    *output_ptr++ = ',';
     k++;
     if (k == perline && i != bound) {
       *output_ptr++ = '\n';
@@ -633,7 +633,7 @@ void print_error_maps(struct CLIOptions *cli_options) {
     int k = 0;
     for (int i = 1; i <= num_names; i++) {
       itoc(j);
-      *output_ptr++ = COMMA;
+      *output_ptr++ = ',';
       j += name_len[i];
       k++;
       if (k == 10 && i != num_names) {
@@ -678,7 +678,7 @@ void print_error_maps(struct CLIOptions *cli_options) {
     int k = 0;
     for (int i = 1; i <= num_scopes; i++) {
       itoc(scope[i].prefix);
-      *output_ptr++ = COMMA;
+      *output_ptr++ = ',';
       k++;
       if (k == 10 && i != num_scopes) {
         *output_ptr++ = '\n';
@@ -713,7 +713,7 @@ void print_error_maps(struct CLIOptions *cli_options) {
     k = 0;
     for (int i = 1; i <= num_scopes; i++) {
       itoc(scope[i].suffix);
-      *output_ptr++ = COMMA;
+      *output_ptr++ = ',';
       k++;
       if (k == 10 && i != num_scopes) {
         *output_ptr++ = '\n';
@@ -748,7 +748,7 @@ void print_error_maps(struct CLIOptions *cli_options) {
     k = 0;
     for (int i = 1; i <= num_scopes; i++) {
       itoc(scope[i].lhs_symbol);
-      *output_ptr++ = COMMA;
+      *output_ptr++ = ',';
       k++;
       if (k == 10 && i != num_scopes) {
         *output_ptr++ = '\n';
@@ -783,7 +783,7 @@ void print_error_maps(struct CLIOptions *cli_options) {
     k = 0;
     for (int i = 1; i <= num_scopes; i++) {
       itoc(scope[i].look_ahead);
-      *output_ptr++ = COMMA;
+      *output_ptr++ = ',';
       k++;
       if (k == 10 && i != num_scopes) {
         *output_ptr++ = '\n';
@@ -818,7 +818,7 @@ void print_error_maps(struct CLIOptions *cli_options) {
     k = 0;
     for (int i = 1; i <= num_scopes; i++) {
       itoc(scope[i].state_set);
-      *output_ptr++ = COMMA;
+      *output_ptr++ = ',';
       k++;
       if (k == 10 && i != num_scopes) {
         *output_ptr++ = '\n';
@@ -862,7 +862,7 @@ void print_error_maps(struct CLIOptions *cli_options) {
       } else {
         itoc(state_index[scope_state[i]] + num_rules);
       }
-      *output_ptr++ = COMMA;
+      *output_ptr++ = ',';
       k++;
       if (k == 10 && i != scope_state_size) {
         *output_ptr++ = '\n';
@@ -896,7 +896,7 @@ void print_error_maps(struct CLIOptions *cli_options) {
     // Transition symbol
     padline();
     *output_ptr++ = '0';
-    *output_ptr++ = COMMA;
+    *output_ptr++ = ',';
     k = 1;
     for (int state_no = 2; state_no <= num_states; state_no++) {
       struct node *q;
@@ -910,7 +910,7 @@ void print_error_maps(struct CLIOptions *cli_options) {
         i = 0;
       }
       itoc(symbol_map[i]);
-      *output_ptr++ = COMMA;
+      *output_ptr++ = ',';
       k++;
       if (k == 10 && state_no != num_states) {
         *output_ptr++ = '\n';
@@ -2675,7 +2675,7 @@ void print_space_parser(struct CLIOptions *cli_options) {
         k = 1;
       }
       itoc(RHS_SIZE(i));
-      *output_ptr++ = COMMA;
+      *output_ptr++ = ',';
     }
     *(output_ptr - 1) = '\n';
     BUFFER_CHECK(sysdcl);
@@ -2710,7 +2710,7 @@ void print_space_parser(struct CLIOptions *cli_options) {
           k = 1;
         }
         itoc(check[i]);
-        *output_ptr++ = COMMA;
+        *output_ptr++ = ',';
       }
       *(output_ptr - 1) = '\n';
       BUFFER_CHECK(sysdcl);
@@ -2745,7 +2745,7 @@ void print_space_parser(struct CLIOptions *cli_options) {
     k = 0;
     for (int i = 1; i <= num_rules; i++) {
       itoc(symbol_map[rules[i].lhs] - num_terminals);
-      *output_ptr++ = COMMA;
+      *output_ptr++ = ',';
       k++;
       if (k == 15) {
         *output_ptr++ = '\n';
@@ -2780,7 +2780,7 @@ void print_space_parser(struct CLIOptions *cli_options) {
     }
     for (int i = 1; i <= (int) action_size; i++) {
       itoc(action[i]);
-      *output_ptr++ = COMMA;
+      *output_ptr++ = ',';
       k++;
       if (k == 10 && i != (int) action_size) {
         *output_ptr++ = '\n';
@@ -2912,7 +2912,7 @@ void print_space_parser(struct CLIOptions *cli_options) {
           result_act = state_index[act] + num_rules;
         }
         itoc(result_act);
-        *output_ptr++ = COMMA;
+        *output_ptr++ = ',';
         k++;
         if (k == 10 && symbol != num_symbols) {
           *output_ptr++ = '\n';
@@ -2943,7 +2943,7 @@ void print_space_parser(struct CLIOptions *cli_options) {
         struct reduce_header_type red;
         red = new_state_element[i].reduce;
         itoc(red.map[0].rule_number);
-        *output_ptr++ = COMMA;
+        *output_ptr++ = ',';
         k++;
         if (k == 10 && i != num_terminal_states) {
           *output_ptr++ = '\n';
@@ -2970,7 +2970,7 @@ void print_space_parser(struct CLIOptions *cli_options) {
       k = 0;
       for (int i = 1; i <= num_terminal_states; i++) {
         itoc(shift_check_index[shift_image[i]]);
-        *output_ptr++ = COMMA;
+        *output_ptr++ = ',';
         k++;
         if (k == 10 && i != num_terminal_states) {
           *output_ptr++ = '\n';
@@ -3018,7 +3018,7 @@ void print_space_parser(struct CLIOptions *cli_options) {
       int ii;
       for (ii = 1; ii <= shift_check_size; ii++) {
         itoc(check[ii]);
-        *output_ptr++ = COMMA;
+        *output_ptr++ = ',';
         k++;
         if (k == 10 && ii != shift_check_size) {
           *output_ptr++ = '\n';
@@ -3060,7 +3060,7 @@ void print_space_parser(struct CLIOptions *cli_options) {
           return;
         }
         itoc(result_act);
-        *output_ptr++ = COMMA;
+        *output_ptr++ = ',';
         k++;
         if (k == 10 && ii != num_terminals) {
           *output_ptr++ = '\n';
@@ -3259,7 +3259,7 @@ void print_time_parser(struct CLIOptions *cli_options) {
         k = 1;
       }
       itoc(RHS_SIZE(i));
-      *output_ptr++ = COMMA;
+      *output_ptr++ = ',';
     }
     *(output_ptr - 1) = '\n';
     BUFFER_CHECK(sysdcl);
@@ -3294,7 +3294,7 @@ void print_time_parser(struct CLIOptions *cli_options) {
         k = 1;
       }
       itoc(check[i]);
-      *output_ptr++ = COMMA;
+      *output_ptr++ = ',';
     }
     *(output_ptr - 1) = '\n';
     BUFFER_CHECK(sysdcl);
@@ -3329,7 +3329,7 @@ void print_time_parser(struct CLIOptions *cli_options) {
     k = 0;
     for (int i = 1; i <= num_rules; i++) {
       itoc(symbol_map[rules[i].lhs]);
-      *output_ptr++ = COMMA;
+      *output_ptr++ = ',';
       k++;
       if (k == 15) {
         *output_ptr++ = '\n';
@@ -3365,7 +3365,7 @@ void print_time_parser(struct CLIOptions *cli_options) {
     }
     for (int i = 1; i <= (int) action_size; i++) {
       itoc(action[i]);
-      *output_ptr++ = COMMA;
+      *output_ptr++ = ',';
       k++;
       if (k == 10 && i != (int) action_size) {
         *output_ptr++ = '\n';
@@ -3418,7 +3418,7 @@ void print_time_parser(struct CLIOptions *cli_options) {
       }
       for (int symbol = 1; symbol <= num_symbols; symbol++) {
         itoc(default_map[symbol]);
-        *output_ptr++ = COMMA;
+        *output_ptr++ = ',';
         k++;
         if (k == 10 && symbol != num_symbols) {
           *output_ptr++ = '\n';
