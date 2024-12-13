@@ -763,10 +763,9 @@ struct DetectedSetSizes mkbasic(struct CLIOptions* cli_options) {
   }
 
   // Construct the FOLLOW map if
-  //   - If we have to print the FOLLOW map
   //   - Error-maps are requested
   //   - There are more than one starting symbol.
-  if (cli_options->follow_bit || error_maps_bit || next_rule[lhs_rule[accept_image]] != lhs_rule[accept_image]) {
+  if (error_maps_bit || next_rule[lhs_rule[accept_image]] != lhs_rule[accept_image]) {
     calloc0_set(follow, num_non_terminals, dss.term_set_size);
     follow.raw -= (num_terminals + 1) * dss.term_set_size;
     SET_BIT_IN(follow, accept_image, eoft_image);
@@ -906,61 +905,6 @@ struct DetectedSetSizes mkbasic(struct CLIOptions* cli_options) {
       PRNT(line);
     }
     ffree(symbol_list);
-  }
-  // If a listing of the FIRST map is requested, it is generated here.
-  if (cli_options->first_bit) {
-    // Print first sets.
-    {
-      printf("\nFirst map for non-terminals:\n\n");
-      for ALL_NON_TERMINALS3(nt) {
-        char tok[SYMBOL_SIZE + 1];
-        char line[PRINT_LINE_SIZE + 1];
-        restore_symbol(tok, RETRIEVE_STRING(nt), cli_options->ormark, cli_options->escape);
-        print_large_token(line, tok, "", PRINT_LINE_SIZE - 7);
-        strcat(line, "  ==>> ");
-        for ALL_TERMINALS3(t) {
-          if (IS_IN_SET(nt_first, nt, t)) {
-            restore_symbol(tok, RETRIEVE_STRING(t), cli_options->ormark, cli_options->escape);
-            if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 1) {
-              printf("\n%s", line);
-              print_large_token(line, tok, "    ", LEN);
-            } else {
-              strcat(line, tok);
-            }
-            strcat(line, " ");
-          }
-        }
-        printf("\n%s\n", line);
-      }
-    }
-  }
-
-  // If a listing of the FOLLOW map is requested, it is generated here.
-  if (cli_options->follow_bit) {
-    // Print follow sets.
-    {
-      printf("\nFollow Map:\n\n");
-      for ALL_NON_TERMINALS3(nt) {
-        char tok[SYMBOL_SIZE + 1];
-        char line[PRINT_LINE_SIZE + 1];
-        restore_symbol(tok, RETRIEVE_STRING(nt), cli_options->ormark, cli_options->escape);
-        print_large_token(line, tok, "", PRINT_LINE_SIZE - 7);
-        strcat(line, "  ==>> ");
-        for ALL_TERMINALS3(t) {
-          if (IS_IN_SET(follow, nt, t)) {
-            restore_symbol(tok, RETRIEVE_STRING(t), cli_options->ormark, cli_options->escape);
-            if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 2) {
-              printf("\n%s", line);
-              print_large_token(line, tok, "    ", LEN);
-            } else {
-              strcat(line, tok);
-            }
-            strcat(line, " ");
-          }
-        }
-        printf("\n%s\n", line);
-      }
-    }
   }
 
   // Free allocated arrays.

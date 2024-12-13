@@ -196,12 +196,9 @@ struct OutputFiles {
 };
 
 struct CLIOptions {
-  bool list_bit;
-  bool first_bit;
-  bool follow_bit;
   bool nt_check_bit;
   bool conflicts_bit;
-  // TODO • have a union for c/cpp/java/unknown.
+  // TODO • have a union for c/cpp/java.
   bool c_bit;
   bool cpp_bit;
   bool java_bit;
@@ -210,7 +207,6 @@ struct CLIOptions {
   bool goto_default_bit;
   bool shift_default_bit;
   bool byte_bit;
-  bool debug_bit;
   bool single_productions_bit;
   int lalr_level;
   int default_opt;
@@ -238,9 +234,6 @@ struct CLIOptions {
 
 static struct CLIOptions init_cli_options() {
   return (struct CLIOptions){
-    .list_bit = false,
-    .first_bit = false,
-    .follow_bit = false,
     .nt_check_bit = false,
     .conflicts_bit = true,
     .c_bit = false,
@@ -251,7 +244,6 @@ static struct CLIOptions init_cli_options() {
     .goto_default_bit = true,
     .shift_default_bit = false,
     .byte_bit = true,
-    .debug_bit = false,
     .single_productions_bit = false,
     .lalr_level = 1,
     .default_opt = 5,

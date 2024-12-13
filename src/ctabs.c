@@ -1060,7 +1060,7 @@ static void common(const bool byte_check_bit, struct CLIOptions *cli_options, st
               "class %s_table\n"
               "{\n"
               "public:\n", of->prs_tag);
-      if (error_maps_bit || cli_options->debug_bit) {
+      if (error_maps_bit) {
         fprintf(of->sysprs, "    static int original_state(int state) { return -%s[state]; }\n", cli_options->table_opt.value == OPTIMIZE_TIME.value ? "check" : "base_check");
       }
       if (error_maps_bit) {
@@ -1078,7 +1078,7 @@ static void common(const bool byte_check_bit, struct CLIOptions *cli_options, st
       fprintf(of->sysprs, "\n");
     } else if (cli_options->java_bit) {
       fprintf(of->sysprs, "abstract class %s extends %s implements %s\n{\n", of->prs_tag, of->dcl_tag, of->def_tag);
-      if (error_maps_bit || cli_options->debug_bit) {
+      if (error_maps_bit) {
         fprintf(of->sysprs, "    public final static int original_state(int state) { return -%s(state); }\n", cli_options->table_opt.value == OPTIMIZE_TIME.value ? "check" : "base_check");
         if (error_maps_bit) {
           fprintf(of->sysprs, "    public final static int asi(int state) { return asb[original_state(state)]; }\n");
@@ -1854,7 +1854,7 @@ void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* tout
       }
     }
   }
-  if (error_maps_bit || cli_options->debug_bit) {
+  if (error_maps_bit) {
     if (ctp->check_size == 0) {
       ctp->check_size = ctp->action_size;
       for (int i = 0; i <= ctp->check_size; i++) {
@@ -2446,7 +2446,7 @@ void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutp
   PRNT3("     Number of Goto/Reduces: %d", goto_reduce_count);
   PRNT3("     Number of Reduces: %d", reduce_count);
   PRNT3("     Number of Defaults: %d", default_count);
-  if (error_maps_bit || cli_options->debug_bit) {
+  if (error_maps_bit) {
     for ALL_STATES3(state_no) {
       check[toutput->state_index[state_no]] = -state_no;
     }

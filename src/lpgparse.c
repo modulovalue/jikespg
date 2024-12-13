@@ -200,20 +200,12 @@ static void options(char *file_prefix, struct CLIOptions *cli_options) {
         cli_options->byte_bit = flag;
       } else if (memcmp("CONFLICTS", token, token_len) == 0) {
         cli_options->conflicts_bit = flag;
-      } else if (memcmp("DEBUG", token, token_len) == 0) {
-        cli_options->debug_bit = flag;
       } else if (memcmp("ERRORMAPS", token, token_len) == 0) {
         error_maps_bit = flag;
-      } else if (memcmp("FIRST", token, token_len) == 0) {
-        cli_options->first_bit = flag;
-      } else if (memcmp("FOLLOW", token, token_len) == 0) {
-        cli_options->follow_bit = flag;
       } else if (memcmp("GOTODEFAULT", token, token_len) == 0) {
         cli_options->goto_default_bit = flag;
       } else if (memcmp("HALFWORD", token, token_len) == 0) {
         cli_options->byte_bit = !flag;
-      } else if (memcmp("LIST", token, token_len) == 0) {
-        cli_options->list_bit = flag;
       } else if (memcmp("NTCHECK", token, token_len) == 0) {
         cli_options->nt_check_bit = flag;
       } else if (memcmp("READREDUCE", token, token_len) == 0) {
@@ -457,27 +449,23 @@ static void process_options_lines(char *grm_file, struct OutputFiles *of, char *
   } else {
     sprintf(opt_string[++top], "DEFAULT=%d", cli_options->default_opt);
   }
-  strcpy(opt_string[++top], cli_options->debug_bit ? "DEBUG" : "NODEBUG");
-  strcpy(opt_string[++top], error_maps_bit ? "ERROR-MAPS" : "NOERROR-MAPS");
+  strcpy(opt_string[++top], error_maps_bit ? "ERRORMAPS" : "NOERRORMAPS");
   sprintf(opt_string[++top], "ESCAPE=%c", cli_options->escape);
-  sprintf(opt_string[++top], "FILE-PREFIX=%s", file_prefix);
-  strcpy(opt_string[++top], cli_options->first_bit ? "FIRST" : "NOFIRST");
-  strcpy(opt_string[++top], cli_options->follow_bit ? "FOLLOW" : "NOFOLLOW");
+  sprintf(opt_string[++top], "FILEPREFIX=%s", file_prefix);
   if (cli_options->c_bit) {
-    sprintf(opt_string[++top], "GENERATE-PARSER=C");
+    sprintf(opt_string[++top], "GENERATEPARSER=C");
   } else if (cli_options->cpp_bit) {
-    sprintf(opt_string[++top], "GENERATE-PARSER=CPP");
+    sprintf(opt_string[++top], "GENERATEPARSER=CPP");
   } else if (cli_options->java_bit) {
-    sprintf(opt_string[++top], "GENERATE-PARSER=JAVA");
+    sprintf(opt_string[++top], "GENERATEPARSER=JAVA");
   } else {
-    strcpy(opt_string[++top], "NOGENERATE-PARSER");
+    strcpy(opt_string[++top], "NOGENERATEPARSER");
   }
   strcpy(opt_string[++top], cli_options->goto_default_bit ? "GOTODEFAULT" : "NOGOTODEFAULT");
   sprintf(opt_string[++top], "HACTFILENAME=%s", cli_options->hact_file);
   sprintf(opt_string[++top], "HBLOCKB=%s", cli_options->hblockb);
   sprintf(opt_string[++top], "HBLOCKE=%s", cli_options->hblocke);
   sprintf(opt_string[++top], "LALR=%d", cli_options->lalr_level);
-  strcpy(opt_string[++top], cli_options->list_bit ? "LIST" : "NOLIST");
   {
     sprintf(opt_string[++top], "MIN-DISTANCE=%d", cli_options->minimum_distance);
     if (cli_options->minimum_distance <= 1) {
@@ -504,9 +492,9 @@ static void process_options_lines(char *grm_file, struct OutputFiles *of, char *
   sprintf(opt_string[++top], "PREFIX=%s", cli_options->prefix);
   strcpy(opt_string[++top], cli_options->read_reduce_bit ? "READREDUCE" : "NOREADREDUCE");
   strcpy(opt_string[++top], cli_options->scopes_bit ? "SCOPES" : "NOSCOPES");
-  strcpy(opt_string[++top], cli_options->shift_default_bit ? "SHIFT-DEFAULT" : "NOSHIFT-DEFAULT");
-  strcpy(opt_string[++top], cli_options->single_productions_bit ? "SINGLE-PRODUCTIONS" : "NOSINGLE-PRODUCTIONS");
-  sprintf(opt_string[++top], "STACK-SIZE=%d", cli_options->stack_size);
+  strcpy(opt_string[++top], cli_options->shift_default_bit ? "SHIFTDEFAULT" : "NOSHIFT-DEFAULT");
+  strcpy(opt_string[++top], cli_options->single_productions_bit ? "SINGLEPRODUCTIONS" : "NOSINGLE-PRODUCTIONS");
+  sprintf(opt_string[++top], "STACKSIZE=%d", cli_options->stack_size);
   sprintf(opt_string[++top], "SUFFIX=%s", cli_options->suffix);
   if (cli_options->table_opt.value == OPTIMIZE_NO_TABLE.value) {
     strcpy(opt_string[++top], "NOTABLE");
@@ -1602,21 +1590,6 @@ static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *
       }
     }
   }
-  if (cli_options->list_bit) {
-    // Aliases are placed in a separate linked list.  NOTE!! After execution
-    // of this loop the hash_table is destroyed because the LINK field of
-    // alias symbols is used to construct a list of the alias symbols.
-    for (register int i = 0; i < HT_SIZE; i++) {
-      register struct hash_type *tail = hash_table[i];
-      for (register struct hash_type *p = tail; p != NULL; p = tail) {
-        tail = p->link;
-        if (p->number < 0) {
-          p->link = alias_root;
-          alias_root = p;
-        }
-      }
-    }
-  }
   // Construct the rule table.  At this stage, NUM_ITEMS is equal to the sum
   // of the right-hand side lists of symbols.  It is used in the declaration of
   // RULE_TAB.  After RULE_TAB is allocated, we increase NUM_ITEMS to its
@@ -1666,12 +1639,7 @@ static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *
         rules[ii].sp = false;
       }
       if (rulehdr[ii].lhs == OMEGA) {
-        if (cli_options->list_bit) {
-          // Proper LHS will be updated after printing
-          rules[ii].lhs = OMEGA;
-        } else {
-          rules[ii].lhs = rules[ii - 1].lhs;
-        }
+        rules[ii].lhs = rules[ii - 1].lhs;
       } else if (IS_A_TERMINAL(rulehdr[ii].lhs)) {
         char temp[SYMBOL_SIZE + 1];
         restore_symbol(temp, RETRIEVE_STRING(rulehdr[ii].lhs), cli_options->ormark, cli_options->escape);

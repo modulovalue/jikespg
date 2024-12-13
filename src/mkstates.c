@@ -455,27 +455,6 @@ JBitset left_produces;
 
 int top;
 
-/// This procedure prints the name associated with a given symbol.
-/// The same format that was used in the procedure DISPLAY_INPUT
-/// to print aliases is used to print name mappings.
-void print_name_map(const int symbol, struct CLIOptions* cli_options) {
-  char line[PRINT_LINE_SIZE];
-  char tok[SYMBOL_SIZE + 1];
-  restore_symbol(tok, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
-  int len = PRINT_LINE_SIZE - 5;
-  print_large_token(line, tok, "", len);
-  strcat(line, " ::= ");
-  restore_symbol(tok, RETRIEVE_NAME(symno[symbol].name_index), cli_options->ormark, cli_options->escape);
-  if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 1) {
-    printf("\n%s", line);
-    len = PRINT_LINE_SIZE - 4;
-    print_large_token(line, tok, "    ", len);
-  } else {
-    strcat(line, tok);
-  }
-  printf("\n%s", line);
-}
-
 ///                             SCOPE_CHECK:
 /// Given a nonterminal LHS_SYMBOL and a nonterminal TARGET where,
 ///
@@ -697,57 +676,6 @@ int insert_suffix(const int item_no) {
   scope_table[ii] = scope_top;
   scope_rhs_size += num_elements + 1;
   return scope_element[scope_top].index;
-}
-
-/// This procedure is similar to the global procedure PTITEM.
-void print_scopes(struct CLIOptions* cli_options) {
-  printf("\nScopes:\n");
-  for (int k = 1; k <= num_scopes; k++) {
-    char tmp[PRINT_LINE_SIZE];
-    char tok[SYMBOL_SIZE + 1];
-    char line[PRINT_LINE_SIZE + 1];
-    int symbol = scope[k].lhs_symbol;
-    restore_symbol(tok, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
-    int len = PRINT_LINE_SIZE - 5;
-    print_large_token(line, tok, "", len);
-    strcat(line, " ::= ");
-    const int offset = MIN(strlen(line) - 1, PRINT_LINE_SIZE / 2 - 1);
-    len = PRINT_LINE_SIZE - (offset + 4);
-    // locate end of list
-    int ii;
-    for (ii = scope[k].prefix; scope_right_side[ii] != 0; ii++) {
-    }
-    // symbols before dot
-    for (ii = ii - 1; ii >= scope[k].prefix; ii--) {
-      symbol = scope_right_side[ii];
-      restore_symbol(tok, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
-      if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 4) {
-        printf("\n%s", line);
-        fill_in(tmp, offset, ' ');
-        print_large_token(line, tok, tmp, len);
-      } else {
-        strcat(line, tok);
-      }
-      strcat(line, " ");
-    }
-    // We now add a dot "." to the output line, and print the remaining
-    // symbols on the right hand side.
-    strcat(line, " .");
-    len = PRINT_LINE_SIZE - (offset + 1);
-    for (ii = scope[k].suffix; scope_right_side[ii] != 0; ii++) {
-      symbol = scope_right_side[ii];
-      restore_symbol(tok, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
-      if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 1) {
-        printf("\n%s", line);
-        fill_in(tmp, offset, ' ');
-        print_large_token(line, tok, tmp, len);
-      } else {
-        strcat(line, tok);
-      }
-      strcat(line, " ");
-    }
-    printf("\n%s", line);
-  }
 }
 
 /// This procedure takes as parameter a nonterminal, LHS_SYMBOL, and
@@ -999,20 +927,6 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
     num_names = n;
     for ALL_SYMBOLS3(symbol) {
       symno[symbol].name_index = names_map[symno[symbol].name_index];
-    }
-  }
-  // If the option LIST_BIT is ON, print the name map.
-  if (cli_options->list_bit) {
-    printf("\nName map:\n");
-    for ALL_SYMBOLS3(symbol) {
-      if (symno[symbol].name_index != symno[accept_image].name_index) {
-        print_name_map(symbol, cli_options);
-      }
-    }
-    for ALL_SYMBOLS3(symbol) {
-      if (symbol != accept_image && symno[symbol].name_index == symno[accept_image].name_index) {
-        print_name_map(symbol, cli_options);
-      }
     }
   }
   if (cli_options->scopes_bit) {
@@ -1432,9 +1346,6 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
           }
         }
         scope_right_side[n] = 0;
-      }
-      if (cli_options->list_bit) {
-        print_scopes(cli_options);
       }
       ffree(prefix_index);
       ffree(suffix_index);
