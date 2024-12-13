@@ -274,8 +274,8 @@ static void options(char *file_prefix, struct CLIOptions *cli_options) {
           cli_options->cpp_bit = false;
           cli_options->java_bit = true;
         } else {
-          PRNTERR2("\"%s\" is an invalid language for %s. You need to set a language: C|CPP|JAVA, Not doing so is deprecated", temp, token);
-
+          PRNTERR2("\"%s\" is an invalid language for %s. Supported languages are C|CPP|JAVA.", temp, token);
+          exit(999);
         }
       } else if (memcmp(token, "HACTFILENAME", token_len) == 0) {
         strcpy(cli_options->hact_file, temp);
@@ -374,7 +374,7 @@ static void options(char *file_prefix, struct CLIOptions *cli_options) {
 /// if they are (it is an) "options" line(s).  If so, the options are
 /// processed.  Then, we process user-supplied options if there are any.  In
 /// any case, the options in effect are printed.
-static void process_options_lines(char *grm_file, struct OutputFiles *output_files, char *file_prefix, struct CLIOptions *cli_options, FILE *sysgrm) {
+static void process_options_lines(char *grm_file, struct OutputFiles *of, char *file_prefix, struct CLIOptions *cli_options, FILE *sysgrm) {
   char old_parm[MAX_LINE_SIZE + 1];
   char output_line[PRINT_LINE_SIZE + 1];
   char opt_string[60][OUTPUT_PARM_SIZE + 1];
@@ -430,7 +430,7 @@ static void process_options_lines(char *grm_file, struct OutputFiles *output_fil
     linestart = p1 - 1;
     p2 = p1;
   }
-  fprintf(syslis, "\n");
+  printf("\n");
   strcpy(parm, old_parm);
   options(file_prefix, cli_options); /* Process new options passed directly to program */
   if (cli_options->act_file[0] == '\0') {
@@ -439,10 +439,10 @@ static void process_options_lines(char *grm_file, struct OutputFiles *output_fil
   if (cli_options->hact_file[0] == '\0') {
     sprintf(cli_options->hact_file, "%shdr.%s", file_prefix, cli_options->java_bit ? "java" : "h");
   }
-  sprintf(output_files->sym_file, "%ssym.%s", file_prefix, cli_options->java_bit ? "java" : "h");
-  sprintf(output_files->def_file, "%sdef.%s", file_prefix, cli_options->java_bit ? "java" : "h");
-  sprintf(output_files->prs_file, "%sprs.%s", file_prefix, cli_options->java_bit ? "java" : "h");
-  sprintf(output_files->dcl_file, "%sdcl.%s", file_prefix, cli_options->java_bit ? "java" : "h");
+  sprintf(of->sym_file, "%ssym.%s", file_prefix, cli_options->java_bit ? "java" : "h");
+  sprintf(of->def_file, "%sdef.%s", file_prefix, cli_options->java_bit ? "java" : "h");
+  sprintf(of->prs_file, "%sprs.%s", file_prefix, cli_options->java_bit ? "java" : "h");
+  sprintf(of->dcl_file, "%sdcl.%s", file_prefix, cli_options->java_bit ? "java" : "h");
   //                          PRINT OPTIONS:
   // Here we print all options set by the user. As of now, only about 48
   // different options and related aliases are allowed. In case that number
@@ -1417,32 +1417,32 @@ static const char *EXTRACT_STRING(const int indx) {
 /// print_line, whichever is smaller.  If a symbol cannot fit on a line
 /// beginning at the proper offset, it is laid out on successive lines,
 /// beginning at the proper offset.
-static void display_input(struct CLIOptions* cli_options) {
+static void display_input(struct CLIOptions* cli_options, struct OutputFiles* of) {
   char line[PRINT_LINE_SIZE + 1];
   char temp[SYMBOL_SIZE + 1];
   // Print the Macro definitions, if any.
   if (num_defs > 0) {
-    fprintf(syslis, "\nDefined Symbols:\n\n");
+    printf("\nDefined Symbols:\n\n");
     for (int j = 0; j < num_defs; j++) {
       fill_in(line, PRINT_LINE_SIZE - (strlen(cli_options->blockb) + 1), '-');
-      fprintf(syslis, "\n\n%s\n%s%s\n", defelmt[j].name, cli_options->blockb, line);
+      printf("\n\n%s\n%s%s\n", defelmt[j].name, cli_options->blockb, line);
       for (const char *ptr = defelmt[j].macro; *ptr != '\0'; ptr++) {
         for (; *ptr != '\n'; ptr++) {
-          putc(*ptr, syslis);
+          printf("%c", *ptr);
         }
-        putc(*ptr, syslis);
+        printf("%c", *ptr);
       }
       fill_in(line, PRINT_LINE_SIZE - (strlen(cli_options->blocke) + 1), '-');
-      fprintf(syslis, "%s%s\n", cli_options->blocke, line);
+      printf("%s%s\n", cli_options->blocke, line);
     }
   }
   register int offset;
   //   Print the Aliases, if any.
   if (alias_root != NULL) {
     if (alias_root->link == NULL) {
-      fprintf(syslis, "\nAlias:\n\n");
+      printf("\nAlias:\n\n");
     } else {
-      fprintf(syslis, "\nAliases:\n\n");
+      printf("\nAliases:\n\n");
     }
     for (const struct hash_type *p = alias_root; p != NULL; p = p->link) {
       restore_symbol(temp, EXTRACT_STRING(p->st_ptr), cli_options->ormark, cli_options->escape);
@@ -1452,26 +1452,26 @@ static void display_input(struct CLIOptions* cli_options) {
       int symb = -p->number;
       restore_symbol(temp, RETRIEVE_STRING(symb), cli_options->ormark, cli_options->escape);
       if (strlen(line) + strlen(temp) > PRINT_LINE_SIZE) {
-        fprintf(syslis, "%s\n", line);
+        printf("%s\n", line);
         len = PRINT_LINE_SIZE - 4;
         print_large_token(line, temp, "    ", len);
       } else {
         strcat(line, temp);
       }
-      fprintf(syslis, "%s\n", line);
+      printf("%s\n", line);
     }
   }
   //   Print the terminals.
   //   The first symbol (#1) represents the empty string.  The last terminal
   // declared by the user is followed by EOFT which may be followed by the
   // ERROR symbol.  See LPG GRAMMAR for more details.
-  fprintf(syslis, "\nTerminals:\n\n");
+  printf("\nTerminals:\n\n");
   strcpy(line, "        "); /* 8 spaces */
   int len = PRINT_LINE_SIZE - 4;
   for (int symb = 2; symb <= num_terminals; symb++) {
     restore_symbol(temp, RETRIEVE_STRING(symb), cli_options->ormark, cli_options->escape);
     if (strlen(line) + strlen(temp) > PRINT_LINE_SIZE) {
-      fprintf(syslis, "\n%s", line);
+      printf("\n%s", line);
       print_large_token(line, temp, "    ", len);
     } else {
       strcat(line, temp);
@@ -1480,9 +1480,9 @@ static void display_input(struct CLIOptions* cli_options) {
       strcat(line, " ");
     }
   }
-  fprintf(syslis, "\n%s", line);
+  printf("\n%s", line);
   //    Print the Rules
-  fprintf(syslis, "\nRules:\n\n");
+  printf("\nRules:\n\n");
   for (register int rule_no = 0; rule_no <= num_rules; rule_no++) {
     int symb = rules[rule_no].lhs;
     sprintf(line, "%-4d  ", rule_no);
@@ -1490,7 +1490,7 @@ static void display_input(struct CLIOptions* cli_options) {
       restore_symbol(temp, RETRIEVE_STRING(symb), cli_options->ormark, cli_options->escape);
       if (strlen(temp) > PRINT_LINE_SIZE - 12) {
         strncat(line, temp, PRINT_LINE_SIZE - 12);
-        fprintf(syslis, "\n%s", line);
+        printf("\n%s", line);
         memmove(temp, temp + (PRINT_LINE_SIZE - 12), sizeof(temp) - (PRINT_LINE_SIZE - 12));
         print_large_token(line, temp, "       ", PRINT_LINE_SIZE - 12);
       } else {
@@ -1510,7 +1510,7 @@ static void display_input(struct CLIOptions* cli_options) {
         restore_symbol(temp, RETRIEVE_STRING(symb), cli_options->ormark, cli_options->escape);
         if (strlen(temp) > PRINT_LINE_SIZE - 12) {
           strncat(line, temp, PRINT_LINE_SIZE - 12);
-          fprintf(syslis, "\n%s", line);
+          printf("\n%s", line);
           memmove(temp, temp + (PRINT_LINE_SIZE - 12), sizeof(temp) - (PRINT_LINE_SIZE - 12));
           print_large_token(line, temp, "       ", PRINT_LINE_SIZE - 12);
         } else {
@@ -1528,7 +1528,7 @@ static void display_input(struct CLIOptions* cli_options) {
       restore_symbol(temp, RETRIEVE_STRING(rhs_sym[i]), cli_options->ormark, cli_options->escape);
       if (strlen(temp) + strlen(line) > PRINT_LINE_SIZE - 1) {
         char tempbuffer1[SYMBOL_SIZE + 1];
-        fprintf(syslis, "\n%s", line);
+        printf("\n%s", line);
         strcpy(tempbuffer1, " ");
         for (int j = 1; j < offset + 1; j++) {
           strcat(tempbuffer1, " ");
@@ -1539,12 +1539,12 @@ static void display_input(struct CLIOptions* cli_options) {
       }
       strcat(line, " ");
     }
-    fprintf(syslis, "\n%s", line);
+    printf("\n%s", line);
   }
 }
 
 /// Process all semantic actions and generate action file.
-static void process_actions(char *grm_file, struct CLIOptions *cli_options) {
+static void process_actions(char *grm_file, struct CLIOptions *cli_options, struct OutputFiles* of) {
   register char *p;
   char line[MAX_LINE_SIZE + 1];
   FILE *sysact = fopen(cli_options->act_file, "w");
@@ -1618,7 +1618,7 @@ static void process_actions(char *grm_file, struct CLIOptions *cli_options) {
   }
   // If LISTING was requested, invoke listing procedure.
   if (cli_options->list_bit) {
-    display_input(cli_options);
+    display_input(cli_options, of);
   }
   // Read in all the action blocks and process them.
   for (int i = 0; i < num_acts; i++) {
@@ -1708,12 +1708,10 @@ static void process_actions(char *grm_file, struct CLIOptions *cli_options) {
 }
 
 /// Actions to be taken if grammar is successfully parsed.
-static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *sysgrm) {
+static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *sysgrm, struct OutputFiles* of) {
   if (rulehdr == NULL) {
     printf("Informative: Empty grammar read in. Processing stopped.\n");
-    fprintf(syslis, "***Informative: Empty grammar read in. Processing stopped.\n");
     fclose(sysgrm);
-    fclose(syslis);
     exit(12);
   }
   num_non_terminals = num_symbols - num_terminals;
@@ -1832,14 +1830,14 @@ static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *
     rules[num_rules + 1].rhs = rhs_ct; /* Fence !! */
   }
   fclose(sysgrm); /* Close grammar input file. */
-  process_actions(grm_file, cli_options);
+  process_actions(grm_file, cli_options, of);
   if (cli_options->list_bit) {
-    display_input(cli_options);
+    display_input(cli_options, of);
   }
 }
 
 /// This procedure opens all relevant files and processes the input grammar.
-void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_files, const int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options) {
+void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_files, const int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options, struct OutputFiles* of) {
   // Parse args.
   {
     // If options are passed to the program, copy them into "parm".
@@ -1884,12 +1882,6 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
       if (strrchr(grm_file, '.') == NULL) {
         PRNTWNG2("A file named \"%s\" with no extension is being opened", grm_file);
       }
-    }
-    //                Open listing file for output.
-    syslis = fopen(lis_file, "w");
-    if (syslis == (FILE *) NULL) {
-      fprintf(stderr, "***ERROR: Listing file \"%s\" cannot be opened.\n", lis_file);
-      exit(12);
     }
     // Complete the initialization of the code array used to replace the
     // builtin functions isalpha, isdigit and isspace.
@@ -2013,7 +2005,7 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
       }
       act -= ERROR_ACTION;
     } else if (act == ACCEPT_ACTION) {
-      accept_action(grm_file, cli_options, sysgrm);
+      accept_action(grm_file, cli_options, sysgrm, of);
       goto end;
     } else {
       // error_action

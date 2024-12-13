@@ -459,7 +459,7 @@ static void print_root_path(const int item_no, struct CLIOptions* cli_options) {
   bool *symbol_seen = Allocate_boolean_array(num_non_terminals);
   symbol_seen -= num_terminals + 1;
   if (trace_root(rules[item_table[item_no].rule_number].lhs, cli_options, symbol_seen)) {
-    fprintf(syslis, "\n"); /* Leave one blank line after root trace. */
+    printf("\n"); /* Leave one blank line after root trace. */
   }
   symbol_seen += num_terminals + 1;
   ffree(symbol_seen);
@@ -569,7 +569,7 @@ static void conflicts_initialization(void) {
   nt_items -= num_terminals + 1;
   item_list = Allocate_short_array(num_items + 1);
   fill_in(msg_line, (PRINT_LINE_SIZE - 11) / 2 - 1, '-');
-  fprintf(syslis, "\n%s CONFLICTS %s\n", msg_line, msg_line);
+  printf("\n%s CONFLICTS %s\n", msg_line, msg_line);
   //   SLR conflicts may be caused by a symbol in the FOLLOW set of a
   // left hand side, which is not actually in the LALR look-ahead set in
   // that context.  Therefore, there may not exist a path in the state
@@ -1414,7 +1414,6 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
         rule_no = item_table[p->item].rule_number;
         restore_symbol(temp, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
         printf("*** Shift/reduce conflict on \"%s\" with rule %d\n", temp, rule_no);
-        fprintf(syslis, "\n*** Shift/reduce conflict on \"%s\" with rule %d\n", temp, rule_no);
         if (cli_options->trace_opt.value != NOTRACE.value) {
           print_relevant_lalr_items(state_no, p->item, symbol, cli_options);
           print_item(p->item, cli_options);
@@ -1431,12 +1430,11 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
         rule_no = item_table[p->item2].rule_number;
         restore_symbol(temp, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
         printf("*** Reduce/reduce conflict on \"%s\" between rule %d and %d\n", temp, n, rule_no);
-        fprintf(syslis, "\n*** Reduce/reduce conflict on \"%s\" between rule %d and %d\n", temp, n, rule_no);
         if (cli_options->trace_opt.value != NOTRACE.value) {
           print_relevant_lalr_items(state_no, p->item1, symbol, cli_options);
           print_item(p->item1, cli_options);
           fill_in(msg_line, PRINT_LINE_SIZE - 3, '-');
-          fprintf(syslis, "\n%s", msg_line);
+          printf("\n%s", msg_line);
           print_relevant_lalr_items(state_no, p->item2, symbol, cli_options);
           print_item(p->item2, cli_options);
         }
@@ -2285,7 +2283,6 @@ void mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
     }
   }
   printf("\n");
-  fprintf(syslis, "\n\n");
   // If the automaton required multiple lookahead, construct the
   // permanent lookahead states.
   if (max_la_state > num_states) {
@@ -2321,23 +2318,18 @@ void mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
   // was used to compute lookahead information.
   if (not_lrk) {
     printf("This grammar is not LR(K).\n\n");
-    fprintf(syslis, "This grammar is not LR(K).\n\n");
   } else {
     if (num_rr_conflicts > 0 || num_sr_conflicts > 0) {
       if (highest_level != INFINITY) {
         printf("This grammar is not LALR(%d).\n\n", highest_level);
-        fprintf(syslis, "This grammar is not LALR(%d).\n\n", highest_level);
       } else {
         printf("This grammar is not LALR(K).\n\n");
-        fprintf(syslis, "This grammar is not LALR(K).\n\n");
       }
     } else {
       if (highest_level == 0) {
         printf("This grammar is LR(0).\n\n");
-        fprintf(syslis, "This grammar is LR(0).\n\n");
       } else {
         printf("This grammar is LALR(%d).\n\n", highest_level);
-        fprintf(syslis, "This grammar is LALR(%d).\n\n", highest_level);
       }
     }
   }

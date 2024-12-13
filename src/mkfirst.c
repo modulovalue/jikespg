@@ -856,7 +856,7 @@ struct DetectedSetSizes mkbasic(struct CLIOptions* cli_options) {
     if (t_root != NIL) {
       if (symbol_list[t_root] != NIL) {
         PRNT("*** The following Terminals are useless: ");
-        fprintf(syslis, "\n\n");
+        printf("\n\n");
         strcpy(line, "        "); /* 8 spaces */
       } else {
         strcpy(line, "*** The following Terminal is useless: ");
@@ -888,7 +888,7 @@ struct DetectedSetSizes mkbasic(struct CLIOptions* cli_options) {
     if (nt_root != NIL) {
       if (symbol_list[nt_root] != NIL) {
         PRNT("*** The following Non-Terminals are useless: ");
-        fprintf(syslis, "\n\n");
+        printf("\n\n");
         strcpy(line, "        "); /* 8 spaces */
       } else {
         strcpy(line, "*** The following Non-Terminal is useless: ");
@@ -911,7 +911,7 @@ struct DetectedSetSizes mkbasic(struct CLIOptions* cli_options) {
   if (cli_options->first_bit) {
     // Print first sets.
     {
-      fprintf(syslis, "\nFirst map for non-terminals:\n\n");
+      printf("\nFirst map for non-terminals:\n\n");
       for ALL_NON_TERMINALS3(nt) {
         char tok[SYMBOL_SIZE + 1];
         char line[PRINT_LINE_SIZE + 1];
@@ -922,7 +922,7 @@ struct DetectedSetSizes mkbasic(struct CLIOptions* cli_options) {
           if (IS_IN_SET(nt_first, nt, t)) {
             restore_symbol(tok, RETRIEVE_STRING(t), cli_options->ormark, cli_options->escape);
             if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 1) {
-              fprintf(syslis, "\n%s", line);
+              printf("\n%s", line);
               print_large_token(line, tok, "    ", LEN);
             } else {
               strcat(line, tok);
@@ -930,7 +930,7 @@ struct DetectedSetSizes mkbasic(struct CLIOptions* cli_options) {
             strcat(line, " ");
           }
         }
-        fprintf(syslis, "\n%s\n", line);
+        printf("\n%s\n", line);
       }
     }
   }
@@ -939,7 +939,7 @@ struct DetectedSetSizes mkbasic(struct CLIOptions* cli_options) {
   if (cli_options->follow_bit) {
     // Print follow sets.
     {
-      fprintf(syslis, "\nFollow Map:\n\n");
+      printf("\nFollow Map:\n\n");
       for ALL_NON_TERMINALS3(nt) {
         char tok[SYMBOL_SIZE + 1];
         char line[PRINT_LINE_SIZE + 1];
@@ -950,7 +950,7 @@ struct DetectedSetSizes mkbasic(struct CLIOptions* cli_options) {
           if (IS_IN_SET(follow, nt, t)) {
             restore_symbol(tok, RETRIEVE_STRING(t), cli_options->ormark, cli_options->escape);
             if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 2) {
-              fprintf(syslis, "\n%s", line);
+              printf("\n%s", line);
               print_large_token(line, tok, "    ", LEN);
             } else {
               strcat(line, tok);
@@ -958,7 +958,7 @@ struct DetectedSetSizes mkbasic(struct CLIOptions* cli_options) {
             strcat(line, " ");
           }
         }
-        fprintf(syslis, "\n%s\n", line);
+        printf("\n%s\n", line);
       }
     }
   }

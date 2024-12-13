@@ -467,13 +467,13 @@ void print_name_map(const int symbol, struct CLIOptions* cli_options) {
   strcat(line, " ::= ");
   restore_symbol(tok, RETRIEVE_NAME(symno[symbol].name_index), cli_options->ormark, cli_options->escape);
   if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 1) {
-    fprintf(syslis, "\n%s", line);
+    printf("\n%s", line);
     len = PRINT_LINE_SIZE - 4;
     print_large_token(line, tok, "    ", len);
   } else {
     strcat(line, tok);
   }
-  fprintf(syslis, "\n%s", line);
+  printf("\n%s", line);
 }
 
 ///                             SCOPE_CHECK:
@@ -701,7 +701,7 @@ int insert_suffix(const int item_no) {
 
 /// This procedure is similar to the global procedure PTITEM.
 void print_scopes(struct CLIOptions* cli_options) {
-  fprintf(syslis, "\nScopes:\n");
+  printf("\nScopes:\n");
   for (int k = 1; k <= num_scopes; k++) {
     char tmp[PRINT_LINE_SIZE];
     char tok[SYMBOL_SIZE + 1];
@@ -722,7 +722,7 @@ void print_scopes(struct CLIOptions* cli_options) {
       symbol = scope_right_side[ii];
       restore_symbol(tok, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
       if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 4) {
-        fprintf(syslis, "\n%s", line);
+        printf("\n%s", line);
         fill_in(tmp, offset, ' ');
         print_large_token(line, tok, tmp, len);
       } else {
@@ -738,7 +738,7 @@ void print_scopes(struct CLIOptions* cli_options) {
       symbol = scope_right_side[ii];
       restore_symbol(tok, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
       if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 1) {
-        fprintf(syslis, "\n%s", line);
+        printf("\n%s", line);
         fill_in(tmp, offset, ' ');
         print_large_token(line, tok, tmp, len);
       } else {
@@ -746,7 +746,7 @@ void print_scopes(struct CLIOptions* cli_options) {
       }
       strcat(line, " ");
     }
-    fprintf(syslis, "\n%s", line);
+    printf("\n%s", line);
   }
 }
 
@@ -869,9 +869,9 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
   // If some error rules are in the wrong format and report them.
   if (item_root != NIL) {
     if (item_list[item_root] == NIL) {
-      fprintf(syslis, "*** This error rule is not in manual format:\n\n");
+      printf("*** This error rule is not in manual format:\n\n");
     } else {
-      fprintf(syslis, "*** These error rules are not in manual format:\n\n");
+      printf("*** These error rules are not in manual format:\n\n");
     }
     for (int item_no = item_root; item_no != NIL; item_no = item_list[item_no]) {
       print_item(item_no, cli_options);
@@ -1003,7 +1003,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
   }
   // If the option LIST_BIT is ON, print the name map.
   if (cli_options->list_bit) {
-    fprintf(syslis, "\nName map:\n");
+    printf("\nName map:\n");
     for ALL_SYMBOLS3(symbol) {
       if (symno[symbol].name_index != symno[accept_image].name_index) {
         print_name_map(symbol, cli_options);

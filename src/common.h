@@ -185,6 +185,14 @@ struct OutputFiles {
   char sym_file[80];
   char def_file[80];
   char dcl_file[80];
+  FILE *sysdcl;
+  FILE *syssym;
+  FILE *sysdef;
+  FILE *sysprs;
+  char dcl_tag[SYMBOL_SIZE];
+  char sym_tag[SYMBOL_SIZE];
+  char def_tag[SYMBOL_SIZE];
+  char prs_tag[SYMBOL_SIZE];
 };
 
 struct CLIOptions {
@@ -270,11 +278,9 @@ static struct CLIOptions init_cli_options() {
   };
 }
 
-void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_files, int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options);
+void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_files, int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options, struct OutputFiles* of);
 
 extern char msg_line[];
-
-extern FILE *syslis;
 
 ///  The variables below are global counters.
 extern long num_items;
@@ -471,6 +477,7 @@ struct GlobalSpace {
   long global_base_size;
   struct node *node_pool;
 } gs;
+
 struct TableOutput {
   long *ordered_state;
   long *symbol_map;
@@ -500,7 +507,6 @@ static long ABS(const long x) {
 
 static void PRNT(char *msg) {
   printf("%s\n", msg);
-  fprintf(syslis, "%s\n", msg);
 }
 
 #define PRNT3(...) \
@@ -513,7 +519,6 @@ static void PRNT(char *msg) {
 
 static void PRNTWNG(char *msg) {
   printf("***WARNING: %s\n", msg);
-  fprintf(syslis, "***WARNING: %s\n", msg);
 }
 
 #define PRNTWNG2(...) \
@@ -522,7 +527,6 @@ static void PRNTWNG(char *msg) {
 
 static void PRNTERR(char *msg) {
   printf("***ERROR: %s\n", msg);
-  fprintf(syslis, "***ERROR: %s\n", msg);
 }
 
 #define PRNTERR2(...) \
@@ -575,9 +579,9 @@ extern short *la_index;
 
 extern int increment;
 
-void cmprtim(struct OutputFiles *output_files, struct CLIOptions *cli_options, FILE *systab, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp);
+void cmprtim(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of);
 
-void cmprspa(struct OutputFiles *output_files, struct CLIOptions *cli_options, FILE *systab, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp);
+void cmprspa(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of);
 
 void init_rmpself(JBitset produces);
 
@@ -609,17 +613,15 @@ void print_state(int state_no, struct CLIOptions* cli_options);
 
 void process_error_maps(struct CLIOptions *cli_options, FILE *systab, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp);
 
-void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, long *term_state_index, long *shift_check_index, struct CTabsProps* ctp, struct new_state_type *new_state_element, short *shift_image, short *real_shift_number);
+void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, long *term_state_index, long *shift_check_index, struct CTabsProps* ctp, struct new_state_type *new_state_element, short *shift_image, short *real_shift_number, struct OutputFiles* of);
 
-void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp);
+void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of);
 
-void init_file(FILE **file, char *file_name, char *file_tag);
+void populate_start_file(FILE **file, char *file_tag, struct CLIOptions *cli_options);
 
-void populate_start_to_file(FILE **file, char *file_tag, struct CLIOptions *cli_options);
+void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of);
 
-void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct CTabsProps* ctp);
-
-void ptstats(struct CLIOptions *cli_options);
+void ptstats(struct CLIOptions *cli_options, struct OutputFiles* of);
 
 void sortdes(long array[], long count[], long low, long high, long max);
 
@@ -704,13 +706,3 @@ static struct TableOutput init_table_output() {
     .state_list = Allocate_long_array(max_la_state + 1),
   };
 }
-
-extern FILE *sysdcl;
-extern FILE *syssym;
-extern FILE *sysprs;
-extern FILE *sysdef;
-
-extern char dcl_tag[SYMBOL_SIZE];
-extern char sym_tag[SYMBOL_SIZE];
-extern char def_tag[SYMBOL_SIZE];
-extern char prs_tag[SYMBOL_SIZE];

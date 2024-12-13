@@ -262,7 +262,7 @@ void restore_symbol(char *out, const char *in, char ormark, char escape) {
 void print_large_token(char *line, char *token, const char *indent, int len) {
   int toklen = strlen(token);
   if (toklen > len && toklen <= PRINT_LINE_SIZE - 1) {
-    fprintf(syslis, "\n%s", token);
+    printf("\n%s", token);
     token = "";
     strcpy(line, indent);
   } else {
@@ -270,7 +270,7 @@ void print_large_token(char *line, char *token, const char *indent, int len) {
     for (; toklen > len; toklen = strlen(temp)) {
       memcpy(temp, token, len);
       temp[len] = '\0';
-      fprintf(syslis, "\n%s", temp);
+      printf("\n%s", temp);
       strcpy(temp, token+len + 1);
       token = temp;
     }
@@ -302,7 +302,7 @@ void print_item(const int item_no, struct CLIOptions* cli_options) {
     symbol = rhs_sym[sbd];
     restore_symbol(tok, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
     if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE - 4) {
-      fprintf(syslis, "\n%s", line);
+      printf("\n%s", line);
       fill_in(tempstr, offset, ' ');
       print_large_token(line, tok, tempstr, len);
     } else {
@@ -326,7 +326,7 @@ void print_item(const int item_no, struct CLIOptions* cli_options) {
     symbol = rhs_sym[i];
     restore_symbol(tok, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
     if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE - 1) {
-      fprintf(syslis, "\n%s", line);
+      printf("\n%s", line);
       fill_in(tempstr, offset, ' ');
       print_large_token(line, tok, tempstr, len);
     } else {
@@ -338,12 +338,12 @@ void print_item(const int item_no, struct CLIOptions* cli_options) {
   {
     snprintf(tok, sizeof(tok), " (%d)", rule_no);
     if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE - 1) {
-      fprintf(syslis, "\n%s", line);
+      printf("\n%s", line);
       fill_in(line, offset, ' ');
     }
     strcat(line, tok);
   }
-  fprintf(syslis, "\n%s", line);
+  printf("\n%s", line);
 }
 
 /// PRINT_STATE prints all the items in a state.  NOTE that when single
@@ -375,7 +375,7 @@ void print_state(const int state_no, struct CLIOptions* cli_options) {
   int kernel_size = 0;
   // END OF INITIALIZATION ----------------------------------------------------
   fill_in(buffer, PRINT_LINE_SIZE - (number_len(state_no) + 8 /* 8 = length("STATE") + 2 spaces + newline*/), '-');
-  fprintf(syslis, "\n\n\nSTATE %d %s", state_no, buffer);
+  printf("\n\n\nSTATE %d %s", state_no, buffer);
   // Print the set of states that have transitions to STATE_NO.
   int n = 0;
   strcpy(line, "( ");
@@ -388,7 +388,7 @@ void print_state(const int state_no, struct CLIOptions* cli_options) {
     if (!state_seen[q->value]) {
       state_seen[q->value] = true;
       if (strlen(line) + number_len(q->value) > PRINT_LINE_SIZE - 2) {
-        fprintf(syslis, "\n%s", line);
+        printf("\n%s", line);
         strcpy(line, "  ");
       }
       if (q->value != 0) {
@@ -398,7 +398,7 @@ void print_state(const int state_no, struct CLIOptions* cli_options) {
     }
   }
   strcat(line, ")");
-  fprintf(syslis, "\n%s\n", line);
+  printf("\n%s\n", line);
   // Add the set of kernel items to the array ITEM_LIST, and mark all
   // items seen to avoid duplicates.
   for (q = statset[state_no].kernel_items; q != NULL; q = q->next) {
@@ -478,7 +478,7 @@ void print_state(const int state_no, struct CLIOptions* cli_options) {
     print_item(item_list[item_no], cli_options);
   }
   if (kernel_size < n) {
-    fprintf(syslis, "\n");
+    printf("\n");
     qcksrt(item_list, kernel_size + 1, n);
     for (int item_no = kernel_size + 1; item_no <= n; item_no++) {
       print_item(item_list[item_no], cli_options);

@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 static char hostfile[] = __FILE__;
 
 #include "common.h"
@@ -172,10 +173,21 @@ static void compute_goto_default(void) {
   ffree(action_count);
 }
 
+void init_file(FILE **file, char *file_name, char *file_tag) {
+  const char *p = strrchr(file_name, '.');
+  if ((*file = fopen(file_name, "w")) == NULL) {
+    fprintf(stderr, "***ERROR: Symbol file \"%s\" cannot be opened\n", file_name);
+    exit(12);
+  } else {
+    memcpy(file_tag, file_name, p - file_name);
+    file_tag[p - file_name] = '\0';
+  }
+}
+
 /// Remap symbols, apply transition default actions  and call
 /// appropriate table compression routine.
-void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct CTabsProps* ctp) {
-  //        First, we decrease by 1 the constants NUM_SYMBOLS
+void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of) {
+  // First, we decrease by 1 the constants NUM_SYMBOLS
   // and NUM_TERMINALS, remove the EMPTY symbol(1) and remap the
   // other symbols beginning at 1.  If default reduction is
   // requested, we assume a special DEFAULT_SYMBOL with number zero.
@@ -258,10 +270,14 @@ void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLI
     }
   }
   struct TableOutput toutput = init_table_output();
+  init_file(&of->sysdcl, output_files->dcl_file, of->dcl_tag);
+  init_file(&of->syssym, output_files->sym_file, of->sym_tag);
+  init_file(&of->sysdef, output_files->def_file, of->def_tag);
+  init_file(&of->sysprs, output_files->prs_file, of->prs_tag);
   if (cli_options->table_opt.value == OPTIMIZE_SPACE.value) {
-    cmprspa(output_files, cli_options, systab, &toutput, dss, ctp);
+    cmprspa(cli_options, &toutput, dss, ctp, of);
   } else if (cli_options->table_opt.value == OPTIMIZE_TIME.value) {
-    cmprtim(output_files, cli_options, systab, &toutput, dss, ctp);
+    cmprtim(cli_options, &toutput, dss, ctp, of);
   } else {
     exit(999);
   }
@@ -271,10 +287,10 @@ void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLI
   // If printing of the states was requested,  print the new mapping
   // of the states.
   if (cli_options->states_bit) {
-    fprintf(syslis, "\nMapping of new state numbers into original numbers:\n");
+    printf("\nMapping of new state numbers into original numbers:\n");
     for ALL_STATES3(state_no) {
-      fprintf(syslis, "\n%5ld  ==>>  %5ld", toutput.ordered_state[state_no], toutput.state_list[state_no]);
+      printf("\n%5ld  ==>>  %5ld", toutput.ordered_state[state_no], toutput.state_list[state_no]);
     }
-    fprintf(syslis, "\n");
+    printf("\n");
   }
 }

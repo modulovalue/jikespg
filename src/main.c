@@ -64,7 +64,7 @@ int main(const int argc, char *argv[]) {
   } else {
     // Prepare
     struct CLIOptions cli_options = init_cli_options();
-    struct OutputFiles output_files = {
+    struct OutputFiles of = {
       .prs_file = "",
       .sym_file = "",
       .def_file = "",
@@ -110,7 +110,7 @@ int main(const int argc, char *argv[]) {
       }
       strcat(lis_file, ".l"); /* add .l extension for listing file */
       strcat(tab_file, ".t"); /* add .t extension for table file */
-      process_input(grm_file, lis_file, &output_files, argc, argv, file_prefix, &cli_options);
+      process_input(grm_file, lis_file, &of, argc, argv, file_prefix, &cli_options, &of);
     }
 
     struct DetectedSetSizes dss = mkbasic(&cli_options);
@@ -147,7 +147,7 @@ int main(const int argc, char *argv[]) {
     }
 
     if (cli_options.states_bit) {
-      ptstats(&cli_options);
+      ptstats(&cli_options, &of);
     }
 
     if (cli_options.table_opt.value != OPTIMIZE_NO_TABLE.value) {
@@ -196,9 +196,8 @@ int main(const int argc, char *argv[]) {
           .last_non_terminal = 0,
           .last_terminal = 0,
         };
-        process_tables(tab_file, &output_files, &cli_options, &dss, &ctp);
+        process_tables(tab_file, &of, &cli_options, &dss, &ctp, &of);
       }
-      fclose(syslis);
     }
 
     return 0;
