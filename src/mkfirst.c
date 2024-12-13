@@ -723,6 +723,7 @@ struct DetectedSetSizes mkbasic(struct CLIOptions* cli_options) {
   if (cli_options->lalr_level > 1) {
     calloc0_set(produces, num_non_terminals, dss.non_term_set_size);
     produces.raw -= (num_terminals + 1) * dss.non_term_set_size;
+    struct node **direct_produces;
     calloc0(direct_produces, num_non_terminals, struct node *);
     direct_produces -= num_terminals + 1;
     for ALL_NON_TERMINALS3(sym_b) {
@@ -751,7 +752,7 @@ struct DetectedSetSizes mkbasic(struct CLIOptions* cli_options) {
     top = 0;
     for ALL_NON_TERMINALS3(nt) {
       if (index_of[nt] == OMEGA) {
-        compute_produces(nt);
+        compute_produces(nt, direct_produces);
       }
     }
     init_rmpself(produces);

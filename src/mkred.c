@@ -5,6 +5,54 @@ static char hostfile[] = __FILE__;
 
 #include "common.h"
 
+struct stack_element {
+  struct stack_element *previous;
+  struct stack_element *next;
+  struct stack_element *link;
+  short state_number;
+  short size;
+};
+
+/// The structure STATE_ELEMENT is used to construct lookahead states.
+/// LA_STATE_ROOT point to a list of lookahead states using the LINK
+/// field. The field NEXT_SHIFT is used to hash the new shift maps
+/// associated with lookahead states. The field IN_STATE identifies the
+/// state that shifted into the lookahead state in question. The field
+/// SYMBOL identifies the symbol on shift the transition was made into
+/// the lookahead state in question.  The remaining fields are
+/// self-explanatory.
+struct state_element {
+  struct state_element *link;
+  struct state_element *next_shift;
+  struct reduce_header_type reduce;
+  struct shift_header_type shift;
+  short in_state;
+  short symbol;
+  short state_number;
+  short shift_number;
+};
+
+/// The structures SR_CONFLICT_ELEMENT and RR_CONFLICT_ELEMENT are used
+/// th store conflict information. CONFLICT_ELEMENT_POOL is used to
+/// keep track of a pool conflict element structures (SR or RR) that
+/// are available for allocation.
+/// See routines ALLOCATE_CONFLICT_ELEMENT and FREE_CONFLICT_ELEMENTS.
+struct sr_conflict_element {
+  struct sr_conflict_element *next;
+  short state_number;
+  short item;
+  short symbol;
+};
+
+struct rr_conflict_element {
+  struct rr_conflict_element *next;
+  short symbol;
+  short item1;
+  short item2;
+};
+
+static void *conflict_element_pool = NULL;
+
 /// VISITED is a structure used to mark state-symbol pairs that have
 /// been visited in the process of computing follow-sources for a
 /// given action in conflict.
@@ -16,7 +64,7 @@ static char hostfile[] = __FILE__;
 /// NULL.
 /// See routines MARK_VISITED, WAS_VISITED, CLEAR_VISITED,
 ///              INIT_LALRK_PROCESS, EXIT_PROCESS
-struct visited_element {
+static struct visited_element {
   struct node **map;
   short *list;
   short root;
@@ -56,68 +104,18 @@ struct visited_element {
 /// value 1.
 /// See routines ALLOCATE_STACK_ELEMENT, FREE_STACK_ELEMENT,
 ///              ADD_DANGLING_STACK, FREE_DANGLING_STACK.
-struct sources_element {
+static struct sources_element {
   struct stack_element **configs;
   struct stack_element **stack_seen;
   short *list;
   short root;
 } sources;
+static struct stack_element *stack_pool = NULL;
+static struct stack_element *dangling_stacks = NULL;
 
-struct stack_element {
-  struct stack_element *previous;
-  struct stack_element *next;
-  struct stack_element *link;
-  short state_number;
-  short size;
-};
+static struct state_element *la_state_root = NULL;
 
-struct stack_element *stack_pool = NULL;
-struct stack_element *dangling_stacks = NULL;
-
-/// The structure STATE_ELEMENT is used to construct lookahead states.
-/// LA_STATE_ROOT point to a list of lookahead states using the LINK
-/// field. The field NEXT_SHIFT is used to hash the new shift maps
-/// associated with lookahead states. The field IN_STATE identifies the
-/// state that shifted into the lookahead state in question. The field
-/// SYMBOL identifies the symbol on shift the transition was made into
-/// the lookahead state in question.  The remaining fields are
-/// self-explanatory.
-struct state_element {
-  struct state_element *link;
-  struct state_element *next_shift;
-  struct reduce_header_type reduce;
-  struct shift_header_type shift;
-  short in_state;
-  short symbol;
-  short state_number;
-  short shift_number;
-};
-
-struct state_element *la_state_root = NULL;
-
-/// The structures SR_CONFLICT_ELEMENT and RR_CONFLICT_ELEMENT are used
-/// th store conflict information. CONFLICT_ELEMENT_POOL is used to
-/// keep track of a pool conflict element structures (SR or RR) that
-/// are available for allocation.
-/// See routines ALLOCATE_CONFLICT_ELEMENT and FREE_CONFLICT_ELEMENTS.
-struct sr_conflict_element {
-  struct sr_conflict_element *next;
-  short state_number;
-  short item;
-  short symbol;
-};
-
-struct sr_conflict_element *sr_conflict_root;
-
-struct rr_conflict_element {
-  struct rr_conflict_element *next;
-  short symbol;
-  short item1;
-  short item2;
-};
-
-struct rr_conflict_element *rr_conflict_root;
-void *conflict_element_pool = NULL;
+static int highest_level = 0;
 
 /// NT_ITEMS and ITEM_LIST are used to construct a mapping from each
 /// nonterminal into the set of items of which the nonterminal in
@@ -125,24 +123,6 @@ void *conflict_element_pool = NULL;
 static short *nt_items = NULL;
 static short *item_list = NULL;
 
-/// LALR_VISITED is used to keep track of (state, nonterminal) pairs
-/// that are visited in tracing the path of a lalr conflict.SLR_VISITED
-/// is similarly used to keep track of nonterminal symbols that are
-/// visited in tracing the path of an slr conflict. SYMBOL_SEEN is used
-/// to keep track of nonterminal symbols that are visited in tracing a
-/// path to the start state (root).
-///
-/// CYCLIC is a boolean vector used to identify states that can enter
-/// a cycle of transitions on nullable nonterminals.
-/// As the computation of CYCLIC requires a modified version of the
-/// digraph algorithm, the variables STACK, INDEX_OF and TOP are used
-/// for that algorithm.
-///
-/// RMPSELF is a boolean vector that indicates whether a given
-/// non-terminal can right-most produce itself. It is only constructed
-/// when LALR_LEVEL > 1.
-bool *lalr_visited;
-bool *symbol_seen;
 bool *cyclic;
 bool *rmpself;
 
@@ -456,7 +436,7 @@ static void compute_cyclic(const short state_no) {
 /// array, SLR_VISITED, indexable by non-terminals, is used.  For
 /// trace-backs to the root item, the boolean array SYMBOL_SEEN, also
 /// also indexable by non-terminals, is used.
-static bool trace_root(const int lhs_symbol, struct CLIOptions* cli_options) {
+static bool trace_root(const int lhs_symbol, struct CLIOptions* cli_options, bool *symbol_seen) {
   if (lhs_symbol == accept_image) {
     return true;
   }
@@ -465,7 +445,7 @@ static bool trace_root(const int lhs_symbol, struct CLIOptions* cli_options) {
   }
   symbol_seen[lhs_symbol] = true;
   for (int item = nt_items[lhs_symbol]; item != NIL; item = item_list[item]) {
-    if (trace_root(rules[item_table[item].rule_number].lhs, cli_options)) {
+    if (trace_root(rules[item_table[item].rule_number].lhs, cli_options, symbol_seen)) {
       print_item(item, cli_options);
       return true;
     }
@@ -478,7 +458,7 @@ static bool trace_root(const int lhs_symbol, struct CLIOptions* cli_options) {
 static void print_root_path(const int item_no, struct CLIOptions* cli_options) {
   bool *symbol_seen = Allocate_boolean_array(num_non_terminals);
   symbol_seen -= num_terminals + 1;
-  if (trace_root(rules[item_table[item_no].rule_number].lhs, cli_options)) {
+  if (trace_root(rules[item_table[item_no].rule_number].lhs, cli_options, symbol_seen)) {
     fprintf(syslis, "\n"); /* Leave one blank line after root trace. */
   }
   symbol_seen += num_terminals + 1;
@@ -492,7 +472,7 @@ static void print_root_path(const int item_no, struct CLIOptions* cli_options) {
 /// to a state where the conflict symbol can be read. If a path is
 /// found, all items along the path are printed and SUCCESS is returned.
 ///  Otherwise, FAILURE is returned.
-static bool lalr_path_retraced(const int state_no, const int goto_indx, const int conflict_symbol, struct CLIOptions *cli_options) {
+static bool lalr_path_retraced(const int state_no, const int goto_indx, const int conflict_symbol, struct CLIOptions *cli_options, bool *lalr_visited) {
   struct goto_header_type go_to = statset[state_no].go_to;
   lalr_visited[go_to.map[goto_indx].laptr] = true;
   bool found = false;
@@ -502,8 +482,9 @@ static bool lalr_path_retraced(const int state_no, const int goto_indx, const in
     item = p->value - 1;
     if (IS_IN_SET(first, item_table[item].suffix_index, conflict_symbol)) {
       // Conflict_symbol can be read in state?
-      if (cli_options->trace_opt == TRACE_FULL)
+      if (cli_options->trace_opt.value == TRACE_FULL.value) {
         print_root_path(item, cli_options);
+      }
       found = true;
     } else if (IS_IN_SET(first, item_table[item].suffix_index, empty)) {
       const int symbol = rules[item_table[item].rule_number].lhs;
@@ -516,7 +497,7 @@ static bool lalr_path_retraced(const int state_no, const int goto_indx, const in
         for (ii = 1; go_to.map[ii].symbol != symbol; ii++) {
         }
         if (!lalr_visited[go_to.map[ii].laptr]) {
-          if (lalr_path_retraced(q->value, ii, conflict_symbol, cli_options)) {
+          if (lalr_path_retraced(q->value, ii, conflict_symbol, cli_options, lalr_visited)) {
             found = true;
             break;
           }
@@ -541,7 +522,24 @@ static void print_relevant_lalr_items(const int state_no, const int item_no, con
   if (lhs_symbol == accept_image) {
     // Do nothing.
   } else {
-    lalr_visited = Allocate_boolean_array(la_top + 1);
+
+    /// LALR_VISITED is used to keep track of (state, nonterminal) pairs
+    /// that are visited in tracing the path of a lalr conflict.SLR_VISITED
+    /// is similarly used to keep track of nonterminal symbols that are
+    /// visited in tracing the path of an slr conflict. SYMBOL_SEEN is used
+    /// to keep track of nonterminal symbols that are visited in tracing a
+    /// path to the start state (root).
+    ///
+    /// CYCLIC is a boolean vector used to identify states that can enter
+    /// a cycle of transitions on nullable nonterminals.
+    /// As the computation of CYCLIC requires a modified version of the
+    /// digraph algorithm, the variables STACK, INDEX_OF and TOP are used
+    /// for that algorithm.
+    ///
+    /// RMPSELF is a boolean vector that indicates whether a given
+    /// non-terminal can right-most produce itself. It is only constructed
+    /// when LALR_LEVEL > 1.
+    bool *lalr_visited = Allocate_boolean_array(la_top + 1);
     struct node *v = lpgaccess(state_no, item_no);
     struct node *p;
     struct node *tail;
@@ -550,7 +548,7 @@ static void print_relevant_lalr_items(const int state_no, const int item_no, con
       int ii;
       for (ii = 1; go_to.map[ii].symbol != lhs_symbol; ii++) {
       }
-      if (lalr_path_retraced(p->value, ii, conflict_symbol, cli_options)) {
+      if (lalr_path_retraced(p->value, ii, conflict_symbol, cli_options, lalr_visited)) {
         break;
       }
     }
@@ -1146,8 +1144,8 @@ static struct state_element *state_to_resolve_conflicts(struct sources_element s
 Build_reduce_map: {
     struct reduce_header_type red;
     if (default_rule != OMEGA &&
-        cli_options->table_opt != OPTIMIZE_TIME &&
-        cli_options->table_opt != OPTIMIZE_SPACE &&
+        cli_options->table_opt.value != OPTIMIZE_TIME.value &&
+        cli_options->table_opt.value != OPTIMIZE_SPACE.value &&
         cli_options->default_opt != 0)
       num_reduce_actions -= rule_count[default_rule];
     num_reductions += num_reduce_actions;
@@ -1156,8 +1154,8 @@ Build_reduce_map: {
     for (int symbol = reduce_root, i_inner = 1; symbol != NIL; symbol = action_list[symbol]) {
       if (cli_options->default_opt == 0 ||
           action[symbol]->value != default_rule ||
-          cli_options->table_opt == OPTIMIZE_TIME ||
-          cli_options->table_opt == OPTIMIZE_SPACE) {
+          cli_options->table_opt.value == OPTIMIZE_TIME.value ||
+          cli_options->table_opt.value == OPTIMIZE_SPACE.value) {
         red.map[i_inner].symbol = symbol;
         red.map[i_inner].rule_number = action[symbol]->value;
         i_inner++;
@@ -1209,48 +1207,6 @@ void init_rmpself(const JBitset produces) {
   }
 }
 
-/// If LALR(k), k > 1, is requested, we may have to create more shift
-/// maps. Initialize SHIFT_TABLE. Note that each element of SHIFT_TABLE
-/// is automatically initialized to NULL by CALLOC.
-/// (See STATE_TO_RESOLVE_CONFLICTS)
-/// Second, we check whether the grammar is not LR(k) for any k
-/// because there exist a nonterminal A such that
-///
-///                     A =>+rm A
-///
-/// Finally, allocate and compute the CYCLIC vector which identifies
-/// states that can enter a cycle via transitions on nullable
-/// nonterminals. If such a cyle exists, the grammar can also be
-/// claimed to be not LR(k) for any k.
-void init_lalrk_process(const struct CLIOptions *cli_options) {
-  not_lrk = false;
-  if (cli_options->lalr_level > 1) {
-    calloc0(shift_table, SHIFT_TABLE_SIZE, struct state_element *);
-    for ALL_NON_TERMINALS3(symbol) {
-      not_lrk = not_lrk || rmpself[symbol];
-    }
-    cyclic = Allocate_boolean_array(num_states + 1);
-    index_of = Allocate_short_array(num_states + 1);
-    stack = Allocate_short_array(num_states + 1);
-    for ALL_STATES3(state_no) {
-      index_of[state_no] = OMEGA;
-    }
-    top = 0;
-    for ALL_STATES3(state_no) {
-      if (index_of[state_no] == OMEGA) {
-        compute_cyclic(state_no);
-      }
-      not_lrk = not_lrk || cyclic[state_no];
-    }
-    ffree(stack);
-    ffree(index_of);
-    sources = allocate_sources();
-    calloc0(visited.map, num_states + 1, struct node *);
-    visited.list = Allocate_short_array(num_states + 1);
-    visited.root = NIL;
-  }
-}
-
 /// Free all support structures that were allocated to help compute
 /// additional lookahead.
 void exit_lalrk_process(const struct CLIOptions *cli_options) {
@@ -1284,7 +1240,7 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
   // value (S+NUM_RULES) to help distinguish it from reduce actions.
   // Reduce actions lie in the range [0..NUM_RULES]. Shift-reduce
   // actions lie in the range [-NUM_RULES..-1].
-  sr_conflict_root = NULL;
+  struct sr_conflict_element *sr_conflict_root = NULL;
   const struct shift_header_type sh = shift[statset[state_no].shift_number];
   for (int i = 1; i <= sh.size; i++) {
     int symbol = sh.map[i].symbol;
@@ -1368,7 +1324,7 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
   // did for the Shift-reduce conflicts. A boolean vector ITEM_SEEN
   // is used to prevent duplication of actions. This problem does
   // not occur with Shift-Reduce conflicts.
-  rr_conflict_root = NULL;
+  struct rr_conflict_element *rr_conflict_root = NULL;
   for (int symbol = reduce_root;
        symbol != NIL; symbol = symbol_list[symbol]) {
     if (action[symbol] != NULL) {
@@ -1459,7 +1415,7 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
         restore_symbol(temp, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
         printf("*** Shift/reduce conflict on \"%s\" with rule %d\n", temp, rule_no);
         fprintf(syslis, "\n*** Shift/reduce conflict on \"%s\" with rule %d\n", temp, rule_no);
-        if (cli_options->trace_opt != NOTRACE) {
+        if (cli_options->trace_opt.value != NOTRACE.value) {
           print_relevant_lalr_items(state_no, p->item, symbol, cli_options);
           print_item(p->item, cli_options);
         }
@@ -1476,7 +1432,7 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
         restore_symbol(temp, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
         printf("*** Reduce/reduce conflict on \"%s\" between rule %d and %d\n", temp, n, rule_no);
         fprintf(syslis, "\n*** Reduce/reduce conflict on \"%s\" between rule %d and %d\n", temp, n, rule_no);
-        if (cli_options->trace_opt != NOTRACE) {
+        if (cli_options->trace_opt.value != NOTRACE.value) {
           print_relevant_lalr_items(state_no, p->item1, symbol, cli_options);
           print_item(p->item1, cli_options);
           fill_in(msg_line, PRINT_LINE_SIZE - 3, '-');
@@ -1625,8 +1581,6 @@ void create_lastats(void) {
 /// identify states whose read sets can be completely computed from
 /// their kernel items.
 struct node *stack_root = NULL;
-bool *single_complete_item;
-int *la_base;
 
 /// Given an item of the form: [x .A y], where x and y are arbitrary strings,
 /// and A is a non-terminal, we pretrace the path(s) in the automaton  that
@@ -1634,7 +1588,7 @@ int *la_base;
 /// STATE_NO.  A number is assigned to all pairs (S, B), where S is a state,
 /// and B is a non-terminal, involved in the paths. GOTO_INDX points to the
 /// GOTO_ELEMENT of (STATE_NO, A).
-void trace_lalr_path(const int state_no, const int goto_indx, struct CLIOptions *cli_options) {
+void trace_lalr_path(const int state_no, const int goto_indx, struct CLIOptions *cli_options, int *la_base) {
   //  If STATE is a state number we first check to see if its base
   // look-ahead set is a special one that does not contain EMPTY and
   // has already been assigned a slot that can be reused.
@@ -1677,7 +1631,7 @@ void trace_lalr_path(const int state_no, const int goto_indx, struct CLIOptions 
         for (ii = 1; go_to_inner.map[ii].symbol != symbol; ii++) {
         }
         if (go_to_inner.map[ii].laptr == OMEGA) {
-          trace_lalr_path(t->value, ii, cli_options);
+          trace_lalr_path(t->value, ii, cli_options, la_base);
         }
       }
       free_nodes(w, p);
@@ -1700,7 +1654,7 @@ void trace_lalr_path(const int state_no, const int goto_indx, struct CLIOptions 
 /// follow a non-terminal in a given state.
 ///  These sets are initialized to the set of terminals that can immediately
 /// follow the non-terminal in the state to which it can shift (READ set).
-void compute_read(struct CLIOptions *cli_options, const struct DetectedSetSizes* dss) {
+void compute_read(struct CLIOptions *cli_options, const struct DetectedSetSizes* dss, bool *single_complete_item) {
   if (cli_options->lalr_level > 1 || cli_options->single_productions_bit) {
     calloc0_set(read_set, num_states + 1, dss->term_set_size);
   }
@@ -1722,6 +1676,7 @@ void compute_read(struct CLIOptions *cli_options, const struct DetectedSetSizes*
   // highest level of look-ahead allowed is 1, then only one such set is
   // allocated, and shared for all pairs (S, B) whose follow set is F.
   la_top = 0;
+  int *la_base;
   calloc0(la_base, num_states + 1, int);
   for ALL_STATES3(state_no) {
     la_base[state_no] = OMEGA;
@@ -1740,7 +1695,7 @@ void compute_read(struct CLIOptions *cli_options, const struct DetectedSetSizes*
           for (ii = 1; go_to.map[ii].symbol != lhs_symbol; ii++) {
           }
           if (go_to.map[ii].laptr == OMEGA) {
-            trace_lalr_path(s->value, ii, cli_options);
+            trace_lalr_path(s->value, ii, cli_options, la_base);
           }
         }
         free_nodes(v, q);
@@ -1772,7 +1727,7 @@ void compute_read(struct CLIOptions *cli_options, const struct DetectedSetSizes*
             for (ii = 1; go_to.map[ii].symbol != lhs_symbol; ii++) {
             }
             if (go_to.map[ii].laptr == OMEGA) {
-              trace_lalr_path(s->value, ii, cli_options);
+              trace_lalr_path(s->value, ii, cli_options, la_base);
             }
           }
           free_nodes(v, q);
@@ -2011,7 +1966,46 @@ void mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
   // INIT_LALRK_PROCESS sets up the necessary environment for the
   // computation of multiple lookahead.
   reset_temporary_space();
-  init_lalrk_process(cli_options);
+
+  /// If LALR(k), k > 1, is requested, we may have to create more shift
+  /// maps. Initialize SHIFT_TABLE. Note that each element of SHIFT_TABLE
+  /// is automatically initialized to NULL by CALLOC.
+  /// (See STATE_TO_RESOLVE_CONFLICTS)
+  /// Second, we check whether the grammar is not LR(k) for any k
+  /// because there exist a nonterminal A such that
+  ///
+  ///                     A =>+rm A
+  ///
+  /// Finally, allocate and compute the CYCLIC vector which identifies
+  /// states that can enter a cycle via transitions on nullable
+  /// nonterminals. If such a cyle exists, the grammar can also be
+  /// claimed to be not LR(k) for any k.
+  bool not_lrk = false;
+  if (cli_options->lalr_level > 1) {
+    calloc0(shift_table, SHIFT_TABLE_SIZE, struct state_element *);
+    for ALL_NON_TERMINALS3(symbol) {
+      not_lrk = not_lrk || rmpself[symbol];
+    }
+    cyclic = Allocate_boolean_array(num_states + 1);
+    index_of = Allocate_short_array(num_states + 1);
+    stack = Allocate_short_array(num_states + 1);
+    for ALL_STATES3(state_no) {
+      index_of[state_no] = OMEGA;
+    }
+    top = 0;
+    for ALL_STATES3(state_no) {
+      if (index_of[state_no] == OMEGA) {
+        compute_cyclic(state_no);
+      }
+      not_lrk = not_lrk || cyclic[state_no];
+    }
+    ffree(stack);
+    ffree(index_of);
+    sources = allocate_sources();
+    calloc0(visited.map, num_states + 1, struct node *);
+    visited.list = Allocate_short_array(num_states + 1);
+    visited.root = NIL;
+  }
   // IN_STAT is used to construct a reverse transition map. See
   // BUILD_IN_STAT for more detail.
   //
@@ -2039,7 +2033,7 @@ void mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
   short *rule_count = Allocate_short_array(num_rules + 1);
   bool *no_shift_on_error_sym = Allocate_boolean_array(num_states + 1);
   short *symbol_list = Allocate_short_array(num_terminals + 1);
-  single_complete_item = Allocate_boolean_array(num_states + 1);
+  bool *single_complete_item = Allocate_boolean_array(num_states + 1);
   struct node **action;
   calloc0(action, num_terminals + 1, struct node *);
   JBitset look_ahead;
@@ -2083,8 +2077,8 @@ void mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
     single_complete_item[state_no] =
         !cli_options->read_reduce_bit &&
         !cli_options->single_productions_bit &&
-        cli_options->table_opt != OPTIMIZE_TIME &&
-        cli_options->table_opt != OPTIMIZE_SPACE &&
+        cli_options->table_opt.value != OPTIMIZE_TIME.value &&
+        cli_options->table_opt.value != OPTIMIZE_SPACE.value &&
         cli_options->default_opt > 0 &&
         item_ptr->next == NULL &&
         item_table[item_no].symbol == empty;
@@ -2104,7 +2098,7 @@ void mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
   // We call COMPUTE_READ to perform the following tasks:
   // 1) Count how many elements are needed in LA_ELEMENT: LA_TOP
   // 2) Allocate space for and initialize LA_SET and LA_INDEX
-  compute_read(cli_options, dss);
+  compute_read(cli_options, dss, single_complete_item);
   // Allocate space for REDUCE which will be used to map each
   // into its reduce map. We also initialize RULE_COUNT which
   // will be used to count the number of reduce actions on each
@@ -2245,7 +2239,7 @@ void mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
       // can be eliminated as a result.
       if (cli_options->default_opt == 0) {
         default_rule = OMEGA;
-      } else if (cli_options->table_opt != OPTIMIZE_TIME && cli_options->table_opt != OPTIMIZE_SPACE && !cli_options->single_productions_bit) {
+      } else if (cli_options->table_opt.value != OPTIMIZE_TIME.value && cli_options->table_opt.value != OPTIMIZE_SPACE.value && !cli_options->single_productions_bit) {
         struct node *q = statset[state_no].complete_items;
         if (q->next == NULL) {
           const int item_no = q->value;
@@ -2273,8 +2267,8 @@ void mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
       if (action[symbol] != NULL) {
         const int rule_no = item_table[action[symbol]->value].rule_number;
         if (rule_no != default_rule ||
-            cli_options->table_opt == OPTIMIZE_SPACE ||
-            cli_options->table_opt == OPTIMIZE_TIME ||
+            cli_options->table_opt.value == OPTIMIZE_SPACE.value ||
+            cli_options->table_opt.value == OPTIMIZE_TIME.value ||
             cli_options->single_productions_bit) {
           red.map[reduce_size].symbol = symbol;
           red.map[reduce_size].rule_number = rule_no;

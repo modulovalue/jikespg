@@ -4,8 +4,8 @@ static char hostfile[] = __FILE__;
 #include "common.h"
 #include "lpgparse.h"
 
-struct action_element {
-  struct action_element *next;
+struct ptables_action_element {
+  struct ptables_action_element *next;
   short count;
   short action;
 };
@@ -15,19 +15,19 @@ struct action_element {
 /// number of occurrences of each action in the automaton is kept.
 /// This procedure is invoked with a specific shift map which it processes
 /// and updates the ACTION_COUNT map accordingly.
-static void process_shift_actions(struct action_element **action_count, const int shift_no) {
+static void process_shift_actions(struct ptables_action_element **action_count, const int shift_no) {
   const struct shift_header_type sh = shift[shift_no];
   for (int i = 1; i <= sh.size; i++) {
     const int symbol = sh.map[i].symbol;
     const short act = sh.map[i].action;
-    struct action_element *q;
+    struct ptables_action_element *q;
     for (q = action_count[symbol]; q != NULL; q = q->next) {
       if (q->action == act)
         break;
     }
     if (q == NULL) /* new action not yet seen */
     {
-      talloc0(q, struct action_element);
+      talloc0(q, struct ptables_action_element);
       q->action = act;
       q->count = 1;
       q->next = action_count[symbol];
@@ -45,8 +45,8 @@ static void compute_shift_default(void) {
   int shift_count = 0;
   int shift_reduce_count = 0;
   shiftdf = Allocate_short_array(num_terminals + 1);
-  struct action_element **action_count;
-  calloc0(action_count, num_terminals + 1, struct action_element *);
+  struct ptables_action_element **action_count;
+  calloc0(action_count, num_terminals + 1, struct ptables_action_element *);
   // For each state, invoke PROCESS_SHIFT_ACTIONS to process the
   // shift map associated with that state.
   for ALL_STATES3(state_no) {
@@ -61,7 +61,7 @@ static void compute_shift_default(void) {
   for ALL_TERMINALS3(symbol) {
     int max_count = 0;
     short default_action = 0;
-    for (const struct action_element *q = action_count[symbol]; q != NULL; q = q->next) {
+    for (const struct ptables_action_element *q = action_count[symbol]; q != NULL; q = q->next) {
       if (q->count > max_count) {
         max_count = q->count;
         default_action = q->action;
@@ -94,8 +94,8 @@ static void compute_goto_default(void) {
   int goto_reduce_count = 0;
   gotodef = Allocate_long_array(num_non_terminals);
   gotodef -= num_terminals + 1;
-  struct action_element **action_count;
-  calloc0(action_count, num_non_terminals, struct action_element *);
+  struct ptables_action_element **action_count;
+  calloc0(action_count, num_non_terminals, struct ptables_action_element *);
   action_count -= num_terminals + 1;
   if (action_count == NULL) {
     nospace(__FILE__, __LINE__);
@@ -110,7 +110,7 @@ static void compute_goto_default(void) {
     for (int i = 1; i <= go_to.size; i++) {
       const int symbol = go_to.map[i].symbol;
       const short act = go_to.map[i].action;
-      struct action_element *q;
+      struct ptables_action_element *q;
       for (q = action_count[symbol]; q != NULL; q = q->next) {
         if (q->action == act) {
           break;
@@ -118,7 +118,7 @@ static void compute_goto_default(void) {
       }
       if (q == NULL) {
         /* new action not yet seen */
-        talloc0(q, struct action_element);
+        talloc0(q, struct ptables_action_element);
         q->action = act;
         q->count = 1;
         q->next = action_count[symbol];
@@ -134,7 +134,7 @@ static void compute_goto_default(void) {
   for ALL_NON_TERMINALS3(symbol) {
     int max_count = 0;
     int default_action = 0;
-    struct action_element *q;
+    struct ptables_action_element *q;
     for (q = action_count[symbol]; q != NULL; q = q->next) {
       if (q->count > max_count) {
         max_count = q->count;
@@ -258,9 +258,9 @@ void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLI
     }
   }
   struct TableOutput toutput = init_table_output();
-  if (cli_options->table_opt == OPTIMIZE_SPACE) {
+  if (cli_options->table_opt.value == OPTIMIZE_SPACE.value) {
     cmprspa(output_files, cli_options, systab, &toutput, dss);
-  } else if (cli_options->table_opt == OPTIMIZE_TIME) {
+  } else if (cli_options->table_opt.value == OPTIMIZE_TIME.value) {
     cmprtim(output_files, cli_options, systab, &toutput, dss);
   } else {
     exit(999);

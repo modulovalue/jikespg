@@ -8,6 +8,7 @@ static char hostfile[] = __FILE__;
 struct NumTableEntries {
   long value;
 };
+
 struct TResult {
   long single_root;
   long multi_root;

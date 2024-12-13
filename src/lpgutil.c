@@ -5,19 +5,23 @@ static char hostfile[] = __FILE__;
 #include <string.h>
 #include "common.h"
 
+struct TemporarySpace {
+  cell **temp_base;
+  long temp_top;
+  long temp_size;
+  long temp_base_size;
+} ts = {
+  .temp_base = NULL,
+  .temp_top = 0,
+  .temp_size = 0,
+  .temp_base_size = 0,
+};
+
 /// The following are global variables and constants used to manage a
 /// pool of temporary space. Externally, the user invokes the function
 /// "talloc" just as he would invoke "malloc".
 const int LOG_BLKSIZE = 14;
 const int BLKSIZE = 1 << LOG_BLKSIZE;
-const int BASE_INCREMENT = 64;
-
-typedef long cell;
-
-cell **temp_base = NULL;
-long temp_top = 0;
-long temp_size = 0;
-long temp_base_size = 0;
 
 /// This procedure obtains more TEMPORARY space.
 bool allocate_more_space(cell ***base, long *size, long *base_size) {
@@ -34,6 +38,7 @@ bool allocate_more_space(cell ***base, long *size, long *base_size) {
   //
   const long k = *size >> LOG_BLKSIZE; /* which segment? */
   if (k == *base_size) {
+    const int BASE_INCREMENT = 64;
     // base overflow? reallocate
     *base_size += BASE_INCREMENT;
     *base = (cell **) (*base == NULL ? malloc(sizeof(cell *) * *base_size) : realloc(*base, sizeof(cell *) * *base_size));
@@ -67,67 +72,57 @@ bool allocate_more_space(cell ***base, long *size, long *base_size) {
 /// This procedure resets the temporary space already allocated so
 /// that it can be reused before new blocks are allocated.
 void reset_temporary_space(void) {
-  temp_top = 0; /* index of next usable elemt */
-  temp_size = 0;
+  ts.temp_top = 0; /* index of next usable elemt */
+  ts.temp_size = 0;
 }
 
 /// This procedure frees all allocated temporary space.
 void free_temporary_space(void) {
-  for (int k = 0; k < temp_base_size && temp_base[k] != NULL; k++) {
-    temp_base[k] += k * BLKSIZE;
-    ffree(temp_base[k]);
+  for (int k = 0; k < ts.temp_base_size && ts.temp_base[k] != NULL; k++) {
+    ts.temp_base[k] += k * BLKSIZE;
+    ffree(ts.temp_base[k]);
   }
-  if (temp_base != NULL) {
-    ffree(temp_base);
-    temp_base = NULL;
+  if (ts.temp_base != NULL) {
+    ffree(ts.temp_base);
+    ts.temp_base = NULL;
   }
-  temp_base_size = 0;
-  temp_top = 0;
-  temp_size = 0;
+  ts.temp_base_size = 0;
+  ts.temp_top = 0;
+  ts.temp_size = 0;
 }
 
 /// talloc allocates an object of size "size" in temporary space and
 /// returns a pointer to it.
 void *talloc(const long size) {
-  long i = temp_top;
-  temp_top += (size + sizeof(cell) - 1) / sizeof(cell);
-  if (temp_top > temp_size) {
-    i = temp_size;
-    temp_top = temp_size + (size + sizeof(cell) - 1) / sizeof(cell);
-    if (!allocate_more_space(&temp_base, &temp_size, &temp_base_size)) {
-      temp_top = temp_size;
+  long i = ts.temp_top;
+  ts.temp_top += (size + sizeof(cell) - 1) / sizeof(cell);
+  if (ts.temp_top > ts.temp_size) {
+    i = ts.temp_size;
+    ts.temp_top = ts.temp_size + (size + sizeof(cell) - 1) / sizeof(cell);
+    if (!allocate_more_space(&ts.temp_base, &ts.temp_size, &ts.temp_base_size)) {
+      ts.temp_top = ts.temp_size;
       return NULL;
     }
   }
-  return &temp_base[i >> LOG_BLKSIZE][i];
+  return &ts.temp_base[i >> LOG_BLKSIZE][i];
 }
 
-/// The following are global variables and constants used to manage a
-/// pool of global space. Externally, the user invokes one of the
-/// functions:
-///
-///    ALLOCATE_NODE
-///    ALLOCATE_GOTO_MAP
-///    ALLOCATE_SHIFT_MAP
-///    ALLOCATE_REDUCE_MAP
-///
-/// These functions allocate space from the global pool in the same
-/// using the function "galloc" below.
-cell **global_base = NULL;
-long global_top = 0;
-long global_size = 0;
-long global_base_size = 0;
-
-struct node *node_pool = NULL;
+struct GlobalSpace gs = (struct GlobalSpace) {
+  .global_base = NULL,
+  .global_top = 0,
+  .global_size = 0,
+  .global_base_size = 0,
+  .node_pool = NULL,
+};
 
 /// galloc allocates an object of size "size" in global space and
 /// returns a pointer to it. It is analogous to "talloc", but it
 /// is a local (static) routine that is only invoked in this file by
 /// other more specialized routines.
 void *galloc(const long size) {
-  long i = global_top;
-  global_top += (size + sizeof(cell) - 1) / sizeof(cell);
-  if (global_top > global_size) {
+  long i = gs.global_top;
+  gs.global_top += (size + sizeof(cell) - 1) / sizeof(cell);
+  if (gs.global_top > gs.global_size) {
     {
       // This function is invoked when the space left in a segment is not
       // enough for GALLOC to allocate a requested object. Rather than
@@ -137,29 +132,29 @@ void *galloc(const long size) {
       while (true) {
         const long i = top;
         top += (sizeof(struct node) + sizeof(cell) - 1) / sizeof(cell);
-        if (top > global_size) {
+        if (top > gs.global_size) {
           break;
         }
-        struct node *p = (struct node *) &global_base[i >> LOG_BLKSIZE][i];
-        p->next = node_pool;
-        node_pool = p;
+        struct node *p = (struct node *) &gs.global_base[i >> LOG_BLKSIZE][i];
+        p->next = gs.node_pool;
+        gs.node_pool = p;
       }
     }
-    i = global_size;
-    global_top = global_size + (size + sizeof(cell) - 1) / sizeof(cell);
-    if (!allocate_more_space(&global_base, &global_size, &global_base_size)) {
-      global_top = global_size;
+    i = gs.global_size;
+    gs.global_top = gs.global_size + (size + sizeof(cell) - 1) / sizeof(cell);
+    if (!allocate_more_space(&gs.global_base, &gs.global_size, &gs.global_base_size)) {
+      gs.global_top = gs.global_size;
       return NULL;
     }
   }
-  return &global_base[i >> LOG_BLKSIZE][i];
+  return &gs.global_base[i >> LOG_BLKSIZE][i];
 }
 
 ///  This function frees a linked list of nodes by adding them to the free
 /// list.  Head points to head of linked list and tail to the end.
 void free_nodes(struct node *head, struct node *tail) {
-  tail->next = node_pool;
-  node_pool = head;
+  tail->next = gs.node_pool;
+  gs.node_pool = head;
 }
 
 /// FILL_IN is a subroutine that pads a buffer, STRING,  with CHARACTER a
@@ -175,7 +170,7 @@ void fill_in(char string[], const int amount, const char character) {
 /// QCKSRT is a quicksort algorithm that takes as arguments an array of
 /// integers, two numbers L and H that indicate the lower and upper bound
 /// positions in ARRAY to be sorted.
-void qcksrt(short array[], const int l, const int h) {
+static void qcksrt(short array[], const int l, const int h) {
   int lostack[14];
   int histack[14];
   // 2 ** 15 - 1 elements

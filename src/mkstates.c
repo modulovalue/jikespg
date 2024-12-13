@@ -427,7 +427,15 @@ void mklr0(struct CLIOptions *cli_options) {
   ffree(shift_table);
 }
 
+
+
 // === Produce Start ===
+
+struct scope_elmt {
+  short link;
+  short item;
+  short index;
+};
 
 short *stack;
 short *index_of;
@@ -439,13 +447,7 @@ short *scope_table;
 
 long scope_top = 0;
 
-struct node **direct_produces;
-
-struct scope_elmt {
-  short link;
-  short item;
-  short index;
-} *scope_element;
+struct scope_elmt *scope_element;
 
 JBitset produces;
 JBitset right_produces;
@@ -812,6 +814,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
   produces.raw -= (num_terminals + 1) * dss->non_term_set_size;
   struct node **goto_domain;
   calloc0(goto_domain, num_states + 1, struct node *);
+  struct node **direct_produces;
   calloc0(direct_produces, num_non_terminals, struct node *);
   direct_produces -= num_terminals + 1;
   // Note that the space allocated for PRODUCES and DIRECT_PRODUCES
@@ -885,7 +888,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
   top = 0;
   for ALL_NON_TERMINALS3(nt) {
     if (index_of[nt] == OMEGA) {
-      compute_produces(nt);
+      compute_produces(nt, direct_produces);
     }
     RESET_BIT_IN(produces, nt, nt - num_terminals);
   }
@@ -963,7 +966,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
   gd_index[num_states + 1] = n + 1;
   // Remove names assigned to nonterminals that are never used as
   // error candidates.
-  if (cli_options->names_opt == OPTIMIZE_PHRASES) {
+  if (cli_options->names_opt.value == OPTIMIZE_PHRASES.value) {
     // In addition to nonterminals that are never used as candidates,
     // if a nullable nonterminal was assigned a name by default
     // (nonterminals that were "named" by default are identified
@@ -1096,7 +1099,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
       top = 0;
       for ALL_NON_TERMINALS3(nt) {
         if (index_of[nt] == OMEGA) {
-          compute_produces(nt);
+          compute_produces(nt, direct_produces);
         }
       }
       left_produces = produces;
@@ -1136,7 +1139,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
         index_of[nt] = OMEGA;
       }
       top = 0;
-      compute_produces(accept_image);
+      compute_produces(accept_image, direct_produces);
       // Construct a mapping from each non_terminal A into the set of
       // items of the form [B  ->  x . A y].
       for ALL_NON_TERMINALS3(nt) {
@@ -1466,7 +1469,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
 ///
 /// This procedure is used to compute the transitive closure of
 /// the PRODUCES, LEFT_PRODUCES and RIGHT_MOST_PRODUCES maps.
-void compute_produces(const int symbol) {
+void compute_produces(const int symbol, struct node **direct_produces) {
   stack[++top] = symbol;
   const int indx = top;
   index_of[symbol] = indx;
@@ -1475,7 +1478,7 @@ void compute_produces(const int symbol) {
     int new_symbol = p->value;
     /* first time seen? */
     if (index_of[new_symbol] == OMEGA) {
-      compute_produces(new_symbol);
+      compute_produces(new_symbol, direct_produces);
     }
     index_of[symbol] = MIN(index_of[symbol], index_of[new_symbol]);
     SET_UNION(produces, symbol, produces, new_symbol);
@@ -1502,7 +1505,7 @@ void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
   no_shifts_ptr.size = 0; /* For states with no SHIFTs */
   no_shifts_ptr.map = NULL;
   mklr0(cli_options);
-  if (error_maps_bit && (cli_options->table_opt == OPTIMIZE_TIME || cli_options->table_opt == OPTIMIZE_SPACE)) {
+  if (error_maps_bit && (cli_options->table_opt.value == OPTIMIZE_TIME.value || cli_options->table_opt.value == OPTIMIZE_SPACE.value)) {
     produce(cli_options, dss);
   }
   // Free space trapped by the CLOSURE and CLITEMS maps.

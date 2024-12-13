@@ -144,8 +144,9 @@ static void B_SET_UNION(const JBitset s1, const int dest, const JBitset s2, cons
 /// EQUAL_SETS checks to see if two sets are equal and returns True or False
 static bool equal_sets(const JBitset set1, const int indx1, const JBitset set2, const int indx2, const int bound) {
   for (register long i = 0; i < bound; i++) {
-    if (set1.raw[indx1 * bound + i] != set2.raw[indx2 * bound + i])
+    if (set1.raw[indx1 * bound + i] != set2.raw[indx2 * bound + i]) {
       return false;
+    }
   }
   return true;
 }

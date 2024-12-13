@@ -41,16 +41,35 @@ static const int PRINT_LINE_SIZE = 80;
 static const int PARSER_LINE_SIZE = 80;
 static const int MAX_LINE_SIZE = 512;
 
-static const int OPTIMIZE_NO_TABLE = 0;
-static const int OPTIMIZE_TIME = 1;
-static const int OPTIMIZE_SPACE = 2;
 
-static const int MINIMUM_NAMES = 1;
-static const int MAXIMUM_NAMES = 2;
-static const int OPTIMIZE_PHRASES = 3;
-static const int NOTRACE = 0;
-static const int TRACE_CONFLICTS = 1;
-static const int TRACE_FULL = 2;
+
+typedef struct {
+  int value;
+} OptimizeMode;
+static const OptimizeMode OPTIMIZE_NO_TABLE = { .value = 0 },
+  OPTIMIZE_TIME = { .value = 1 },
+  OPTIMIZE_SPACE = { .value = 2 };
+
+
+
+typedef struct {
+  int value;
+} OptimizeNames;
+static const OptimizeNames MINIMUM_NAMES = { .value = 1 },
+  MAXIMUM_NAMES = { .value = 2 },
+  OPTIMIZE_PHRASES = { .value = 3 };
+
+
+
+typedef struct {
+  int value;
+} TraceMode;
+static const TraceMode NOTRACE = { .value = 0 },
+  TRACE_CONFLICTS = { .value = 1 },
+  TRACE_FULL = { .value = 2 };
+
+
+
 static const int STATE_TABLE_UBOUND = 1020;
 static const int STATE_TABLE_SIZE = STATE_TABLE_UBOUND + 1; /* 1021 is a prime */
 static const int SHIFT_TABLE_UBOUND = 400;
@@ -58,9 +77,9 @@ static const int SHIFT_TABLE_SIZE = SHIFT_TABLE_UBOUND + 1; /* 401 is a prime */
 static const int SCOPE_UBOUND = 100;
 static const int SCOPE_SIZE = SCOPE_UBOUND + 1; /* 101 is prime */
 
-static const int INFINITY = (short) SHRT_MAX;
-static const int OMEGA = (short) SHRT_MIN;
-static const int NIL = (short) SHRT_MIN + 1;
+static const short INFINITY = SHRT_MAX;
+static const short OMEGA = SHRT_MIN;
+static const short NIL = SHRT_MIN + 1;
 static const int DEFAULT_SYMBOL = 0;
 
 static const int HT_SIZE = 701; /* 701 is a prime */
@@ -93,8 +112,6 @@ static const int IOBUFFER_SIZE = 655360;
 #define ENTIRE_RHS3(x, rule_no) (int (x) = rules[rule_no].rhs; (x) < rules[(rule_no) + 1].rhs; (x)++)
 
 extern const long MAX_TABLE_SIZE;
-
-extern struct node **direct_produces;
 
 extern JBitset produces;
 
@@ -190,9 +207,9 @@ struct CLIOptions {
   bool single_productions_bit;
   int lalr_level;
   int default_opt;
-  int trace_opt;
-  int names_opt;
-  int table_opt;
+  TraceMode trace_opt;
+  OptimizeNames names_opt;
+  OptimizeMode table_opt;
   int maximum_distance;
   int minimum_distance;
   int stack_size;
@@ -206,6 +223,10 @@ struct CLIOptions {
   int blocke_len;
   int hblockb_len;
   int hblocke_len;
+  char blockb[MAX_PARM_SIZE];
+  char blocke[MAX_PARM_SIZE];
+  char hblockb[MAX_PARM_SIZE];
+  char hblocke[MAX_PARM_SIZE];
 };
 
 static struct CLIOptions init_cli_options() {
@@ -242,6 +263,10 @@ static struct CLIOptions init_cli_options() {
     .blocke_len = -1,
     .hblockb_len = -1,
     .hblocke_len = -1,
+    .blockb = {'/', '.'},
+    .blocke = {'.', '/'},
+    .hblockb = {'/', ':'},
+    .hblocke = {':', '/'},
   };
 }
 
@@ -399,7 +424,7 @@ extern long first_index;
 extern long last_index;
 extern long last_symbol;
 
-void compute_produces(int symbol);
+void compute_produces(int symbol, struct node **direct_produces);
 
 void reset_temporary_space(void);
 
@@ -419,8 +444,26 @@ void restore_symbol(char *out, const char *in, char ormark, char escape);
 
 void *galloc(long size);
 
-extern struct node *node_pool;
+typedef long cell;
 
+struct GlobalSpace {
+  /// The following are global variables and constants used to manage a
+  /// pool of global space. Externally, the user invokes one of the
+  /// functions:
+  ///
+  ///    ALLOCATE_NODE
+  ///    ALLOCATE_GOTO_MAP
+  ///    ALLOCATE_SHIFT_MAP
+  ///    ALLOCATE_REDUCE_MAP
+  ///
+  /// These functions allocate space from the global pool in the same
+  /// using the function "galloc" below.
+  cell **global_base;
+  long global_top;
+  long global_size;
+  long global_base_size;
+  struct node *node_pool;
+} gs;
 struct TableOutput {
   long *ordered_state;
   long *symbol_map;
@@ -532,10 +575,8 @@ extern int shift_check_size;
 extern struct node **conflict_symbols;
 extern JBitset read_set;
 extern JBitset la_set;
-extern int highest_level;
 extern long la_top;
 extern short *la_index;
-extern bool not_lrk;
 
 extern int increment;
 
@@ -612,10 +653,10 @@ static bool *Allocate_boolean_array(const long n) {
 /// If there are nodes in the free pool, one of them is returned. Otherwise,
 /// a new node is allocated from the global storage pool.
 static struct node *Allocate_node() {
-  struct node *p = node_pool;
+  struct node *p = gs.node_pool;
   if (p != NULL) {
     // Is free list not empty?
-    node_pool = p->next;
+    gs.node_pool = p->next;
   } else {
     galloc0(p, struct node, 1);
   }

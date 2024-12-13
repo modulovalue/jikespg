@@ -64,7 +64,7 @@ cd "$JIKESPG_DIR"
 # cp "$SRC_DIR/jikespg" "$JAVA_DIR/"
 # cd "$JAVA_DIR"
 # echo "Running './jikespg jikespg.g' in $JAVA_DIR"
-# ./jikespg pgn.g
+# ./jikespg java.g
 
 # Step 6: Cleanup - Remove jikespg from the example directories and clean the source directory
 cleanup

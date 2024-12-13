@@ -150,7 +150,7 @@ int main(const int argc, char *argv[]) {
       ptstats(&cli_options);
     }
 
-    if (cli_options.table_opt != OPTIMIZE_NO_TABLE) {
+    if (cli_options.table_opt.value != OPTIMIZE_NO_TABLE.value) {
       if (cli_options.goto_default_bit && cli_options.nt_check_bit) {
         PRNTERR("The options GOTO_DEFAULT and NT_CHECK are incompatible. Tables not generated");
       } else {

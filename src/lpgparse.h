@@ -125,8 +125,8 @@ void assign_symbol_no(const char *string_ptr, int image);
 
 static void alias_map(const char *stringptr, int image);
 
-static int symbol_image(const char *item);
+int symbol_image(const char *item);
 
-static int name_map(const char *symb);
+int name_map(const char *symb);
 
 static void build_symno(void);

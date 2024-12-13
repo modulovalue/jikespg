@@ -13,7 +13,7 @@ static char hostfile[] = __FILE__;
 #include "lpgact.h"
 #include "lpgprs.h"
 
-char *string_table = NULL;
+static char *string_table = NULL;
 
 /// SYMNO is an array that maps symbol numbers to actual symbols.
 struct symno_type *symno = NULL;
@@ -32,59 +32,54 @@ const char *RETRIEVE_NAME(const int indx) {
 // TODO • make this a local?
 char parm[256] = "";
 
-long string_offset = 0;
+static long string_offset = 0;
 
-char blockb[MAX_PARM_SIZE] = {'/', '.'};
-char blocke[MAX_PARM_SIZE] = {'.', '/'};
-char hblockb[MAX_PARM_SIZE] = {'/', ':'};
-char hblocke[MAX_PARM_SIZE] = {':', '/'};
+static const int SPACE_CODE = 1;
+static const int DIGIT_CODE = 2;
+static const int ALPHA_CODE = 3;
+static char code[256] = {0};
 
-const int SPACE_CODE = 1;
-const int DIGIT_CODE = 2;
-const int ALPHA_CODE = 3;
-char code[256] = {0};
-
-bool IsSpace(const int c) {
+static bool IsSpace(const int c) {
   return code[c] == SPACE_CODE;
 }
 
-bool IsDigit(const int c) {
+static bool IsDigit(const int c) {
   return code[c] == DIGIT_CODE;
 }
 
-bool IsAlpha(const int c) {
+static bool IsAlpha(const int c) {
   return code[c] == ALPHA_CODE;
 }
 
-int line_no = 0;
+static int line_no = 0;
 
 /// The two character pointer variables, P1 and P2, are used in
 /// processing the io buffer, INPUT_BUFFER.
-char *p1;
-char *p2;
-char *input_buffer;
+static char *p1;
+static char *p2;
+static char *input_buffer;
 
-char *linestart;
-char *bufend;
-char *ct_ptr;
+static char *linestart;
+static char *bufend;
+static char *ct_ptr;
 
 /// current token & related variables
-short ct = 0;
-short ct_start_col = 0;
-short ct_end_col = 0;
-short ct_length = 0;
+static short ct = 0;
+static short ct_start_col = 0;
+static short ct_end_col = 0;
+static short ct_length = 0;
 
-long ct_start_line = 0;
-long ct_end_line = 0;
+static long ct_start_line = 0;
+static long ct_end_line = 0;
 
-const int OUTPUT_PARM_SIZE = MAX_PARM_SIZE + 7;
-const int MAXIMUM_LA_LEVEL = 100;
-const int STRING_BUFFER_SIZE = 8192;
+static const int OUTPUT_PARM_SIZE = MAX_PARM_SIZE + 7;
+static const int MAXIMUM_LA_LEVEL = 100;
+static const int STRING_BUFFER_SIZE = 8192;
 
-short *macro_table;
+static short *macro_table;
 
 /// READ_INPUT fills the buffer from p1 to the end.
-void read_input(char *grm_file, FILE *sysgrm) {
+static void read_input(char *grm_file, FILE *sysgrm) {
   long num_read = input_buffer + IOBUFFER_SIZE - bufend;
   if ((num_read = fread(bufend, 1, num_read, sysgrm)) == 0) {
     if (ferror(sysgrm) != 0) {
@@ -99,7 +94,7 @@ void read_input(char *grm_file, FILE *sysgrm) {
 /// VERIFY takes as argument a character string and checks whether each
 /// character is a digit. If all are digits, then 1 is returned; if not, then
 /// 0 is returned.
-bool verify_is_digit(const char *item) {
+static bool verify_is_digit(const char *item) {
   while (IsDigit(*item)) {
     item++;
   }
@@ -108,7 +103,7 @@ bool verify_is_digit(const char *item) {
 
 /// TRANSLATE takes as arguments a character array, which it folds to upper
 /// to uppercase and returns.
-char *translate(char *str, const int len) {
+static char *translate(char *str, const int len) {
   for (register int i = 0; i < len; i++) {
     str[i] = TOUPPER(str[i]);
   }
@@ -124,7 +119,7 @@ char *translate(char *str, const int len) {
 ///                  if (tolower(s1[i]) != s2[i])  ?
 /// because tolower(ch) is sometimes implemented as (ch-'A'+'a') which
 /// does not work when "ch" is already a lower case character.
-bool strxeq(char *s1, char *s2) {
+static bool strxeq(char *s1, char *s2) {
   for (; *s2 != '\0'; s1++, s2++) {
     if (*s1 != *s2 && *s1 != toupper(*s2))
       return false;
@@ -139,7 +134,7 @@ bool strxeq(char *s1, char *s2) {
 /// Basically, there are two kinds of options: switches which indicate a
 /// certain setting just by their appearance, and valued options which are
 /// followed by an equal sign and the value to be assigned to them.
-void options(char *file_prefix, struct CLIOptions *cli_options) {
+static void options(char *file_prefix, struct CLIOptions *cli_options) {
   char token[MAX_PARM_SIZE + 1];
   char temp[MAX_PARM_SIZE + 1];
   char *c;
@@ -251,9 +246,9 @@ void options(char *file_prefix, struct CLIOptions *cli_options) {
       if (memcmp(token, "ACTFILENAME", token_len) == 0) {
         strcpy(cli_options->act_file, temp);
       } else if (strcmp(token, "BLOCKB") == 0) {
-        strcpy(blockb, temp);
+        strcpy(cli_options->blockb, temp);
       } else if (strcmp(token, "BLOCKE") == 0) {
-        strcpy(blocke, temp);
+        strcpy(cli_options->blocke, temp);
       } else if (memcmp("DEFAULT", token, token_len) == 0) {
         if (verify_is_digit(temp)) {
           cli_options->default_opt = MIN(atoi(temp), 5);
@@ -284,9 +279,9 @@ void options(char *file_prefix, struct CLIOptions *cli_options) {
       } else if (memcmp(token, "HACTFILENAME", token_len) == 0) {
         strcpy(cli_options->hact_file, temp);
       } else if (strcmp(token, "HBLOCKB") == 0) {
-        strcpy(hblockb, temp);
+        strcpy(cli_options->hblockb, temp);
       } else if (strcmp(token, "HBLOCKE") == 0) {
-        strcpy(hblocke, temp);
+        strcpy(cli_options->hblocke, temp);
       } else if (memcmp("LALR", token, token_len) == 0) {
         register int token_len = strlen(temp);
         if (token_len > MAX_PARM_SIZE) {
@@ -378,7 +373,7 @@ void options(char *file_prefix, struct CLIOptions *cli_options) {
 /// if they are (it is an) "options" line(s).  If so, the options are
 /// processed.  Then, we process user-supplied options if there are any.  In
 /// any case, the options in effect are printed.
-void process_options_lines(char *grm_file, struct OutputFiles *output_files, char *file_prefix, struct CLIOptions *cli_options, FILE *sysgrm) {
+static void process_options_lines(char *grm_file, struct OutputFiles *output_files, char *file_prefix, struct CLIOptions *cli_options, FILE *sysgrm) {
   char old_parm[MAX_LINE_SIZE + 1];
   char output_line[PRINT_LINE_SIZE + 1];
   char opt_string[60][OUTPUT_PARM_SIZE + 1];
@@ -454,8 +449,8 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
   // BLOCKB, BLOCKE, HBLOCKB and HBLOCKE can generate the longest strings
   // since their value can be up to MAX_PARM_SIZE characters long.
   sprintf(opt_string[++top], "ACTFILENAME=%s", cli_options->act_file);
-  sprintf(opt_string[++top], "BLOCKB=%s", blockb);
-  sprintf(opt_string[++top], "BLOCKE=%s", blocke);
+  sprintf(opt_string[++top], "BLOCKB=%s", cli_options->blockb);
+  sprintf(opt_string[++top], "BLOCKE=%s", cli_options->blocke);
   strcpy(opt_string[++top], cli_options->byte_bit ? "BYTE" : "NOBYTE");
   strcpy(opt_string[++top], cli_options->conflicts_bit ? "CONFLICTS" : "NOCONFLICTS");
   if (cli_options->default_opt == 0) {
@@ -480,8 +475,8 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
   }
   strcpy(opt_string[++top], cli_options->goto_default_bit ? "GOTODEFAULT" : "NOGOTODEFAULT");
   sprintf(opt_string[++top], "HACTFILENAME=%s", cli_options->hact_file);
-  sprintf(opt_string[++top], "HBLOCKB=%s", hblockb);
-  sprintf(opt_string[++top], "HBLOCKE=%s", hblocke);
+  sprintf(opt_string[++top], "HBLOCKB=%s", cli_options->hblockb);
+  sprintf(opt_string[++top], "HBLOCKE=%s", cli_options->hblocke);
   sprintf(opt_string[++top], "LALR=%d", cli_options->lalr_level);
   strcpy(opt_string[++top], cli_options->list_bit ? "LIST" : "NOLIST");
   {
@@ -498,11 +493,11 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
       exit(12);
     }
   }
-  if (cli_options->names_opt == MAXIMUM_NAMES) {
+  if (cli_options->names_opt.value == MAXIMUM_NAMES.value) {
     strcpy(opt_string[++top], "NAMES=MAXIMUM");
-  } else if (cli_options->names_opt == MINIMUM_NAMES) {
+  } else if (cli_options->names_opt.value == MINIMUM_NAMES.value) {
     strcpy(opt_string[++top], "NAMES=MINIMUM");
-  } else {
+  } else if (cli_options->names_opt.value == OPTIMIZE_PHRASES.value) {
     strcpy(opt_string[++top], "NAMES=OPTIMIZED");
   }
   strcpy(opt_string[++top], cli_options->nt_check_bit ? "NTCHECK" : "NONTCHECK");
@@ -515,21 +510,21 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
   sprintf(opt_string[++top], "STACK-SIZE=%d", cli_options->stack_size);
   strcpy(opt_string[++top], cli_options->states_bit ? "STATES" : "NOSTATES");
   sprintf(opt_string[++top], "SUFFIX=%s", cli_options->suffix);
-  if (cli_options->table_opt == OPTIMIZE_NO_TABLE) {
+  if (cli_options->table_opt.value == OPTIMIZE_NO_TABLE.value) {
     strcpy(opt_string[++top], "NOTABLE");
-  } else if (cli_options->table_opt == OPTIMIZE_SPACE) {
+  } else if (cli_options->table_opt.value == OPTIMIZE_SPACE.value) {
     strcpy(opt_string[++top], "TABLE=SPACE");
-  } else if (cli_options->table_opt == OPTIMIZE_TIME) {
+  } else if (cli_options->table_opt.value == OPTIMIZE_TIME.value) {
     strcpy(opt_string[++top], "TABLE=TIME");
   } else {
     PRNT("Unsupported table optimization option.");
     exit(12);
   }
-  if (cli_options->trace_opt == NOTRACE) {
+  if (cli_options->trace_opt.value == NOTRACE.value) {
     strcpy(opt_string[++top], "NOTRACE");
-  } else if (cli_options->trace_opt == TRACE_CONFLICTS) {
+  } else if (cli_options->trace_opt.value == TRACE_CONFLICTS.value) {
     strcpy(opt_string[++top], "TRACE=CONFLICTS");
-  } else if (cli_options->trace_opt == TRACE_FULL) {
+  } else if (cli_options->trace_opt.value == TRACE_FULL.value) {
     strcpy(opt_string[++top], "TRACE=FULL");
   } else {
     PRNT("Unsupported trace option.");
@@ -549,36 +544,37 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
   }
   PRNT(output_line);
   PRNT("");
-  if (cli_options->table_opt == OPTIMIZE_SPACE) {
+  if (cli_options->table_opt.value == OPTIMIZE_SPACE.value) {
     if (cli_options->default_opt < 4) {
       PRNTWNG("DEFAULT_OPTION requested must be >= 4 if optimizing for space");
     }
-  } else if (cli_options->table_opt == OPTIMIZE_TIME) {
+  }
+  if (cli_options->table_opt.value == OPTIMIZE_TIME.value) {
     if (cli_options->shift_default_bit) {
       PRNTWNG("SHIFT-DEFAULT option is only valid for Space tables");
     }
   }
   // Check if there are any conflicts in the options.
   temp[0] = '\0';
-  if (strcmp(blockb, blocke) == 0) {
+  if (strcmp(cli_options->blockb, cli_options->blocke) == 0) {
     strcpy(temp, "BLOCKB and BLOCKE");
-  } else if (strlen(blockb) == 1 && blockb[0] == cli_options->escape) {
+  } else if (strlen(cli_options->blockb) == 1 && cli_options->blockb[0] == cli_options->escape) {
     strcpy(temp, "BLOCKB and ESCAPE");
-  } else if (strlen(blockb) == 1 && blockb[0] == cli_options->ormark) {
+  } else if (strlen(cli_options->blockb) == 1 && cli_options->blockb[0] == cli_options->ormark) {
     strcpy(temp, "BLOCKB and ORMARK");
-  } else if (strlen(blocke) == 1 && blocke[0] == cli_options->escape) {
+  } else if (strlen(cli_options->blocke) == 1 && cli_options->blocke[0] == cli_options->escape) {
     strcpy(temp, "ESCAPE and BLOCKE");
-  } else if (strlen(blocke) == 1 && blocke[0] == cli_options->ormark) {
+  } else if (strlen(cli_options->blocke) == 1 && cli_options->blocke[0] == cli_options->ormark) {
     strcpy(temp, "ORMARK and BLOCKE");
-  } else if (strcmp(hblockb, hblocke) == 0) {
+  } else if (strcmp(cli_options->hblockb, cli_options->hblocke) == 0) {
     strcpy(temp, "HBLOCKB and HBLOCKE");
-  } else if (strlen(hblockb) == 1 && hblockb[0] == cli_options->escape) {
+  } else if (strlen(cli_options->hblockb) == 1 && cli_options->hblockb[0] == cli_options->escape) {
     strcpy(temp, "HBLOCKB and ESCAPE");
-  } else if (strlen(hblockb) == 1 && hblockb[0] == cli_options->ormark) {
+  } else if (strlen(cli_options->hblockb) == 1 && cli_options->hblockb[0] == cli_options->ormark) {
     strcpy(temp, "HBLOCKB and ORMARK");
-  } else if (strlen(hblocke) == 1 && hblocke[0] == cli_options->escape) {
+  } else if (strlen(cli_options->hblocke) == 1 && cli_options->hblocke[0] == cli_options->escape) {
     strcpy(temp, "ESCAPE and HBLOCKE");
-  } else if (strlen(hblocke) == 1 && hblocke[0] == cli_options->ormark) {
+  } else if (strlen(cli_options->hblocke) == 1 && cli_options->hblocke[0] == cli_options->ormark) {
     strcpy(temp, "ORMARK and HBLOCKE");
   } else if (cli_options->ormark == cli_options->escape) {
     strcpy(temp, "ORMARK and ESCAPE");
@@ -588,8 +584,8 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
     PRNT3("Input process aborted at line %d ...", line_no);
     exit(12);
   }
-  if (strlen(hblockb) <= strlen(blockb) && memcmp(hblockb, blockb, strlen(hblockb)) == 0) {
-    PRNTERR2("Hblockb value, %s, cannot be a suffix of blockb: %s", hblockb, blockb);
+  if (strlen(cli_options->hblockb) <= strlen(cli_options->blockb) && memcmp(cli_options->hblockb, cli_options->blockb, strlen(cli_options->hblockb)) == 0) {
+    PRNTERR2("Hblockb value, %s, cannot be a suffix of blockb: %s", cli_options->hblockb, cli_options->blockb);
     PRNT3("Input process aborted at line %d ...", line_no);
     exit(12);
   }
@@ -597,7 +593,7 @@ void process_options_lines(char *grm_file, struct OutputFiles *output_files, cha
 
 /// HASH takes as argument a symbol and hashes it into a location in
 /// HASH_TABLE.
-int hash(const char *symbl) {
+static int hash(const char *symbl) {
   register unsigned long hash_value = 0;
   for (; *symbl != '\0'; symbl++) {
     const register unsigned short k = *symbl;
@@ -613,7 +609,7 @@ int hash(const char *symbl) {
 /// INSERT_STRING takes as an argument a pointer to a ht_elemt structure and
 /// a character string. It inserts the string into the string table and sets
 /// the value of node to the index into the string table.
-void insert_string(struct hash_type *q, const char *string) {
+static void insert_string(struct hash_type *q, const char *string) {
   long string_size = 0;
   if (string_offset + strlen(string) >= string_size) {
     string_size += STRING_BUFFER_SIZE;
@@ -630,7 +626,7 @@ void insert_string(struct hash_type *q, const char *string) {
   }
 }
 
-bool EQUAL_STRING(const char *symb, const struct hash_type *p) {
+static bool EQUAL_STRING(const char *symb, const struct hash_type *p) {
   return strcmp(symb, string_table + p->st_ptr) == 0;
 }
 
@@ -684,7 +680,7 @@ void alias_map(const char *stringptr, const int image) {
 /// SYMBOL_IMAGE takes as argument a symbol.  It searches for that symbol
 /// in the HASH_TABLE, and if found, it returns its image; otherwise, it
 /// returns OMEGA.
-static int symbol_image(const char *item) {
+int symbol_image(const char *item) {
   for (const register struct hash_type *q = hash_table[hash(item)]; q != NULL; q = q->link) {
     if (EQUAL_STRING(item, q))
       return ABS(q->number);
@@ -696,7 +692,7 @@ static int symbol_image(const char *item) {
 /// is not yet in the table. If it was already in the table then it is
 /// assigned a NAME_INDEX number if it did not yet have one.  The name index
 /// assigned is returned.
-static int name_map(const char *symb) {
+int name_map(const char *symb) {
   register struct hash_type *p;
   const register int i = hash(symb);
   for (p = hash_table[i]; p != NULL; p = p->link) {
@@ -721,7 +717,7 @@ static int name_map(const char *symb) {
 }
 
 /// SCANNER scans the input stream and returns the next input token.
-void scanner(char *grm_file, FILE *sysgrm, struct CLIOptions* cli_options) {
+static void scanner(char *grm_file, FILE *sysgrm, struct CLIOptions* cli_options) {
   char tok_string[SYMBOL_SIZE + 1];
 scan_token:
   // Skip "blank" spaces.
@@ -741,7 +737,7 @@ scan_token:
       linestart = p1 - 1;
     }
   }
-  if (strncmp(p1, hblockb, cli_options->hblockb_len) == 0) /* check block opener */
+  if (strncmp(p1, cli_options->hblockb, cli_options->hblockb_len) == 0) /* check block opener */
   {
     p1 = p1 + cli_options->hblockb_len;
     ct_length = 0;
@@ -756,7 +752,7 @@ scan_token:
       ct_start_col = p1 - linestart;
     }
 
-    while (strncmp(p1, hblocke, cli_options->hblocke_len) != 0) {
+    while (strncmp(p1, cli_options->hblocke, cli_options->hblocke_len) != 0) {
       if (*p1 == '\0') {
         PRNTERR2("End of file encountered while scanning header action block in rule %ld", num_rules);
         exit(12);
@@ -782,7 +778,7 @@ scan_token:
     p2 = p1 + cli_options->hblocke_len;
 
     return;
-  } else if (strncmp(p1, blockb, cli_options->blockb_len) == 0) /* check block  */
+  } else if (strncmp(p1, cli_options->blockb, cli_options->blockb_len) == 0) /* check block  */
   {
     p1 = p1 + cli_options->blockb_len;
     ct_length = 0;
@@ -797,7 +793,7 @@ scan_token:
       ct_start_col = p1 - linestart;
     }
 
-    while (strncmp(p1, blocke, cli_options->blocke_len) != 0) {
+    while (strncmp(p1, cli_options->blocke, cli_options->blocke_len) != 0) {
       if (*p1 == '\0') {
         PRNTERR2("End of file encountered while scanning action block in rule %ld", num_rules);
         exit(12);
@@ -1043,7 +1039,7 @@ check_symbol_length:
 }
 
 /// This function allocates a line_elemt structure and returns a pointer to it.
-struct line_elemt *alloc_line(void) {
+static struct line_elemt *alloc_line(void) {
   register struct line_elemt *p = line_pool_root;
   if (p != NULL) {
     line_pool_root = p->link;
@@ -1054,7 +1050,7 @@ struct line_elemt *alloc_line(void) {
 }
 
 /// This function frees a line_elemt structure which is returned to a free pool.
-void free_line(struct line_elemt *p) {
+static void free_line(struct line_elemt *p) {
   p->link = line_pool_root;
   line_pool_root = p;
 }
@@ -1064,7 +1060,7 @@ void free_line(struct line_elemt *p) {
 /// is found then the macro definition associated with it is returned.
 /// If the name is not found, then a message is printed, a new definition is
 /// entered to avoid more messages and NULL is returned.
-struct line_elemt *find_macro(char *name) {
+static struct line_elemt *find_macro(char *name) {
   register struct line_elemt *root = NULL;
   char macro_name[MAX_LINE_SIZE + 1];
   register char *s = macro_name;
@@ -1122,7 +1118,7 @@ struct line_elemt *find_macro(char *name) {
 /// user defined macro names. If one is found, the macro definition is
 /// substituted for the name. The modified action text is then printed out in
 /// the action file.
-void process_action_line(FILE *sysout, char *text, const int line_no, const int rule_no, char *grm_file, struct CLIOptions* cli_options) {
+static void process_action_line(FILE *sysout, char *text, const int line_no, const int rule_no, char *grm_file, struct CLIOptions* cli_options) {
   char temp1[MAX_LINE_SIZE + 1];
   char suffix[MAX_LINE_SIZE + 1];
   char symbol[SYMBOL_SIZE + 1];
@@ -1379,7 +1375,7 @@ next_line: {
 /// This procedure takes as argument a macro definition.  If the name of the
 /// macro is one of the predefined names, it issues an error.  Otherwise, it
 /// inserts the macro definition into the table headed by MACRO_TABLE.
-void mapmacro(const int def_index) {
+static void mapmacro(const int def_index) {
   if (strcmp(defelmt[def_index].name, krule_text) == 0 ||
       strcmp(defelmt[def_index].name, krule_number) == 0 ||
       strcmp(defelmt[def_index].name, knum_rules) == 0 ||
@@ -1404,9 +1400,9 @@ void mapmacro(const int def_index) {
   }
 }
 
-struct hash_type *alias_root = NULL;
+static struct hash_type *alias_root = NULL;
 
-const char *EXTRACT_STRING(const int indx) {
+static const char *EXTRACT_STRING(const int indx) {
   return &string_table[indx];
 }
 
@@ -1420,23 +1416,23 @@ const char *EXTRACT_STRING(const int indx) {
 /// print_line, whichever is smaller.  If a symbol cannot fit on a line
 /// beginning at the proper offset, it is laid out on successive lines,
 /// beginning at the proper offset.
-void display_input(struct CLIOptions* cli_options) {
+static void display_input(struct CLIOptions* cli_options) {
   char line[PRINT_LINE_SIZE + 1];
   char temp[SYMBOL_SIZE + 1];
   // Print the Macro definitions, if any.
   if (num_defs > 0) {
     fprintf(syslis, "\nDefined Symbols:\n\n");
     for (int j = 0; j < num_defs; j++) {
-      fill_in(line, PRINT_LINE_SIZE - (strlen(blockb) + 1), '-');
-      fprintf(syslis, "\n\n%s\n%s%s\n", defelmt[j].name, blockb, line);
+      fill_in(line, PRINT_LINE_SIZE - (strlen(cli_options->blockb) + 1), '-');
+      fprintf(syslis, "\n\n%s\n%s%s\n", defelmt[j].name, cli_options->blockb, line);
       for (const char *ptr = defelmt[j].macro; *ptr != '\0'; ptr++) {
         for (; *ptr != '\n'; ptr++) {
           putc(*ptr, syslis);
         }
         putc(*ptr, syslis);
       }
-      fill_in(line, PRINT_LINE_SIZE - (strlen(blocke) + 1), '-');
-      fprintf(syslis, "%s%s\n", blocke, line);
+      fill_in(line, PRINT_LINE_SIZE - (strlen(cli_options->blocke) + 1), '-');
+      fprintf(syslis, "%s%s\n", cli_options->blocke, line);
     }
   }
   register int offset;
@@ -1547,7 +1543,7 @@ void display_input(struct CLIOptions* cli_options) {
 }
 
 /// Process all semantic actions and generate action file.
-void process_actions(char *grm_file, struct CLIOptions *cli_options) {
+static void process_actions(char *grm_file, struct CLIOptions *cli_options) {
   register char *p;
   char line[MAX_LINE_SIZE + 1];
   FILE *sysact = fopen(cli_options->act_file, "w");
@@ -1711,7 +1707,7 @@ void process_actions(char *grm_file, struct CLIOptions *cli_options) {
 }
 
 /// Actions to be taken if grammar is successfully parsed.
-void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *sysgrm) {
+static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *sysgrm) {
   if (rulehdr == NULL) {
     printf("Informative: Empty grammar read in. Processing stopped.\n");
     fprintf(syslis, "***Informative: Empty grammar read in. Processing stopped.\n");
@@ -1735,11 +1731,11 @@ void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *sysgrm)
       }
       for ALL_NON_TERMINALS3(symbol) {
         if (symno[symbol].name_index == OMEGA) {
-          if (cli_options->names_opt == MAXIMUM_NAMES) {
+          if (cli_options->names_opt.value == MAXIMUM_NAMES.value) {
             symno[symbol].name_index = name_map(RETRIEVE_STRING(symbol));
-          } else if (cli_options->names_opt == OPTIMIZE_PHRASES) {
+          } else if (cli_options->names_opt.value == OPTIMIZE_PHRASES.value) {
             symno[symbol].name_index = -name_map(RETRIEVE_STRING(symbol));
-          } else {
+          } else if (cli_options->names_opt.value == MINIMUM_NAMES.value) {
             symno[symbol].name_index = symno[error_image].name_index;
           }
         }
@@ -1944,10 +1940,10 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
     }
     process_options_lines(grm_file, output_files, file_prefix, cli_options, sysgrm);
     eolt_image = OMEGA;
-    cli_options->blockb_len = strlen(blockb);
-    cli_options->blocke_len = strlen(blocke);
-    cli_options->hblockb_len = strlen(hblockb);
-    cli_options->hblocke_len = strlen(hblocke);
+    cli_options->blockb_len = strlen(cli_options->blockb);
+    cli_options->blocke_len = strlen(cli_options->blocke);
+    cli_options->hblockb_len = strlen(cli_options->hblockb);
+    cli_options->hblocke_len = strlen(cli_options->hblocke);
     // Keywords, Reserved symbols, and predefined macros
     kdefine[0] = cli_options->escape; /*Set empty first space to the default */
     kterminals[0] = cli_options->escape; /* escape symbol.                      */
@@ -1986,8 +1982,7 @@ void process_input(char *grm_file, char *lis_file, struct OutputFiles *output_fi
     // Reduce
     if (act <= NUM_RULES) {
       stack_top--;
-    } else if (act > ERROR_ACTION || /* Shift_reduce */
-               act < ACCEPT_ACTION) /* Shift */
+    } else if (act > ERROR_ACTION || /* Shift_reduce */ act < ACCEPT_ACTION) /* Shift */
     {
       // token_action
       {
