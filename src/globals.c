@@ -2,7 +2,6 @@
 
 static char hostfile[] = __FILE__;
 
-#include <stdlib.h>
 #include <stdbool.h>
 
 long num_items = 0;
@@ -44,7 +43,9 @@ bool error_maps_bit = false;
 
 int increment = 30;
 
+// Used by the parser because C doesn't have classes.
 char ormark;
+// Used by the parser because C doesn't have classes.
 char escape;
 
 short *rhs_sym = NULL;

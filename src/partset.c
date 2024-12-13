@@ -48,7 +48,7 @@ static char hostfile[] = __FILE__;
 ///    into the stack. Repeat step 2 until the partition is empty.
 void partset(const JBitset collection, const long *element_size, const long *list, long *start, long *stack, long set_size, const bool from_process_scopes) {
   int collection_size;
-  // TODO • remove this unnecessary indirection.
+  // TODO • Remove this unnecessary indirection.
   if (from_process_scopes) {
     collection_size = set_size;
     set_size = num_states;

@@ -110,7 +110,6 @@ int main(const int argc, char *argv[]) {
       }
       strcat(lis_file, ".l"); /* add .l extension for listing file */
       strcat(tab_file, ".t"); /* add .t extension for table file */
-
       process_input(grm_file, lis_file, &output_files, argc, argv, file_prefix, &cli_options);
     }
 

@@ -5,25 +5,25 @@ static char hostfile[] = __FILE__;
 #include <string.h>
 #include "common.h"
 
-struct node **new_state_element_reduce_nodes;
+static struct node **new_state_element_reduce_nodes;
 
-long total_bytes;
-long num_table_entries;
+static long total_bytes;
+static long num_table_entries;
 
-int top;
-int empty_root;
-int single_root;
-int multi_root;
+static int top;
+static int empty_root;
+static int single_root;
+static int multi_root;
 
-long *row_size;
-long *frequency_symbol;
-long *frequency_count;
+static long *row_size;
+static long *frequency_symbol;
+static long *frequency_count;
 
-bool *shift_on_error_symbol;
+static bool *shift_on_error_symbol;
 
 ///  REMAP_NON_TERMINALS remaps the non-terminal symbols and states based on
 /// frequency of entries.
-void remap_non_terminals(const struct CLIOptions *cli_options) {
+static void remap_non_terminals(const struct CLIOptions *cli_options) {
   //   The variable FREQUENCY_SYMBOL is used to hold the non-terminals
   // in the grammar, and  FREQUENCY_COUNT is used correspondingly to
   // hold the number of actions defined on each non-terminal.
@@ -103,7 +103,7 @@ void remap_non_terminals(const struct CLIOptions *cli_options) {
 /// starting position in a vector where each of its rows may be placed
 /// without clobbering elements in another row.  The starting positions are
 /// stored in the vector STATE_INDEX.
-void overlap_nt_rows(struct CLIOptions *cli_options) {
+static void overlap_nt_rows(struct CLIOptions *cli_options) {
   num_table_entries = num_gotos + num_goto_reduces + num_states;
   increment_size = MAX(num_table_entries / 100 * increment, last_symbol + 1);
   table_size = MIN(num_table_entries + increment_size, MAX_TABLE_SIZE);
@@ -238,7 +238,7 @@ void overlap_nt_rows(struct CLIOptions *cli_options) {
 /// addition,  there must not exist a terminal symbol "t" such that:
 /// REDUCE(S1, t) and REDUCE(S2, t) are defined, and
 /// REDUCE(S1, t) ^= REDUCE(S2, t)
-void merge_similar_t_rows(const struct CLIOptions *cli_options) {
+static void merge_similar_t_rows(const struct CLIOptions *cli_options) {
   short *table = Allocate_short_array(num_shift_maps + 1);
   empty_root = NIL;
   single_root = NIL;
@@ -374,7 +374,7 @@ void merge_similar_t_rows(const struct CLIOptions *cli_options) {
 /// If we can determine that there is a shift action on a pair (S, t)
 /// we can apply shift default to the Shift actions just like we did
 /// for the Goto actions.
-void merge_shift_domains(struct CLIOptions *cli_options) {
+static void merge_shift_domains(struct CLIOptions *cli_options) {
   // Some of the rows in the shift action map have already been merged
   // by the merging of compatible states... We simply need to increase
   // the size of the granularity by merging these new terminal states
@@ -627,7 +627,7 @@ void merge_shift_domains(struct CLIOptions *cli_options) {
 /// We iterate over each of these lists and construct new states out
 /// of these groups of similar states when they are compatible. Then,
 /// we remap the terminal symbols.
-void overlay_sim_t_rows(struct CLIOptions *cli_options) {
+static void overlay_sim_t_rows(struct CLIOptions *cli_options) {
   int num_shifts_saved = 0;
   int num_reductions_saved = 0;
   int default_saves = 0;
@@ -944,7 +944,7 @@ void overlay_sim_t_rows(struct CLIOptions *cli_options) {
 /// We now compute the starting position for each terminal state just
 /// as we did for the non-terminal states.
 /// The starting positions are stored in the vector TERM_STATE_INDEX.
-void overlap_t_rows(struct CLIOptions *cli_options) {
+static void overlap_t_rows(struct CLIOptions *cli_options) {
   short *terminal_list = Allocate_short_array(num_terminals + 1);
   term_state_index = Allocate_long_array(max_la_state + 1);
   increment_size = MAX(num_table_entries * increment / 100, num_terminals + 1);
@@ -1084,7 +1084,7 @@ void overlap_t_rows(struct CLIOptions *cli_options) {
 }
 
 /// We now write out the tables to the SYSTAB file.
-void print_tables_space(struct CLIOptions *cli_options, FILE *systab) {
+static void print_tables_space(struct CLIOptions *cli_options, FILE *systab) {
   int default_count = 0;
   int goto_count = 0;
   int goto_reduce_count = 0;

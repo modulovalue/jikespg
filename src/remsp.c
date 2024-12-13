@@ -3,7 +3,7 @@ static char hostfile[] = __FILE__;
 
 #include "common.h"
 
-int max_sp_state;
+static int max_sp_state;
 
 struct action_element {
   struct action_element *next;
@@ -40,25 +40,21 @@ short *next_rule;
 short *rule_list;
 short **sp_action;
 
-bool IS_SP_RHS(const long symbol) {
+static int top;
+static int rule_root;
+
+static bool IS_SP_RHS(const long symbol) {
   return sp_rules[symbol] != NIL;
 }
 
-bool IS_SP_RULE(const long rule_no) {
+static bool IS_SP_RULE(const long rule_no) {
   return rule_list[rule_no] != OMEGA;
 }
-
-bool *is_conflict_symbol;
-
-JBitset look_ahead;
-
-int top;
-int rule_root;
 
 /// This function first tries to recycle an action_element node from a
 /// free list. If the list is empty a new node is allocated from
 /// temporary storage.
-struct action_element *allocate_action_element(void) {
+static struct action_element *allocate_action_element(void) {
   struct action_element *p = action_element_pool;
   if (p != NULL) {
     action_element_pool = p->next;
@@ -70,7 +66,7 @@ struct action_element *allocate_action_element(void) {
 
 /// This routine returns a list of action_element structures to the
 /// free list.
-void free_action_elements(struct action_element *head, struct action_element *tail) {
+static void free_action_elements(struct action_element *head, struct action_element *tail) {
   tail->next = action_element_pool;
   action_element_pool = head;
 }
@@ -84,7 +80,7 @@ void free_action_elements(struct action_element *head, struct action_element *ta
 ///
 ///   2) As a side effect, it uses the ordering above to order all
 ///      the SP rules.
-void compute_sp_map(const int symbol) {
+static void compute_sp_map(const int symbol) {
   stack[++top] = symbol;
   const int indx = top;
   index_of[symbol] = indx;
@@ -141,7 +137,7 @@ void compute_sp_map(const int symbol) {
 /// transition on SYMBOL is a lookahead-shift, indicating that the
 /// parser requires extra lookahead on a particular symbol, the set of
 /// reduce actions for that symbol is calculated as the empty set.
-void compute_sp_action(const short state_no, const short symbol, const short action) {
+static void compute_sp_action(const short state_no, const short symbol, const short action, JBitset look_ahead, bool* is_conflict_symbol) {
   const struct goto_header_type go_to = statset[state_no].go_to;
   if (sp_action[symbol] == NULL) {
     sp_action[symbol] = Allocate_short_array(num_terminals + 1);
@@ -211,7 +207,7 @@ void compute_sp_action(const short state_no, const short symbol, const short act
 /// rule_no that may be reduced when the parser enters state_no.
 /// Sp_default_action tries to determine the highest rule that may be
 /// reached via a sequence of SP reductions.
-short sp_default_action(const short state_no, short rule_no) {
+static short sp_default_action(const short state_no, short rule_no) {
   const struct goto_header_type go_to = statset[state_no].go_to;
   // While the rule we have at hand is a single production, ...
   while (IS_SP_RULE(rule_no)) {
@@ -258,7 +254,7 @@ short sp_default_action(const short state_no, short rule_no) {
 /// be processed after taking the transition. It returns the reduce
 /// action that follows the transition if an action on la_symbol is
 /// found, otherwise it returns the most suitable default action.
-int sp_nt_action(const short state_no, const int lhs_symbol, const short la_symbol) {
+static int sp_nt_action(const short state_no, const int lhs_symbol, const short la_symbol) {
   const struct goto_header_type go_to = statset[state_no].go_to;
   int ii;
   for (ii = 1; go_to.map[ii].symbol != lhs_symbol; ii++) {
@@ -290,7 +286,7 @@ int sp_nt_action(const short state_no, const int lhs_symbol, const short la_symb
 /// is also executed ending with RULE2.
 /// The goal of this function is to find the greatest ancestor of
 /// BASE_RULE that is also a descendant of both RULE1 and RULE2.
-int greatest_common_ancestor(const short base_rule, const short la_symbol, const short state1, const short rule1, const short state2, const short rule2) {
+static int greatest_common_ancestor(const short base_rule, const short la_symbol, const short state1, const short rule1, const short state2, const short rule2) {
   int act1 = base_rule;
   int act2 = base_rule;
   int rule_no;
@@ -310,7 +306,7 @@ int greatest_common_ancestor(const short base_rule, const short la_symbol, const
 /// SYMBOL is the right-hand side of a SP rule and the global map
 /// sp_action[SYMBOL] yields a set of update reduce actions that may
 /// follow the transition on SYMBOL into STATE_NO.
-void compute_update_actions(const short source_state, const short state_no, const short symbol) {
+static void compute_update_actions(const short source_state, const short state_no, const short symbol) {
   const struct reduce_header_type red = reduce[state_no];
   for (int i = 1; i <= red.size; i++) {
     if (IS_SP_RULE(red.map[i].rule_number)) {
@@ -359,7 +355,7 @@ void compute_update_actions(const short source_state, const short state_no, cons
 /// map sp_symbol[SYMBOL]. The value SP_RULE_COUNT is the number of
 /// rules in the list. The value SP_ACTION_COUNT is the number of
 /// actions in the map sp_symbol[SYMBOL].
-short sp_state_map(const int rule_head, const int item_no, const int sp_rule_count, const int sp_action_count, const int symbol) {
+static short sp_state_map(const int rule_head, const int item_no, const int sp_rule_count, const int sp_action_count, const int symbol) {
   // These new SP states are defined by their reduce maps. Hash the
   // reduce map based on the set of rules in its range - simply add
   // them up and reduce modulo STATE_TABLE_SIZE.
@@ -496,8 +492,10 @@ void remove_single_productions(struct DetectedSetSizes* dss) {
     short shift_number;
   } *new_shift;
   calloc0(new_shift, max_la_state + 1, struct new_shift_element);
+  JBitset look_ahead;
   calloc0_set(look_ahead, 1, dss->term_set_size);
   calloc0(sp_action, num_symbols + 1, short *);
+  bool *is_conflict_symbol;
   calloc0(is_conflict_symbol, num_symbols + 1, bool);
   calloc0(sp_table, STATE_TABLE_SIZE, struct sp_state_element *);
   calloc0(new_action, num_states + 1, struct action_element *);
@@ -632,7 +630,7 @@ void remove_single_productions(struct DetectedSetSizes* dss) {
       for (int i = 1; i <= go_to.size; i++) {
         int symbol = go_to.map[i].symbol;
         if (IS_SP_RHS(symbol)) {
-          compute_sp_action(state_no, symbol, go_to.map[i].action);
+          compute_sp_action(state_no, symbol, go_to.map[i].action, look_ahead, is_conflict_symbol);
           symbol_list[symbol] = symbol_root;
           symbol_root = symbol;
         }
@@ -641,7 +639,7 @@ void remove_single_productions(struct DetectedSetSizes* dss) {
         int symbol = sh.map[i].symbol;
         index_of[symbol] = i;
         if (IS_SP_RHS(symbol)) {
-          compute_sp_action(state_no, symbol, sh.map[i].action);
+          compute_sp_action(state_no, symbol, sh.map[i].action, look_ahead, is_conflict_symbol);
           symbol_list[symbol] = symbol_root;
           symbol_root = symbol;
         }
@@ -656,7 +654,7 @@ void remove_single_productions(struct DetectedSetSizes* dss) {
           int lhs_symbol = rules[rule_no].lhs;
           if (index_of[lhs_symbol] != OMEGA) {
             if (symbol_list[lhs_symbol] == OMEGA) {
-              compute_sp_action(state_no, lhs_symbol, go_to.map[index_of[lhs_symbol]].action);
+              compute_sp_action(state_no, lhs_symbol, go_to.map[index_of[lhs_symbol]].action, look_ahead, is_conflict_symbol);
               symbol_list[lhs_symbol] = symbol_root;
               symbol_root = lhs_symbol;
             }

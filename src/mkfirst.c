@@ -725,20 +725,20 @@ struct DetectedSetSizes mkbasic(struct CLIOptions* cli_options) {
     produces.raw -= (num_terminals + 1) * dss.non_term_set_size;
     calloc0(direct_produces, num_non_terminals, struct node *);
     direct_produces -= num_terminals + 1;
-    for ALL_NON_TERMINALS3(nt) {
+    for ALL_NON_TERMINALS3(sym_b) {
       struct node *p;
-      for (bool end_node = (p = clitems[nt]) == NULL; !end_node; end_node = p == clitems[nt]) {
+      for (bool end_node = (p = clitems[sym_b]) == NULL; !end_node; end_node = p == clitems[sym_b]) {
         p = p->next;
-        item_no = p->value;
-        int symbol = item_table[item_no].symbol;
-        if (IS_A_NON_TERMINAL(symbol)) {
+        int item_no = p->value;
+        int sym_a = item_table[item_no].symbol;
+        if (IS_A_NON_TERMINAL(sym_a)) {
           const int i = item_table[item_no].suffix_index;
-          if (IS_IN_SET(first, i, empty) && !IS_IN_SET(produces, nt, symbol - num_terminals)) {
-            SET_BIT_IN(produces, nt, symbol - num_terminals);
+          if (IS_IN_SET(first, i, empty) && !IS_IN_SET(produces, sym_b, sym_a - num_terminals)) {
+            SET_BIT_IN(produces, sym_b, sym_a - num_terminals);
             struct node *q = Allocate_node();
-            q->value = symbol;
-            q->next = direct_produces[nt];
-            direct_produces[nt] = q;
+            q->value = sym_a;
+            q->next = direct_produces[sym_b];
+            direct_produces[sym_b] = q;
           }
         }
       }

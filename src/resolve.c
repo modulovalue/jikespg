@@ -156,7 +156,7 @@ struct state_element **shift_table;
 /// & returns a pointer to it. If there are nodes in the free pool,
 /// one of them is returned. Otherwise, a new node is allocated
 /// from the temporary storage pool.
-void *allocate_conflict_element(void) {
+static void *allocate_conflict_element(void) {
   void *p = conflict_element_pool;
   if (p != NULL) {
     conflict_element_pool = ((struct sr_conflict_element *) p)->next;
@@ -168,7 +168,7 @@ void *allocate_conflict_element(void) {
 
 /// This routine returns a list of conflict_element (sr/rr)structures
 /// to the free pool.
-void free_conflict_elements(void *head, void *tail) {
+static void free_conflict_elements(void *head, void *tail) {
   ((struct sr_conflict_element *) tail)->next =
       (struct sr_conflict_element *) conflict_element_pool;
   conflict_element_pool = head;
@@ -178,7 +178,7 @@ void free_conflict_elements(void *head, void *tail) {
 /// pointer to it. If there are nodes in the free pool, one of them
 /// is returned. Otherwise, a new node is allocated from the
 /// temporary storage pool.
-struct stack_element *allocate_stack_element(void) {
+static struct stack_element *allocate_stack_element(void) {
   struct stack_element *p = stack_pool;
   if (p != NULL) {
     stack_pool = p->next;
@@ -190,7 +190,7 @@ struct stack_element *allocate_stack_element(void) {
 
 /// This routine returns a list of stack_element structures to the
 /// free pool.
-void free_stack_elements(struct stack_element *head, struct stack_element *tail) {
+static void free_stack_elements(struct stack_element *head, struct stack_element *tail) {
   tail->next = stack_pool;
   stack_pool = head;
 }
@@ -198,7 +198,7 @@ void free_stack_elements(struct stack_element *head, struct stack_element *tail)
 /// When an allocated stack_element structure is not directly associated
 /// with an action, it is added to a circular list of dangling stack_element
 /// nodes so that its space can be reclaimed.
-void add_dangling_stack_element(struct stack_element *s) {
+static void add_dangling_stack_element(struct stack_element *s) {
   if (dangling_stacks == NULL) {
     s->next = s;
   } else {
@@ -211,7 +211,7 @@ void add_dangling_stack_element(struct stack_element *s) {
 /// This function is invoked to free up all dangling stack_element nodes
 /// and reset the dangling stack list.
 /// Recall that the dangling stack list is circular.
-void free_dangling_stack_elements(void) {
+static void free_dangling_stack_elements(void) {
   if (dangling_stacks != NULL) {
     struct stack_element *tail = dangling_stacks;
     free_stack_elements(dangling_stacks->next, tail);
@@ -221,7 +221,7 @@ void free_dangling_stack_elements(void) {
 
 /// This function allocates and initializes a SOURCE_ELEMENT map.
 /// See definition of SOURCE_ELEMENT above.
-struct sources_element allocate_sources(void) {
+static struct sources_element allocate_sources(void) {
   struct sources_element sources;
   calloc0(sources.configs, num_rules + num_rules + num_states + 1, struct stack_element *);
   sources.configs += num_rules;
@@ -235,7 +235,7 @@ struct sources_element allocate_sources(void) {
 /// This function takes as argument a SOURCES_ELEMENT structure which it
 /// resets to the empty map.
 /// See definition of SOURCE_ELEMENT above.
-struct sources_element clear_sources(struct sources_element sources) {
+static struct sources_element clear_sources(struct sources_element sources) {
   struct stack_element *tail;
   for (int act = sources.root; act != NIL; act = sources.list[act]) {
     for (struct stack_element *p = sources.configs[act]; p != NULL; tail = p, p = p->next) {
@@ -250,7 +250,7 @@ struct sources_element clear_sources(struct sources_element sources) {
 /// This function takes as argument a SOURCES_ELEMENT structure. First, it
 /// clears it to reclaim all space that was used by STACK_ELEMENTs and then
 /// it frees the array space used as a base to construct the map.
-void free_sources(struct sources_element sources) {
+static void free_sources(struct sources_element sources) {
   sources = clear_sources(sources);
   sources.configs -= num_rules;
   ffree(sources.configs);
@@ -261,7 +261,7 @@ void free_sources(struct sources_element sources) {
 
 /// This function takes as argument two pointers to sorted lists of stacks.
 /// It merges the lists in the proper order and returns the resulting list.
-struct stack_element *union_config_sets(struct stack_element *root1, struct stack_element *root2) {
+static struct stack_element *union_config_sets(struct stack_element *root1, struct stack_element *root2) {
   struct stack_element *root = NULL;
   // This loop iterates over both lists until one (or both) has been
   // completely processed. Each time around the loop, a stack is
@@ -334,7 +334,7 @@ struct stack_element *union_config_sets(struct stack_element *root1, struct stac
 /// set (sorted list) of configurations. It adds the set of configurations
 /// to the previous set of configurations associated with the ACTION in the
 /// SOURCES_ELEMENT map.
-struct sources_element add_configs(struct sources_element sources, const int action, struct stack_element *config_root) {
+static struct sources_element add_configs(struct sources_element sources, const int action, struct stack_element *config_root) {
   if (config_root != NULL) {
     if (sources.configs[action] == NULL) {
       // The previous was empty?
@@ -348,7 +348,7 @@ struct sources_element add_configs(struct sources_element sources, const int act
 
 /// This function clears out all external space used by the VISITED set and
 /// resets VISITED to the empty set.
-void clear_visited(void) {
+static void clear_visited(void) {
   for (int state_no = visited.root; state_no != NIL; state_no = visited.list[state_no]) {
     struct node *tail;
     for (struct node *p = visited.map[state_no]; p != NULL; tail = p, p = p->next) {
@@ -361,7 +361,7 @@ void clear_visited(void) {
 
 /// This boolean function checks whether a given pair [state, symbol]
 /// was already inserted in the VISITED set.
-bool was_visited(const int state_no, const int symbol) {
+static bool was_visited(const int state_no, const int symbol) {
   struct node *p;
   for (p = visited.map[state_no]; p != NULL; p = p->next) {
     if (p->value == symbol) {
@@ -372,7 +372,7 @@ bool was_visited(const int state_no, const int symbol) {
 }
 
 /// This function inserts a given pair [state, symbol] into the VISITED set.
-void mark_visited(const int state_no, const int symbol) {
+static void mark_visited(const int state_no, const int symbol) {
   if (visited.map[state_no] == NULL) {
     // 1st time we see state_no?
     visited.list[state_no] = visited.root;
@@ -386,7 +386,7 @@ void mark_visited(const int state_no, const int symbol) {
 
 /// This procedure is a modified instantiation of the digraph algorithm
 /// to compute the CYCLIC set of states.
-void compute_cyclic(const short state_no) {
+static void compute_cyclic(const short state_no) {
   stack[++top] = state_no;
   const int indx = top;
   cyclic[state_no] = false;
@@ -427,7 +427,7 @@ void compute_cyclic(const short state_no) {
 /// array, SLR_VISITED, indexable by non-terminals, is used.  For
 /// trace-backs to the root item, the boolean array SYMBOL_SEEN, also
 /// also indexable by non-terminals, is used.
-bool trace_root(const int lhs_symbol, struct CLIOptions* cli_options) {
+static bool trace_root(const int lhs_symbol, struct CLIOptions* cli_options) {
   if (lhs_symbol == accept_image) {
     return true;
   }
@@ -446,7 +446,7 @@ bool trace_root(const int lhs_symbol, struct CLIOptions* cli_options) {
 
 /// The procedure below is invoked to retrace a path from the initial
 /// item to a given item (ITEM_NO) passed to it as argument.
-void print_root_path(const int item_no, struct CLIOptions* cli_options) {
+static void print_root_path(const int item_no, struct CLIOptions* cli_options) {
   bool *symbol_seen = Allocate_boolean_array(num_non_terminals);
   symbol_seen -= num_terminals + 1;
   if (trace_root(rules[item_table[item_no].rule_number].lhs, cli_options)) {
@@ -463,7 +463,7 @@ void print_root_path(const int item_no, struct CLIOptions* cli_options) {
 /// to a state where the conflict symbol can be read. If a path is
 /// found, all items along the path are printed and SUCCESS is returned.
 ///  Otherwise, FAILURE is returned.
-bool lalr_path_retraced(const int state_no, const int goto_indx, const int conflict_symbol, struct CLIOptions *cli_options) {
+static bool lalr_path_retraced(const int state_no, const int goto_indx, const int conflict_symbol, struct CLIOptions *cli_options) {
   struct goto_header_type go_to = statset[state_no].go_to;
   lalr_visited[go_to.map[goto_indx].laptr] = true;
   bool found = false;
@@ -507,7 +507,7 @@ bool lalr_path_retraced(const int state_no, const int goto_indx, const int confl
 ///   In this procedure, we attempt to retrace an LALR conflict path
 /// (there may be more than one) of CONFLICT_SYMBOL in the state
 /// automaton that led to ITEM_NO in state STATE_NO.
-void print_relevant_lalr_items(const int state_no, const int item_no, const int conflict_symbol, struct CLIOptions *cli_options) {
+static void print_relevant_lalr_items(const int state_no, const int item_no, const int conflict_symbol, struct CLIOptions *cli_options) {
   const int lhs_symbol = rules[item_table[item_no].rule_number].lhs;
   if (lhs_symbol == accept_image) {
     // Do nothing.
@@ -534,7 +534,7 @@ void print_relevant_lalr_items(const int state_no, const int item_no, const int 
 
 /// This routine is invoked when a grammar contains conflicts, and the
 /// first conflict is detected.
-void conflicts_initialization(void) {
+static void conflicts_initialization(void) {
   // NT_ITEMS and ITEM_LIST are used in reporting SLR conflicts, and
   // in recreating paths from the Start item. See the routines
   // PRINT_RELEVANT_SLR_ITEMS and PRINT_ROOT_PATH.
@@ -568,7 +568,7 @@ void conflicts_initialization(void) {
 }
 
 /// Add SYMBOL to the set of symbols CONFLICT_SYMBOLS[STATE_NO].
-void add_conflict_symbol(const int state_no, const int symbol) {
+static void add_conflict_symbol(const int state_no, const int symbol) {
   struct node *p = Allocate_node();
   p->value = symbol;
   if (conflict_symbols[state_no] == NULL) {
@@ -587,7 +587,7 @@ void add_conflict_symbol(const int state_no, const int symbol) {
 /// until new state(s) are reached where a transition is possible on
 /// the lookahead symbol. It then returns the new set of configurations
 /// found on which a transition on LA_SYMBOL is possible.
-struct stack_element *follow_sources(struct stack_element *stack, int symbol, const int la_symbol) {
+static struct stack_element *follow_sources(struct stack_element *stack, int symbol, const int la_symbol) {
   struct stack_element *configs = NULL; /* Initialize the output set of configurations */
   // If the starting configuration consists of a single state and
   // the initial [state, symbol] pair has already been visited,
@@ -746,7 +746,7 @@ struct stack_element *follow_sources(struct stack_element *stack, int symbol, co
 /// outside, LOOK_AHEAD is assumed to be initialized to the empty set.
 /// NEXT_LA first executes the transition on SYMBOL and thereafter, all
 /// terminal symbols that can be read are added to LOOKAHEAD.
-void next_la(struct stack_element *stack, const int symbol, const JBitset look_ahead) {
+static void next_la(struct stack_element *stack, const int symbol, const JBitset look_ahead) {
   // The only symbol that can follow the end-of-file symbol is the
   // end-of-file symbol.
   if (symbol == eoft_image) {
@@ -843,7 +843,7 @@ void next_la(struct stack_element *stack, const int symbol, const JBitset look_a
 /// STACK. It searches the hash table to see if it already contained
 /// the stack in question. If yes, it returns TRUE. Otherwise, it
 /// inserts the stack into the table and returns FALSE.
-bool stack_was_seen(struct stack_element **stack_seen, struct stack_element *stack) {
+static bool stack_was_seen(struct stack_element **stack_seen, struct stack_element *stack) {
   unsigned long hash_address = stack->size; /* Initialize hash address */
   for (struct stack_element *p = stack; p != NULL; p = p->previous) {
     hash_address += p->state_number;
@@ -872,7 +872,7 @@ bool stack_was_seen(struct stack_element **stack_seen, struct stack_element *sta
 /// conflicts by doing more look-ahead.  If the conflict resolution
 /// is successful, then a new state is created and returned; otherwise,
 /// the NULL pointer is returned.
-struct state_element *state_to_resolve_conflicts(struct sources_element sources, int la_symbol, int level, struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
+static struct state_element *state_to_resolve_conflicts(struct sources_element sources, int la_symbol, int level, struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
   struct sources_element new_sources = allocate_sources();
   struct node **action;
   calloc0(action, num_terminals + 1, struct node *);
@@ -1572,39 +1572,4 @@ void create_lastats(void) {
   ffree(shift_list);
   ffree(shift_count);
   ffree(state_list);
-}
-
-struct node **direct_produces;
-
-/// For a given symbol, complete the computation of
-/// PRODUCES[symbol].
-///
-/// This procedure is used to compute the transitive closure of
-/// the PRODUCES, LEFT_PRODUCES and RIGHT_MOST_PRODUCES maps.
-void compute_produces(const int symbol) {
-  stack[++top] = symbol;
-  const int indx = top;
-  index_of[symbol] = indx;
-  struct node *q;
-  for (struct node *p = direct_produces[symbol]; p != NULL; q = p, p = p->next) {
-    int new_symbol = p->value;
-    /* first time seen? */
-    if (index_of[new_symbol] == OMEGA) {
-      compute_produces(new_symbol);
-    }
-    index_of[symbol] = MIN(index_of[symbol], index_of[new_symbol]);
-    SET_UNION(produces, symbol, produces, new_symbol);
-  }
-  if (direct_produces[symbol] != NULL) {
-    free_nodes(direct_produces[symbol], q);
-  }
-  /* symbol is SCC root */
-  if (index_of[symbol] == indx) {
-    for (int new_symbol = stack[top]; new_symbol != symbol; new_symbol = stack[--top]) {
-      ASSIGN_SET(produces, new_symbol, produces, symbol);
-      index_of[new_symbol] = INFINITY;
-    }
-    index_of[symbol] = INFINITY;
-    top--;
-  }
 }

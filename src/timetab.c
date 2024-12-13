@@ -6,14 +6,14 @@ static char hostfile[] = __FILE__;
 #include <string.h>
 #include "common.h"
 
-int default_saves = 0;
-short default_rule;
+static int default_saves = 0;
+static short default_rule;
 
-bool *is_terminal;
+static bool *is_terminal;
 
 /// We now remap the symbols in the unified Table based on frequency.
 /// We also remap the states based on frequency.
-void remap_symbols(void) {
+static void remap_symbols(void) {
   ordered_state = Allocate_long_array(max_la_state + 1);
   symbol_map = Allocate_long_array(num_symbols + 1);
   is_terminal = Allocate_boolean_array(num_symbols + 1);
@@ -165,7 +165,7 @@ void remap_symbols(void) {
 /// compute the starting position in a vector where each of its rows
 /// may be placed without clobbering elements in another row.
 /// The starting positions are stored in the vector STATE_INDEX.
-void overlap_tables(struct CLIOptions *cli_options) {
+static void overlap_tables(struct CLIOptions *cli_options) {
   state_index = Allocate_long_array(max_la_state + 1);
   long *symbol_list = Allocate_long_array(num_symbols + 1);
   num_entries -= default_saves;
@@ -318,7 +318,7 @@ void overlap_tables(struct CLIOptions *cli_options) {
 }
 
 /// We now write out the tables to the SYSTAB file.
-void print_tables_time(struct CLIOptions *cli_options, FILE *systab) {
+static void print_tables_time(struct CLIOptions *cli_options, FILE *systab) {
   int la_shift_count = 0;
   int shift_count = 0;
   int goto_count = 0;

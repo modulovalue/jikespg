@@ -23,7 +23,6 @@ struct state_element {
   short state_number;
 };
 
-struct state_element **state_table;
 struct state_element **shift_table;
 struct state_element *state_root;
 struct state_element *state_tail;
@@ -35,7 +34,7 @@ struct shift_header_type no_shifts_ptr;
 /// no state based on that kernel set already exists, then a new one is
 /// created and added to STATE_TABLE. In any case, a pointer to the STATE of
 /// the KERNEL is returned.
-struct state_element *lr0_state_map(struct node *kernel) {
+struct state_element *lr0_state_map(struct node *kernel, struct state_element **state_table) {
   unsigned long hash_address = 0;
   // Compute the hash address.
   struct node *p;
@@ -102,6 +101,7 @@ void mklr0(struct CLIOptions *cli_options) {
   nt_list -= num_terminals + 1;
   struct node **partition;
   calloc0(partition, num_symbols + 1, struct node *);
+  struct state_element **state_table;
   calloc0(state_table, STATE_TABLE_SIZE, struct state_element *);
   calloc0(shift_table, SHIFT_TABLE_SIZE, struct state_element *);
   // INITIALIZATION -----------------------------------------------------------
@@ -132,7 +132,7 @@ void mklr0(struct CLIOptions *cli_options) {
   }
   // Insert first state in STATE_TABLE and keep constructing states
   // until we no longer can.
-  for (struct state_element *state = lr0_state_map(q); /* insert initial state */ state != NULL; /* and process next state until no more */ state = state->queue) {
+  for (struct state_element *state = lr0_state_map(q, state_table); /* insert initial state */ state != NULL; /* and process next state until no more */ state = state->queue) {
     // Now we construct a list of all non-terminals that can be
     // introduced in this state through closure.  The CLOSURE of each
     // non-terminal has been previously computed in MKFIRST.
@@ -277,7 +277,7 @@ void mklr0(struct CLIOptions *cli_options) {
       }
       /* Not a Read-Reduce action */
       if (action == OMEGA) {
-        struct state_element *new_state = lr0_state_map(q);
+        struct state_element *new_state = lr0_state_map(q, state_table);
         action = new_state->state_number;
       }
       // At this stage, the partition list has been freed (for an old
@@ -810,10 +810,10 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
   calloc0_set(set, 1, dss->non_term_set_size);
   calloc0_set(produces, num_non_terminals, dss->non_term_set_size);
   produces.raw -= (num_terminals + 1) * dss->non_term_set_size;
-  calloc0(direct_produces, num_non_terminals, struct node *);
-  direct_produces -= num_terminals + 1;
   struct node **goto_domain;
   calloc0(goto_domain, num_states + 1, struct node *);
+  calloc0(direct_produces, num_non_terminals, struct node *);
+  direct_produces -= num_terminals + 1;
   // Note that the space allocated for PRODUCES and DIRECT_PRODUCES
   // is automatically initialized to 0 by calloc. Logically, this sets
   // all the sets in the PRODUCES map to the empty set and all the
@@ -823,21 +823,20 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
   // Also, we count the number of error rules and verify that they are
   // in the right format.
   int item_root = NIL;
-  for ALL_NON_TERMINALS3(nt) {
+  for ALL_NON_TERMINALS3(sym_a) {
     struct node *p;
-    for (bool end_node = (p = clitems[nt]) == NULL; !end_node; end_node = p == clitems[nt]) {
+    for (bool end_node = (p = clitems[sym_a]) == NULL; !end_node; end_node = p == clitems[sym_a]) {
       p = p->next;
       int item_no = p->value;
-      int symbol = item_table[item_no].symbol;
-      if (IS_A_NON_TERMINAL(symbol)) {
+      int sym_b = item_table[item_no].symbol;
+      if (IS_A_NON_TERMINAL(sym_b)) {
         const int i = item_table[item_no].suffix_index;
-        if (IS_IN_SET(first, i, empty) &&
-            !IS_IN_SET(produces, symbol, nt - num_terminals)) {
-          SET_BIT_IN(produces, symbol, nt - num_terminals);
+        if (IS_IN_SET(first, i, empty) && !IS_IN_SET(produces, sym_b, sym_a - num_terminals)) {
+          SET_BIT_IN(produces, sym_b, sym_a - num_terminals);
           struct node *q = Allocate_node();
-          q->value = nt;
-          q->next = direct_produces[symbol];
-          direct_produces[symbol] = q;
+          q->value = sym_a;
+          q->next = direct_produces[sym_b];
+          direct_produces[sym_b] = q;
         }
       }
       int rule_no = item_table[item_no].rule_number;
@@ -848,20 +847,20 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
         }
       }
       item_no += ii;
-      symbol = item_table[item_no].symbol;
-      if (symbol == error_image) {
+      sym_b = item_table[item_no].symbol;
+      if (sym_b == error_image) {
         if (IS_A_NON_TERMINAL(item_table[item_no + 1].symbol) && ii > 0) {
-          symbol = item_table[item_no + 2].symbol;
-          if (symbol == empty) {
+          sym_b = item_table[item_no + 2].symbol;
+          if (sym_b == empty) {
             num_error_rules++;
           }
         }
-        if (symbol != empty) {
+        if (sym_b != empty) {
           item_list[item_no] = item_root;
           item_root = item_no;
         }
       }
-      symbol = eoft_image;
+      sym_b = eoft_image;
     }
   }
   // If some error rules are in the wrong format and report them.
@@ -1462,6 +1461,38 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
   ffree(goto_domain);
 }
 
+/// For a given symbol, complete the computation of
+/// PRODUCES[symbol].
+///
+/// This procedure is used to compute the transitive closure of
+/// the PRODUCES, LEFT_PRODUCES and RIGHT_MOST_PRODUCES maps.
+void compute_produces(const int symbol) {
+  stack[++top] = symbol;
+  const int indx = top;
+  index_of[symbol] = indx;
+  struct node *q;
+  for (struct node *p = direct_produces[symbol]; p != NULL; q = p, p = p->next) {
+    int new_symbol = p->value;
+    /* first time seen? */
+    if (index_of[new_symbol] == OMEGA) {
+      compute_produces(new_symbol);
+    }
+    index_of[symbol] = MIN(index_of[symbol], index_of[new_symbol]);
+    SET_UNION(produces, symbol, produces, new_symbol);
+  }
+  if (direct_produces[symbol] != NULL) {
+    free_nodes(direct_produces[symbol], q);
+  }
+  /* symbol is SCC root */
+  if (index_of[symbol] == indx) {
+    for (int new_symbol = stack[top]; new_symbol != symbol; new_symbol = stack[--top]) {
+      ASSIGN_SET(produces, new_symbol, produces, symbol);
+      index_of[new_symbol] = INFINITY;
+    }
+    index_of[symbol] = INFINITY;
+    top--;
+  }
+}
 // === Produce End ===
 
 /// In this procedure, we first construct the LR(0) automaton.

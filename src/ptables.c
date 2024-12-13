@@ -15,7 +15,7 @@ struct action_element {
 /// number of occurrences of each action in the automaton is kept.
 /// This procedure is invoked with a specific shift map which it processes
 /// and updates the ACTION_COUNT map accordingly.
-void process_shift_actions(struct action_element **action_count, const int shift_no) {
+static void process_shift_actions(struct action_element **action_count, const int shift_no) {
   const struct shift_header_type sh = shift[shift_no];
   for (int i = 1; i <= sh.size; i++) {
     const int symbol = sh.map[i].symbol;
@@ -39,7 +39,7 @@ void process_shift_actions(struct action_element **action_count, const int shift
 /// This procedure updates the vector SHIFTDF, indexable by the terminals in
 /// the grammar. Its task is to assign to each element of SHIFTDF, the action
 /// most frequently defined on the symbol in question.
-void compute_shift_default(void) {
+static void compute_shift_default(void) {
   // Set up a pool of temporary space.
   reset_temporary_space();
   int shift_count = 0;
@@ -87,7 +87,7 @@ void compute_shift_default(void) {
 /// the non-terminals in the grammar. Its task is to assign to each element
 /// of the array the Action which is most frequently defined on the symbol in
 /// question, and remove all such actions from the state automaton.
-void compute_goto_default(void) {
+static void compute_goto_default(void) {
   // Set up a pool of temporary space.
   reset_temporary_space();
   int goto_count = 0;
