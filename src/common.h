@@ -503,7 +503,7 @@ void *talloc(long size);
 struct DetectedSetSizes {
   long term_set_size;
   long non_term_set_size;
-} mkbasic(struct CLIOptions *cli_options, JBitset nt_first);
+} mkbasic(struct CLIOptions *cli_options, JBitset nt_first, bool* * rmpself, JBitset* firstx);
 
 extern char ormark;
 extern char escape;
@@ -649,7 +649,7 @@ void cmprtim(struct CLIOptions *cli_options, struct TableOutput* toutput, struct
 
 void cmprspa(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of);
 
-void init_rmpself(JBitset produces);
+bool* init_rmpself(JBitset produces);
 
 void field(long num, int len);
 
@@ -657,13 +657,13 @@ void fill_in(char string[], int amount, char character);
 
 void free_nodes(struct node *head, struct node *tail);
 
-void mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct SourcesElementSources* ses);
+void mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct SourcesElementSources* ses, bool *rmpself, JBitset first);
 
-void la_traverse(int state_no, int goto_indx, int *stack_top, struct StackRoot* sr);
+void la_traverse(int state_no, int goto_indx, int *stack_top, struct StackRoot* sr, JBitset first);
 
-void remove_single_productions(struct DetectedSetSizes* dss, struct StackRoot* sr);
+void remove_single_productions(struct DetectedSetSizes* dss, struct StackRoot* sr, JBitset first);
 
-void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss);
+void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, JBitset first);
 
 void nospace(char *, long);
 
@@ -769,4 +769,11 @@ static struct TableOutput init_table_output() {
     .symbol_map = Allocate_long_array(num_symbols + 1),
     .state_list = Allocate_long_array(max_la_state + 1),
   };
+}
+
+static void calloc0_set_fn(JBitset* into, const int s, const int l) {
+  *into = (JBitset) {.raw = calloc(s, l * sizeof(BOOLEAN_CELL)), .size = (l)};
+  if ((*into).raw == NULL) {
+    nospace(hostfile, __LINE__);
+  }
 }

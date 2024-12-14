@@ -135,7 +135,7 @@ static void compute_sp_map(const int symbol, struct SPData *spd, short *sp_rules
 /// transition on SYMBOL is a lookahead-shift, indicating that the
 /// parser requires extra lookahead on a particular symbol, the set of
 /// reduce actions for that symbol is calculated as the empty set.
-static void compute_sp_action(const short state_no, const short symbol, const short action, JBitset look_ahead, bool *is_conflict_symbol, short *index_of, short **sp_action, struct StackRoot* sr) {
+static void compute_sp_action(const short state_no, const short symbol, const short action, JBitset look_ahead, bool *is_conflict_symbol, short *index_of, short **sp_action, struct StackRoot* sr, JBitset first) {
   const struct goto_header_type go_to = statset[state_no].go_to;
   if (sp_action[symbol] == NULL) {
     sp_action[symbol] = Allocate_short_array(num_terminals + 1);
@@ -162,7 +162,7 @@ static void compute_sp_action(const short state_no, const short symbol, const sh
         int k = go_to.map[i].laptr;
         if (la_index[k] == OMEGA) {
           int stack_top = 0;
-          la_traverse(state_no, i, &stack_top, sr);
+          la_traverse(state_no, i, &stack_top, sr, first);
         }
         ASSIGN_SET(look_ahead, 0, la_set, k);
         RESET_BIT(look_ahead, empty); /* empty not valid look-ahead */
@@ -188,7 +188,7 @@ static void compute_sp_action(const short state_no, const short symbol, const sh
       int k = go_to.map[i].laptr;
       if (la_index[k] == OMEGA) {
         int stack_top = 0;
-        la_traverse(state_no, i, &stack_top, sr);
+        la_traverse(state_no, i, &stack_top, sr, first);
       }
       ASSIGN_SET(look_ahead, 0, la_set, k);
       RESET_BIT(look_ahead, empty); /* empty not valid look-ahead */
@@ -473,7 +473,7 @@ static short sp_state_map(const int rule_head, const int item_no, const int sp_r
 
 /// This program is invoked to remove as many single production
 /// actions as possible for a conflict-free automaton.
-void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* sr) {
+void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* sr, JBitset first) {
   struct AEPool pool = {
     .action_element_pool = NULL,
   };
@@ -639,7 +639,7 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
       for (int i = 1; i <= go_to.size; i++) {
         int symbol = go_to.map[i].symbol;
         if (IS_SP_RHS(symbol, sp_rules)) {
-          compute_sp_action(state_no, symbol, go_to.map[i].action, look_ahead, is_conflict_symbol, index_of, sp_action, sr);
+          compute_sp_action(state_no, symbol, go_to.map[i].action, look_ahead, is_conflict_symbol, index_of, sp_action, sr, first);
           symbol_list[symbol] = symbol_root;
           symbol_root = symbol;
         }
@@ -648,7 +648,7 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
         int symbol = sh.map[i].symbol;
         index_of[symbol] = i;
         if (IS_SP_RHS(symbol, sp_rules)) {
-          compute_sp_action(state_no, symbol, sh.map[i].action, look_ahead, is_conflict_symbol, index_of, sp_action, sr);
+          compute_sp_action(state_no, symbol, sh.map[i].action, look_ahead, is_conflict_symbol, index_of, sp_action, sr, first);
           symbol_list[symbol] = symbol_root;
           symbol_root = symbol;
         }
@@ -663,7 +663,7 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
           int lhs_symbol = rules[rule_no].lhs;
           if (index_of[lhs_symbol] != OMEGA) {
             if (symbol_list[lhs_symbol] == OMEGA) {
-              compute_sp_action(state_no, lhs_symbol, go_to.map[index_of[lhs_symbol]].action, look_ahead, is_conflict_symbol, index_of, sp_action, sr);
+              compute_sp_action(state_no, lhs_symbol, go_to.map[index_of[lhs_symbol]].action, look_ahead, is_conflict_symbol, index_of, sp_action, sr, first);
               symbol_list[lhs_symbol] = symbol_root;
               symbol_root = lhs_symbol;
             }

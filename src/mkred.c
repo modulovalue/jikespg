@@ -5,8 +5,6 @@ static char hostfile[] = __FILE__;
 
 #include "common.h"
 
-bool *rmpself;
-
 /// The structure STATE_ELEMENT is used to construct lookahead states.
 /// LA_STATE_ROOT point to a list of lookahead states using the LINK
 /// field. The field NEXT_SHIFT is used to hash the new shift maps
@@ -419,7 +417,7 @@ static void print_root_path(const int item_no, struct CLIOptions* cli_options, s
 /// to a state where the conflict symbol can be read. If a path is
 /// found, all items along the path are printed and SUCCESS is returned.
 ///  Otherwise, FAILURE is returned.
-static bool lalr_path_retraced(const int state_no, const int goto_indx, const int conflict_symbol, struct CLIOptions *cli_options, bool *lalr_visited, short *item_list, short *nt_items) {
+static bool lalr_path_retraced(const int state_no, const int goto_indx, const int conflict_symbol, struct CLIOptions *cli_options, bool *lalr_visited, short *item_list, short *nt_items, JBitset first) {
   struct goto_header_type go_to = statset[state_no].go_to;
   lalr_visited[go_to.map[goto_indx].laptr] = true;
   bool found = false;
@@ -444,7 +442,7 @@ static bool lalr_path_retraced(const int state_no, const int goto_indx, const in
         for (ii = 1; go_to.map[ii].symbol != symbol; ii++) {
         }
         if (!lalr_visited[go_to.map[ii].laptr]) {
-          if (lalr_path_retraced(q->value, ii, conflict_symbol, cli_options, lalr_visited, item_list, nt_items)) {
+          if (lalr_path_retraced(q->value, ii, conflict_symbol, cli_options, lalr_visited, item_list, nt_items, first)) {
             found = true;
             break;
           }
@@ -464,7 +462,7 @@ static bool lalr_path_retraced(const int state_no, const int goto_indx, const in
 ///   In this procedure, we attempt to retrace an LALR conflict path
 /// (there may be more than one) of CONFLICT_SYMBOL in the state
 /// automaton that led to ITEM_NO in state STATE_NO.
-static void print_relevant_lalr_items(const int state_no, const int item_no, const int conflict_symbol, struct CLIOptions *cli_options, short *item_list, short *nt_items) {
+static void print_relevant_lalr_items(const int state_no, const int item_no, const int conflict_symbol, struct CLIOptions *cli_options, short *item_list, short *nt_items, JBitset first) {
   const int lhs_symbol = rules[item_table[item_no].rule_number].lhs;
   if (lhs_symbol == accept_image) {
     // Do nothing.
@@ -495,7 +493,7 @@ static void print_relevant_lalr_items(const int state_no, const int item_no, con
       int ii;
       for (ii = 1; go_to.map[ii].symbol != lhs_symbol; ii++) {
       }
-      if (lalr_path_retraced(p->value, ii, conflict_symbol, cli_options, lalr_visited, item_list, nt_items)) {
+      if (lalr_path_retraced(p->value, ii, conflict_symbol, cli_options, lalr_visited, item_list, nt_items, first)) {
         break;
       }
     }
@@ -561,7 +559,7 @@ static void add_conflict_symbol(const int state_no, const int symbol) {
 /// until new state(s) are reached where a transition is possible on
 /// the lookahead symbol. It then returns the new set of configurations
 /// found on which a transition on LA_SYMBOL is possible.
-static struct stack_element *follow_sources(struct stack_element *stack, int symbol, const int la_symbol, bool *cyclic, struct StackPool* sp, struct visited_element* visited, struct StackRoot* sr) {
+static struct stack_element *follow_sources(struct stack_element *stack, int symbol, const int la_symbol, bool *cyclic, struct StackPool* sp, struct visited_element* visited, struct StackRoot* sr, bool *rmpself, JBitset first) {
   struct stack_element *configs = NULL; /* Initialize the output set of configurations */
   // If the starting configuration consists of a single state and
   // the initial [state, symbol] pair has already been visited,
@@ -586,7 +584,7 @@ static struct stack_element *follow_sources(struct stack_element *stack, int sym
     }
     if (la_index[go_to.map[ii].laptr] == OMEGA) {
       int stack_top = 0;
-      la_traverse(state_no, ii, &stack_top, sr);
+      la_traverse(state_no, ii, &stack_top, sr, first);
     }
     if (!IS_IN_SET(la_set, go_to.map[ii].laptr, la_symbol)) {
       return configs;
@@ -638,7 +636,7 @@ static struct stack_element *follow_sources(struct stack_element *stack, int sym
           q->size = stack->size + 1;
           q->previous = stack;
           q->next = NULL;
-          struct stack_element *new_configs = follow_sources(q, symbol, la_symbol, cyclic, sp, visited, sr);
+          struct stack_element *new_configs = follow_sources(q, symbol, la_symbol, cyclic, sp, visited, sr, rmpself, first);
           if (new_configs == NULL) {
             free_stack_elements(q, q, sp);
           } else {
@@ -671,7 +669,7 @@ static struct stack_element *follow_sources(struct stack_element *stack, int sym
           for (int i = 1; i < item_table[item_no].dot; i++) {
             q = q->previous;
           }
-          q = follow_sources(q, lhs_symbol, la_symbol, cyclic, sp, visited, sr);
+          q = follow_sources(q, lhs_symbol, la_symbol, cyclic, sp, visited, sr, rmpself, first);
           configs = union_config_sets(configs, q, sp);
         } else {
           struct node *tail;
@@ -694,7 +692,7 @@ static struct stack_element *follow_sources(struct stack_element *stack, int sym
             q->size = 1;
             q->previous = NULL;
             q->next = NULL;
-            struct stack_element *new_configs = follow_sources(q, lhs_symbol, la_symbol, cyclic, sp, visited, sr);
+            struct stack_element *new_configs = follow_sources(q, lhs_symbol, la_symbol, cyclic, sp, visited, sr, rmpself, first);
             if (new_configs == NULL) {
               free_stack_elements(q, q, sp);
             } else {
@@ -719,7 +717,7 @@ static struct stack_element *follow_sources(struct stack_element *stack, int sym
 /// outside, LOOK_AHEAD is assumed to be initialized to the empty set.
 /// NEXT_LA first executes the transition on SYMBOL and thereafter, all
 /// terminal symbols that can be read are added to LOOKAHEAD.
-static void next_la(struct stack_element *stack, const int symbol, const JBitset look_ahead, struct StackRoot* sr) {
+static void next_la(struct stack_element *stack, const int symbol, const JBitset look_ahead, struct StackRoot* sr, bool *rmpself, JBitset first) {
   // The only symbol that can follow the end-of-file symbol is the
   // end-of-file symbol.
   if (symbol == eoft_image) {
@@ -775,7 +773,7 @@ static void next_la(struct stack_element *stack, const int symbol, const JBitset
           for (int i = 1; i < item_table[item_no].dot; i++) {
             q = q->previous;
           }
-          next_la(q, lhs_symbol, look_ahead, sr);
+          next_la(q, lhs_symbol, look_ahead, sr, rmpself, first);
         } else {
           struct node *tail;
           // Compute the item in the root state of the stack,
@@ -799,7 +797,7 @@ static void next_la(struct stack_element *stack, const int symbol, const JBitset
             // yet computed,call LA_TRAVERSE to compute it.
             if (la_index[go_to.map[ii].laptr] == OMEGA) {
               int stack_top = 0;
-              la_traverse(p->value, ii, &stack_top, sr);
+              la_traverse(p->value, ii, &stack_top, sr, first);
             }
             SET_UNION(look_ahead, 0, la_set, go_to.map[ii].laptr);
           }
@@ -845,7 +843,7 @@ static bool stack_was_seen(struct stack_element **stack_seen, struct stack_eleme
 /// conflicts by doing more look-ahead.  If the conflict resolution
 /// is successful, then a new state is created and returned; otherwise,
 /// the NULL pointer is returned.
-static struct state_element *state_to_resolve_conflicts(struct sources_element sources, int la_symbol, int level, struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct state_element **shift_table, bool *cyclic, struct StackPool* sp, struct visited_element* visited, struct STRS* strs, struct StackRoot* sr) {
+static struct state_element *state_to_resolve_conflicts(struct sources_element sources, int la_symbol, int level, struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct state_element **shift_table, bool *cyclic, struct StackPool* sp, struct visited_element* visited, struct STRS* strs, struct StackRoot* sr, bool *rmpself, JBitset first) {
   struct sources_element new_sources = allocate_sources();
   struct node **action;
   calloc0(action, num_terminals + 1, struct node *);
@@ -898,7 +896,7 @@ static struct state_element *state_to_resolve_conflicts(struct sources_element s
         strs->highest_level = INFINITY;
         goto clean_up_and_return;
       }
-      next_la(stack, la_symbol, look_ahead, sr);
+      next_la(stack, la_symbol, look_ahead, sr, rmpself, first);
     }
     RESET_BIT(look_ahead, empty); /* EMPTY never in LA set */
     // For each lookahead symbol computed for this action, add an
@@ -951,13 +949,13 @@ static struct state_element *state_to_resolve_conflicts(struct sources_element s
         clear_visited(visited);
         for (struct stack_element *stack = sources.configs[act]; stack != NULL; stack = stack->next) {
           struct stack_element *new_configs;
-          new_configs = follow_sources(stack, la_symbol, symbol, cyclic, sp, visited, sr);
+          new_configs = follow_sources(stack, la_symbol, symbol, cyclic, sp, visited, sr, rmpself, first);
           new_sources = add_configs(new_sources, act, new_configs, sp);
         }
       }
       free_nodes(action[symbol], tail);
       action[symbol] = NULL;
-      state = state_to_resolve_conflicts(new_sources, symbol, level + 1, cli_options, dss, shift_table, cyclic, sp, visited, strs, sr);
+      state = state_to_resolve_conflicts(new_sources, symbol, level + 1, cli_options, dss, shift_table, cyclic, sp, visited, strs, sr, rmpself, first);
       if (state == NULL) {
         goto clean_up_and_return;
       }
@@ -1138,8 +1136,8 @@ clean_up_and_return:
 /// produce themselves. It takes as argumen the map PRODUCES which
 /// identifies for each nonterminal the set of nonterminals that it can
 /// right-most produce.
-void init_rmpself(const JBitset produces) {
-  rmpself = Allocate_boolean_array(num_non_terminals);
+bool* init_rmpself(const JBitset produces) {
+  bool *rmpself = Allocate_boolean_array(num_non_terminals);
   rmpself -= num_terminals + 1;
   // Note that each element of the map produces is a boolean vector
   // that is indexable in the range 1..num_non_terminals. Since each
@@ -1149,11 +1147,12 @@ void init_rmpself(const JBitset produces) {
   for ALL_NON_TERMINALS3(nt) {
     rmpself[nt] = IS_IN_SET(produces, nt, nt - num_terminals);
   }
+  return rmpself;
 }
 
 /// Free all support structures that were allocated to help compute
 /// additional lookahead.
-void exit_lalrk_process(const struct CLIOptions *cli_options, struct state_element **shift_table, bool *cyclic, struct StackPool* sp, struct visited_element* visited, struct SourcesElementSources* ses) {
+void exit_lalrk_process(const struct CLIOptions *cli_options, struct state_element **shift_table, bool *cyclic, struct StackPool* sp, struct visited_element* visited, struct SourcesElementSources* ses, bool *rmpself) {
   if (cli_options->lalr_level > 1) {
     rmpself += num_terminals + 1;
     ffree(rmpself);
@@ -1179,7 +1178,7 @@ void free_conflict_space(short *item_list, short *nt_items) {
 /// where k > 1, then we attempt to resolve the conflicts by computing
 /// more lookaheads. Shift-Reduce conflicts are processed first,
 /// followed by Reduce-Reduce conflicts.
-void resolve_conflicts(const int state_no, struct node **action, const short *symbol_list, const int reduce_root, struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct state_element **shift_table, bool *cyclic, short *item_list, short *nt_items, struct StackPool* sp, struct ConflictPool* cp, struct visited_element* visited, struct SourcesElementSources* ses, struct STRS* strs, struct StackRoot* sr) {
+void resolve_conflicts(const int state_no, struct node **action, const short *symbol_list, const int reduce_root, struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct state_element **shift_table, bool *cyclic, short *item_list, short *nt_items, struct StackPool* sp, struct ConflictPool* cp, struct visited_element* visited, struct SourcesElementSources* ses, struct STRS* strs, struct StackRoot* sr, bool *rmpself, JBitset first) {
   // Note that a shift action to a state "S" is encoded with the
   // value (S+NUM_RULES) to help distinguish it from reduce actions.
   // Reduce actions lie in the range [0..NUM_RULES]. Shift-reduce
@@ -1217,7 +1216,7 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
           q->size = 1;
           q->previous = NULL;
           q->next = NULL;
-          struct stack_element *new_configs = follow_sources(q, lhs_symbol, symbol, cyclic, sp, visited, sr);
+          struct stack_element *new_configs = follow_sources(q, lhs_symbol, symbol, cyclic, sp, visited, sr, rmpself, first);
           if (new_configs == NULL) {
             free_stack_elements(q, q, sp);
           } else {
@@ -1234,7 +1233,7 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
       // the conflicts.  In any case, STATE_TO_RESOLVE_CONFLICTS
       // frees the space that is used by the action map headed by
       // ACTION_ROOT.
-      struct state_element *state = state_to_resolve_conflicts(ses->sources, symbol, 2, cli_options, dss, shift_table, cyclic, sp, visited, strs, sr);
+      struct state_element *state = state_to_resolve_conflicts(ses->sources, symbol, 2, cli_options, dss, shift_table, cyclic, sp, visited, strs, sr, rmpself, first);
       if (state != NULL) {
         state->in_state = state_no;
         free_nodes(action[symbol], tail);
@@ -1289,7 +1288,7 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
             q->size = 1;
             q->previous = NULL;
             q->next = NULL;
-            struct stack_element *new_configs = follow_sources(q, lhs_symbol, symbol, cyclic, sp, visited, sr);
+            struct stack_element *new_configs = follow_sources(q, lhs_symbol, symbol, cyclic, sp, visited, sr, rmpself, first);
             if (new_configs == NULL) {
               free_stack_elements(q, q, sp);
             } else {
@@ -1302,7 +1301,7 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
         //     STATE_TO_RESOLVE_CONFLICTS will return a pointer to a
         // STATE_ELEMENT if the conflicts were resolvable with more
         // lookaheads, otherwise, it returns NULL.
-        struct state_element *state = state_to_resolve_conflicts(ses->sources, symbol, 2, cli_options, dss, shift_table, cyclic, sp, visited, strs, sr);
+        struct state_element *state = state_to_resolve_conflicts(ses->sources, symbol, 2, cli_options, dss, shift_table, cyclic, sp, visited, strs, sr, rmpself, first);
         if (state != NULL) {
           state->in_state = state_no;
           free_nodes(action[symbol], tail);
@@ -1359,7 +1358,7 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
         restore_symbol(temp, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
         printf("*** Shift/reduce conflict on \"%s\" with rule %d\n", temp, rule_no);
         if (cli_options->trace_opt.value != NOTRACE.value) {
-          print_relevant_lalr_items(state_no, p->item, symbol, cli_options, item_list, nt_items);
+          print_relevant_lalr_items(state_no, p->item, symbol, cli_options, item_list, nt_items, first);
           print_item(p->item, cli_options);
         }
       }
@@ -1375,11 +1374,11 @@ void resolve_conflicts(const int state_no, struct node **action, const short *sy
         restore_symbol(temp, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
         printf("*** Reduce/reduce conflict on \"%s\" between rule %d and %d\n", temp, n, rule_no);
         if (cli_options->trace_opt.value != NOTRACE.value) {
-          print_relevant_lalr_items(state_no, p->item1, symbol, cli_options, item_list, nt_items);
+          print_relevant_lalr_items(state_no, p->item1, symbol, cli_options, item_list, nt_items, first);
           print_item(p->item1, cli_options);
           fill_in(msg_line, PRINT_LINE_SIZE - 3, '-');
           printf("\n%s", msg_line);
-          print_relevant_lalr_items(state_no, p->item2, symbol, cli_options, item_list, nt_items);
+          print_relevant_lalr_items(state_no, p->item2, symbol, cli_options, item_list, nt_items, first);
           print_item(p->item2, cli_options);
         }
       }
@@ -1521,7 +1520,7 @@ void create_lastats(struct STRS* strs) {
 /// STATE_NO.  A number is assigned to all pairs (S, B), where S is a state,
 /// and B is a non-terminal, involved in the paths. GOTO_INDX points to the
 /// GOTO_ELEMENT of (STATE_NO, A).
-void trace_lalr_path(const int state_no, const int goto_indx, struct CLIOptions *cli_options, int *la_base) {
+void trace_lalr_path(const int state_no, const int goto_indx, struct CLIOptions *cli_options, int *la_base, JBitset first) {
   //  If STATE is a state number we first check to see if its base
   // look-ahead set is a special one that does not contain EMPTY and
   // has already been assigned a slot that can be reused.
@@ -1564,7 +1563,7 @@ void trace_lalr_path(const int state_no, const int goto_indx, struct CLIOptions 
         for (ii = 1; go_to_inner.map[ii].symbol != symbol; ii++) {
         }
         if (go_to_inner.map[ii].laptr == OMEGA) {
-          trace_lalr_path(t->value, ii, cli_options, la_base);
+          trace_lalr_path(t->value, ii, cli_options, la_base, first);
         }
       }
       free_nodes(w, p);
@@ -1587,7 +1586,7 @@ void trace_lalr_path(const int state_no, const int goto_indx, struct CLIOptions 
 /// follow a non-terminal in a given state.
 ///  These sets are initialized to the set of terminals that can immediately
 /// follow the non-terminal in the state to which it can shift (READ set).
-void compute_read(struct CLIOptions *cli_options, const struct DetectedSetSizes* dss, bool *single_complete_item) {
+void compute_read(struct CLIOptions *cli_options, const struct DetectedSetSizes* dss, bool *single_complete_item, JBitset first) {
   if (cli_options->lalr_level > 1 || cli_options->single_productions_bit) {
     calloc0_set(read_set, num_states + 1, dss->term_set_size);
   }
@@ -1628,7 +1627,7 @@ void compute_read(struct CLIOptions *cli_options, const struct DetectedSetSizes*
           for (ii = 1; go_to.map[ii].symbol != lhs_symbol; ii++) {
           }
           if (go_to.map[ii].laptr == OMEGA) {
-            trace_lalr_path(s->value, ii, cli_options, la_base);
+            trace_lalr_path(s->value, ii, cli_options, la_base, first);
           }
         }
         free_nodes(v, q);
@@ -1660,7 +1659,7 @@ void compute_read(struct CLIOptions *cli_options, const struct DetectedSetSizes*
             for (ii = 1; go_to.map[ii].symbol != lhs_symbol; ii++) {
             }
             if (go_to.map[ii].laptr == OMEGA) {
-              trace_lalr_path(s->value, ii, cli_options, la_base);
+              trace_lalr_path(s->value, ii, cli_options, la_base, first);
             }
           }
           free_nodes(v, q);
@@ -1742,12 +1741,11 @@ void compute_read(struct CLIOptions *cli_options, const struct DetectedSetSizes*
 /// (ITEM_NO), and a set (LOOK_AHEAD).  It computes the look-ahead set of
 /// terminals for the given item in the given state and places the answer in
 /// the set LOOK_AHEAD.
-void compute_la(const int state_no, const int item_no, const JBitset look_ahead, struct StackRoot* sr) {
+void compute_la(const int state_no, const int item_no, const JBitset look_ahead, struct StackRoot* sr, JBitset first) {
   sr->stack_root = NULL;
   const int lhs_symbol = rules[item_table[item_no].rule_number].lhs;
   if (lhs_symbol == accept_image) {
-    ASSIGN_SET(look_ahead, 0,
-               first, item_table[item_no - 1].suffix_index);
+    ASSIGN_SET(look_ahead, 0, first, item_table[item_no - 1].suffix_index);
     return;
   }
   INIT_SET(look_ahead); /* initialize set */
@@ -1764,7 +1762,7 @@ void compute_la(const int state_no, const int item_no, const JBitset look_ahead,
     // LA_TRAVERSE the graph to compute it.
     if (la_index[go_to.map[ii].laptr] == OMEGA) {
       int stack_top = 0;
-      la_traverse(s->value, ii, &stack_top, sr);
+      la_traverse(s->value, ii, &stack_top, sr, first);
     }
     SET_UNION(look_ahead, 0, la_set, go_to.map[ii].laptr);
   }
@@ -1825,7 +1823,7 @@ void build_in_stat(void) {
 /// GOTO_ELEMENT array.
 ///
 /// The same digraph algorithm used in MKFIRST is used for this computation.
-void la_traverse(const int state_no, const int goto_indx, int *stack_top, struct StackRoot* sr) {
+void la_traverse(const int state_no, const int goto_indx, int *stack_top, struct StackRoot* sr, JBitset first) {
   const struct goto_header_type go_to = statset[state_no].go_to;
   const int la_ptr = go_to.map[goto_indx].laptr;
   struct node *s = Allocate_node(); /* Push LA_PTR down the stack */
@@ -1861,7 +1859,7 @@ void la_traverse(const int state_no, const int goto_indx, int *stack_top, struct
         for (ii = 1; go_to_inner.map[ii].symbol != symbol; ii++) {
         }
         if (la_index[go_to_inner.map[ii].laptr] == OMEGA) {
-          la_traverse(t->value, ii, stack_top, sr);
+          la_traverse(t->value, ii, stack_top, sr, first);
         }
         SET_UNION(la_set, la_ptr, la_set, go_to_inner.map[ii].laptr);
         la_index[la_ptr] = MIN(la_index[la_ptr], la_index[go_to_inner.map[ii].laptr]);
@@ -1893,7 +1891,7 @@ void la_traverse(const int state_no, const int goto_indx, int *stack_top, struct
 ///
 /// For a complete description of the lookahead algorithm used in this
 /// program, see Charles, PhD thesis, NYU 1991.
-void mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct SourcesElementSources* ses) {
+void mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct SourcesElementSources* ses, bool *rmpself, JBitset first) {
   struct STRS strs = (struct STRS) {
     .highest_level = 0,
     .la_state_root = NULL,
@@ -1905,7 +1903,6 @@ void mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
   // INIT_LALRK_PROCESS sets up the necessary environment for the
   // computation of multiple lookahead.
   reset_temporary_space();
-
   /// If LALR(k), k > 1, is requested, we may have to create more shift
   /// maps. Initialize SHIFT_TABLE. Note that each element of SHIFT_TABLE
   /// is automatically initialized to NULL by CALLOC.
@@ -2043,7 +2040,7 @@ void mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
   // We call COMPUTE_READ to perform the following tasks:
   // 1) Count how many elements are needed in LA_ELEMENT: LA_TOP
   // 2) Allocate space for and initialize LA_SET and LA_INDEX
-  compute_read(cli_options, dss, single_complete_item);
+  compute_read(cli_options, dss, single_complete_item, first);
   // Allocate space for REDUCE which will be used to map each
   // into its reduce map. We also initialize RULE_COUNT which
   // will be used to count the number of reduce actions on each
@@ -2109,7 +2106,7 @@ void mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
         // for all complete items
         item_no = item_ptr->value;
         rule_no = item_table[item_no].rule_number;
-        compute_la(state_no, item_no, look_ahead, &sr);
+        compute_la(state_no, item_no, look_ahead, &sr, first);
         for ALL_TERMINALS3(symbol) {
           // for all symbols in la set
           if (IS_ELEMENT(look_ahead, symbol)) {
@@ -2147,7 +2144,7 @@ void mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
       // element (if the conflicts were reduce-reduce conflicts, only
       // the first element in the ACTION(t) list is returned).
       if (symbol_root != NIL) {
-        resolve_conflicts(state_no, action, symbol_list, symbol_root, cli_options, dss, shift_table, cyclic, item_list, nt_items, &sp, &cp, &visited, ses, &strs, &sr);
+        resolve_conflicts(state_no, action, symbol_list, symbol_root, cli_options, dss, shift_table, cyclic, item_list, nt_items, &sp, &cp, &visited, ses, &strs, &sr, rmpself, first);
         for (symbol = symbol_root; symbol != NIL; symbol = symbol_list[symbol]) {
           if (action[symbol] != NULL) {
             item_no = action[symbol]->value;
@@ -2245,12 +2242,12 @@ void mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
   // automaton. Clear all temporary space that was used in that
   // process and calculate the maximum lookahead level that was
   // needed.
-  exit_lalrk_process(cli_options, shift_table, cyclic, &sp, &visited, ses);
+  exit_lalrk_process(cli_options, shift_table, cyclic, &sp, &visited, ses, rmpself);
   free_conflict_space(item_list, nt_items);
   cli_options->lalr_level = strs.highest_level;
   // If the removal of single productions is requested, do that.
   if (cli_options->single_productions_bit) {
-    remove_single_productions(dss, &sr);
+    remove_single_productions(dss, &sr, first);
   }
   // If either more than one lookahead was needed or the removal
   // of single productions was requested, the automaton was

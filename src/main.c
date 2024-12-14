@@ -112,15 +112,17 @@ int main(const int argc, char *argv[]) {
     /// may appear immediately after the non-terminal.
     JBitset follow = {.raw = NULL};
 
-    struct DetectedSetSizes dss = mkbasic(&cli_options, follow);
+    bool *rmpself;
 
-    mkstats(&cli_options, &dss);
+    struct DetectedSetSizes dss = mkbasic(&cli_options, follow, &rmpself, &first);
+
+    mkstats(&cli_options, &dss, first);
 
     struct SourcesElementSources ses = (struct SourcesElementSources) {
       .sources = NULL,
     };
 
-    mkrdcts(&cli_options, &dss, &ses);
+    mkrdcts(&cli_options, &dss, &ses, rmpself, first);
 
     // Output more basic statistics.
     {

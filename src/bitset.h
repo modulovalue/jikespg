@@ -15,7 +15,7 @@ struct jbitset {
 #define JBitset struct jbitset
 
 #define calloc0_set(into, s, l) \
-  into = (JBitset) {.raw = calloc(s, (l) * sizeof(BOOLEAN_CELL)), .size = (l)}; \
+  (into) = (JBitset) {.raw = calloc(s, (l) * sizeof(BOOLEAN_CELL)), .size = (l)}; \
   if ((into).raw == NULL) \
     nospace(hostfile, __LINE__);
 
@@ -71,7 +71,9 @@ static bool IS_IN_SET(const JBitset set, const int i, const int b) {
 /// should not be invoked with a parameter of the same name.
 /// set[i] union set2[j]
 static void SET_UNION(const JBitset set1, const int i, const JBitset set2, const int j) {
-  if (set1.size != set2.size) exit(666);
+  if (set1.size != set2.size) {
+    exit(666);
+  }
   const long size = set1.size;
   for (register long kji = 0; kji < size; kji++) {
     set1.raw[i * size + kji] |= set2.raw[j * size + kji];

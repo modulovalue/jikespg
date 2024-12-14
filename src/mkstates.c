@@ -704,7 +704,7 @@ int get_shift_symbol(const int lhs_symbol, bool *symbol_seen) {
 /// that are required as candidates for secondary error recovery.  If the
 /// option NAMES=OPTIMIZED is requested, the NAME map is optimized and SYMNO
 /// is updated accordingly.
-void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct Produced* produced, struct ScopeTop* st) {
+void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct Produced* produced, struct ScopeTop* st, JBitset first) {
   // TOP, STACK, and INDEX are used for the digraph algorithm
   // in the routines COMPUTE_PRODUCES.
   //
@@ -1406,7 +1406,7 @@ void compute_produces(const int symbol, struct node **direct_produces, short *st
 // === Produce End ===
 
 /// In this procedure, we first construct the LR(0) automaton.
-void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
+void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, JBitset first) {
   struct ScopeTop st = (struct ScopeTop) {
     .top = 0
   };
@@ -1423,7 +1423,7 @@ void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss) {
   mklr0(cli_options, &no_shifts_ptr, &no_gotos_ptr);
   struct Produced produced = {};
   if (error_maps_bit && (cli_options->table_opt.value == OPTIMIZE_TIME.value || cli_options->table_opt.value == OPTIMIZE_SPACE.value)) {
-    produce(cli_options, dss, &produced, &st);
+    produce(cli_options, dss, &produced, &st, first);
   }
   // Free space trapped by the CLOSURE and CLITEMS maps.
   for ALL_NON_TERMINALS3(j) {
