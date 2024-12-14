@@ -35,23 +35,6 @@ const char *RETRIEVE_NAME(const int indx) {
   return &string_table[name[indx]];
 }
 
-static const int SPACE_CODE = 1;
-static const int DIGIT_CODE = 2;
-static const int ALPHA_CODE = 3;
-static char code[256] = {0};
-
-static bool IsSpace(const int c) {
-  return code[c] == SPACE_CODE;
-}
-
-static bool IsDigit(const int c) {
-  return code[c] == DIGIT_CODE;
-}
-
-static bool IsAlpha(const int c) {
-  return code[c] == ALPHA_CODE;
-}
-
 static const int OUTPUT_PARM_SIZE = MAX_PARM_SIZE + 7;
 static const int MAXIMUM_LA_LEVEL = 100;
 static const int STRING_BUFFER_SIZE = 8192;
@@ -73,7 +56,7 @@ static void read_input(char *grm_file, FILE *sysgrm, struct ScannerState* ss) {
 /// character is a digit. If all are digits, then 1 is returned; if not, then
 /// 0 is returned.
 static bool verify_is_digit(const char *item) {
-  while (IsDigit(*item)) {
+  while (isdigit(*item)) {
     item++;
   }
   return *item == '\0';
@@ -200,7 +183,7 @@ static void options(char *file_prefix, struct CLIOptions *cli_options, char *par
     } else {
       // We now process the valued-parameter. Pick value after "=" and process
       i++;
-      if (IsSpace(parm[i]) || parm[i] == '\0') {
+      if (isspace(parm[i]) || parm[i] == '\0') {
         // no value specified
         PRNTERR2("Null string or blank is invalid for parameter %s", token);
         continue;
@@ -365,7 +348,7 @@ static void process_options_lines(char *grm_file, struct OutputFiles *of, char *
   // Until end-of-file is reached, process
   while (ss->p1 != NULL) {
     // all comment and %options lines.
-    while (IsSpace(*ss->p2)) {
+    while (isspace(*ss->p2)) {
       // skip all space symbols
       if (*ss->p2 == '\n') {
         ss->line_no++;
@@ -697,7 +680,7 @@ static void scanner(char *grm_file, FILE *sysgrm, struct CLIOptions* cli_options
 scan_token:
   // Skip "blank" spaces.
   ss->p1 = ss->p2;
-  while (IsSpace(*ss->p1)) {
+  while (isspace(*ss->p1)) {
     if (*ss->p1++ == '\n') {
       if (ss->bufend == ss->input_buffer + IOBUFFER_SIZE) {
         int i = ss->bufend - ss->p1;
@@ -802,7 +785,7 @@ scan_token:
   ss->p2 = ss->p1 + 1;
   switch (*ss->p1) {
     case '<':
-      if (IsAlpha(*ss->p2)) {
+      if (isalpha(*ss->p2)) {
         ss->p2++;
         while (*ss->p2 != '\n') {
           if (*ss->p2++ == '>') {
@@ -855,7 +838,7 @@ scan_token:
         while (*ss->p2 != '\n')
           ss->p2++;
         goto scan_token;
-      } else if (*ss->p2 == '>' && IsSpace(*(ss->p2 + 1))) {
+      } else if (*ss->p2 == '>' && isspace(*(ss->p2 + 1))) {
         ss->ct = ARROW_TK;
         ss->ct_length = 2;
         ss->p2++;
@@ -863,7 +846,7 @@ scan_token:
       }
       break;
     case ':':
-      if (*ss->p2 == ':' && *(ss->p2 + 1) == '=' && IsSpace(*(ss->p2 + 2))) {
+      if (*ss->p2 == ':' && *(ss->p2 + 1) == '=' && isspace(*(ss->p2 + 2))) {
         ss->ct = EQUIVALENCE_TK;
         ss->ct_length = 3;
         ss->p2 = ss->p1 + 3;
@@ -877,7 +860,7 @@ scan_token:
       ss->p2 = ss->p1;
       return;
     default:
-      if (*ss->p1 == cli_options->ormark && IsSpace(*ss->p2)) {
+      if (*ss->p1 == cli_options->ormark && isspace(*ss->p2)) {
         ss->ct = OR_TK;
         ss->ct_length = 1;
         return;
@@ -887,7 +870,7 @@ scan_token:
         switch (*ss->p2) {
           case 't':
           case 'T':
-            if (strxeq(p3, "erminals") && IsSpace(*(ss->p1 + 10))) {
+            if (strxeq(p3, "erminals") && isspace(*(ss->p1 + 10))) {
               ss->ct = TERMINALS_KEY_TK;
               ss->ct_length = 10;
               ss->p2 = ss->p1 + 10;
@@ -897,7 +880,7 @@ scan_token:
 
           case 'd':
           case 'D':
-            if (strxeq(p3, "efine") && IsSpace(*(ss->p1 + 7))) {
+            if (strxeq(p3, "efine") && isspace(*(ss->p1 + 7))) {
               ss->ct = DEFINE_KEY_TK;
               ss->ct_length = 7;
               ss->p2 = ss->p1 + 7;
@@ -907,31 +890,31 @@ scan_token:
 
           case 'e':
           case 'E':
-            if (strxeq(p3, "mpty") && IsSpace(*(ss->p1 + 6))) {
+            if (strxeq(p3, "mpty") && isspace(*(ss->p1 + 6))) {
               ss->ct = EMPTY_SYMBOL_TK;
               ss->ct_length = 6;
               ss->p2 = ss->p1 + 6;
               return;
             }
-            if (strxeq(p3, "rror") && IsSpace(*(ss->p1 + 6))) {
+            if (strxeq(p3, "rror") && isspace(*(ss->p1 + 6))) {
               ss->ct = ERROR_SYMBOL_TK;
               ss->ct_length = 6;
               ss->p2 = ss->p1 + 6;
               return;
             }
-            if (strxeq(p3, "ol") && IsSpace(*(ss->p1 + 4))) {
+            if (strxeq(p3, "ol") && isspace(*(ss->p1 + 4))) {
               ss->ct = EOL_SYMBOL_TK;
               ss->ct_length = 4;
               ss->p2 = ss->p1 + 4;
               return;
             }
-            if (strxeq(p3, "of") && IsSpace(*(ss->p1 + 4))) {
+            if (strxeq(p3, "of") && isspace(*(ss->p1 + 4))) {
               ss->ct = EOF_SYMBOL_TK;
               ss->ct_length = 4;
               ss->p2 = ss->p1 + 4;
               return;
             }
-            if (strxeq(p3, "nd") && IsSpace(*(ss->p1 + 4))) {
+            if (strxeq(p3, "nd") && isspace(*(ss->p1 + 4))) {
               ss->ct = END_KEY_TK;
               ss->ct_length = 4;
               ss->p2 = ss->p1 + 4;
@@ -941,7 +924,7 @@ scan_token:
 
           case 'r':
           case 'R':
-            if (strxeq(p3, "ules") && IsSpace(*(ss->p1 + 6))) {
+            if (strxeq(p3, "ules") && isspace(*(ss->p1 + 6))) {
               ss->ct = RULES_KEY_TK;
               ss->ct_length = 6;
               ss->p2 = ss->p1 + 6;
@@ -951,7 +934,7 @@ scan_token:
 
           case 'a':
           case 'A':
-            if (strxeq(p3, "lias") && IsSpace(*(ss->p1 + 6))) {
+            if (strxeq(p3, "lias") && isspace(*(ss->p1 + 6))) {
               ss->ct = ALIAS_KEY_TK;
               ss->ct_length = 6;
               ss->p2 = ss->p1 + 6;
@@ -961,7 +944,7 @@ scan_token:
 
           case 's':
           case 'S':
-            if (strxeq(p3, "tart") && IsSpace(*(ss->p1 + 6))) {
+            if (strxeq(p3, "tart") && isspace(*(ss->p1 + 6))) {
               ss->ct = START_KEY_TK;
               ss->ct_length = 6;
               ss->p2 = ss->p1 + 6;
@@ -971,7 +954,7 @@ scan_token:
 
           case 'n':
           case 'N':
-            if (strxeq(p3, "ames") && IsSpace(*(ss->p1 + 6))) {
+            if (strxeq(p3, "ames") && isspace(*(ss->p1 + 6))) {
               ss->ct = NAMES_KEY_TK;
               ss->ct_length = 6;
               ss->p2 = ss->p1 + 6;
@@ -984,7 +967,7 @@ scan_token:
         }
 
         ss->ct = MACRO_NAME_TK;
-        while (!IsSpace(*ss->p2)) {
+        while (!isspace(*ss->p2)) {
           ss->p2++;
         }
         ss->ct_length = ss->p2 - ss->p1;
@@ -992,7 +975,7 @@ scan_token:
       }
   }
   ss->ct = SYMBOL_TK;
-  while (!IsSpace(*ss->p2)) {
+  while (!isspace(*ss->p2)) {
     ss->p2++;
   }
   ss->ct_length = ss->p2 - ss->p1;
@@ -1254,7 +1237,7 @@ next_line: {
       // macro list.
       // find next delimeter
       int jj;
-      for (jj = k + 1; jj < text_len && !IsSpace(text[jj]); ++jj) {
+      for (jj = k + 1; jj < text_len && !isspace(text[jj]); ++jj) {
       }
       memcpy(symbol, text + k, jj - k); /* copy macro name into symbol */
       symbol[jj - k] = '\0';
@@ -1684,29 +1667,6 @@ void process_input(char *grm_file, struct OutputFiles *output_files, const int a
         PRNTWNG2("A file named \"%s\" with no extension is being opened", grm_file);
       }
     }
-    // Complete the initialization of the code array used to replace the
-    // builtin functions isalpha, isdigit and isspace.
-    for (unsigned c = 'a'; c <= 'z'; c++) {
-      if (isalpha(c)) {
-        code[c] = ALPHA_CODE;
-      }
-    }
-    for (unsigned c = 'A'; c <= 'Z'; c++) {
-      if (isalpha(c)) {
-        code[c] = ALPHA_CODE;
-      }
-    }
-    for (unsigned c = '0'; c <= '9'; c++) {
-      if (isdigit(c)) {
-        code[c] = DIGIT_CODE;
-      }
-    }
-    code[' '] = SPACE_CODE;
-    code['\n'] = SPACE_CODE;
-    code['\t'] = SPACE_CODE;
-    code['\r'] = SPACE_CODE;
-    code['\v'] = SPACE_CODE;
-    code['\f'] = SPACE_CODE;
   }
 
   struct ScannerState ss = {
