@@ -8,11 +8,19 @@ struct TemporarySpace {
   long temp_top;
   long temp_size;
   long temp_base_size;
-} ts = {
+} ts = (struct TemporarySpace) {
   .temp_base = NULL,
   .temp_top = 0,
   .temp_size = 0,
   .temp_base_size = 0,
+};
+
+struct GlobalSpace gs = (struct GlobalSpace) {
+  .global_base = NULL,
+  .global_top = 0,
+  .global_size = 0,
+  .global_base_size = 0,
+  .node_pool = NULL,
 };
 
 /// The following are global variables and constants used to manage a
@@ -104,14 +112,6 @@ void *talloc(const long size) {
   }
   return &ts.temp_base[i >> LOG_BLKSIZE][i];
 }
-
-struct GlobalSpace gs = (struct GlobalSpace) {
-  .global_base = NULL,
-  .global_top = 0,
-  .global_size = 0,
-  .global_base_size = 0,
-  .node_pool = NULL,
-};
 
 /// galloc allocates an object of size "size" in global space and
 /// returns a pointer to it. It is analogous to "talloc", but it

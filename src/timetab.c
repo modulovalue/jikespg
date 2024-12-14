@@ -7,6 +7,7 @@
 /// We also remap the states based on frequency.
 struct DefaultSaves {
   int default_saves;
+  int last_symbol;
 } remap_symbols(struct TableOutput* toutput, bool* is_terminal) {
   int default_saves = 0;
   long *frequency_symbol = Allocate_long_array(num_symbols + 1);
@@ -78,6 +79,7 @@ struct DefaultSaves {
   // number of actions defined on them.
   sortdes(frequency_symbol, frequency_count, 1, num_terminals, max_la_state);
   sortdes(frequency_symbol, frequency_count, num_terminals + 1, num_symbols, max_la_state);
+  long last_symbol;
   for (last_symbol = num_symbols; last_symbol > num_terminals; last_symbol--) {
     if (frequency_count[last_symbol] != 0) {
       break;
@@ -152,7 +154,8 @@ struct DefaultSaves {
   ffree(frequency_count);
   ffree(row_size);
   return (struct DefaultSaves) {
-    .default_saves = default_saves
+    .default_saves = default_saves,
+    .last_symbol = last_symbol,
   };
 }
 
@@ -160,7 +163,7 @@ struct DefaultSaves {
 /// compute the starting position in a vector where each of its rows
 /// may be placed without clobbering elements in another row.
 /// The starting positions are stored in the vector STATE_INDEX.
-static void overlap_tables(struct CLIOptions *cli_options, struct TableOutput* toutput, bool* is_terminal, struct DefaultSaves default_saves, struct CTabsProps* ctp) {
+static void overlap_tables(struct CLIOptions *cli_options, struct TableOutput* toutput, bool* is_terminal, struct DefaultSaves default_saves, struct CTabsProps* ctp, long last_symbol) {
   long *symbol_list = Allocate_long_array(num_symbols + 1);
   num_entries -= default_saves.default_saves;
   ctp->increment_size = MAX(num_entries * increment / 100, num_symbols + 1);
@@ -320,6 +323,6 @@ static void overlap_tables(struct CLIOptions *cli_options, struct TableOutput* t
 void cmprtim(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of) {
   bool *is_terminal = Allocate_boolean_array(num_symbols + 1);
   struct DefaultSaves default_saves = remap_symbols(toutput, is_terminal);
-  overlap_tables(cli_options, toutput, is_terminal, default_saves, ctp);
+  overlap_tables(cli_options, toutput, is_terminal, default_saves, ctp, default_saves.last_symbol);
   print_time_parser(cli_options, toutput, dss, ctp, of);
 }

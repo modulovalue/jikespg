@@ -17,10 +17,11 @@ long accept_act;
 long error_act;
 long first_index;
 long last_index;
-long last_symbol;
 long max_name_length = 0;
 
-bool byte_terminal_range = true;
+struct ByteTerminalRange {
+  bool value;
+};
 
 const char digits[] = "0123456789";
 
@@ -194,7 +195,7 @@ static void exit_file(FILE **file, char *file_tag, struct CLIOptions *cli_option
   }
 }
 
-static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of) {
+static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct ByteTerminalRange* btr) {
   long *state_start = Allocate_long_array(num_states + 2);
   long *state_stack = Allocate_long_array(num_states + 1);
   PRNT("\nError maps storage:");
@@ -266,11 +267,11 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
   compute_action_symbols_range(state_start, state_stack, toutput->state_list, action_symbols_range);
   for (int i = 0; i < offset - 1; i++) {
     if (action_symbols_range[i] > (cli_options->java_bit ? 127 : 255)) {
-      byte_terminal_range = 0;
+      btr->value = 0;
       break;
     }
   }
-  if (byte_terminal_range) {
+  if (btr->value) {
     if (cli_options->java_bit) {
       prnt_longs("\n    public final static byte asr[] = {0,\n", 0, offset - 2, 10, action_symbols_range, cli_options, of);
     } else {
@@ -859,10 +860,14 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
 }
 
 static void common(const bool byte_check_bit, struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of) {
+  struct ByteTerminalRange btr = (struct ByteTerminalRange) {
+    .value = true
+  };
+
   // Write table common.
   {
     if (error_maps_bit) {
-      print_error_maps(cli_options, toutput, dss, ctp, of);
+      print_error_maps(cli_options, toutput, dss, ctp, of, &btr);
     }
     if (byte_check_bit) {
       // Do nothing.
@@ -873,7 +878,7 @@ static void common(const bool byte_check_bit, struct CLIOptions *cli_options, st
         PRNT("\n***Warning: Base Check vector contains value > 255. 16-bit words used.");
       }
     }
-    if (byte_terminal_range) {
+    if (btr.value) {
       // Do nothing.
     } else {
       if (cli_options->java_bit) {
@@ -1129,7 +1134,7 @@ static void common(const bool byte_check_bit, struct CLIOptions *cli_options, st
                 "%s const          char  string_buffer[];\n",
                 cli_options->c_bit ? "extern" : "    static",
                 cli_options->c_bit ? "extern" : "    static",
-                byte_terminal_range <= (cli_options->java_bit ? 127 : 255) ? "char " : "short",
+                btr.value <= (cli_options->java_bit ? 127 : 255) ? "char " : "short",
                 cli_options->c_bit ? "extern" : "    static",
                 cli_options->c_bit ? "extern" : "    static",
                 cli_options->c_bit ? "extern" : "    static",

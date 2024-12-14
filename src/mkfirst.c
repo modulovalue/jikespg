@@ -3,8 +3,6 @@
 #include <string.h>
 #include "common.h"
 
-JBitset first = {.raw = NULL};
-
 const int LEN = PRINT_LINE_SIZE - 4;
 
 long NEXT_RULE_SIZE() {
@@ -26,7 +24,7 @@ struct f_element_type {
 /// returns FALSE.  Otherwise, the whole right-hand side is traversed, and it
 /// returns the value TRUE.
 bool is_terminal_rhs(short *rhs_start, const bool *produces_terminals, const int rule_no) {
-  for (rhs_start[rule_no] = rhs_start[rule_no]; rhs_start[rule_no] <= rules[rule_no + 1].rhs - 1; rhs_start[rule_no]++) {
+  for (; rhs_start[rule_no] <= rules[rule_no + 1].rhs - 1; rhs_start[rule_no]++) {
     const int symbol = rhs_sym[rhs_start[rule_no]];
     if (IS_A_NON_TERMINAL(symbol)) {
       if (!produces_terminals[symbol])
@@ -405,7 +403,7 @@ void compute_follow(const int nt, struct DetectedSetSizes *dss, short *stack, sh
 
 /// MKFIRST constructs the FIRST and FOLLOW maps, the CLOSURE map,
 /// ADEQUATE_ITEM and ITEM_TABLE maps and all other basic maps.
-struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first, bool * *rmpself, JBitset* firstx) {
+struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first, bool * *rmpself, JBitset* first) {
   struct DetectedSetSizes dss = {
     .non_term_set_size = num_non_terminals / SIZEOF_BC + (num_non_terminals % SIZEOF_BC ? 1 : 0),
     .term_set_size = num_terminals / SIZEOF_BC + (num_terminals % SIZEOF_BC ? 1 : 0),
@@ -603,7 +601,7 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
     rule_no = next_rule[rule_no];
     num_first_sets++;
   }
-  calloc0_set_fn(firstx, num_first_sets + 1, dss.term_set_size);
+  calloc0_set_fn(first, num_first_sets + 1, dss.term_set_size);
   for (int i = 1; i <= topp.top; i++) {
     int root = first_element[i].suffix_root;
     int tail = first_element[i].suffix_tail;
@@ -614,18 +612,18 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
     // in the sequence and places the result in the FIRST set indexable by INDEX.
     int symbol = root > tail ? empty : rhs_sym[root];
     if (IS_A_TERMINAL(symbol)) {
-      INIT_BITSET(first, index);
-      SET_BIT_IN(first, index, symbol); /* add it to set */
+      INIT_BITSET(*first, index);
+      SET_BIT_IN(*first, index, symbol); /* add it to set */
     } else {
-      ASSIGN_SET(first, index, nt_first, symbol);
+      ASSIGN_SET(*first, index, nt_first, symbol);
     }
-    for (int i = root + 1; i <= tail && IS_IN_SET(first, index, empty); i++) {
+    for (int i = root + 1; i <= tail && IS_IN_SET(*first, index, empty); i++) {
       symbol = rhs_sym[i];
-      RESET_BIT_IN(first, index, empty); /* remove EMPTY */
+      RESET_BIT_IN(*first, index, empty); /* remove EMPTY */
       if (IS_A_TERMINAL(symbol)) {
-        SET_BIT_IN(first, index, symbol); /* add it to set */
+        SET_BIT_IN(*first, index, symbol); /* add it to set */
       } else {
-        SET_UNION(first, index, nt_first, symbol);
+        SET_UNION(*first, index, nt_first, symbol);
       }
     }
   }
@@ -634,8 +632,8 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
     rule_no = next_rule[rule_no];
     item_no = first_item_of[rule_no];
     item_table[item_no].suffix_index = i;
-    INIT_BITSET(first, i);
-    SET_BIT_IN(first, i, eoft_image);
+    INIT_BITSET(*first, i);
+    SET_BIT_IN(*first, i, eoft_image);
   }
   // If the READ/REDUCE option is on, we precalculate the kernel
   // of the final states which simply consists of the last item
@@ -696,7 +694,7 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
         int sym_a = item_table[item_no].symbol;
         if (IS_A_NON_TERMINAL(sym_a)) {
           const int i = item_table[item_no].suffix_index;
-          if (IS_IN_SET(first, i, empty) && !IS_IN_SET(produces, sym_b, sym_a - num_terminals)) {
+          if (IS_IN_SET(*first, i, empty) && !IS_IN_SET(produces, sym_b, sym_a - num_terminals)) {
             SET_BIT_IN(produces, sym_b, sym_a - num_terminals);
             struct node *q = Allocate_node();
             q->value = sym_a;
@@ -741,7 +739,7 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
     for ALL_NON_TERMINALS3(nt) {
       if (index_of[nt] == OMEGA) {
         // not yet computed ?
-        compute_follow(nt, &dss, stack, index_of, &topp, follow, next_item, nt_items, first);
+        compute_follow(nt, &dss, stack, index_of, &topp, follow, next_item, nt_items, *first);
       }
     }
     //  Initialize FIRST for suffixes that can follow each starting
@@ -756,7 +754,7 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
         item_no = first_item_of[rule_no];
         int symbol = item_table[item_no].symbol;
         if (IS_A_NON_TERMINAL(symbol)) {
-          ASSIGN_SET(first, i, follow, symbol);
+          ASSIGN_SET(*first, i, follow, symbol);
         }
       }
     }

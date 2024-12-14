@@ -420,8 +420,6 @@ extern struct itemtab {
 /// non-terminal is nullable.
 extern bool *null_nt;
 
-extern JBitset first;
-
 /// SHIFT is an array used to hold the complete set of all shift maps
 /// needed to construct the state automaton. Though its size is
 extern struct shift_header_type *shift;
@@ -484,7 +482,6 @@ extern long accept_act;
 extern long error_act;
 extern long first_index;
 extern long last_index;
-extern long last_symbol;
 
 struct ProduceTop {
   int top;
@@ -501,7 +498,7 @@ void *talloc(long size);
 struct DetectedSetSizes {
   long term_set_size;
   long non_term_set_size;
-} mkbasic(struct CLIOptions *cli_options, JBitset nt_first, bool* * rmpself, JBitset* firstx);
+} mkbasic(struct CLIOptions *cli_options, JBitset nt_first, bool* * rmpself, JBitset* first);
 
 extern char ormark;
 extern char escape;

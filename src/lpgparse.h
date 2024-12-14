@@ -2,8 +2,6 @@
 #include <stdbool.h>
 #include "common.h"
 
-extern int stack_top;
-
 struct ScannerState {
   short ct;
   short ct_start_col;
@@ -19,8 +17,6 @@ struct ScannerState {
   char *p2;
   char *input_buffer;
 };
-
-extern long string_offset;
 
 /// structure to store rule in first pass
 struct rulehdr_type {
@@ -59,11 +55,13 @@ struct hash_type {
   int st_ptr;
 };
 
-/// SYMNO is an array that maps symbol numbers to actual symbols.
-extern struct symno_type {
+struct symno_type {
   int ptr;
   int name_index;
-} *symno;
+};
+
+/// SYMNO is an array that maps symbol numbers to actual symbols.
+extern struct symno_type *symno;
 
 /// NAME is an array containing names to be associated with symbols.
 extern int *name;
@@ -76,6 +74,8 @@ static int num_defs = 0;
 static long defelmt_size = 0;
 static long actelmt_size = 0;
 static long rulehdr_size = 0;
+
+extern int stack_top;
 
 /// The following variables hold the names
 /// of keywords and predefined macros.

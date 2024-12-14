@@ -111,6 +111,7 @@ int main(const int argc, char *argv[]) {
     JBitset follow = {.raw = NULL};
 
     bool *rmpself;
+    JBitset first;
 
     struct DetectedSetSizes dss = mkbasic(&cli_options, follow, &rmpself, &first);
 

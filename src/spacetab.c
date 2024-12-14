@@ -16,8 +16,8 @@ struct TResult {
 
 ///  REMAP_NON_TERMINALS remaps the non-terminal symbols and states based on
 /// frequency of entries.
-static void remap_non_terminals(const struct CLIOptions *cli_options, struct TableOutput *toutput) {
-  //   The variable FREQUENCY_SYMBOL is used to hold the non-terminals
+static long remap_non_terminals(const struct CLIOptions *cli_options, struct TableOutput *toutput) {
+  // The variable FREQUENCY_SYMBOL is used to hold the non-terminals
   // in the grammar, and  FREQUENCY_COUNT is used correspondingly to
   // hold the number of actions defined on each non-terminal.
   // ORDERED_STATE and ROW_SIZE are used in a similar fashion for states
@@ -60,6 +60,7 @@ static void remap_non_terminals(const struct CLIOptions *cli_options, struct Tab
   // If Goto-Default was requested, we find out how many non-terminals
   // were eliminated as a result, and adjust the GOTO-DEFAULT map,
   // based on the new mapping of the non-terminals.
+  long last_symbol;
   if (cli_options->goto_default_bit) {
     long *temp_goto_default = Allocate_long_array(num_non_terminals);
     temp_goto_default -= num_terminals + 1;
@@ -90,13 +91,14 @@ static void remap_non_terminals(const struct CLIOptions *cli_options, struct Tab
   frequency_count += num_terminals + 1;
   ffree(frequency_count);
   ffree(row_size);
+  return last_symbol;
 }
 
 /// We now overlap the non-terminal table, or more precisely, we compute the
 /// starting position in a vector where each of its rows may be placed
 /// without clobbering elements in another row.  The starting positions are
 /// stored in the vector STATE_INDEX.
-static void overlap_nt_rows(struct CLIOptions *cli_options, struct TableOutput *toutput, struct NumTableEntries *nte, struct CTabsProps *ctp) {
+static void overlap_nt_rows(struct CLIOptions *cli_options, struct TableOutput *toutput, struct NumTableEntries *nte, struct CTabsProps *ctp, long last_symbol) {
   nte->value = num_gotos + num_goto_reduces + num_states;
   ctp->increment_size = MAX(nte->value / 100 * increment, last_symbol + 1);
   ctp->table_size = MIN(nte->value + ctp->increment_size, MAX_TABLE_SIZE);
@@ -1021,11 +1023,11 @@ void cmprspa(struct CLIOptions *cli_options, struct TableOutput *toutput, struct
   calloc0(new_state_element, max_la_state + 1, struct new_state_type);
   struct node **new_state_element_reduce_nodes;
   calloc0(new_state_element_reduce_nodes, max_la_state + 1, struct node *);
-  remap_non_terminals(cli_options, toutput);
+  long last_symbol = remap_non_terminals(cli_options, toutput);
   struct NumTableEntries nte = (struct NumTableEntries){
     .value = 0,
   };
-  overlap_nt_rows(cli_options, toutput, &nte, ctp);
+  overlap_nt_rows(cli_options, toutput, &nte, ctp, last_symbol);
   struct TResult tresult = (struct TResult){
     .single_root = NIL,
     .multi_root = NIL,
