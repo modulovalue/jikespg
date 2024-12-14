@@ -17,7 +17,7 @@ struct jbitset {
 #define calloc0_set(into, s, l) \
   (into) = (JBitset) {.raw = calloc(s, (l) * sizeof(BOOLEAN_CELL)), .size = (l)}; \
   if ((into).raw == NULL) \
-    nospace(hostfile, __LINE__);
+    nospace();
 
 /// The following macros are used to define operations on sets that
 /// are represented as bit-strings.  BOOLEAN_CELL is a type that is

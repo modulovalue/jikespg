@@ -1,7 +1,5 @@
 #include <stdlib.h>
 #include <string.h>
-static char hostfile[] = __FILE__;
-
 #include "common.h"
 #include "lpgparse.h"
 
@@ -99,7 +97,7 @@ static void compute_goto_default(void) {
   calloc0(action_count, num_non_terminals, struct ptables_action_element *);
   action_count -= num_terminals + 1;
   if (action_count == NULL) {
-    nospace(__FILE__, __LINE__);
+    nospace();
   }
   // The array ACTION_COUNT is used to construct a map from each
   // non-terminal into the set (list) of actions defined on that

@@ -7,32 +7,30 @@
 #include <assert.h>
 #include <stdio.h>
 
-static char hostfile[];
-
 #define galloc0(into, x, times) \
   into = (x *) galloc((times) * sizeof(x)); \
   if ((into) == (x *) NULL) \
-    nospace(hostfile, __LINE__);
+    nospace();
 
 #define talloc0(into, x) \
   into = (x *) talloc(sizeof(x)); \
   if ((into) == (x *) NULL) \
-    nospace(hostfile, __LINE__);
+    nospace();
 
 #define realloc0(into, times, t) \
   into = (t *) realloc(into, (times) * sizeof(t)); \
   if ((into) == (t *) NULL) \
-    nospace(hostfile, __LINE__);
+    nospace();
 
 #define talloc0_raw(into, xyz, s) \
   into = (xyz *) talloc(s); \
   if ((into) == (xyz *) NULL) \
-    nospace(hostfile, __LINE__);
+    nospace();
 
 #define calloc0(into, size, x) \
   into = (x *) calloc(size, sizeof(x)); \
   if ((into) == (x *) NULL) \
-    nospace(hostfile, __LINE__);
+    nospace();
 
 static const int MAX_PARM_SIZE = 22;
 static const int SYMBOL_SIZE = 256;
@@ -665,7 +663,7 @@ void remove_single_productions(struct DetectedSetSizes* dss, struct StackRoot* s
 
 void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, JBitset first);
 
-void nospace(char *, long);
+void nospace();
 
 int number_len(int state_no);
 
@@ -773,7 +771,7 @@ static struct TableOutput init_table_output() {
 
 static void calloc0_set_fn(JBitset* into, const int s, const int l) {
   *into = (JBitset) {.raw = calloc(s, l * sizeof(BOOLEAN_CELL)), .size = (l)};
-  if ((*into).raw == NULL) {
-    nospace(hostfile, __LINE__);
+  if (into->raw == NULL) {
+    nospace();
   }
 }

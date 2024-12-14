@@ -1,6 +1,4 @@
 #include "lpgparse.h"
-static char hostfile[] = __FILE__;
-
 #include <stdlib.h>
 #include <string.h>
 #include "common.h"
@@ -490,7 +488,7 @@ void print_state(const int state_no, struct CLIOptions* cli_options) {
 }
 
 /// This procedure is invoked when a call to MALLOC, CALLOC or REALLOC fails.
-void nospace(char *file_name, const long line_number) {
-  fprintf(stderr, "*** Cannot allocate space ... LPG terminated in file %s at line %ld\n", file_name, line_number);
+void nospace() {
+  fprintf(stderr, "*** Cannot allocate space ***\n");
   exit(12);
 }

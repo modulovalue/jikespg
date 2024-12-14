@@ -1,7 +1,4 @@
 #include "bitset.h"
-
-static char hostfile[] = __FILE__;
-
 #include <stdbool.h>
 
 long num_items = 0;

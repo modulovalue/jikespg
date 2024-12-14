@@ -1,5 +1,3 @@
-static char hostfile[] = __FILE__;
-
 #include <stdlib.h>
 #include <string.h>
 #include "common.h"

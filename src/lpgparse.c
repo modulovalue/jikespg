@@ -1,7 +1,4 @@
 #include <stdlib.h>
-
-static char hostfile[] = __FILE__;
-
 #include <string.h>
 #include <ctype.h>
 #include "common.h"
@@ -597,7 +594,7 @@ static void insert_string(struct hash_type *q, const char *string) {
        ? malloc(string_size * sizeof(char))
        : realloc(string_table, string_size * sizeof(char)));
     if (string_table == (char *) NULL) {
-      nospace(__FILE__, __LINE__);
+      nospace();
     }
   }
   q->st_ptr = string_offset;
@@ -1075,7 +1072,7 @@ static struct line_elemt *find_macro(char *name) {
        ? malloc(defelmt_size * sizeof(struct defelmt_type))
        : realloc(defelmt, defelmt_size * sizeof(struct defelmt_type)));
     if (defelmt == (struct defelmt_type *) NULL)
-      nospace(__FILE__, __LINE__);
+      nospace();
   }
   strcpy(defelmt[num_defs].name, macro_name);
   defelmt[num_defs].length = 0;
@@ -1867,7 +1864,7 @@ end: {
          ? malloc(string_offset * sizeof(char))
          : realloc(string_table, string_offset * sizeof(char)));
       if (string_table == (char *) NULL)
-        nospace(__FILE__, __LINE__);
+        nospace();
     }
     ffree(terminal);
     ffree(hash_table);

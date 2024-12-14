@@ -19,7 +19,7 @@ static void add_macro_definition(const char *name, const struct terminal_type *t
              ? malloc(defelmt_size * sizeof(struct defelmt_type))
              : realloc(defelmt, defelmt_size * sizeof(struct defelmt_type)));
         if (defelmt == (struct defelmt_type *) NULL)
-            nospace(__FILE__, __LINE__);
+            nospace();
     }
 
     defelmt[num_defs].length       = term->length;
@@ -41,7 +41,7 @@ static void add_block_definition(const struct terminal_type *term)
              ? malloc(actelmt_size * sizeof(struct actelmt_type))
              : realloc(actelmt, actelmt_size * sizeof(struct actelmt_type)));
         if (actelmt == (struct actelmt_type *) NULL)
-            nospace(__FILE__, __LINE__);
+            nospace();
     }
 
     actelmt[num_acts].rule_number  = num_rules;
@@ -401,7 +401,7 @@ static void act77(void)
              ? malloc(rulehdr_size * sizeof(struct rulehdr_type))
              : realloc(rulehdr, rulehdr_size * sizeof(struct rulehdr_type)));
         if (rulehdr == (struct rulehdr_type *) NULL)
-            nospace(__FILE__, __LINE__);
+            nospace();
     }
 
     rulehdr[num_rules].sp = ((SYM3.kind == ARROW_TK) ? true : false);
@@ -422,7 +422,7 @@ static void act78(void)
              ? malloc(rulehdr_size * sizeof(struct rulehdr_type))
              : realloc(rulehdr, rulehdr_size * sizeof(struct rulehdr_type)));
         if (rulehdr == (struct rulehdr_type *) NULL)
-            nospace(__FILE__, __LINE__);
+            nospace();
     }
     rulehdr[num_rules].sp = rulehdr[num_rules - 1].sp;
     rulehdr[num_rules].lhs = OMEGA;
@@ -442,7 +442,7 @@ static void act79(void)
              ? malloc(rulehdr_size * sizeof(struct rulehdr_type))
              : realloc(rulehdr, rulehdr_size * sizeof(struct rulehdr_type)));
         if (rulehdr == (struct rulehdr_type *) NULL)
-            nospace(__FILE__, __LINE__);
+            nospace();
     }
     rulehdr[num_rules].sp = ((SYM3.kind == ARROW_TK) ? true : false);
     assign_symbol_no(SYM2.name, OMEGA);
