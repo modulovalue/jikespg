@@ -208,8 +208,7 @@ static void overlap_nt_rows(struct CLIOptions *cli_options, struct TableOutput *
 /// addition,  there must not exist a terminal symbol "t" such that:
 /// REDUCE(S1, t) and REDUCE(S2, t) are defined, and
 /// REDUCE(S1, t) ^= REDUCE(S2, t)
-static void merge_similar_t_rows(const struct CLIOptions *cli_options, struct TableOutput *toutput, bool *shift_on_error_symbol, struct node **new_state_element_reduce_nodes,
-                                 struct TResult *tresult, struct new_state_type *new_state_element) {
+static void merge_similar_t_rows(const struct CLIOptions *cli_options, struct TableOutput *toutput, bool *shift_on_error_symbol, struct node **new_state_element_reduce_nodes, struct TResult *tresult, struct new_state_type *new_state_element) {
   short *table = Allocate_short_array(num_shift_maps + 1);
   tresult->top = 0;
   for (int i = 1; i <= max_la_state; i++) {
@@ -259,7 +258,7 @@ static void merge_similar_t_rows(const struct CLIOptions *cli_options, struct Ta
     if (state_no > num_states) {
       hash_address = lastats[state_no].shift_number;
     } else {
-      if (cli_options->default_opt == 5) {
+      if (cli_options->default_opt.value == OPT_5.value) {
         const struct shift_header_type sh = shift[statset[state_no].shift_number];
         for (int j = 1; j <= sh.size && !shift_on_error_symbol[state_no]; j++)
           shift_on_error_symbol[state_no] = sh.map[j].symbol == error_image;
@@ -342,8 +341,7 @@ static void merge_similar_t_rows(const struct CLIOptions *cli_options, struct Ta
 /// If we can determine that there is a shift action on a pair (S, t)
 /// we can apply shift default to the Shift actions just like we did
 /// for the Goto actions.
-static void merge_shift_domains(struct CLIOptions *cli_options, struct TableOutput *toutput, long *row_size, long *frequency_symbol, long *frequency_count, struct NumTableEntries *nte,
-                                long *shift_check_index, struct CTabsProps *ctp, struct new_state_type *new_state_element, short *shift_image, short *real_shift_number) {
+static void merge_shift_domains(struct CLIOptions *cli_options, struct TableOutput *toutput, long *row_size, long *frequency_symbol, long *frequency_count, struct NumTableEntries *nte, long *shift_check_index, struct CTabsProps *ctp, struct new_state_type *new_state_element, short *shift_image, short *real_shift_number) {
   // Some of the rows in the shift action map have already been merged
   // by the merging of compatible states... We simply need to increase
   // the size of the granularity by merging these new terminal states
@@ -580,8 +578,7 @@ static void merge_shift_domains(struct CLIOptions *cli_options, struct TableOutp
 /// We iterate over each of these lists and construct new states out
 /// of these groups of similar states when they are compatible. Then,
 /// we remap the terminal symbols.
-static void overlay_sim_t_rows(struct CLIOptions *cli_options, struct TableOutput *toutput, bool *shift_on_error_symbol, struct node **new_state_element_reduce_nodes, struct TResult *tresult,
-                               struct NumTableEntries *nte, long *shift_check_index, struct CTabsProps *ctp, struct new_state_type *new_state_element, short *shift_image, short *real_shift_number) {
+static void overlay_sim_t_rows(struct CLIOptions *cli_options, struct TableOutput *toutput, bool *shift_on_error_symbol, struct node **new_state_element_reduce_nodes, struct TResult *tresult, struct NumTableEntries *nte, long *shift_check_index, struct CTabsProps *ctp, struct new_state_type *new_state_element, short *shift_image, short *real_shift_number) {
   int num_shifts_saved = 0;
   int num_reductions_saved = 0;
   int default_saves = 0;

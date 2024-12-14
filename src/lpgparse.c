@@ -20,6 +20,8 @@ static struct line_elemt {
 
 int stack_top = -1;
 
+long string_offset = 0;
+
 static char *string_table = NULL;
 
 /// SYMNO is an array that maps symbol numbers to actual symbols.
@@ -35,11 +37,6 @@ char *RETRIEVE_STRING(const int indx) {
 const char *RETRIEVE_NAME(const int indx) {
   return &string_table[name[indx]];
 }
-
-// TODO • make this a local?
-char parm[256] = "";
-
-static long string_offset = 0;
 
 static const int SPACE_CODE = 1;
 static const int DIGIT_CODE = 2;
@@ -58,26 +55,6 @@ static bool IsAlpha(const int c) {
   return code[c] == ALPHA_CODE;
 }
 
-/// The two character pointer variables, P1 and P2, are used in
-/// processing the io buffer, INPUT_BUFFER.
-static char *p1;
-static char *p2;
-static char *input_buffer;
-
-static char *bufend;
-static char *ct_ptr;
-
-struct ScannerState {
-  short ct;
-  short ct_start_col;
-  short ct_end_col;
-  short ct_length;
-  long ct_start_line;
-  long ct_end_line;
-  char *linestart;
-  int line_no;
-};
-
 static const int OUTPUT_PARM_SIZE = MAX_PARM_SIZE + 7;
 static const int MAXIMUM_LA_LEVEL = 100;
 static const int STRING_BUFFER_SIZE = 8192;
@@ -85,16 +62,16 @@ static const int STRING_BUFFER_SIZE = 8192;
 static short *macro_table;
 
 /// READ_INPUT fills the buffer from p1 to the end.
-static void read_input(char *grm_file, FILE *sysgrm) {
-  long num_read = input_buffer + IOBUFFER_SIZE - bufend;
-  if ((num_read = fread(bufend, 1, num_read, sysgrm)) == 0) {
+static void read_input(char *grm_file, FILE *sysgrm, struct ScannerState* ss) {
+  long num_read = ss->input_buffer + IOBUFFER_SIZE - ss->bufend;
+  if ((num_read = fread(ss->bufend, 1, num_read, sysgrm)) == 0) {
     if (ferror(sysgrm) != 0) {
       fprintf(stderr, "*** Error reading input file \"%s\".\n", grm_file);
       exit(12);
     }
   }
-  bufend += num_read;
-  *bufend = '\0';
+  ss->bufend += num_read;
+  *ss->bufend = '\0';
 }
 
 /// VERIFY takes as argument a character string and checks whether each
@@ -140,7 +117,7 @@ static bool strxeq(char *s1, char *s2) {
 /// Basically, there are two kinds of options: switches which indicate a
 /// certain setting just by their appearance, and valued options which are
 /// followed by an equal sign and the value to be assigned to them.
-static void options(char *file_prefix, struct CLIOptions *cli_options) {
+static void options(char *file_prefix, struct CLIOptions *cli_options, char *parm) {
   char token[MAX_PARM_SIZE + 1];
   char temp[MAX_PARM_SIZE + 1];
   char *c;
@@ -247,7 +224,17 @@ static void options(char *file_prefix, struct CLIOptions *cli_options) {
         strcpy(cli_options->blocke, temp);
       } else if (memcmp("DEFAULT", token, token_len) == 0) {
         if (verify_is_digit(temp)) {
-          cli_options->default_opt = MIN(atoi(temp), 5);
+          switch (atoi(temp)) {
+            case 0: cli_options->default_opt = OPT_0;
+            case 1: cli_options->default_opt = OPT_1;
+            case 2: cli_options->default_opt = OPT_2;
+            case 3: cli_options->default_opt = OPT_3;
+            case 4: cli_options->default_opt = OPT_4;
+            case 5: cli_options->default_opt = OPT_5;
+            default:
+              printf("\"%s\" is an invalid option", temp);
+              exit(999);
+          }
         } else {
           PRNTERR2("\"%s\" is an invalid value for %s", temp, token);
         }
@@ -370,7 +357,7 @@ static void options(char *file_prefix, struct CLIOptions *cli_options) {
 /// if they are (it is an) "options" line(s).  If so, the options are
 /// processed.  Then, we process user-supplied options if there are any.  In
 /// any case, the options in effect are printed.
-static void process_options_lines(char *grm_file, struct OutputFiles *of, char *file_prefix, struct CLIOptions *cli_options, FILE *sysgrm, struct ScannerState* ss) {
+static void process_options_lines(char *grm_file, struct OutputFiles *of, char *file_prefix, struct CLIOptions *cli_options, FILE *sysgrm, struct ScannerState* ss, char *parm) {
   char old_parm[MAX_LINE_SIZE + 1];
   char output_line[PRINT_LINE_SIZE + 1];
   char opt_string[60][OUTPUT_PARM_SIZE + 1];
@@ -381,54 +368,54 @@ static void process_options_lines(char *grm_file, struct OutputFiles *of, char *
   static char ooptions[9] = " OPTIONS";
   ooptions[0] = cli_options->escape; /* "ooptions" always uses default escape symbol */
   // Until end-of-file is reached, process
-  while (p1 != NULL) {
+  while (ss->p1 != NULL) {
     // all comment and %options lines.
-    while (IsSpace(*p2)) {
+    while (IsSpace(*ss->p2)) {
       // skip all space symbols
-      if (*p2 == '\n') {
+      if (*ss->p2 == '\n') {
         ss->line_no++;
-        ss->linestart = p2;
-        p1 = p2 + 1;
+        ss->linestart = ss->p2;
+        ss->p1 = ss->p2 + 1;
       }
-      p2++;
+      ss->p2++;
     }
-    line_end = strchr(p2, '\n'); /* find end-of-line */
+    line_end = strchr(ss->p2, '\n'); /* find end-of-line */
     // First, check if line is a comment line. If so, skip it.  Next,
     // check if line is an options line. If so, process it. Otherwise,
     // break out of the loop.
     // Note that no length check is necessary before checking for "--"
     // or "%options" since the buffer is always extended by
     // MAX_LINE_SIZE elements past its required length. (see read_input)
-    if (*p2 == '-' && *(p2 + 1) == '-') {
+    if (*ss->p2 == '-' && *(ss->p2 + 1) == '-') {
       // Skip comment line.
-    } else if (memcmp(ooptions, translate(p2, 8), 8) == 0) {
+    } else if (memcmp(ooptions, translate(ss->p2, 8), 8) == 0) {
       *line_end = '\0';
-      PRNT(p2); /* Print options line */
-      strcpy(parm, p2 + strlen(ooptions));
-      options(file_prefix, cli_options); /* Process hard-coded options */
+      PRNT(ss->p2); /* Print options line */
+      strcpy(parm, ss->p2 + strlen(ooptions));
+      options(file_prefix, cli_options, parm); /* Process hard-coded options */
     } else {
-      p2 = p1; /* make p2 point to first character */
+      ss->p2 = ss->p1; /* make p2 point to first character */
       break;
     }
     // If the line was a comment or an option line, check the following
     // line.  If we are at the end of the buffer, read in more data...
-    p1 = line_end + 1;
-    if (bufend == input_buffer + IOBUFFER_SIZE) {
-      int i = bufend - p1;
+    ss->p1 = line_end + 1;
+    if (ss->bufend == ss->input_buffer + IOBUFFER_SIZE) {
+      int i = ss->bufend - ss->p1;
       if (i < MAX_LINE_SIZE) {
-        strcpy(input_buffer, p1);
-        bufend = &input_buffer[i];
-        read_input(grm_file, sysgrm);
-        p1 = &input_buffer[0];
+        strcpy(ss->input_buffer, ss->p1);
+        ss->bufend = &ss->input_buffer[i];
+        read_input(grm_file, sysgrm, ss);
+        ss->p1 = &ss->input_buffer[0];
       }
     }
     ss->line_no++;
-    ss->linestart = p1 - 1;
-    p2 = p1;
+    ss->linestart = ss->p1 - 1;
+    ss->p2 = ss->p1;
   }
   printf("\n");
   strcpy(parm, old_parm);
-  options(file_prefix, cli_options); /* Process new options passed directly to program */
+  options(file_prefix, cli_options, parm); /* Process new options passed directly to program */
   if (cli_options->act_file[0] == '\0') {
     sprintf(cli_options->act_file, "%sact.%s", file_prefix, cli_options->java_bit ? "java" : "h");
   }
@@ -450,11 +437,12 @@ static void process_options_lines(char *grm_file, struct OutputFiles *of, char *
   sprintf(opt_string[++top], "BLOCKE=%s", cli_options->blocke);
   strcpy(opt_string[++top], cli_options->byte_bit ? "BYTE" : "NOBYTE");
   strcpy(opt_string[++top], cli_options->conflicts_bit ? "CONFLICTS" : "NOCONFLICTS");
-  if (cli_options->default_opt == 0) {
-    strcpy(opt_string[++top], "NODEFAULT");
-  } else {
-    sprintf(opt_string[++top], "DEFAULT=%d", cli_options->default_opt);
-  }
+  if (cli_options->default_opt.value == OPT_0.value) strcpy(opt_string[++top], "NODEFAULT");
+  else if (cli_options->default_opt.value == OPT_1.value) printf("DEFAULT=1");
+  else if (cli_options->default_opt.value == OPT_2.value) printf("DEFAULT=2");
+  else if (cli_options->default_opt.value == OPT_3.value) printf("DEFAULT=3");
+  else if (cli_options->default_opt.value == OPT_4.value) printf("DEFAULT=4");
+  else if (cli_options->default_opt.value == OPT_5.value) printf("DEFAULT=5");
   strcpy(opt_string[++top], error_maps_bit ? "ERRORMAPS" : "NOERRORMAPS");
   sprintf(opt_string[++top], "ESCAPE=%c", cli_options->escape);
   sprintf(opt_string[++top], "FILEPREFIX=%s", file_prefix);
@@ -537,7 +525,7 @@ static void process_options_lines(char *grm_file, struct OutputFiles *of, char *
   PRNT(output_line);
   PRNT("");
   if (cli_options->table_opt.value == OPTIMIZE_SPACE.value) {
-    if (cli_options->default_opt < 4) {
+    if (cli_options->default_opt.value < OPT_4.value) {
       PRNTWNG("DEFAULT_OPTION requested must be >= 4 if optimizing for space");
     }
   }
@@ -713,123 +701,123 @@ static void scanner(char *grm_file, FILE *sysgrm, struct CLIOptions* cli_options
   char tok_string[SYMBOL_SIZE + 1];
 scan_token:
   // Skip "blank" spaces.
-  p1 = p2;
-  while (IsSpace(*p1)) {
-    if (*p1++ == '\n') {
-      if (bufend == input_buffer + IOBUFFER_SIZE) {
-        int i = bufend - p1;
+  ss->p1 = ss->p2;
+  while (IsSpace(*ss->p1)) {
+    if (*ss->p1++ == '\n') {
+      if (ss->bufend == ss->input_buffer + IOBUFFER_SIZE) {
+        int i = ss->bufend - ss->p1;
         if (i < MAX_LINE_SIZE) {
-          strcpy(input_buffer, p1);
-          bufend = &input_buffer[i];
-          read_input(grm_file, sysgrm);
-          p1 = &input_buffer[0];
+          strcpy(ss->input_buffer, ss->p1);
+          ss->bufend = &ss->input_buffer[i];
+          read_input(grm_file, sysgrm, ss);
+          ss->p1 = &ss->input_buffer[0];
         }
       }
       ss->line_no++;
-      ss->linestart = p1 - 1;
+      ss->linestart = ss->p1 - 1;
     }
   }
-  if (strncmp(p1, cli_options->hblockb, cli_options->hblockb_len) == 0) /* check block opener */
+  if (strncmp(ss->p1, cli_options->hblockb, cli_options->hblockb_len) == 0) /* check block opener */
   {
-    p1 = p1 + cli_options->hblockb_len;
+    ss->p1 = ss->p1 + cli_options->hblockb_len;
     ss->ct_length = 0;
-    ct_ptr = p1;
-    if (*p1 == '\n') {
-      ct_ptr++;
+    ss->ct_ptr = ss->p1;
+    if (*ss->p1 == '\n') {
+      ss->ct_ptr++;
       ss->ct_length--;
       ss->ct_start_line = ss->line_no + 1;
       ss->ct_start_col = 1;
     } else {
       ss->ct_start_line = ss->line_no;
-      ss->ct_start_col = p1 - ss->linestart;
+      ss->ct_start_col = ss->p1 - ss->linestart;
     }
 
-    while (strncmp(p1, cli_options->hblocke, cli_options->hblocke_len) != 0) {
-      if (*p1 == '\0') {
+    while (strncmp(ss->p1, cli_options->hblocke, cli_options->hblocke_len) != 0) {
+      if (*ss->p1 == '\0') {
         PRNTERR2("End of file encountered while scanning header action block in rule %ld", num_rules);
         exit(12);
       }
-      if (*p1++ == '\n') {
-        if (bufend == input_buffer + IOBUFFER_SIZE) {
-          int i = bufend - p1;
+      if (*ss->p1++ == '\n') {
+        if (ss->bufend == ss->input_buffer + IOBUFFER_SIZE) {
+          int i = ss->bufend - ss->p1;
           if (i < MAX_LINE_SIZE) {
-            strcpy(input_buffer, p1);
-            bufend = &input_buffer[i];
-            read_input(grm_file, sysgrm);
-            p1 = &input_buffer[0];
+            strcpy(ss->input_buffer, ss->p1);
+            ss->bufend = &ss->input_buffer[i];
+            read_input(grm_file, sysgrm, ss);
+            ss->p1 = &ss->input_buffer[0];
           }
         }
         ss->line_no++;
-        ss->linestart = p1 - 1;
+        ss->linestart = ss->p1 - 1;
       }
       ss->ct_length++;
     }
     ss->ct = HBLOCK_TK;
     ss->ct_end_line = ss->line_no;
-    ss->ct_end_col = p1 - ss->linestart - 1;
-    p2 = p1 + cli_options->hblocke_len;
+    ss->ct_end_col = ss->p1 - ss->linestart - 1;
+    ss->p2 = ss->p1 + cli_options->hblocke_len;
 
     return;
-  } else if (strncmp(p1, cli_options->blockb, cli_options->blockb_len) == 0) /* check block  */
+  } else if (strncmp(ss->p1, cli_options->blockb, cli_options->blockb_len) == 0) /* check block  */
   {
-    p1 = p1 + cli_options->blockb_len;
+    ss->p1 = ss->p1 + cli_options->blockb_len;
     ss->ct_length = 0;
-    ct_ptr = p1;
-    if (*p1 == '\n') {
-      ct_ptr++;
+    ss->ct_ptr = ss->p1;
+    if (*ss->p1 == '\n') {
+      ss->ct_ptr++;
       ss->ct_length--;
       ss->ct_start_line = ss->line_no + 1;
       ss->ct_start_col = 1;
     } else {
       ss->ct_start_line = ss->line_no;
-      ss->ct_start_col = p1 - ss->linestart;
+      ss->ct_start_col = ss->p1 - ss->linestart;
     }
 
-    while (strncmp(p1, cli_options->blocke, cli_options->blocke_len) != 0) {
-      if (*p1 == '\0') {
+    while (strncmp(ss->p1, cli_options->blocke, cli_options->blocke_len) != 0) {
+      if (*ss->p1 == '\0') {
         PRNTERR2("End of file encountered while scanning action block in rule %ld", num_rules);
         exit(12);
       }
-      if (*p1++ == '\n') {
-        if (bufend == input_buffer + IOBUFFER_SIZE) {
-          int i = bufend - p1;
+      if (*ss->p1++ == '\n') {
+        if (ss->bufend == ss->input_buffer + IOBUFFER_SIZE) {
+          long i = ss->bufend - ss->p1;
           if (i < MAX_LINE_SIZE) {
-            strcpy(input_buffer, p1);
-            bufend = &input_buffer[i];
-            read_input(grm_file, sysgrm);
-            p1 = &input_buffer[0];
+            strcpy(ss->input_buffer, ss->p1);
+            ss->bufend = &ss->input_buffer[i];
+            read_input(grm_file, sysgrm, ss);
+            ss->p1 = &ss->input_buffer[0];
           }
         }
         ss->line_no++;
-        ss->linestart = p1 - 1;
+        ss->linestart = ss->p1 - 1;
       }
       ss->ct_length++;
     }
     ss->ct = BLOCK_TK;
     ss->ct_end_line = ss->line_no;
-    ss->ct_end_col = p1 - ss->linestart - 1;
-    p2 = p1 + cli_options->blocke_len;
+    ss->ct_end_col = ss->p1 - ss->linestart - 1;
+    ss->p2 = ss->p1 + cli_options->blocke_len;
 
     return;
   }
   // Scan the next token.
-  ct_ptr = p1;
+  ss->ct_ptr = ss->p1;
   ss->ct_start_line = ss->line_no;
-  ss->ct_start_col = p1 - ss->linestart;
-  p2 = p1 + 1;
-  switch (*p1) {
+  ss->ct_start_col = ss->p1 - ss->linestart;
+  ss->p2 = ss->p1 + 1;
+  switch (*ss->p1) {
     case '<':
-      if (IsAlpha(*p2)) {
-        p2++;
-        while (*p2 != '\n') {
-          if (*p2++ == '>') {
+      if (IsAlpha(*ss->p2)) {
+        ss->p2++;
+        while (*ss->p2 != '\n') {
+          if (*ss->p2++ == '>') {
             ss->ct = SYMBOL_TK;
-            ss->ct_length = p2 - p1;
+            ss->ct_length = ss->p2 - ss->p1;
             goto check_symbol_length;
           }
         }
-        int i = SYMBOL_SIZE < p2 - p1 ? SYMBOL_SIZE : p2 - p1;
-        memcpy(tok_string, p1, i);
+        int i = SYMBOL_SIZE < ss->p2 - ss->p1 ? SYMBOL_SIZE : ss->p2 - ss->p1;
+        memcpy(tok_string, ss->p1, i);
         tok_string[i] = '\0';
         PRNTERR2("Symbol \"%s\" has been referenced in line %ld without the closing \">\"", tok_string, ss->ct_start_line);
         exit(12);
@@ -837,20 +825,20 @@ scan_token:
       break;
 
     case '\'':
-      ct_ptr = p2;
+      ss->ct_ptr = ss->p2;
       ss->ct = SYMBOL_TK;
-      while (*p2 != '\n') {
-        if (*p2 == '\'') {
-          p2++;
-          if (*p2 != '\'') {
-            ss->ct_length = p2 - p1 - 2;
+      while (*ss->p2 != '\n') {
+        if (*ss->p2 == '\'') {
+          ss->p2++;
+          if (*ss->p2 != '\'') {
+            ss->ct_length = ss->p2 - ss->p1 - 2;
             goto remove_quotes;
           }
         }
-        p2++;
+        ss->p2++;
       }
-      ss->ct_length = p2 - p1 - 1;
-      memcpy(tok_string, p1, ss->ct_length);
+      ss->ct_length = ss->p2 - ss->p1 - 1;
+      memcpy(tok_string, ss->p1, ss->ct_length);
       tok_string[ss->ct_length] = '\0';
       PRNTWNG2("Symbol \"%s\" referenced in line %ld requires a closing quote", tok_string, ss->ct_start_line);
 
@@ -858,32 +846,32 @@ scan_token:
       if (ss->ct_length == 0) /* Empty symbol? disregard it */
         goto scan_token;
       int i = 0;
-      p1 = ct_ptr;
+      ss->p1 = ss->ct_ptr;
       do {
-        *p1++ = ct_ptr[i++];
-        if (ct_ptr[i] == '\'')
+        *ss->p1++ = ss->ct_ptr[i++];
+        if (ss->ct_ptr[i] == '\'')
           i++; /* skip next quote */
       } while (i < ss->ct_length);
-      ss->ct_length = p1 - ct_ptr;
+      ss->ct_length = ss->p1 - ss->ct_ptr;
       goto check_symbol_length;
     case '-': /* scan possible comment  */
-      if (*p2 == '-') {
-        p2++;
-        while (*p2 != '\n')
-          p2++;
+      if (*ss->p2 == '-') {
+        ss->p2++;
+        while (*ss->p2 != '\n')
+          ss->p2++;
         goto scan_token;
-      } else if (*p2 == '>' && IsSpace(*(p2 + 1))) {
+      } else if (*ss->p2 == '>' && IsSpace(*(ss->p2 + 1))) {
         ss->ct = ARROW_TK;
         ss->ct_length = 2;
-        p2++;
+        ss->p2++;
         return;
       }
       break;
     case ':':
-      if (*p2 == ':' && *(p2 + 1) == '=' && IsSpace(*(p2 + 2))) {
+      if (*ss->p2 == ':' && *(ss->p2 + 1) == '=' && IsSpace(*(ss->p2 + 2))) {
         ss->ct = EQUIVALENCE_TK;
         ss->ct_length = 3;
-        p2 = p1 + 3;
+        ss->p2 = ss->p1 + 3;
         return;
       }
       break;
@@ -891,109 +879,107 @@ scan_token:
     case '\x1a': /* CTRL-Z • END-OF-FILE? */
       ss->ct = EOF_TK;
       ss->ct_length = 0;
-      p2 = p1;
-
+      ss->p2 = ss->p1;
       return;
-
     default:
-      if (*p1 == cli_options->ormark && IsSpace(*p2)) {
+      if (*ss->p1 == cli_options->ormark && IsSpace(*ss->p2)) {
         ss->ct = OR_TK;
         ss->ct_length = 1;
         return;
-      } else if (*p1 == cli_options->escape) /* escape character? */
+      } else if (*ss->p1 == cli_options->escape) /* escape character? */
       {
-        register char *p3 = p2 + 1;
-        switch (*p2) {
+        register char *p3 = ss->p2 + 1;
+        switch (*ss->p2) {
           case 't':
           case 'T':
-            if (strxeq(p3, "erminals") && IsSpace(*(p1 + 10))) {
+            if (strxeq(p3, "erminals") && IsSpace(*(ss->p1 + 10))) {
               ss->ct = TERMINALS_KEY_TK;
               ss->ct_length = 10;
-              p2 = p1 + 10;
+              ss->p2 = ss->p1 + 10;
               return;
             }
             break;
 
           case 'd':
           case 'D':
-            if (strxeq(p3, "efine") && IsSpace(*(p1 + 7))) {
+            if (strxeq(p3, "efine") && IsSpace(*(ss->p1 + 7))) {
               ss->ct = DEFINE_KEY_TK;
               ss->ct_length = 7;
-              p2 = p1 + 7;
+              ss->p2 = ss->p1 + 7;
               return;
             }
             break;
 
           case 'e':
           case 'E':
-            if (strxeq(p3, "mpty") && IsSpace(*(p1 + 6))) {
+            if (strxeq(p3, "mpty") && IsSpace(*(ss->p1 + 6))) {
               ss->ct = EMPTY_SYMBOL_TK;
               ss->ct_length = 6;
-              p2 = p1 + 6;
+              ss->p2 = ss->p1 + 6;
               return;
             }
-            if (strxeq(p3, "rror") && IsSpace(*(p1 + 6))) {
+            if (strxeq(p3, "rror") && IsSpace(*(ss->p1 + 6))) {
               ss->ct = ERROR_SYMBOL_TK;
               ss->ct_length = 6;
-              p2 = p1 + 6;
+              ss->p2 = ss->p1 + 6;
               return;
             }
-            if (strxeq(p3, "ol") && IsSpace(*(p1 + 4))) {
+            if (strxeq(p3, "ol") && IsSpace(*(ss->p1 + 4))) {
               ss->ct = EOL_SYMBOL_TK;
               ss->ct_length = 4;
-              p2 = p1 + 4;
+              ss->p2 = ss->p1 + 4;
               return;
             }
-            if (strxeq(p3, "of") && IsSpace(*(p1 + 4))) {
+            if (strxeq(p3, "of") && IsSpace(*(ss->p1 + 4))) {
               ss->ct = EOF_SYMBOL_TK;
               ss->ct_length = 4;
-              p2 = p1 + 4;
+              ss->p2 = ss->p1 + 4;
               return;
             }
-            if (strxeq(p3, "nd") && IsSpace(*(p1 + 4))) {
+            if (strxeq(p3, "nd") && IsSpace(*(ss->p1 + 4))) {
               ss->ct = END_KEY_TK;
               ss->ct_length = 4;
-              p2 = p1 + 4;
+              ss->p2 = ss->p1 + 4;
               return;
             }
             break;
 
           case 'r':
           case 'R':
-            if (strxeq(p3, "ules") && IsSpace(*(p1 + 6))) {
+            if (strxeq(p3, "ules") && IsSpace(*(ss->p1 + 6))) {
               ss->ct = RULES_KEY_TK;
               ss->ct_length = 6;
-              p2 = p1 + 6;
+              ss->p2 = ss->p1 + 6;
               return;
             }
             break;
 
           case 'a':
           case 'A':
-            if (strxeq(p3, "lias") && IsSpace(*(p1 + 6))) {
+            if (strxeq(p3, "lias") && IsSpace(*(ss->p1 + 6))) {
               ss->ct = ALIAS_KEY_TK;
               ss->ct_length = 6;
-              p2 = p1 + 6;
+              ss->p2 = ss->p1 + 6;
               return;
             }
             break;
 
           case 's':
           case 'S':
-            if (strxeq(p3, "tart") && IsSpace(*(p1 + 6))) {
+            if (strxeq(p3, "tart") && IsSpace(*(ss->p1 + 6))) {
               ss->ct = START_KEY_TK;
               ss->ct_length = 6;
-              p2 = p1 + 6;
+              ss->p2 = ss->p1 + 6;
               return;
             }
             break;
 
           case 'n':
           case 'N':
-            if (strxeq(p3, "ames") && IsSpace(*(p1 + 6))) {
+            if (strxeq(p3, "ames") && IsSpace(*(ss->p1 + 6))) {
               ss->ct = NAMES_KEY_TK;
               ss->ct_length = 6;
-              p2 = p1 + 6;
+              ss->p2 = ss->p1 + 6;
               return;
             }
             break;
@@ -1003,22 +989,22 @@ scan_token:
         }
 
         ss->ct = MACRO_NAME_TK;
-        while (!IsSpace(*p2)) {
-          p2++;
+        while (!IsSpace(*ss->p2)) {
+          ss->p2++;
         }
-        ss->ct_length = p2 - p1;
+        ss->ct_length = ss->p2 - ss->p1;
         goto check_symbol_length;
       }
   }
   ss->ct = SYMBOL_TK;
-  while (!IsSpace(*p2)) {
-    p2++;
+  while (!IsSpace(*ss->p2)) {
+    ss->p2++;
   }
-  ss->ct_length = p2 - p1;
+  ss->ct_length = ss->p2 - ss->p1;
 check_symbol_length:
   if (ss->ct_length > SYMBOL_SIZE) {
     ss->ct_length = SYMBOL_SIZE;
-    memcpy(tok_string, p1, ss->ct_length);
+    memcpy(tok_string, ss->p1, ss->ct_length);
     tok_string[ss->ct_length] = '\0';
     if (symbol_image(tok_string) == OMEGA) {
       PRNTWNG2("Length of Symbol \"%s\" in line %d exceeds maximum of ", tok_string, ss->line_no);
@@ -1060,8 +1046,8 @@ static struct line_elemt *find_macro(char *name) {
   for (register int j = macro_table[i]; j != NIL; j = defelmt[j].next) {
     if (strcmp(macro_name, defelmt[j].name) == 0) {
       register char *ptr = defelmt[j].macro;
-      if (ptr) /* undefined macro? */
-      {
+      /* undefined macro? */
+      if (ptr) {
         while (*ptr != '\0') {
           register struct line_elemt *q = alloc_line();
           s = q->line;
@@ -1412,46 +1398,46 @@ static void process_actions(char *grm_file, struct CLIOptions *cli_options, stru
   for (int i = 0; i < HT_SIZE; i++) {
     macro_table[i] = NIL;
   }
-  bufend = &input_buffer[0];
-  read_input(grm_file, sysgrm);
-  p2 = &input_buffer[0];
-  ss->linestart = p2 - 1;
-  p1 = p2;
+  ss->bufend = &ss->input_buffer[0];
+  read_input(grm_file, sysgrm, ss);
+  ss->p2 = &ss->input_buffer[0];
+  ss->linestart = ss->p2 - 1;
+  ss->p1 = ss->p2;
   ss->line_no = 1;
   // Read in all the macro definitions and insert them into macro_table.
   for (int i = 0; i < num_defs; i++) {
     calloc0(defelmt[i].macro, defelmt[i].length + 2, char);
     for (; ss->line_no < defelmt[i].start_line; ss->line_no++) {
-      while (*p1 != '\n') {
-        p1++;
+      while (*ss->p1 != '\n') {
+        ss->p1++;
       }
-      p1++;
-      if (bufend == input_buffer + IOBUFFER_SIZE) {
-        int k = bufend - p1;
+      ss->p1++;
+      if (ss->bufend == ss->input_buffer + IOBUFFER_SIZE) {
+        int k = ss->bufend - ss->p1;
         if (k < MAX_LINE_SIZE) {
-          strcpy(input_buffer, p1);
-          bufend = &input_buffer[k];
-          read_input(grm_file, sysgrm);
-          p1 = &input_buffer[0];
+          strcpy(ss->input_buffer, ss->p1);
+          ss->bufend = &ss->input_buffer[k];
+          read_input(grm_file, sysgrm, ss);
+          ss->p1 = &ss->input_buffer[0];
         }
       }
-      ss->linestart = p1 - 1;
+      ss->linestart = ss->p1 - 1;
     }
-    p1 = ss->linestart + defelmt[i].start_column;
+    ss->p1 = ss->linestart + defelmt[i].start_column;
     for (register int j = 0; j < defelmt[i].length; j++) {
-      defelmt[i].macro[j] = *p1;
-      if (*p1++ == '\n') {
-        if (bufend == input_buffer + IOBUFFER_SIZE) {
-          int k = bufend - p1;
+      defelmt[i].macro[j] = *ss->p1;
+      if (*ss->p1++ == '\n') {
+        if (ss->bufend == ss->input_buffer + IOBUFFER_SIZE) {
+          int k = ss->bufend - ss->p1;
           if (k < MAX_LINE_SIZE) {
-            strcpy(input_buffer, p1);
-            bufend = &input_buffer[k];
-            read_input(grm_file, sysgrm);
-            p1 = &input_buffer[0];
+            strcpy(ss->input_buffer, ss->p1);
+            ss->bufend = &ss->input_buffer[k];
+            read_input(grm_file, sysgrm, ss);
+            ss->p1 = &ss->input_buffer[0];
           }
         }
         ss->line_no++;
-        ss->linestart = p1 - 1;
+        ss->linestart = ss->p1 - 1;
       }
     }
     defelmt[i].macro[defelmt[i].length] = '\n';
@@ -1464,33 +1450,33 @@ static void process_actions(char *grm_file, struct CLIOptions *cli_options, stru
   // Read in all the action blocks and process them.
   for (int i = 0; i < num_acts; i++) {
     for (; ss->line_no < actelmt[i].start_line; ss->line_no++) {
-      while (*p1 != '\n') {
-        p1++;
+      while (*ss->p1 != '\n') {
+        ss->p1++;
       }
-      p1++;
-      if (bufend == input_buffer + IOBUFFER_SIZE) {
-        int k = bufend - p1;
+      ss->p1++;
+      if (ss->bufend == ss->input_buffer + IOBUFFER_SIZE) {
+        int k = ss->bufend - ss->p1;
         if (k < MAX_LINE_SIZE) {
-          strcpy(input_buffer, p1);
-          bufend = &input_buffer[k];
-          read_input(grm_file, sysgrm);
-          p1 = &input_buffer[0];
+          strcpy(ss->input_buffer, ss->p1);
+          ss->bufend = &ss->input_buffer[k];
+          read_input(grm_file, sysgrm, ss);
+          ss->p1 = &ss->input_buffer[0];
         }
       }
-      ss->linestart = p1 - 1;
+      ss->linestart = ss->p1 - 1;
     }
     if (actelmt[i].start_line == actelmt[i].end_line) {
       int len = actelmt[i].end_column - actelmt[i].start_column + 1;
       memcpy(line, ss->linestart + actelmt[i].start_column, len);
       line[len] = '\0';
-      while (*p1 != '\n') {
-        p1++;
+      while (*ss->p1 != '\n') {
+        ss->p1++;
       }
     } else {
       p = line;
-      p1 = ss->linestart + actelmt[i].start_column;
-      while (*p1 != '\n') {
-        *p++ = *p1++;
+      ss->p1 = ss->linestart + actelmt[i].start_column;
+      while (*ss->p1 != '\n') {
+        *p++ = *ss->p1++;
       }
       *p = '\0';
     }
@@ -1501,22 +1487,22 @@ static void process_actions(char *grm_file, struct CLIOptions *cli_options, stru
     }
     if (ss->line_no != actelmt[i].end_line) {
       while (ss->line_no < actelmt[i].end_line) {
-        p1++;
-        if (bufend == input_buffer + IOBUFFER_SIZE) {
-          int k = bufend - p1;
+        ss->p1++;
+        if (ss->bufend == ss->input_buffer + IOBUFFER_SIZE) {
+          int k = ss->bufend - ss->p1;
           if (k < MAX_LINE_SIZE) {
-            strcpy(input_buffer, p1);
-            bufend = &input_buffer[k];
-            read_input(grm_file, sysgrm);
-            p1 = &input_buffer[0];
+            strcpy(ss->input_buffer, ss->p1);
+            ss->bufend = &ss->input_buffer[k];
+            read_input(grm_file, sysgrm, ss);
+            ss->p1 = &ss->input_buffer[0];
           }
         }
         ss->line_no++;
-        ss->linestart = p1 - 1;
+        ss->linestart = ss->p1 - 1;
         if (ss->line_no < actelmt[i].end_line) {
           p = line;
-          while (*p1 != '\n') {
-            *p++ = *p1++;
+          while (*ss->p1 != '\n') {
+            *p++ = *ss->p1++;
           }
           *p = '\0';
           if (actelmt[i].header_block) {
@@ -1528,7 +1514,7 @@ static void process_actions(char *grm_file, struct CLIOptions *cli_options, stru
       }
       if (actelmt[i].end_column != 0) {
         int len = actelmt[i].end_column;
-        memcpy(line, p1, len);
+        memcpy(line, ss->p1, len);
         line[len] = '\0';
         if (actelmt[i].header_block) {
           process_action_line(syshact, line, ss->line_no, actelmt[i].rule_number, grm_file, cli_options);
@@ -1656,6 +1642,9 @@ static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *
 
 /// This procedure opens all relevant files and processes the input grammar.
 void process_input(char *grm_file, struct OutputFiles *output_files, const int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options) {
+  // TODO • make this a local?
+  char parm[256] = "";
+
   // Parse args.
   {
     // If options are passed to the program, copy them into "parm".
@@ -1748,18 +1737,18 @@ void process_input(char *grm_file, struct OutputFiles *output_files, const int a
     // Allocate space for input buffer and read in initial data in input
     // file. Next, invoke PROCESS_OPTION_LINES to process all lines in
     // input file that are options line.
-    calloc0(input_buffer, IOBUFFER_SIZE + 1 + MAX_LINE_SIZE, char);
-    bufend = &input_buffer[0];
-    read_input(grm_file, sysgrm);
-    p2 = &input_buffer[0];
-    ss.linestart = p2 - 1;
-    p1 = p2;
+    calloc0(ss.input_buffer, IOBUFFER_SIZE + 1 + MAX_LINE_SIZE, char);
+    ss.bufend = &ss.input_buffer[0];
+    read_input(grm_file, sysgrm, &ss);
+    ss.p2 = &ss.input_buffer[0];
+    ss.linestart = ss.p2 - 1;
+    ss.p1 = ss.p2;
     ss.line_no++;
-    if (*p2 == '\0') {
+    if (*ss.p2 == '\0') {
       fprintf(stderr, "Input file \"%s\" containing grammar is empty, undefined, or invalid\n", grm_file);
       exit(12);
     }
-    process_options_lines(grm_file, output_files, file_prefix, cli_options, sysgrm, &ss);
+    process_options_lines(grm_file, output_files, file_prefix, cli_options, sysgrm, &ss, parm);
     eolt_image = OMEGA;
     cli_options->blockb_len = strlen(cli_options->blockb);
     cli_options->blocke_len = strlen(cli_options->blocke);
@@ -1820,7 +1809,7 @@ void process_input(char *grm_file, struct OutputFiles *output_files, const int a
           terminal[top].end_column = ss.ct_end_col;
           terminal[top].length = ss.ct_length;
           if (ss.ct != BLOCK_TK) {
-            memcpy(terminal[top].name, ct_ptr, ss.ct_length);
+            memcpy(terminal[top].name, ss.ct_ptr, ss.ct_length);
             terminal[top].name[ss.ct_length] = '\0';
           } else {
             terminal[top].name[0] = '\0';
@@ -1839,17 +1828,17 @@ void process_input(char *grm_file, struct OutputFiles *output_files, const int a
       // error_action
       {
         // Error messages to be printed if an error is encountered during parsing.
-        ct_ptr[ss.ct_length] = '\0';
+        ss.ct_ptr[ss.ct_length] = '\0';
         if (ss.ct == EOF_TK) {
           PRNTERR2("End-of file reached prematurely");
         } else if (ss.ct == MACRO_NAME_TK) {
-          PRNTERR2("Misplaced macro name \"%s\" found in line %d, column %d", ct_ptr, ss.line_no, ss.ct_start_col);
+          PRNTERR2("Misplaced macro name \"%s\" found in line %d, column %d", ss.ct_ptr, ss.line_no, ss.ct_start_col);
         } else if (ss.ct == SYMBOL_TK) {
           char tok_string[SYMBOL_SIZE + 1];
-          restore_symbol(tok_string, ct_ptr, cli_options->ormark, cli_options->escape);
+          restore_symbol(tok_string, ss.ct_ptr, cli_options->ormark, cli_options->escape);
           PRNTERR2("Misplaced symbol \"%s\" found in line %d, column %d", tok_string, ss.line_no, ss.ct_start_col);
         } else {
-          PRNTERR2("Misplaced keyword \"%s\" found in line %d, column %d", ct_ptr, ss.line_no, ss.ct_start_col);
+          PRNTERR2("Misplaced keyword \"%s\" found in line %d, column %d", ss.ct_ptr, ss.line_no, ss.ct_start_col);
         }
         exit(12);
       }
@@ -1882,7 +1871,7 @@ end: {
     }
     ffree(terminal);
     ffree(hash_table);
-    ffree(input_buffer);
+    ffree(ss.input_buffer);
     ffree(rulehdr); /* allocated in action LPGACT when grammar is not empty */
   }
 }

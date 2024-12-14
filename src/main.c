@@ -108,7 +108,11 @@ int main(const int argc, char *argv[]) {
       process_input(grm_file, &of, argc, argv, file_prefix, &cli_options);
     }
 
-    struct DetectedSetSizes dss = mkbasic(&cli_options);
+    /// FOLLOW is a mapping from non-terminals to a set of terminals that
+    /// may appear immediately after the non-terminal.
+    JBitset follow = {.raw = NULL};
+
+    struct DetectedSetSizes dss = mkbasic(&cli_options, follow);
 
     mkstats(&cli_options, &dss);
 

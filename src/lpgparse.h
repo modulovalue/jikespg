@@ -4,6 +4,24 @@
 
 extern int stack_top;
 
+struct ScannerState {
+  short ct;
+  short ct_start_col;
+  short ct_end_col;
+  short ct_length;
+  long ct_start_line;
+  long ct_end_line;
+  char *linestart;
+  int line_no;
+  char *ct_ptr;
+  char *bufend;
+  char *p1;
+  char *p2;
+  char *input_buffer;
+};
+
+extern long string_offset;
+
 /// structure to store rule in first pass
 struct rulehdr_type {
   struct node *rhs_root;

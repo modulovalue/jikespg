@@ -70,6 +70,19 @@ static const TraceMode NOTRACE = { .value = 0 },
 
 
 
+typedef struct {
+  int value;
+} DefaultOpt;
+static const DefaultOpt
+  OPT_0 = { .value = 0 },
+  OPT_1 = { .value = 1 },
+  OPT_2 = { .value = 2 },
+  OPT_3 = { .value = 3 },
+  OPT_4 = { .value = 4 },
+  OPT_5 = { .value = 5 };
+
+
+
 static const int STATE_TABLE_UBOUND = 1020;
 static const int STATE_TABLE_SIZE = STATE_TABLE_UBOUND + 1; /* 1021 is a prime */
 static const int SHIFT_TABLE_UBOUND = 400;
@@ -112,8 +125,6 @@ static const int IOBUFFER_SIZE = 655360;
 #define ENTIRE_RHS3(x, rule_no) (int (x) = rules[rule_no].rhs; (x) < rules[(rule_no) + 1].rhs; (x)++)
 
 extern const long MAX_TABLE_SIZE;
-
-extern JBitset produces;
 
 struct node {
   struct node *next;
@@ -209,7 +220,7 @@ struct CLIOptions {
   bool byte_bit;
   bool single_productions_bit;
   int lalr_level;
-  int default_opt;
+  DefaultOpt default_opt;
   TraceMode trace_opt;
   OptimizeNames names_opt;
   OptimizeMode table_opt;
@@ -359,9 +370,6 @@ extern struct itemtab {
 extern bool *null_nt;
 
 extern JBitset first;
-/// FOLLOW is a mapping from non-terminals to a set of terminals that
-/// may appear immediately after the non-terminal.
-extern JBitset follow;
 
 /// SHIFT is an array used to hold the complete set of all shift maps
 /// needed to construct the state automaton. Though its size is
@@ -427,7 +435,11 @@ extern long first_index;
 extern long last_index;
 extern long last_symbol;
 
-void compute_produces(int symbol, struct node **direct_produces);
+struct ProduceTop {
+  int top;
+};
+
+void compute_produces(int symbol, struct node **direct_produces, short *stack, short *index_of, JBitset produces, struct ProduceTop* top_value);
 
 void reset_temporary_space(void);
 
@@ -438,7 +450,7 @@ void *talloc(long size);
 struct DetectedSetSizes {
   long term_set_size;
   long non_term_set_size;
-} mkbasic(struct CLIOptions *cli_options);
+} mkbasic(struct CLIOptions *cli_options, JBitset nt_first);
 
 extern char ormark;
 extern char escape;
