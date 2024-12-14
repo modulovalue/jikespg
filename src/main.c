@@ -116,7 +116,11 @@ int main(const int argc, char *argv[]) {
 
     mkstats(&cli_options, &dss);
 
-    mkrdcts(&cli_options, &dss);
+    struct SourcesElementSources ses = (struct SourcesElementSources) {
+      .sources = NULL,
+    };
+
+    mkrdcts(&cli_options, &dss, &ses);
 
     // Output more basic statistics.
     {

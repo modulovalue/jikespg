@@ -131,6 +131,59 @@ struct node {
   int value;
 };
 
+struct stack_element {
+  struct stack_element *previous;
+  struct stack_element *next;
+  struct stack_element *link;
+  short state_number;
+  short size;
+};
+
+/// Given a set of actions that are in conflict on a given symbol, the
+/// structure SOURCES_ELEMENT is used to store a mapping from each
+/// such action into a set of configurations that can be reached
+/// following execution of the action in question up to the point where
+/// the automaton is about to shift the conflict symbol.
+/// The field CONFIGS is an array indexable by actions which are
+/// encoded as follows:
+///    1. shift-reduce  [-NUM_RULES..-1]
+///    2. reduce        [0..NUM_RULES]
+///    3. shift         [NUM_RULES+1..NUM_STATES+1].
+/// Each element of CONFIGS points to a set (sorted list) of
+/// configurations.  For efficiency, the fields LIST and ROOT are used
+/// to store the set (list) of indexed elements of CONFIGS that are not
+/// NULL.
+/// See routines ALLOCATE_SOURCES, FREE_SOURCES, CLEAR_SOURCES,
+///              ADD_CONFIGS, UNION_CONFIG_SETS.
+/// See STATE_TO_RESOLVE_CONFLICTS for an explanation of STACK_SEEN.
+///
+/// A configuration is a stack of states that represents a certain path
+/// in the automaton. The stack is implemented as a list of
+/// STACK_ELEMENT nodes linked through the field PREVIOUS.
+/// A set/list of configurations is linked through the field NEXT.
+/// When attempting to resolve conflicts we try to make sure that the
+/// set of configurations associated with each action is unique. This
+/// is achieved by throwing these configurations into a set and making
+/// sure that there are no duplicates. The field LINK is used for that
+/// purpose (see routine STACK_WAS_SEEN). The field STATE_NUMBER is
+/// obviously used to store the number of a state in the automaton. The
+/// field SIZE holds index of the node within the stack. Thus, for the
+/// first element of the stack this field represents the number of
+/// elements in the stack; for the last element, this field holds the
+/// value 1.
+/// See routines ALLOCATE_STACK_ELEMENT, FREE_STACK_ELEMENT,
+///              ADD_DANGLING_STACK, FREE_DANGLING_STACK.
+struct sources_element {
+  struct stack_element **configs;
+  struct stack_element **stack_seen;
+  short *list;
+  short root;
+};
+
+struct SourcesElementSources {
+  struct sources_element sources;
+};
+
 /// RULES is the structure that contain the rules of the grammar.
 /// Every rule of the grammar is mapped into an integer, and given
 /// rule, and we have access to a value RHS which is the index
@@ -551,6 +604,17 @@ struct new_state_type {
   short image;
 };
 
+/// STACK_ROOT is used in la_traverse to construct a stack of symbols.
+/// The boolean vector SINGLE_COMPLETE_ITEM identifies states whose
+/// kernel consists of a single final item and other conditions allows
+/// us to compute default reductions for such states.
+/// The vector LA_BASE is used in COMPUTE_READ and TRACE_LALR_PATH to
+/// identify states whose read sets can be completely computed from
+/// their kernel items.
+struct StackRoot {
+  struct node *stack_root;
+};
+
 /// CONFLICT_SYMBOLS is a mapping from each state into a set of terminal
 /// symbols on which an LALR(1) conflict was detected in the state in
 /// question.
@@ -593,11 +657,11 @@ void fill_in(char string[], int amount, char character);
 
 void free_nodes(struct node *head, struct node *tail);
 
-void mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss);
+void mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct SourcesElementSources* ses);
 
-void la_traverse(int state_no, int goto_indx, int *stack_top);
+void la_traverse(int state_no, int goto_indx, int *stack_top, struct StackRoot* sr);
 
-void remove_single_productions(struct DetectedSetSizes* dss);
+void remove_single_productions(struct DetectedSetSizes* dss, struct StackRoot* sr);
 
 void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss);
 
