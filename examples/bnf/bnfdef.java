@@ -3,7 +3,6 @@ interface bnfdef
     public final static int
 
       ERROR_SYMBOL      = 5,
-      MAX_NAME_LENGTH   = 11,
       NUM_STATES        = 8,
 
       NT_OFFSET         = 5,

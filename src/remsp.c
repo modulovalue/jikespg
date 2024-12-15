@@ -76,7 +76,7 @@ static void free_action_elements(struct remsp_action_element *head, struct remsp
 ///
 ///   2) As a side effect, it uses the ordering above to order all
 ///      the SP rules.
-static void compute_sp_map(const int symbol, struct SPData *spd, short *sp_rules, short *rule_list, short *index_of, short *next_rule, short *stack) {
+static void compute_sp_map(const int symbol, struct SPData *spd, short *sp_rules, short *rule_list, short *index_of, short *next_rule, short *stack, struct ruletab_type *rules) {
   stack[++spd->top] = symbol;
   const int indx = spd->top;
   index_of[symbol] = indx;
@@ -87,7 +87,7 @@ static void compute_sp_map(const int symbol, struct SPData *spd, short *sp_rules
     const int lhs_symbol = rules[rule_no].lhs;
     if (IS_SP_RHS(lhs_symbol, sp_rules)) {
       if (index_of[lhs_symbol] == OMEGA) {
-        compute_sp_map(lhs_symbol, spd, sp_rules, rule_list, index_of, next_rule, stack);
+        compute_sp_map(lhs_symbol, spd, sp_rules, rule_list, index_of, next_rule, stack, rules);
       }
       index_of[symbol] = MIN(index_of[symbol], index_of[lhs_symbol]);
     }
@@ -133,7 +133,7 @@ static void compute_sp_map(const int symbol, struct SPData *spd, short *sp_rules
 /// transition on SYMBOL is a lookahead-shift, indicating that the
 /// parser requires extra lookahead on a particular symbol, the set of
 /// reduce actions for that symbol is calculated as the empty set.
-static void compute_sp_action(const short state_no, const short symbol, const short action, JBitset look_ahead, bool *is_conflict_symbol, short *index_of, short **sp_action, struct StackRoot* sr, JBitset first) {
+static void compute_sp_action(const short state_no, const short symbol, const short action, JBitset look_ahead, bool *is_conflict_symbol, short *index_of, short **sp_action, struct StackRoot* sr, JBitset first, struct LAIndex* lai, struct node **conflict_symbols, JBitset la_set, struct node **adequate_item) {
   const struct goto_header_type go_to = statset[state_no].go_to;
   if (sp_action[symbol] == NULL) {
     sp_action[symbol] = Allocate_short_array(num_terminals + 1);
@@ -158,9 +158,9 @@ static void compute_sp_action(const short state_no, const short symbol, const sh
       if (RHS_SIZE(rule_no) == 1 && lhs_symbol != accept_image) {
         i = index_of[lhs_symbol];
         int k = go_to.map[i].laptr;
-        if (la_index[k] == OMEGA) {
+        if (lai->la_index[k] == OMEGA) {
           int stack_top = 0;
-          la_traverse(state_no, i, &stack_top, sr, first);
+          la_traverse(state_no, i, &stack_top, sr, first, lai, adequate_item);
         }
         ASSIGN_SET(look_ahead, 0, la_set, k);
         RESET_BIT(look_ahead, empty); /* empty not valid look-ahead */
@@ -184,9 +184,9 @@ static void compute_sp_action(const short state_no, const short symbol, const sh
       int lhs_symbol = rules[rule_no].lhs;
       i = index_of[lhs_symbol];
       int k = go_to.map[i].laptr;
-      if (la_index[k] == OMEGA) {
+      if (lai->la_index[k] == OMEGA) {
         int stack_top = 0;
-        la_traverse(state_no, i, &stack_top, sr, first);
+        la_traverse(state_no, i, &stack_top, sr, first, lai, adequate_item);
       }
       ASSIGN_SET(look_ahead, 0, la_set, k);
       RESET_BIT(look_ahead, empty); /* empty not valid look-ahead */
@@ -203,7 +203,7 @@ static void compute_sp_action(const short state_no, const short symbol, const sh
 /// rule_no that may be reduced when the parser enters state_no.
 /// Sp_default_action tries to determine the highest rule that may be
 /// reached via a sequence of SP reductions.
-static short sp_default_action(const short state_no, short rule_no, short *rule_list) {
+static short sp_default_action(const short state_no, short rule_no, short *rule_list, struct SRTable* srt) {
   const struct goto_header_type go_to = statset[state_no].go_to;
   // While the rule we have at hand is a single production, ...
   while (IS_SP_RULE(rule_no, rule_list)) {
@@ -223,7 +223,7 @@ static short sp_default_action(const short state_no, short rule_no, short *rule_
       int best_rule = OMEGA;
       // Enter the state action and look for preferably a SP rule
       // or some rule with right-hand size 1.
-      const struct reduce_header_type red = reduce[action];
+      const struct reduce_header_type red = srt->reduce[action];
       for (ii = 1; ii <= red.size; ii++) {
         action = red.map[ii].rule_number;
         if (IS_SP_RULE(action, rule_list)) {
@@ -250,7 +250,7 @@ static short sp_default_action(const short state_no, short rule_no, short *rule_
 /// be processed after taking the transition. It returns the reduce
 /// action that follows the transition if an action on la_symbol is
 /// found, otherwise it returns the most suitable default action.
-static int sp_nt_action(const short state_no, const int lhs_symbol, const short la_symbol, short *rule_list) {
+static int sp_nt_action(const short state_no, const int lhs_symbol, const short la_symbol, short *rule_list, struct SRTable* srt) {
   const struct goto_header_type go_to = statset[state_no].go_to;
   int ii;
   for (ii = 1; go_to.map[ii].symbol != lhs_symbol; ii++) {
@@ -259,7 +259,7 @@ static int sp_nt_action(const short state_no, const int lhs_symbol, const short 
   if (action < 0) {
     action = -action;
   } else {
-    const struct reduce_header_type red = reduce[action];
+    const struct reduce_header_type red = srt->reduce[action];
     action = OMEGA;
     for (ii = 1; ii <= red.size; ii++) {
       const int rule_no = red.map[ii].rule_number;
@@ -282,7 +282,7 @@ static int sp_nt_action(const short state_no, const int lhs_symbol, const short 
 /// is also executed ending with RULE2.
 /// The goal of this function is to find the greatest ancestor of
 /// BASE_RULE that is also a descendant of both RULE1 and RULE2.
-static int greatest_common_ancestor(const short base_rule, const short la_symbol, const short state1, const short rule1, const short state2, const short rule2, short *rule_list) {
+static int greatest_common_ancestor(const short base_rule, const short la_symbol, const short state1, const short rule1, const short state2, const short rule2, short *rule_list, struct SRTable* srt) {
   int act1 = base_rule;
   int act2 = base_rule;
   int rule_no;
@@ -292,8 +292,8 @@ static int greatest_common_ancestor(const short base_rule, const short la_symbol
       break;
     }
     const int lhs_symbol = rules[rule_no].lhs;
-    act1 = sp_nt_action(state1, lhs_symbol, la_symbol, rule_list);
-    act2 = sp_nt_action(state2, lhs_symbol, la_symbol, rule_list);
+    act1 = sp_nt_action(state1, lhs_symbol, la_symbol, rule_list, srt);
+    act2 = sp_nt_action(state2, lhs_symbol, la_symbol, rule_list, srt);
   }
   return rule_no;
 }
@@ -302,13 +302,13 @@ static int greatest_common_ancestor(const short base_rule, const short la_symbol
 /// SYMBOL is the right-hand side of a SP rule and the global map
 /// sp_action[SYMBOL] yields a set of update reduce actions that may
 /// follow the transition on SYMBOL into STATE_NO.
-static void compute_update_actions(const short source_state, const short state_no, const short symbol, short *rule_list, short **sp_action, struct update_action_element **update_action) {
-  const struct reduce_header_type red = reduce[state_no];
+static void compute_update_actions(const short source_state, const short state_no, const short symbol, short *rule_list, short **sp_action, struct update_action_element **update_action, struct SRTable* srt) {
+  const struct reduce_header_type red = srt->reduce[state_no];
   for (int i = 1; i <= red.size; i++) {
     if (IS_SP_RULE(red.map[i].rule_number, rule_list)) {
       int rule_no = sp_action[symbol][red.map[i].symbol];
       if (rule_no == OMEGA) {
-        rule_no = sp_default_action(source_state, red.map[i].rule_number, rule_list);
+        rule_no = sp_default_action(source_state, red.map[i].rule_number, rule_list, srt);
       }
       // Lookup the update map to see if a previous update was made
       // in STATE_NO on SYMBOL...
@@ -335,7 +335,7 @@ static void compute_update_actions(const short source_state, const short state_n
                                              source_state,
                                              rule_no,
                                              p->state,
-                                             p->action, rule_list);
+                                             p->action, rule_list, srt);
       }
     }
   }
@@ -471,7 +471,7 @@ static short sp_state_map(const int rule_head, const int item_no, const int sp_r
 
 /// This program is invoked to remove as many single production
 /// actions as possible for a conflict-free automaton.
-void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* sr, JBitset first) {
+void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* sr, JBitset first, struct LAIndex* lai, struct node **conflict_symbols, JBitset la_set, struct node **adequate_item, struct SRTable* srt, struct statset_type *statset, struct lastats_type *lastats, short *gd_index, struct node **in_stat, struct ruletab_type *rules) {
   struct AEPool pool = {
     .action_element_pool = NULL,
   };
@@ -546,7 +546,7 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
   };
   for (int i = symbol_root; i != NIL; i = symbol_list[i]) {
     if (index_of[i] == OMEGA) {
-      compute_sp_map(i, &spd, sp_rules, rule_list, index_of, next_rule, stack);
+      compute_sp_map(i, &spd, sp_rules, rule_list, index_of, next_rule, stack, rules);
     }
   }
   if (spd.rule_root != NIL) {
@@ -601,7 +601,7 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
   for ALL_STATES3(state_no) {
     new_action[state_no] = NULL;
     struct goto_header_type go_to = statset[state_no].go_to;
-    struct shift_header_type sh = shift[statset[state_no].shift_number];
+    struct shift_header_type sh = srt->shift[statset[state_no].shift_number];
     // If the state has no goto actions, it is not considered, as
     // no single productions could have been introduced in it.
     // Otherwise, we initialize index_of to the empty map and
@@ -637,7 +637,7 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
       for (int i = 1; i <= go_to.size; i++) {
         int symbol = go_to.map[i].symbol;
         if (IS_SP_RHS(symbol, sp_rules)) {
-          compute_sp_action(state_no, symbol, go_to.map[i].action, look_ahead, is_conflict_symbol, index_of, sp_action, sr, first);
+          compute_sp_action(state_no, symbol, go_to.map[i].action, look_ahead, is_conflict_symbol, index_of, sp_action, sr, first, lai, conflict_symbols, la_set, adequate_item);
           symbol_list[symbol] = symbol_root;
           symbol_root = symbol;
         }
@@ -646,7 +646,7 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
         int symbol = sh.map[i].symbol;
         index_of[symbol] = i;
         if (IS_SP_RHS(symbol, sp_rules)) {
-          compute_sp_action(state_no, symbol, sh.map[i].action, look_ahead, is_conflict_symbol, index_of, sp_action, sr, first);
+          compute_sp_action(state_no, symbol, sh.map[i].action, look_ahead, is_conflict_symbol, index_of, sp_action, sr, first, lai, conflict_symbols, la_set, adequate_item);
           symbol_list[symbol] = symbol_root;
           symbol_root = symbol;
         }
@@ -661,7 +661,7 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
           int lhs_symbol = rules[rule_no].lhs;
           if (index_of[lhs_symbol] != OMEGA) {
             if (symbol_list[lhs_symbol] == OMEGA) {
-              compute_sp_action(state_no, lhs_symbol, go_to.map[index_of[lhs_symbol]].action, look_ahead, is_conflict_symbol, index_of, sp_action, sr, first);
+              compute_sp_action(state_no, lhs_symbol, go_to.map[index_of[lhs_symbol]].action, look_ahead, is_conflict_symbol, index_of, sp_action, sr, first, lai, conflict_symbols, la_set, adequate_item);
               symbol_list[lhs_symbol] = symbol_root;
               symbol_root = lhs_symbol;
             }
@@ -730,7 +730,7 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
             if (item_ptr->next == NULL && item_table[item_no].symbol == empty) {
               rule_no = item_table[item_no].rule_number;
             } else {
-              compute_update_actions(state_no, action, symbol, rule_list, sp_action, update_action);
+              compute_update_actions(state_no, action, symbol, rule_list, sp_action, update_action, srt);
               rule_no = OMEGA;
             }
           }
@@ -785,7 +785,7 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
   // We are now ready to extend all global maps based on states and
   // permanently install the new states.
   realloc0(statset, state_map.max_sp_state + 1, struct statset_type);
-  realloc0(reduce, state_map.max_sp_state + 1, struct reduce_header_type);
+  realloc0(srt->reduce, state_map.max_sp_state + 1, struct reduce_header_type);
   // see routine PRODUCE
   if (gd_index != NULL) {
     realloc0(gd_index, state_map.max_sp_state + 2, short);
@@ -807,7 +807,7 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
   // offset the number associated with each lookahead state by the
   // number of new SP states that were added.
   for (int j = 1; j <= num_shift_maps; j++) {
-    struct shift_header_type sh = shift[j];
+    struct shift_header_type sh = srt->shift[j];
     for (int i = 1; i <= sh.size; i++) {
       if (sh.map[i].action > num_states) {
         sh.map[i].action += state_map.max_sp_state - num_states;
@@ -859,7 +859,7 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
     // Construct a permanent reduce map for this SP state.
     num_reductions += reduce_size;
     struct reduce_header_type red = Allocate_reduce_map(reduce_size);
-    reduce[state_no] = red;
+    srt->reduce[state_no] = red;
     red.map[0].symbol = DEFAULT_SYMBOL;
     red.map[0].rule_number = default_rule;
     for (actionp = state->action_root; actionp != NULL; actionp = actionp->next) {
@@ -882,7 +882,7 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
   // At most, the shift array contains 1..num_states elements. As,
   // each of these elements might be (theoretically) replaced by a
   // new one, we need to double its size.
-  realloc0(shift, 2 * (num_states + 1), struct shift_header_type);
+  realloc0(srt->shift, 2 * (num_states + 1), struct shift_header_type);
   // For each state with updates or new actions, take appropriate
   // actions.
   for ALL_STATES3(state_no) {
@@ -890,7 +890,7 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
     // that are in non-final states.
     if (update_action[state_no] != NULL) {
       struct update_action_element *p_inner;
-      struct reduce_header_type red = reduce[state_no];
+      struct reduce_header_type red = srt->reduce[state_no];
       for (int i = 1; i <= red.size; i++) {
         index_of[red.map[i].symbol] = i;
       }
@@ -909,7 +909,7 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
       for (int i = 1; i <= go_to.size; i++) {
         index_of[go_to.map[i].symbol] = i;
       }
-      struct shift_header_type sh = shift[statset[state_no].shift_number];
+      struct shift_header_type sh = srt->shift[statset[state_no].shift_number];
       for (int i = 1; i <= sh.size; i++) {
         index_of[sh.map[i].symbol] = i;
         shift_transition[sh.map[i].symbol] = sh.map[i].action;
@@ -954,7 +954,7 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
         // that matched the shift_transition.
         int jj;
         for (jj = shift_table[hash_address]; jj != NIL; jj = new_shift[jj].link) {
-          sh2 = shift[new_shift[jj].shift_number];
+          sh2 = srt->shift[new_shift[jj].shift_number];
           if (sh.size == sh2.size) {
             int ii;
             for (ii = 1; ii <= sh.size; ii++) {
@@ -979,7 +979,7 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
             sh2.map[i].action = shift_transition[symbol];
           }
           num_shift_maps++;
-          shift[num_shift_maps] = sh2;
+          srt->shift[num_shift_maps] = sh2;
           statset[state_no].shift_number = num_shift_maps;
           spd.top++;
           new_shift[spd.top].shift_number = num_shift_maps;

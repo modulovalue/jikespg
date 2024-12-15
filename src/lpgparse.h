@@ -142,4 +142,4 @@ int symbol_image(const char *item);
 
 int name_map(const char *symb);
 
-static void build_symno(void);
+void build_symno(void);

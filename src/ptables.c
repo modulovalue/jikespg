@@ -14,8 +14,8 @@ struct ptables_action_element {
 /// number of occurrences of each action in the automaton is kept.
 /// This procedure is invoked with a specific shift map which it processes
 /// and updates the ACTION_COUNT map accordingly.
-static void process_shift_actions(struct ptables_action_element **action_count, const int shift_no) {
-  const struct shift_header_type sh = shift[shift_no];
+static void process_shift_actions(struct ptables_action_element **action_count, const int shift_no, struct SRTable* srt) {
+  const struct shift_header_type sh = srt->shift[shift_no];
   for (int i = 1; i <= sh.size; i++) {
     const int symbol = sh.map[i].symbol;
     const short act = sh.map[i].action;
@@ -38,7 +38,7 @@ static void process_shift_actions(struct ptables_action_element **action_count, 
 /// This procedure updates the vector SHIFTDF, indexable by the terminals in
 /// the grammar. Its task is to assign to each element of SHIFTDF, the action
 /// most frequently defined on the symbol in question.
-static void compute_shift_default(void) {
+static void compute_shift_default(struct SRTable* srt, struct lastats_type *lastats, short *shiftdf, struct statset_type *statset) {
   // Set up a pool of temporary space.
   reset_temporary_space();
   int shift_count = 0;
@@ -49,10 +49,10 @@ static void compute_shift_default(void) {
   // For each state, invoke PROCESS_SHIFT_ACTIONS to process the
   // shift map associated with that state.
   for ALL_STATES3(state_no) {
-    process_shift_actions(action_count, statset[state_no].shift_number);
+    process_shift_actions(action_count, statset[state_no].shift_number, srt);
   }
   for ALL_LA_STATES3(state_no) {
-    process_shift_actions(action_count, lastats[state_no].shift_number);
+    process_shift_actions(action_count, lastats[state_no].shift_number, srt);
   }
   // We now iterate over the ACTION_COUNT mapping, and for each
   // terminal t, initialize SHIFTDF[t] to the action that is most
@@ -86,7 +86,7 @@ static void compute_shift_default(void) {
 /// the non-terminals in the grammar. Its task is to assign to each element
 /// of the array the Action which is most frequently defined on the symbol in
 /// question, and remove all such actions from the state automaton.
-static void compute_goto_default(void) {
+static void compute_goto_default(long *gotodef) {
   // Set up a pool of temporary space.
   reset_temporary_space();
   int goto_count = 0;
@@ -171,7 +171,7 @@ static void compute_goto_default(void) {
   ffree(action_count);
 }
 
-void init_file(FILE **file, char *file_name, char *file_tag) {
+static void init_file(FILE **file, char *file_name, char *file_tag) {
   const char *p = strrchr(file_name, '.');
   if ((*file = fopen(file_name, "w")) == NULL) {
     fprintf(stderr, "***ERROR: Symbol file \"%s\" cannot be opened\n", file_name);
@@ -184,7 +184,7 @@ void init_file(FILE **file, char *file_name, char *file_tag) {
 
 /// Remap symbols, apply transition default actions  and call
 /// appropriate table compression routine.
-void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of) {
+void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, short *gd_range, struct SRTable* srt, long *scope_right_side, struct lastats_type *lastats, short *shiftdf, long *gotodef, short *gd_index, struct statset_type *statset) {
   // First, we decrease by 1 the constants NUM_SYMBOLS
   // and NUM_TERMINALS, remove the EMPTY symbol(1) and remap the
   // other symbols beginning at 1.  If default reduction is
@@ -206,7 +206,7 @@ void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLI
     for (int i = 1; i <= go_to.size; i++) {
       go_to.map[i].symbol--;
     }
-    struct reduce_header_type red = reduce[state_no];
+    struct reduce_header_type red = srt->reduce[state_no];
     for (int i = 1; i <= red.size; i++) {
       red.map[i].symbol--;
     }
@@ -230,7 +230,7 @@ void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLI
   }
   // Remap all symbols in the domain of the Shift maps.
   for (int i = 1; i <= num_shift_maps; i++) {
-    const struct shift_header_type sh = shift[i];
+    const struct shift_header_type sh = srt->shift[i];
     for (int j = 1; j <= sh.size; j++) {
       sh.map[j].symbol--;
     }
@@ -252,10 +252,10 @@ void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLI
   // If Goto Default and/or Shift Default were requested, process
   // appropriately.
   if (cli_options->shift_default_bit) {
-    compute_shift_default();
+    compute_shift_default(srt, lastats, shiftdf, statset);
   }
   if (cli_options->goto_default_bit) {
-    compute_goto_default();
+    compute_goto_default(gotodef);
   }
   // Release the pool of temporary space.
   free_temporary_space();
@@ -272,10 +272,11 @@ void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLI
   init_file(&of->syssym, output_files->sym_file, of->sym_tag);
   init_file(&of->sysdef, output_files->def_file, of->def_tag);
   init_file(&of->sysprs, output_files->prs_file, of->prs_tag);
+  struct ImportantAspects ia = (struct ImportantAspects) {};
   if (cli_options->table_opt.value == OPTIMIZE_SPACE.value) {
-    cmprspa(cli_options, &toutput, dss, ctp, of);
+    cmprspa(cli_options, &toutput, dss, ctp, of, np, scope, &ia, srt, scope_right_side, lastats, shiftdf, gotodef, gd_index, gd_range);
   } else if (cli_options->table_opt.value == OPTIMIZE_TIME.value) {
-    cmprtim(cli_options, &toutput, dss, ctp, of);
+    cmprtim(cli_options, &toutput, dss, ctp, of, np, scope, &ia, srt, scope_right_side, lastats, gotodef, gd_index, gd_range);
   } else {
     exit(999);
   }

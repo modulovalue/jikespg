@@ -10,10 +10,14 @@
 #include "lpgact.h"
 #include "lpgprs.h"
 
-static struct line_elemt {
+struct line_elemt {
   struct line_elemt *link;
   char line[MAX_LINE_SIZE + 1];
-} *line_pool_root = NULL;
+};
+
+struct LinePool {
+  struct line_elemt *line_pool_root;
+};
 
 int stack_top = -1;
 
@@ -991,10 +995,10 @@ check_symbol_length:
 }
 
 /// This function allocates a line_elemt structure and returns a pointer to it.
-static struct line_elemt *alloc_line(void) {
-  register struct line_elemt *p = line_pool_root;
+static struct line_elemt *alloc_line(struct LinePool* lp) {
+  register struct line_elemt *p = lp->line_pool_root;
   if (p != NULL) {
-    line_pool_root = p->link;
+    lp->line_pool_root = p->link;
   } else {
     talloc0(p, struct line_elemt);
   }
@@ -1002,9 +1006,9 @@ static struct line_elemt *alloc_line(void) {
 }
 
 /// This function frees a line_elemt structure which is returned to a free pool.
-static void free_line(struct line_elemt *p) {
-  p->link = line_pool_root;
-  line_pool_root = p;
+static void free_line(struct line_elemt *p, struct LinePool* lp) {
+  p->link = lp->line_pool_root;
+  lp->line_pool_root = p;
 }
 
 /// FIND_MACRO takes as argument a pointer to a macro name. It searches for
@@ -1012,7 +1016,7 @@ static void free_line(struct line_elemt *p) {
 /// is found then the macro definition associated with it is returned.
 /// If the name is not found, then a message is printed, a new definition is
 /// entered to avoid more messages and NULL is returned.
-static struct line_elemt *find_macro(char *name, short *macro_table) {
+static struct line_elemt *find_macro(char *name, short *macro_table, struct LinePool* lp) {
   register struct line_elemt *root = NULL;
   char macro_name[MAX_LINE_SIZE + 1];
   register char *s = macro_name;
@@ -1027,7 +1031,7 @@ static struct line_elemt *find_macro(char *name, short *macro_table) {
       /* undefined macro? */
       if (ptr) {
         while (*ptr != '\0') {
-          register struct line_elemt *q = alloc_line();
+          register struct line_elemt *q = alloc_line(lp);
           s = q->line;
           while (*ptr != '\n')
             *s++ = *ptr++;
@@ -1070,7 +1074,7 @@ static struct line_elemt *find_macro(char *name, short *macro_table) {
 /// user defined macro names. If one is found, the macro definition is
 /// substituted for the name. The modified action text is then printed out in
 /// the action file.
-static void process_action_line(FILE *sysout, char *text, const int line_no, const int rule_no, char *grm_file, struct CLIOptions* cli_options, short *macro_table) {
+static void process_action_line(FILE *sysout, char *text, const int line_no, const int rule_no, char *grm_file, struct CLIOptions* cli_options, short *macro_table, struct LinePool* lp, struct ruletab_type *rules) {
   char temp1[MAX_LINE_SIZE + 1];
   char suffix[MAX_LINE_SIZE + 1];
   char symbol[SYMBOL_SIZE + 1];
@@ -1248,7 +1252,7 @@ next_line: {
         suffix[0] = '\0';
       }
       text[k] = '\0'; /* prefix before macro */
-      root = find_macro(symbol, macro_table); /* "root" points to a circular  */
+      root = find_macro(symbol, macro_table, lp); /* "root" points to a circular  */
       // linked list of line_elemt(s)
       // containing macro definition.
       if (root != NULL) /* if macro name was found */
@@ -1266,7 +1270,7 @@ next_line: {
             strcat(q -> line, suffix);
             tail = q;
           } else {
-            tail = alloc_line();
+            tail = alloc_line(lp);
             strcpy(tail -> line, suffix);
             q->link = tail;
           }
@@ -1280,7 +1284,7 @@ next_line: {
           strcat(text, root -> line);
           q = root;
           root = root->link;
-          free_line(q);
+          free_line(q, lp);
         }
         // if there are more macro lines to process,
         // add list to list headed by INPUT_LINE_ROOT
@@ -1319,7 +1323,7 @@ next_line: {
     strcpy(text, input_line_root -> line);
     q = input_line_root;
     input_line_root = input_line_root->link;
-    free_line(q);
+    free_line(q, lp);
     goto next_line;
   }
 }
@@ -1353,7 +1357,10 @@ static void mapmacro(const int def_index, short *macro_table) {
 }
 
 /// Process all semantic actions and generate action file.
-static void process_actions(char *grm_file, struct CLIOptions *cli_options, struct ScannerState* ss) {
+static void process_actions(char *grm_file, struct CLIOptions *cli_options, struct ScannerState* ss, struct ruletab_type *rules) {
+  struct LinePool lp = (struct LinePool) {
+    .line_pool_root = NULL,
+  };
   register char *p;
   char line[MAX_LINE_SIZE + 1];
   FILE *sysact = fopen(cli_options->act_file, "w");
@@ -1459,9 +1466,9 @@ static void process_actions(char *grm_file, struct CLIOptions *cli_options, stru
       *p = '\0';
     }
     if (actelmt[i].header_block) {
-      process_action_line(syshact, line, ss->line_no, actelmt[i].rule_number, grm_file, cli_options, macro_table);
+      process_action_line(syshact, line, ss->line_no, actelmt[i].rule_number, grm_file, cli_options, macro_table, &lp, rules);
     } else {
-      process_action_line(sysact, line, ss->line_no, actelmt[i].rule_number, grm_file, cli_options, macro_table);
+      process_action_line(sysact, line, ss->line_no, actelmt[i].rule_number, grm_file, cli_options, macro_table, &lp, rules);
     }
     if (ss->line_no != actelmt[i].end_line) {
       while (ss->line_no < actelmt[i].end_line) {
@@ -1484,9 +1491,9 @@ static void process_actions(char *grm_file, struct CLIOptions *cli_options, stru
           }
           *p = '\0';
           if (actelmt[i].header_block) {
-            process_action_line(syshact, line, ss->line_no, actelmt[i].rule_number, grm_file, cli_options, macro_table);
+            process_action_line(syshact, line, ss->line_no, actelmt[i].rule_number, grm_file, cli_options, macro_table, &lp, rules);
           } else {
-            process_action_line(sysact, line, ss->line_no, actelmt[i].rule_number, grm_file, cli_options, macro_table);
+            process_action_line(sysact, line, ss->line_no, actelmt[i].rule_number, grm_file, cli_options, macro_table, &lp, rules);
           }
         }
       }
@@ -1495,9 +1502,9 @@ static void process_actions(char *grm_file, struct CLIOptions *cli_options, stru
         memcpy(line, ss->p1, len);
         line[len] = '\0';
         if (actelmt[i].header_block) {
-          process_action_line(syshact, line, ss->line_no, actelmt[i].rule_number, grm_file, cli_options, macro_table);
+          process_action_line(syshact, line, ss->line_no, actelmt[i].rule_number, grm_file, cli_options, macro_table, &lp, rules);
         } else {
-          process_action_line(sysact, line, ss->line_no, actelmt[i].rule_number, grm_file, cli_options, macro_table);
+          process_action_line(sysact, line, ss->line_no, actelmt[i].rule_number, grm_file, cli_options, macro_table, &lp, rules);
         }
       }
     }
@@ -1615,7 +1622,7 @@ static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *
     rules[num_rules + 1].rhs = rhs_ct; /* Fence !! */
   }
   fclose(sysgrm); /* Close grammar input file. */
-  process_actions(grm_file, cli_options, ss);
+  process_actions(grm_file, cli_options, ss, rules);
 }
 
 /// This procedure opens all relevant files and processes the input grammar.

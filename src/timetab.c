@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include "lpgparse.h"
 #include <string.h>
 #include "common.h"
 
@@ -8,7 +7,7 @@
 struct DefaultSaves {
   int default_saves;
   int last_symbol;
-} remap_symbols(struct TableOutput* toutput, bool* is_terminal) {
+} remap_symbols(struct TableOutput* toutput, bool* is_terminal, struct SRTable* srt, struct lastats_type *lastats) {
   int default_saves = 0;
   long *frequency_symbol = Allocate_long_array(num_symbols + 1);
   long *frequency_count = Allocate_long_array(num_symbols + 1);
@@ -27,7 +26,7 @@ struct DefaultSaves {
   for ALL_STATES3(state_no) {
     toutput->ordered_state[state_no] = state_no;
     row_size[state_no] = 0;
-    struct shift_header_type sh = shift[statset[state_no].shift_number];
+    struct shift_header_type sh = srt->shift[statset[state_no].shift_number];
     for (int i = 1; i <= sh.size; i++) {
       row_size[state_no]++;
       long symbol = sh.map[i].symbol;
@@ -39,7 +38,7 @@ struct DefaultSaves {
       long symbol = go_to.map[i].symbol;
       frequency_count[symbol]++;
     }
-    struct reduce_header_type red = reduce[state_no];
+    struct reduce_header_type red = srt->reduce[state_no];
     short default_rule = red.map[0].rule_number;
     for (int i = 1; i <= red.size; i++) {
       if (red.map[i].rule_number != default_rule) {
@@ -55,7 +54,7 @@ struct DefaultSaves {
   for ALL_LA_STATES3(state_no) {
     toutput->ordered_state[state_no] = state_no;
     row_size[state_no] = 0;
-    struct shift_header_type sh = shift[lastats[state_no].shift_number];
+    struct shift_header_type sh = srt->shift[lastats[state_no].shift_number];
     for (int i = 1; i <= sh.size; i++) {
       row_size[state_no]++;
       long symbol = sh.map[i].symbol;
@@ -93,7 +92,7 @@ struct DefaultSaves {
   // As we merge the symbols, we keep track of which ones are terminals
   // and which ones are non-terminals.  We also keep track of the new
   // mapping for the symbols in SYMBOL_MAP.
-  int j = num_terminals + 1;
+  long j = num_terminals + 1;
   int k = 0;
   for (int i = 1; i <= num_terminals;) {
     k++;
@@ -132,7 +131,7 @@ struct DefaultSaves {
     for (int i = 1; i <= go_to.size; i++) {
       go_to.map[i].symbol = toutput->symbol_map[go_to.map[i].symbol];
     }
-    struct reduce_header_type red = reduce[state_no];
+    struct reduce_header_type red = srt->reduce[state_no];
     for (int i = 1; i <= red.size; i++) {
       red.map[i].symbol = toutput->symbol_map[red.map[i].symbol];
     }
@@ -144,7 +143,7 @@ struct DefaultSaves {
     }
   }
   for (int i = 1; i <= num_shift_maps; i++) {
-    struct shift_header_type sh = shift[i];
+    struct shift_header_type sh = srt->shift[i];
     for (int j = 1; j <= sh.size; j++) {
       sh.map[j].symbol = toutput->symbol_map[sh.map[j].symbol];
     }
@@ -163,7 +162,7 @@ struct DefaultSaves {
 /// compute the starting position in a vector where each of its rows
 /// may be placed without clobbering elements in another row.
 /// The starting positions are stored in the vector STATE_INDEX.
-static void overlap_tables(struct CLIOptions *cli_options, struct TableOutput* toutput, bool* is_terminal, struct DefaultSaves default_saves, struct CTabsProps* ctp, long last_symbol) {
+static void overlap_tables(struct CLIOptions *cli_options, struct TableOutput* toutput, bool* is_terminal, struct DefaultSaves default_saves, struct CTabsProps* ctp, long last_symbol, struct NextPrevious* np, struct ImportantAspects* ia, struct SRTable* srt, struct lastats_type *lastats) {
   long *symbol_list = Allocate_long_array(num_symbols + 1);
   num_entries -= default_saves.default_saves;
   ctp->increment_size = MAX(num_entries * increment / 100, num_symbols + 1);
@@ -174,19 +173,19 @@ static void overlap_tables(struct CLIOptions *cli_options, struct TableOutput* t
   // element in the list.
   // The variable MAX_INDX is used to keep track of the maximum
   // starting position for a row that has been used.
-  next = Allocate_long_array(ctp->table_size + 1);
-  previous = Allocate_long_array(ctp->table_size + 1);
-  first_index = 1;
-  next[first_index] = first_index + 1; /* Should be constant-folded */
-  previous[first_index] = NIL;
+  np->next = Allocate_long_array(ctp->table_size + 1);
+  np->previous = Allocate_long_array(ctp->table_size + 1);
+  ia->first_index = 1;
+  np->next[ia->first_index] = ia->first_index + 1; /* Should be constant-folded */
+  np->previous[ia->first_index] = NIL;
   for (long indx = 2; indx < (int) ctp->table_size; indx++) {
-    next[indx] = indx + 1;
-    previous[indx] = indx - 1;
+    np->next[indx] = indx + 1;
+    np->previous[indx] = indx - 1;
   }
-  last_index = ctp->table_size;
-  previous[last_index] = last_index - 1;
-  next[last_index] = NIL;
-  long max_indx = first_index;
+  ia->last_index = ctp->table_size;
+  np->previous[ia->last_index] = ia->last_index - 1;
+  np->next[ia->last_index] = NIL;
+  long max_indx = ia->first_index;
   // We now iterate over all the states in their new sorted order as
   // indicated by the variable STATE_NO, and determine an "overlap"
   // position for them.
@@ -198,7 +197,7 @@ static void overlap_tables(struct CLIOptions *cli_options, struct TableOutput* t
     struct shift_header_type sh;
     struct reduce_header_type red;
     if (state_no > num_states) {
-      sh = shift[lastats[state_no].shift_number];
+      sh = srt->shift[lastats[state_no].shift_number];
       red = lastats[state_no].reduce;
     } else {
       const struct goto_header_type go_to = statset[state_no].go_to;
@@ -207,8 +206,8 @@ static void overlap_tables(struct CLIOptions *cli_options, struct TableOutput* t
         symbol_list[symbol] = root_symbol;
         root_symbol = symbol;
       }
-      sh = shift[statset[state_no].shift_number];
-      red = reduce[state_no];
+      sh = srt->shift[statset[state_no].shift_number];
+      red = srt->reduce[state_no];
     }
     for (int i = 1; i <= sh.size; i++) {
       int symbol = sh.map[i].symbol;
@@ -229,17 +228,17 @@ static void overlap_tables(struct CLIOptions *cli_options, struct TableOutput* t
     // we try to determine if it might be a valid starting position. If
     // not, INDX is moved to the next element, and we repeat the process
     // until a valid position is found.
-    long indx = first_index;
+    long indx = ia->first_index;
   look_for_match_in_table:
     if (indx == NIL) {
       indx = ctp->table_size + 1;
     }
     if (indx + num_symbols > (int) ctp->table_size) {
-      reallocate(cli_options, ctp);
+      reallocate(cli_options, ctp, np, ia);
     }
     for (int symbol = root_symbol; symbol != NIL; symbol = symbol_list[symbol]) {
-      if (next[indx + symbol] == OMEGA) {
-        indx = next[indx];
+      if (np->next[indx + symbol] == OMEGA) {
+        indx = np->next[indx];
         goto look_for_match_in_table;
       }
     }
@@ -254,28 +253,28 @@ static void overlap_tables(struct CLIOptions *cli_options, struct TableOutput* t
     toutput->state_index[state_no] = indx;
     for (int symbol = root_symbol; symbol != NIL; symbol = symbol_list[symbol]) {
       const long i = indx + symbol;
-      if (first_index == last_index)
-        first_index = NIL;
-      else if (i == first_index) {
-        first_index = next[first_index];
-        previous[first_index] = NIL;
-      } else if (i == last_index) {
-        last_index = previous[last_index];
-        next[last_index] = NIL;
+      if (ia->first_index == ia->last_index) {
+        ia->first_index = NIL;
+      } else if (i == ia->first_index) {
+        ia->first_index = np->next[ia->first_index];
+        np->previous[ia->first_index] = NIL;
+      } else if (i == ia->last_index) {
+        ia->last_index = np->previous[ia->last_index];
+        np->next[ia->last_index] = NIL;
       } else {
-        next[previous[i]] = next[i];
-        previous[next[i]] = previous[i];
+        np->next[np->previous[i]] = np->next[i];
+        np->previous[np->next[i]] = np->previous[i];
       }
-      next[i] = OMEGA;
+      np->next[i] = OMEGA;
     }
   }
   // Update all global counters, and compute ACCEPT_ACTION and
   // ERROR_ACTION.
   ctp->table_size = max_indx + num_symbols;
-  accept_act = max_indx + num_rules + 1;
-  error_act = accept_act + 1;
+  ia->accept_act = max_indx + num_rules + 1;
+  ia->error_act = ia->accept_act + 1;
   for (ctp->action_size = ctp->table_size; ctp->action_size >= max_indx; ctp->action_size--) {
-    if (next[ctp->action_size] == OMEGA) {
+    if (np->next[ctp->action_size] == OMEGA) {
       break;
     }
   }
@@ -320,9 +319,9 @@ static void overlap_tables(struct CLIOptions *cli_options, struct TableOutput* t
 /// together, to achieve maximum speed efficiency.
 /// Otherwise, the compression technique used in this table is
 /// analogous to the technique used in the routine CMPRSPA.
-void cmprtim(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of) {
+void cmprtim(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, long *scope_right_side, struct lastats_type *lastats, long *gotodef, short *gd_index, short *gd_range) {
   bool *is_terminal = Allocate_boolean_array(num_symbols + 1);
-  struct DefaultSaves default_saves = remap_symbols(toutput, is_terminal);
-  overlap_tables(cli_options, toutput, is_terminal, default_saves, ctp, default_saves.last_symbol);
-  print_time_parser(cli_options, toutput, dss, ctp, of);
+  struct DefaultSaves default_saves = remap_symbols(toutput, is_terminal, srt, lastats);
+  overlap_tables(cli_options, toutput, is_terminal, default_saves, ctp, default_saves.last_symbol, np, ia, srt, lastats);
+  print_time_parser(cli_options, toutput, dss, ctp, of, np, scope, ia, srt, scope_right_side, lastats, gotodef, gd_index, gd_range, rules);
 }

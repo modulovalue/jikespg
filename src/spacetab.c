@@ -16,7 +16,7 @@ struct TResult {
 
 ///  REMAP_NON_TERMINALS remaps the non-terminal symbols and states based on
 /// frequency of entries.
-static long remap_non_terminals(const struct CLIOptions *cli_options, struct TableOutput *toutput) {
+static long remap_non_terminals(const struct CLIOptions *cli_options, struct TableOutput *toutput, long *gotodef) {
   // The variable FREQUENCY_SYMBOL is used to hold the non-terminals
   // in the grammar, and  FREQUENCY_COUNT is used correspondingly to
   // hold the number of actions defined on each non-terminal.
@@ -98,7 +98,7 @@ static long remap_non_terminals(const struct CLIOptions *cli_options, struct Tab
 /// starting position in a vector where each of its rows may be placed
 /// without clobbering elements in another row.  The starting positions are
 /// stored in the vector STATE_INDEX.
-static void overlap_nt_rows(struct CLIOptions *cli_options, struct TableOutput *toutput, struct NumTableEntries *nte, struct CTabsProps *ctp, long last_symbol) {
+static void overlap_nt_rows(struct CLIOptions *cli_options, struct TableOutput *toutput, struct NumTableEntries *nte, struct CTabsProps *ctp, long last_symbol, struct NextPrevious* np, struct ImportantAspects* ia) {
   nte->value = num_gotos + num_goto_reduces + num_states;
   ctp->increment_size = MAX(nte->value / 100 * increment, last_symbol + 1);
   ctp->table_size = MIN(nte->value + ctp->increment_size, MAX_TABLE_SIZE);
@@ -108,19 +108,19 @@ static void overlap_nt_rows(struct CLIOptions *cli_options, struct TableOutput *
   // list.
   //   The variable MAX_INDX is used to keep track of the maximum starting
   // position for a row that has been used.
-  next = Allocate_long_array(ctp->table_size + 1);
-  previous = Allocate_long_array(ctp->table_size + 1);
-  first_index = 1;
-  previous[first_index] = NIL;
-  next[first_index] = first_index + 1;
+  np->next = Allocate_long_array(ctp->table_size + 1);
+  np->previous = Allocate_long_array(ctp->table_size + 1);
+  ia->first_index = 1;
+  np->previous[ia->first_index] = NIL;
+  np->next[ia->first_index] = ia->first_index + 1;
   for (long indx = 2; indx < (int) ctp->table_size; indx++) {
-    next[indx] = indx + 1;
-    previous[indx] = indx - 1;
+    np->next[indx] = indx + 1;
+    np->previous[indx] = indx - 1;
   }
-  last_index = ctp->table_size;
-  previous[last_index] = last_index - 1;
-  next[last_index] = NIL;
-  int max_indx = first_index;
+  ia->last_index = ctp->table_size;
+  np->previous[ia->last_index] = ia->last_index - 1;
+  np->next[ia->last_index] = NIL;
+  int max_indx = ia->first_index;
   // We now iterate over all the states in their new sorted order as
   // indicated by the variable STATE_NO, and determine an "overlap"
   // position for them.
@@ -131,17 +131,17 @@ static void overlap_nt_rows(struct CLIOptions *cli_options, struct TableOutput *
     // position.  If not, INDX is moved to the next element, and we
     // repeat the process until a valid position is found.
     const struct goto_header_type go_to = statset[state_no__].go_to;
-    long indx = first_index;
+    long indx = ia->first_index;
   look_for_match_in_base_table:
     if (indx == NIL) {
       indx = ctp->table_size + 1;
     }
     if (indx + last_symbol > ctp->table_size) {
-      reallocate(cli_options, ctp);
+      reallocate(cli_options, ctp, np, ia);
     }
     for (int i = 1; i <= go_to.size; i++) {
-      if (next[indx + go_to.map[i].symbol] == OMEGA) {
-        indx = next[indx];
+      if (np->next[indx + go_to.map[i].symbol] == OMEGA) {
+        indx = np->next[indx];
         goto look_for_match_in_base_table;
       }
     }
@@ -153,28 +153,28 @@ static void overlap_nt_rows(struct CLIOptions *cli_options, struct TableOutput *
     for (int j = 1; j <= go_to.size; j++) {
       const int symbol = go_to.map[j].symbol;
       int i = indx + symbol;
-      if (i == last_index) {
-        last_index = previous[last_index];
-        next[last_index] = NIL;
+      if (i == ia->last_index) {
+        ia->last_index = np->previous[ia->last_index];
+        np->next[ia->last_index] = NIL;
       } else {
-        next[previous[i]] = next[i];
-        previous[next[i]] = previous[i];
+        np->next[np->previous[i]] = np->next[i];
+        np->previous[np->next[i]] = np->previous[i];
       }
-      next[i] = OMEGA;
+      np->next[i] = OMEGA;
     }
-    if (first_index == last_index) {
-      first_index = NIL;
-    } else if (indx == first_index) {
-      first_index = next[first_index];
-      previous[first_index] = NIL;
-    } else if (indx == last_index) {
-      last_index = previous[last_index];
-      next[last_index] = NIL;
+    if (ia->first_index == ia->last_index) {
+      ia->first_index = NIL;
+    } else if (indx == ia->first_index) {
+      ia->first_index = np->next[ia->first_index];
+      np->previous[ia->first_index] = NIL;
+    } else if (indx == ia->last_index) {
+      ia->last_index = np->previous[ia->last_index];
+      np->next[ia->last_index] = NIL;
     } else {
-      next[previous[indx]] = next[indx];
-      previous[next[indx]] = previous[indx];
+      np->next[np->previous[indx]] = np->next[indx];
+      np->previous[np->next[indx]] = np->previous[indx];
     }
-    next[indx] = OMEGA;
+    np->next[indx] = OMEGA;
     if (indx > max_indx) {
       max_indx = indx;
     }
@@ -186,12 +186,12 @@ static void overlap_nt_rows(struct CLIOptions *cli_options, struct TableOutput *
     ctp->check_size = 0;
   }
   for (ctp->action_size = max_indx + last_symbol; ctp->action_size >= max_indx; ctp->action_size--) {
-    if (next[ctp->action_size] == OMEGA) {
+    if (np->next[ctp->action_size] == OMEGA) {
       break;
     }
   }
-  accept_act = max_indx + num_rules + 1;
-  error_act = accept_act + 1;
+  ia->accept_act = max_indx + num_rules + 1;
+  ia->error_act = ia->accept_act + 1;
   printf("\n");
   if (cli_options->goto_default_bit || cli_options->nt_check_bit) {
     PRNT3("Length of base Check Table: %d", ctp->check_size);
@@ -208,7 +208,7 @@ static void overlap_nt_rows(struct CLIOptions *cli_options, struct TableOutput *
 /// addition,  there must not exist a terminal symbol "t" such that:
 /// REDUCE(S1, t) and REDUCE(S2, t) are defined, and
 /// REDUCE(S1, t) ^= REDUCE(S2, t)
-static void merge_similar_t_rows(const struct CLIOptions *cli_options, struct TableOutput *toutput, bool *shift_on_error_symbol, struct node **new_state_element_reduce_nodes, struct TResult *tresult, struct new_state_type *new_state_element) {
+static void merge_similar_t_rows(const struct CLIOptions *cli_options, struct TableOutput *toutput, bool *shift_on_error_symbol, struct node **new_state_element_reduce_nodes, struct TResult *tresult, struct new_state_type *new_state_element, struct SRTable* srt, struct lastats_type *lastats) {
   short *table = Allocate_short_array(num_shift_maps + 1);
   tresult->top = 0;
   for (int i = 1; i <= max_la_state; i++) {
@@ -227,7 +227,7 @@ static void merge_similar_t_rows(const struct CLIOptions *cli_options, struct Ta
     if (state_no > num_states) {
       red = lastats[state_no].reduce;
     } else {
-      red = reduce[state_no];
+      red = srt->reduce[state_no];
     }
     for (int i = 1; i <= red.size; i++) {
       const int rule_no = red.map[i].rule_number;
@@ -259,7 +259,7 @@ static void merge_similar_t_rows(const struct CLIOptions *cli_options, struct Ta
       hash_address = lastats[state_no].shift_number;
     } else {
       if (cli_options->default_opt.value == OPT_5.value) {
-        const struct shift_header_type sh = shift[statset[state_no].shift_number];
+        const struct shift_header_type sh = srt->shift[statset[state_no].shift_number];
         for (int j = 1; j <= sh.size && !shift_on_error_symbol[state_no]; j++)
           shift_on_error_symbol[state_no] = sh.map[j].symbol == error_image;
       }
@@ -341,7 +341,7 @@ static void merge_similar_t_rows(const struct CLIOptions *cli_options, struct Ta
 /// If we can determine that there is a shift action on a pair (S, t)
 /// we can apply shift default to the Shift actions just like we did
 /// for the Goto actions.
-static void merge_shift_domains(struct CLIOptions *cli_options, struct TableOutput *toutput, long *row_size, long *frequency_symbol, long *frequency_count, struct NumTableEntries *nte, long *shift_check_index, struct CTabsProps *ctp, struct new_state_type *new_state_element, short *shift_image, short *real_shift_number) {
+static void merge_shift_domains(struct CLIOptions *cli_options, struct TableOutput *toutput, long *row_size, long *frequency_symbol, long *frequency_count, struct NumTableEntries *nte, long *shift_check_index, struct CTabsProps *ctp, struct new_state_type *new_state_element, short *shift_image, short *real_shift_number, struct NextPrevious* np, struct ImportantAspects* ia, struct SRTable* srt, short *shiftdf) {
   // Some of the rows in the shift action map have already been merged
   // by the merging of compatible states... We simply need to increase
   // the size of the granularity by merging these new terminal states
@@ -379,7 +379,7 @@ static void merge_shift_domains(struct CLIOptions *cli_options, struct TableOutp
     for (int i = 1; i <= num_terminals; i++) {
       shift_symbols[i] = false;
     }
-    struct shift_header_type sh = shift[shift_no];
+    struct shift_header_type sh = srt->shift[shift_no];
     int shift_size = sh.size;
     unsigned long hash_address = shift_size;
     for (int i = 1; i <= shift_size; i++) {
@@ -389,7 +389,7 @@ static void merge_shift_domains(struct CLIOptions *cli_options, struct TableOutp
     }
     hash_address %= SHIFT_TABLE_SIZE;
     for (int i = shift_domain_table[hash_address]; i != NIL; i = shift_domain_link[i]) {
-      sh = shift[new_state_element[i].shift_number];
+      sh = srt->shift[new_state_element[i].shift_number];
       if (sh.size == shift_size) {
         int jj;
         for (jj = 1; jj <= shift_size; jj++) {
@@ -421,7 +421,7 @@ static void merge_shift_domains(struct CLIOptions *cli_options, struct TableOutp
   }
   for (int i = 1; i <= ctp->shift_domain_count; i++) {
     int shift_no = real_shift_number[i];
-    struct shift_header_type sh = shift[shift_no];
+    struct shift_header_type sh = srt->shift[shift_no];
     for (int j = 1; j <= sh.size; j++) {
       int symbol = sh.map[j].symbol;
       frequency_count[symbol]++;
@@ -438,7 +438,7 @@ static void merge_shift_domains(struct CLIOptions *cli_options, struct TableOutp
     eolt_image = toutput->symbol_map[eolt_image];
   }
   for (int i = 1; i <= num_shift_maps; i++) {
-    struct shift_header_type sh = shift[i];
+    struct shift_header_type sh = srt->shift[i];
     for (int j = 1; j <= sh.size; j++) {
       sh.map[j].symbol = toutput->symbol_map[sh.map[j].symbol];
     }
@@ -453,7 +453,7 @@ static void merge_shift_domains(struct CLIOptions *cli_options, struct TableOutp
   // REDUCE maps.
   if (error_maps_bit) {
     for ALL_STATES3(state_no) {
-      struct reduce_header_type red = reduce[state_no];
+      struct reduce_header_type red = srt->reduce[state_no];
       for (int i = 1; i <= red.size; i++) {
         red.map[i].symbol = toutput->symbol_map[red.map[i].symbol];
       }
@@ -474,40 +474,40 @@ static void merge_shift_domains(struct CLIOptions *cli_options, struct TableOutp
   int old_table_size = ctp->table_size;
   ctp->table_size = MIN(nte->value + ctp->increment_size, MAX_TABLE_SIZE);
   if ((int) ctp->table_size > old_table_size) {
-    ffree(previous);
-    ffree(next);
-    previous = Allocate_long_array(ctp->table_size + 1);
-    next = Allocate_long_array(ctp->table_size + 1);
+    ffree(np->previous);
+    ffree(np->next);
+    np->previous = Allocate_long_array(ctp->table_size + 1);
+    np->next = Allocate_long_array(ctp->table_size + 1);
   } else {
     ctp->table_size = old_table_size;
   }
-  first_index = 1;
-  previous[first_index] = NIL;
-  next[first_index] = first_index + 1;
+  ia->first_index = 1;
+  np->previous[ia->first_index] = NIL;
+  np->next[ia->first_index] = ia->first_index + 1;
   for (int indx = 2; indx < (int) ctp->table_size; indx++) {
-    next[indx] = indx + 1;
-    previous[indx] = indx - 1;
+    np->next[indx] = indx + 1;
+    np->previous[indx] = indx - 1;
   }
-  last_index = ctp->table_size;
-  previous[last_index] = last_index - 1;
-  next[last_index] = NIL;
-  int max_indx = first_index;
+  ia->last_index = ctp->table_size;
+  np->previous[ia->last_index] = ia->last_index - 1;
+  np->next[ia->last_index] = NIL;
+  int max_indx = ia->first_index;
   // Look for a suitable index where to overlay the shift check row.
   for (int k = 1; k <= ctp->shift_domain_count; k++) {
     int shift_no = ordered_shift[k];
-    struct shift_header_type sh = shift[real_shift_number[shift_no]];
-    int indx = first_index;
+    struct shift_header_type sh = srt->shift[real_shift_number[shift_no]];
+    int indx = ia->first_index;
   look_for_match_in_sh_chk_tab:
     if (indx == NIL) {
       indx = ctp->table_size + 1;
     }
     if (indx + num_terminals > (int) ctp->table_size) {
-      reallocate(cli_options, ctp);
+      reallocate(cli_options, ctp, np, ia);
     }
     for (int i = 1; i <= sh.size; i++) {
       int symbol = sh.map[i].symbol;
-      if (next[indx + symbol] == OMEGA) {
-        indx = next[indx];
+      if (np->next[indx + symbol] == OMEGA) {
+        indx = np->next[indx];
         goto look_for_match_in_sh_chk_tab;
       }
     }
@@ -519,35 +519,35 @@ static void merge_shift_domains(struct CLIOptions *cli_options, struct TableOutp
     for (int j = 1; j <= sh.size; j++) {
       int symbol = sh.map[j].symbol;
       int i = indx + symbol;
-      if (next[i] != 0) {
-        if (i == last_index) {
-          last_index = previous[last_index];
-          next[last_index] = NIL;
+      if (np->next[i] != 0) {
+        if (i == ia->last_index) {
+          ia->last_index = np->previous[ia->last_index];
+          np->next[ia->last_index] = NIL;
         } else {
-          next[previous[i]] = next[i];
-          previous[next[i]] = previous[i];
+          np->next[np->previous[i]] = np->next[i];
+          np->previous[np->next[i]] = np->previous[i];
         }
       }
-      next[i] = OMEGA;
+      np->next[i] = OMEGA;
     }
     // We now remove the starting position itself from the list without
     // marking it as taken, since it can still be used for a shift check.
     // MAX_INDX is updated if required.
     // SHIFT_CHECK_INDEX(SHIFT_NO) is properly set to INDX as the
     // starting position of STATE_NO.
-    if (first_index == last_index)
-      first_index = NIL;
-    else if (indx == first_index) {
-      first_index = next[first_index];
-      previous[first_index] = NIL;
-    } else if (indx == last_index) {
-      last_index = previous[last_index];
-      next[last_index] = NIL;
+    if (ia->first_index == ia->last_index) {
+      ia->first_index = NIL;
+    } else if (indx == ia->first_index) {
+      ia->first_index = np->next[ia->first_index];
+      np->previous[ia->first_index] = NIL;
+    } else if (indx == ia->last_index) {
+      ia->last_index = np->previous[ia->last_index];
+      np->next[ia->last_index] = NIL;
     } else {
-      next[previous[indx]] = next[indx];
-      previous[next[indx]] = previous[indx];
+      np->next[np->previous[indx]] = np->next[indx];
+      np->previous[np->next[indx]] = np->previous[indx];
     }
-    next[indx] = 0;
+    np->next[indx] = 0;
     if (indx > max_indx) {
       max_indx = indx;
     }
@@ -560,7 +560,7 @@ static void merge_shift_domains(struct CLIOptions *cli_options, struct TableOutp
   PRNT3("Number of entries in Shift Check Table: %ld", nte->value);
   int kk;
   for (kk = ctp->shift_check_size; kk >= max_indx; kk--) {
-    if (next[kk] == OMEGA) {
+    if (np->next[kk] == OMEGA) {
       break;
     }
   }
@@ -578,7 +578,7 @@ static void merge_shift_domains(struct CLIOptions *cli_options, struct TableOutp
 /// We iterate over each of these lists and construct new states out
 /// of these groups of similar states when they are compatible. Then,
 /// we remap the terminal symbols.
-static void overlay_sim_t_rows(struct CLIOptions *cli_options, struct TableOutput *toutput, bool *shift_on_error_symbol, struct node **new_state_element_reduce_nodes, struct TResult *tresult, struct NumTableEntries *nte, long *shift_check_index, struct CTabsProps *ctp, struct new_state_type *new_state_element, short *shift_image, short *real_shift_number) {
+static void overlay_sim_t_rows(struct CLIOptions *cli_options, struct TableOutput *toutput, bool *shift_on_error_symbol, struct node **new_state_element_reduce_nodes, struct TResult *tresult, struct NumTableEntries *nte, long *shift_check_index, struct CTabsProps *ctp, struct new_state_type *new_state_element, short *shift_image, short *real_shift_number, struct NextPrevious* np, struct ImportantAspects* ia, struct SRTable* srt, struct ruletab_type *rules, struct lastats_type *lastats, short *shiftdf) {
   int num_shifts_saved = 0;
   int num_reductions_saved = 0;
   int default_saves = 0;
@@ -608,7 +608,7 @@ static void overlay_sim_t_rows(struct CLIOptions *cli_options, struct TableOutpu
     if (state_no > num_states) {
       red = lastats[state_no].reduce;
     } else {
-      red = reduce[state_no];
+      red = srt->reduce[state_no];
     }
     for ALL_TERMINALS3(j) {
       reduce_action[j] = OMEGA;
@@ -636,7 +636,7 @@ static void overlay_sim_t_rows(struct CLIOptions *cli_options, struct TableOutpu
       if (state_no > num_states) {
         red = lastats[state_no].reduce;
       } else {
-        red = reduce[state_no];
+        red = srt->reduce[state_no];
       }
       int jj;
       for (jj = 1; jj <= red.size; jj++) {
@@ -680,7 +680,7 @@ static void overlay_sim_t_rows(struct CLIOptions *cli_options, struct TableOutpu
     // by rule 0.
     int k = 0;
     int reduce_size = 0;
-    int default_rule = error_act;
+    int default_rule = ia->error_act;
     struct node *tail;
     for (struct node *q = new_state_element_reduce_nodes[i]; q != NULL; tail = q, q = q->next) {
       int rule_no = q->value;
@@ -722,7 +722,7 @@ static void overlay_sim_t_rows(struct CLIOptions *cli_options, struct TableOutpu
         if (reduce_action[symbol] != default_rule) {
           new_red.map[reduce_size].symbol = symbol;
           if (reduce_action[symbol] == 0) {
-            new_red.map[reduce_size].rule_number = accept_act;
+            new_red.map[reduce_size].rule_number = ia->accept_act;
           } else {
             new_red.map[reduce_size].rule_number =
                 reduce_action[symbol];
@@ -748,14 +748,14 @@ static void overlay_sim_t_rows(struct CLIOptions *cli_options, struct TableOutpu
     struct reduce_header_type new_red;
     struct reduce_header_type red;
     if (rules[rule_no].lhs == accept_image) {
-      red = reduce[state_no];
+      red = srt->reduce[state_no];
       int reduce_size = red.size;
       new_red = Allocate_reduce_map(reduce_size);
       new_red.map[0].symbol = DEFAULT_SYMBOL;
-      new_red.map[0].rule_number = error_act;
+      new_red.map[0].rule_number = ia->error_act;
       for (int j = 1; j <= reduce_size; j++) {
         new_red.map[j].symbol = red.map[j].symbol;
-        new_red.map[j].rule_number = accept_act;
+        new_red.map[j].rule_number = ia->accept_act;
       }
     } else {
       for ALL_TERMINALS3(j) {
@@ -765,7 +765,7 @@ static void overlay_sim_t_rows(struct CLIOptions *cli_options, struct TableOutpu
         if (state_no > num_states) {
           red = lastats[state_no].reduce;
         } else {
-          red = reduce[state_no];
+          red = srt->reduce[state_no];
         }
         for (int j = 1; j <= red.size; j++) {
           int symbol = red.map[j].symbol;
@@ -791,10 +791,10 @@ static void overlay_sim_t_rows(struct CLIOptions *cli_options, struct TableOutpu
     if (state_no > num_states) {
       red = lastats[state_no].reduce;
     } else {
-      red = reduce[state_no];
+      red = srt->reduce[state_no];
     }
     red.map[0].symbol = DEFAULT_SYMBOL;
-    red.map[0].rule_number = error_act;
+    red.map[0].rule_number = ia->error_act;
     new_state_element[i].reduce = red;
   }
   ctp->num_terminal_states = tresult->top;
@@ -802,7 +802,7 @@ static void overlay_sim_t_rows(struct CLIOptions *cli_options, struct TableOutpu
   long *frequency_count = Allocate_long_array(num_terminals + 1);
   long *row_size = Allocate_long_array(max_la_state + 1);
   if (cli_options->shift_default_bit) {
-    merge_shift_domains(cli_options, toutput, row_size, frequency_symbol, frequency_count, nte, shift_check_index, ctp, new_state_element, shift_image, real_shift_number);
+    merge_shift_domains(cli_options, toutput, row_size, frequency_symbol, frequency_count, nte, shift_check_index, ctp, new_state_element, shift_image, real_shift_number, np, ia, srt, shiftdf);
   }
   // We now reorder the terminal states based on the number of actions
   // in them, and remap the terminal symbols if they were not already
@@ -814,7 +814,7 @@ static void overlay_sim_t_rows(struct CLIOptions *cli_options, struct TableOutpu
   for (int i = 1; i <= ctp->num_terminal_states; i++) {
     toutput->ordered_state[i] = i;
     row_size[i] = 0;
-    struct shift_header_type sh = shift[new_state_element[i].shift_number];
+    struct shift_header_type sh = srt->shift[new_state_element[i].shift_number];
     for (int j = 1; j <= sh.size; j++) {
       int symbol = sh.map[j].symbol;
       if (!cli_options->shift_default_bit || sh.map[j].action != shiftdf[symbol]) {
@@ -856,7 +856,7 @@ static void overlay_sim_t_rows(struct CLIOptions *cli_options, struct TableOutpu
       eolt_image = toutput->symbol_map[eolt_image];
     }
     for (int i = 1; i <= num_shift_maps; i++) {
-      struct shift_header_type sh = shift[i];
+      struct shift_header_type sh = srt->shift[i];
       for (int j = 1; j <= sh.size; j++) {
         sh.map[j].symbol = toutput->symbol_map[sh.map[j].symbol];
       }
@@ -872,7 +872,7 @@ static void overlay_sim_t_rows(struct CLIOptions *cli_options, struct TableOutpu
     // REDUCE maps.
     if (error_maps_bit) {
       for ALL_STATES3(state_no) {
-        struct reduce_header_type red = reduce[state_no];
+        struct reduce_header_type red = srt->reduce[state_no];
         for (int i = 1; i <= red.size; i++) {
           red.map[i].symbol = toutput->symbol_map[red.map[i].symbol];
         }
@@ -892,30 +892,30 @@ static void overlay_sim_t_rows(struct CLIOptions *cli_options, struct TableOutpu
 /// We now compute the starting position for each terminal state just
 /// as we did for the non-terminal states.
 /// The starting positions are stored in the vector TERM_STATE_INDEX.
-static void overlap_t_rows(struct CLIOptions *cli_options, struct TableOutput *toutput, struct NumTableEntries *nte, long *term_state_index, struct CTabsProps *ctp, struct new_state_type *new_state_element) {
+static void overlap_t_rows(struct CLIOptions *cli_options, struct TableOutput *toutput, struct NumTableEntries *nte, long *term_state_index, struct CTabsProps *ctp, struct new_state_type *new_state_element, struct NextPrevious* np, struct ImportantAspects* ia, struct SRTable* srt, short *shiftdf) {
   short *terminal_list = Allocate_short_array(num_terminals + 1);
   ctp->increment_size = MAX(nte->value * increment / 100, num_terminals + 1);
   const long old_size = ctp->table_size;
   ctp->table_size = MIN(nte->value + ctp->increment_size, MAX_TABLE_SIZE);
   if ((int) ctp->table_size > old_size) {
-    ffree(previous);
-    ffree(next);
-    next = Allocate_long_array(ctp->table_size + 1);
-    previous = Allocate_long_array(ctp->table_size + 1);
+    ffree(np->previous);
+    ffree(np->next);
+    np->next = Allocate_long_array(ctp->table_size + 1);
+    np->previous = Allocate_long_array(ctp->table_size + 1);
   } else {
     ctp->table_size = old_size;
   }
-  first_index = 1;
-  previous[first_index] = NIL;
-  next[first_index] = first_index + 1;
+  ia->first_index = 1;
+  np->previous[ia->first_index] = NIL;
+  np->next[ia->first_index] = ia->first_index + 1;
   for (int indx = 2; indx < (int) ctp->table_size; indx++) {
-    next[indx] = indx + 1;
-    previous[indx] = indx - 1;
+    np->next[indx] = indx + 1;
+    np->previous[indx] = indx - 1;
   }
-  last_index = ctp->table_size;
-  previous[last_index] = last_index - 1;
-  next[last_index] = NIL;
-  int max_indx = first_index;
+  ia->last_index = ctp->table_size;
+  np->previous[ia->last_index] = ia->last_index - 1;
+  np->next[ia->last_index] = NIL;
+  int max_indx = ia->first_index;
   for (int k = 1; k <= ctp->num_terminal_states; k++) {
     const int state_no = toutput->ordered_state[k];
     // For the terminal table, we are dealing with two lists, the SHIFT
@@ -923,7 +923,7 @@ static void overlap_t_rows(struct CLIOptions *cli_options, struct TableOutput *t
     // in TERMINAL_LIST.  Since we have to iterate over the list twice,
     // this merging makes things easy.
     int root_symbol = NIL;
-    const struct shift_header_type sh = shift[new_state_element[state_no].shift_number];
+    const struct shift_header_type sh = srt->shift[new_state_element[state_no].shift_number];
     for (int i = 1; i <= sh.size; i++) {
       int symbol = sh.map[i].symbol;
       if (!cli_options->shift_default_bit ||
@@ -938,17 +938,17 @@ static void overlap_t_rows(struct CLIOptions *cli_options, struct TableOutput *t
       root_symbol = red.map[i].symbol;
     }
     // Look for a suitable index where to overlay the state.
-    int indx = first_index;
+    int indx = ia->first_index;
   look_for_match_in_term_table:
     if (indx == NIL) {
       indx = ctp->table_size + 1;
     }
     if (indx + num_terminals > (int) ctp->table_size) {
-      reallocate(cli_options, ctp);
+      reallocate(cli_options, ctp, np, ia);
     }
     for (int symbol = root_symbol; symbol != NIL; symbol = terminal_list[symbol]) {
-      if (next[indx + symbol] == OMEGA) {
-        indx = next[indx];
+      if (np->next[indx + symbol] == OMEGA) {
+        indx = np->next[indx];
         goto look_for_match_in_term_table;
       }
     }
@@ -956,33 +956,33 @@ static void overlap_t_rows(struct CLIOptions *cli_options, struct TableOutput *t
     // positions that are claimed by terminal actions in the state.
     for (int symbol = root_symbol; symbol != NIL; symbol = terminal_list[symbol]) {
       const int i = indx + symbol;
-      if (i == last_index) {
-        last_index = previous[last_index];
-        next[last_index] = NIL;
+      if (i == ia->last_index) {
+        ia->last_index = np->previous[ia->last_index];
+        np->next[ia->last_index] = NIL;
       } else {
-        next[previous[i]] = next[i];
-        previous[next[i]] = previous[i];
+        np->next[np->previous[i]] = np->next[i];
+        np->previous[np->next[i]] = np->previous[i];
       }
-      next[i] = OMEGA;
+      np->next[i] = OMEGA;
     }
     // We now remove the starting position itself from the list, and
     // mark it as taken(CHECK(INDX) = OMEGA)
     // MAX_INDX is updated if required.
     // TERM_STATE_INDEX(STATE_NO) is properly set to INDX as the starting
     // position of STATE_NO.
-    if (first_index == last_index) {
-      first_index = NIL;
-    } else if (indx == first_index) {
-      first_index = next[first_index];
-      previous[first_index] = NIL;
-    } else if (indx == last_index) {
-      last_index = previous[last_index];
-      next[last_index] = NIL;
+    if (ia->first_index == ia->last_index) {
+      ia->first_index = NIL;
+    } else if (indx == ia->first_index) {
+      ia->first_index = np->next[ia->first_index];
+      np->previous[ia->first_index] = NIL;
+    } else if (indx == ia->last_index) {
+      ia->last_index = np->previous[ia->last_index];
+      np->next[ia->last_index] = NIL;
     } else {
-      next[previous[indx]] = next[indx];
-      previous[next[indx]] = previous[indx];
+      np->next[np->previous[indx]] = np->next[indx];
+      np->previous[np->next[indx]] = np->previous[indx];
     }
-    next[indx] = OMEGA;
+    np->next[indx] = OMEGA;
     if (indx > max_indx) {
       max_indx = indx;
     }
@@ -990,9 +990,8 @@ static void overlap_t_rows(struct CLIOptions *cli_options, struct TableOutput *t
   }
   // Update all counts, and report statistics.
   ctp->term_check_size = max_indx + num_terminals;
-  for (ctp->term_action_size = max_indx + num_terminals;
-       ctp->term_action_size >= max_indx; ctp->term_action_size--) {
-    if (next[ctp->term_action_size] == OMEGA) {
+  for (ctp->term_action_size = max_indx + num_terminals; ctp->term_action_size >= max_indx; ctp->term_action_size--) {
+    if (np->next[ctp->term_action_size] == OMEGA) {
       break;
     }
   }
@@ -1013,32 +1012,32 @@ static void overlap_t_rows(struct CLIOptions *cli_options, struct TableOutput *t
     ctp->term_action_size
   );
   ffree(terminal_list);
-  ffree(next);
-  ffree(previous);
+  ffree(np->next);
+  ffree(np->previous);
 }
 
-void cmprspa(struct CLIOptions *cli_options, struct TableOutput *toutput, struct DetectedSetSizes *dss, struct CTabsProps *ctp, struct OutputFiles* of) {
+void cmprspa(struct CLIOptions *cli_options, struct TableOutput *toutput, struct DetectedSetSizes *dss, struct CTabsProps *ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, long *scope_right_side, struct lastats_type *lastats, short *shiftdf, long *gotodef, short *gd_index, short *gd_range) {
   bool *shift_on_error_symbol = Allocate_boolean_array(max_la_state + 1);
   struct new_state_type *new_state_element;
   calloc0(new_state_element, max_la_state + 1, struct new_state_type);
   struct node **new_state_element_reduce_nodes;
   calloc0(new_state_element_reduce_nodes, max_la_state + 1, struct node *);
-  long last_symbol = remap_non_terminals(cli_options, toutput);
+  long last_symbol = remap_non_terminals(cli_options, toutput, gotodef);
   struct NumTableEntries nte = (struct NumTableEntries){
     .value = 0,
   };
-  overlap_nt_rows(cli_options, toutput, &nte, ctp, last_symbol);
+  overlap_nt_rows(cli_options, toutput, &nte, ctp, last_symbol, np, ia);
   struct TResult tresult = (struct TResult){
     .single_root = NIL,
     .multi_root = NIL,
     .empty_root = NIL,
   };
-  merge_similar_t_rows(cli_options, toutput, shift_on_error_symbol, new_state_element_reduce_nodes, &tresult, new_state_element);
+  merge_similar_t_rows(cli_options, toutput, shift_on_error_symbol, new_state_element_reduce_nodes, &tresult, new_state_element, srt, lastats);
   long *shift_check_index = Allocate_long_array(num_shift_maps + 1);
   short *shift_image = Allocate_short_array(max_la_state + 1);
   short *real_shift_number = Allocate_short_array(num_shift_maps + 1);
-  overlay_sim_t_rows(cli_options, toutput, shift_on_error_symbol, new_state_element_reduce_nodes, &tresult, &nte, shift_check_index, ctp, new_state_element, shift_image, real_shift_number);
+  overlay_sim_t_rows(cli_options, toutput, shift_on_error_symbol, new_state_element_reduce_nodes, &tresult, &nte, shift_check_index, ctp, new_state_element, shift_image, real_shift_number, np, ia, srt, rules, lastats, shiftdf);
   long *term_state_index = Allocate_long_array(max_la_state + 1);
-  overlap_t_rows(cli_options, toutput, &nte, term_state_index, ctp, new_state_element);
-  print_space_parser(cli_options, toutput, dss, term_state_index, shift_check_index, ctp, new_state_element, shift_image, real_shift_number, of);
+  overlap_t_rows(cli_options, toutput, &nte, term_state_index, ctp, new_state_element, np, ia, srt, shiftdf);
+  print_space_parser(cli_options, toutput, dss, term_state_index, shift_check_index, ctp, new_state_element, shift_image, real_shift_number, of, scope, ia, srt, scope_right_side, shiftdf, gotodef, gd_index, gd_range, rules);
 }

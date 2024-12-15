@@ -70,6 +70,8 @@ int main(const int argc, char *argv[]) {
     };
     char tab_file[80];
 
+    struct scope_type *scope;
+
     // Process input.
     {
       char grm_file[80];
@@ -113,15 +115,27 @@ int main(const int argc, char *argv[]) {
     bool *rmpself;
     JBitset first;
 
-    struct DetectedSetSizes dss = mkbasic(&cli_options, follow, &rmpself, &first);
+    struct FirstDeps fd = (struct FirstDeps) {
+      .adequate_item = NULL,
+      .clitems = NULL,
+      .closure = NULL,
+    };
+    struct DetectedSetSizes dss = mkbasic(&cli_options, follow, &rmpself, &first, &fd, rules);
 
-    mkstats(&cli_options, &dss, first);
+    struct SRTable srt = (struct SRTable) {
+      .reduce = NULL,
+      .shift = NULL,
+    };
+
+    long *scope_right_side = NULL;
+
+    mkstats(&cli_options, &dss, first, scope, fd.clitems, fd.closure, &srt, scope_right_side, null_nt);
 
     struct SourcesElementSources ses = (struct SourcesElementSources) {
       .sources = NULL,
     };
 
-    mkrdcts(&cli_options, &dss, &ses, rmpself, first);
+    struct ConflictCounter conflicts = mkrdcts(&cli_options, &dss, &ses, rmpself, first, fd.adequate_item, &srt, lastats, null_nt, gd_index, rules);
 
     // Output more basic statistics.
     {
@@ -146,8 +160,8 @@ int main(const int argc, char *argv[]) {
         PRNT3("Number of Goto/Reduce actions: %ld", num_goto_reduces);
       }
       PRNT3("Number of Reduce actions: %ld", num_reductions);
-      PRNT3("Number of Shift-Reduce conflicts: %ld", num_sr_conflicts);
-      PRNT3("Number of Reduce-Reduce conflicts: %ld", num_rr_conflicts);
+      PRNT3("Number of Shift-Reduce conflicts: %ld", conflicts.num_sr_conflicts);
+      PRNT3("Number of Reduce-Reduce conflicts: %ld", conflicts.num_rr_conflicts);
     }
 
     if (cli_options.table_opt.value != OPTIMIZE_NO_TABLE.value) {
@@ -162,14 +176,14 @@ int main(const int argc, char *argv[]) {
           // IN_STAT, FIRST, NULL_NT and FOLLOW (if it's no longer
           // needed).
           ffree(rhs_sym);
-          if (adequate_item != NULL) {
+          if (fd.adequate_item != NULL) {
             for ALL_RULES3(rule_no) {
-              struct node *q = adequate_item[rule_no];
+              struct node *q = fd.adequate_item[rule_no];
               if (q != NULL) {
                 free_nodes(q, q);
               }
             }
-            ffree(adequate_item);
+            ffree(fd.adequate_item);
           }
           if (!error_maps_bit) {
             ffree(item_table);
@@ -196,7 +210,14 @@ int main(const int argc, char *argv[]) {
           .last_non_terminal = 0,
           .last_terminal = 0,
         };
-        process_tables(tab_file, &of, &cli_options, &dss, &ctp, &of);
+        struct NextPrevious np = (struct NextPrevious) {
+          .previous = NULL,
+          .next = NULL,
+        };
+
+        short *shiftdf = NULL;
+        long *gotodef = NULL;
+        process_tables(tab_file, &of, &cli_options, &dss, &ctp, &of, &np, scope, gd_range, &srt, scope_right_side, lastats, shiftdf, gotodef, gd_index, statset);
       }
     }
 

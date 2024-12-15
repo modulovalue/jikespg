@@ -3,7 +3,6 @@ interface exprdef
     public final static int
 
       ERROR_SYMBOL      = 9,
-      MAX_NAME_LENGTH   = 10,
       NUM_STATES        = 13,
 
       NT_OFFSET         = 9,
