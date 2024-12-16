@@ -55,7 +55,7 @@ struct state_element *lr0_state_map(struct node *kernel, struct state_element **
   // Add a new state based on the KERNEL set.
   num_states++;
   struct state_element *ptr;
-  talloc0(ptr, struct state_element);
+  talloc0p(&ptr, struct state_element);
   ptr->queue = NULL;
   ptr->kernel_items = kernel;
   ptr->complete_items = NULL;
@@ -702,7 +702,7 @@ int get_shift_symbol(const int lhs_symbol, bool *symbol_seen, struct node **clit
 /// that are required as candidates for secondary error recovery.  If the
 /// option NAMES=OPTIMIZED is requested, the NAME map is optimized and SYMNO
 /// is updated accordingly.
-void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct Produced* produced, struct ScopeTop* st, JBitset first, struct scope_type *scope, struct node **clitems, bool *null_nt, long *scope_right_side, struct ruletab_type *rules, short **scope_state, struct statset_type *statset, struct itemtab *item_table, short *rhs_sym) {
+void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct Produced* produced, struct ScopeTop* st, JBitset first, struct scope_type *scope, struct node **clitems, bool *null_nt, long *scope_right_side, struct ruletab_type *rules, short **scope_state, struct statset_type *statset, struct itemtab *item_table, short *rhs_sym, short **gd_range, short **gd_index) {
   // TOP, STACK, and INDEX are used for the digraph algorithm
   // in the routines COMPUTE_PRODUCES.
   //
@@ -871,20 +871,20 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
   // Allocate and construct the permanent goto domain structure:
   //   GD_INDEX and GD_RANGE.
   int n = 0;
-  gd_index = Allocate_short_array(num_states + 2);
-  gd_range = Allocate_short_array(gotodom_size + 1);
+  *gd_index = Allocate_short_array(num_states + 2);
+  *gd_range = Allocate_short_array(gotodom_size + 1);
   for ALL_STATES3(state_no) {
-    gd_index[state_no] = n + 1;
+    (*gd_index)[state_no] = n + 1;
     struct node *p;
     struct node *q;
     for (p = goto_domain[state_no]; p != NULL; q = p, p = p->next) {
-      gd_range[++n] = p->value;
+      (*gd_range)[++n] = p->value;
     }
     if (goto_domain[state_no] != NULL) {
       free_nodes(goto_domain[state_no], q);
     }
   }
-  gd_index[num_states + 1] = n + 1;
+  (*gd_index)[num_states + 1] = n + 1;
   // Remove names assigned to nonterminals that are never used as
   // error candidates.
   if (cli_options->names_opt.value == OPTIMIZE_PHRASES.value) {
@@ -1408,7 +1408,7 @@ void compute_produces(const int symbol, struct node **direct_produces, short *st
 
 
 /// In this procedure, we first construct the LR(0) automaton.
-void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, JBitset first,  struct scope_type *scope, struct node **clitems, struct node **closure, struct SRTable* srt, long *scope_right_side, bool *null_nt, short **scope_state, struct itemtab *item_table, struct ruletab_type *rules, short *rhs_sym) {
+void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, JBitset first,  struct scope_type *scope, struct node **clitems, struct node **closure, struct SRTable* srt, long *scope_right_side, bool *null_nt, short **scope_state, struct itemtab *item_table, struct ruletab_type *rules, short *rhs_sym, short **gd_range, short **gd_index) {
   struct ScopeTop st = (struct ScopeTop) {
     .top = 0
   };
@@ -1425,7 +1425,7 @@ void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, JBits
   mklr0(cli_options, &no_shifts_ptr, &no_gotos_ptr, clitems, closure, srt, rules, item_table);
   struct Produced produced = {};
   if (error_maps_bit && (cli_options->table_opt.value == OPTIMIZE_TIME.value || cli_options->table_opt.value == OPTIMIZE_SPACE.value)) {
-    produce(cli_options, dss, &produced, &st, first, scope, clitems, null_nt, scope_right_side, rules, scope_state, statset, item_table, rhs_sym);
+    produce(cli_options, dss, &produced, &st, first, scope, clitems, null_nt, scope_right_side, rules, scope_state, statset, item_table, rhs_sym, gd_range, gd_index);
   }
   // Free space trapped by the CLOSURE and CLITEMS maps.
   for ALL_NON_TERMINALS3(j) {

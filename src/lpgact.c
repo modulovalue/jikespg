@@ -149,7 +149,7 @@ static void act37(void)
 #line 312 "jikespg.g"
 static void act39(void)
 {
-    register int image;
+    int image;
     char tok_string[SYMBOL_SIZE + 1];
 
     switch(SYM3.kind)
@@ -310,7 +310,7 @@ static void missing_quote(void)
 static void act63(void)
 {
     assign_symbol_no(SYM1.name, OMEGA);
-    register struct node *q = Allocate_node();
+    struct node *q = Allocate_node();
     q -> value = symbol_image(SYM1.name);
     if (start_symbol_root == NULL)
         q -> next = q;
@@ -355,7 +355,7 @@ static void act73(void)
 
     if (start_symbol_root == NULL)
     {
-        register struct node *q = Allocate_node();
+        struct node *q = Allocate_node();
         q -> value = empty;
         q -> next = q;
         start_symbol_root = q;
@@ -379,7 +379,7 @@ static void act77(void)
     assign_symbol_no(SYM2.name, OMEGA);
     if (start_symbol_root == NULL)
     {
-        register struct node *q = Allocate_node();
+        struct node *q = Allocate_node();
         q -> value = symbol_image(SYM2.name);
         q -> next = q;
 
@@ -461,7 +461,7 @@ static void act82(void)
         PRNTERR2("%s not declared or aliased to terminal symbol. Line %ld, column %d", tok_string, SYM2.start_line, SYM2.start_column);
         exit(12);
     }
-    register struct node *q = Allocate_node();
+    struct node *q = Allocate_node();
     q -> value = error_image;
     num_items++;
     if (rulehdr[num_rules].rhs_root == NULL)
@@ -479,7 +479,7 @@ static void act82(void)
 static void act83(void)
 {
     assign_symbol_no(SYM2.name, OMEGA);
-    register int sym = symbol_image(SYM2.name);
+    int sym = symbol_image(SYM2.name);
     if (sym != empty)
     {
         if (sym == eoft_image)
@@ -487,7 +487,7 @@ static void act83(void)
             PRNTERR2("End-of-file symbol cannot be used in rule. Line %ld, column %d", SYM2.start_line, SYM2.start_column);
             exit(12);
         }
-        register struct node *q = Allocate_node();
+        struct node *q = Allocate_node();
         q -> value = sym;
         num_items++;
         if (rulehdr[num_rules].rhs_root == NULL)
@@ -641,11 +641,12 @@ static void process_TERMINALS_section(void)
 static void process_ALIAS_section(void)
 {
 
-    register int k = 0;
-    if (eoft_image <= num_terminals)
+    int k = 0;
+    if (eoft_image <= num_terminals) {
         k++;
-    else
+    } else {
         num_terminals++;
+    }
 
     if (error_maps_bit)
     {
@@ -661,9 +662,9 @@ static void process_ALIAS_section(void)
 
     if (k > 0)
     {
-        for (register int i = 0; i < HT_SIZE; i++)
+        for (int i = 0; i < HT_SIZE; i++)
         {
-            register struct hash_type* p = hash_table[i];
+            struct hash_type* p = hash_table[i];
             while(p != NULL)
             {
                 if (p -> number > num_terminals)

@@ -136,7 +136,7 @@ static struct stack_element *allocate_stack_element(struct StackPool* sp) {
   if (p != NULL) {
     sp->stack_pool = p->next;
   } else {
-    talloc0(p, struct stack_element);
+    talloc0p(&p, struct stack_element);
   }
   return p;
 }
@@ -969,7 +969,7 @@ static struct state_element *state_to_resolve_conflicts(struct sources_element s
   // is updated with S.
   // Otherwise, this field indicates that this look-ahead state is
   // dangling - no other state point to it.
-  talloc0(state, struct state_element);
+  talloc0p(&state, struct state_element);
   state->link = strs->la_state_root;
   strs->la_state_root = state;
   max_la_state++;

@@ -26,7 +26,7 @@ static void process_shift_actions(struct ptables_action_element **action_count, 
     }
     if (q == NULL) /* new action not yet seen */
     {
-      talloc0(q, struct ptables_action_element);
+      talloc0p(&q, struct ptables_action_element);
       q->action = act;
       q->count = 1;
       q->next = action_count[symbol];
@@ -117,7 +117,7 @@ static void compute_goto_default(long *gotodef, struct statset_type *statset) {
       }
       if (q == NULL) {
         /* new action not yet seen */
-        talloc0(q, struct ptables_action_element);
+        talloc0p(&q, struct ptables_action_element);
         q->action = act;
         q->count = 1;
         q->next = action_count[symbol];

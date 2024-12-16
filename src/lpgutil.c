@@ -51,7 +51,7 @@ bool allocate_more_space(cell ***base, long *size, long *base_size) {
     if (*base == (cell **) NULL) {
       return false;
     }
-    for (register long i = *base_size; i < *base_size; i++) {
+    for (long i = *base_size; i < *base_size; i++) {
       (*base)[i] = NULL;
     }
   }

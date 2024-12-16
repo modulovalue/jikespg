@@ -26,9 +26,9 @@ struct ByteTerminalRange {
 /// negative, a leading "-" is added.
 static void itoc(const int num) {
   char tmp[12];
-  register long val = ABS(num);
+  long val = ABS(num);
   tmp[11] = '\0';
-  register char *p = &tmp[11];
+  char *p = &tmp[11];
   do {
     p--;
     *p = "0123456789"[val % 10];
@@ -44,7 +44,7 @@ static void itoc(const int num) {
 }
 
 static void padline(void) {
-  for (register int i = 0; i < 12; i++) {
+  for (int i = 0; i < 12; i++) {
     *output_ptr++ = ' ';
   }
 }
@@ -1668,7 +1668,7 @@ void sortdes(long array[], long count[], const long low, const long high, const 
   // elements of each bucket.  LIST is used to hold these lists.
   ArrayLong bucket = Allocate_long_array2(max + 1);
   ArrayLong list = Allocate_long_array2(high - low + 1);
-  for (register int i = 0; i <= max; i++) {
+  for (int i = 0; i <= max; i++) {
     bucket.raw[i] = NIL;
   }
   // We now partition the elements to be sorted and place them in their
@@ -1678,7 +1678,7 @@ void sortdes(long array[], long count[], const long low, const long high, const 
   //
   //   NOTE that it is known that the values of the elements of ARRAY
   // also lie in the range LOW..HIGH.
-  for (register long i = high; i >= low; i--) {
+  for (long i = high; i >= low; i--) {
     const long k = count[i];
     const long element = array[i];
     list.raw[element - low] = bucket.raw[k];
@@ -1688,7 +1688,7 @@ void sortdes(long array[], long count[], const long low, const long high, const 
   // in sorted order.  The iteration is done backward because we want
   // the arrays sorted in descending order.
   long k = low;
-  for (register long i = max; i >= 0; i--) {
+  for (long i = max; i >= 0; i--) {
     for (long element = bucket.raw[i]; element != NIL; element = list.raw[element - low], k++) {
       array[k] = element;
       count[k] = i;
@@ -1706,7 +1706,7 @@ void reallocate(struct CLIOptions *cli_options, struct CTabsProps* ctp, struct N
     PRNTERR2("Table has exceeded maximum limit of %ld", MAX_TABLE_SIZE);
     exit(12);
   }
-  const register int old_size = ctp->table_size;
+  const int old_size = ctp->table_size;
   ctp->table_size = MIN(ctp->table_size + ctp->increment_size, MAX_TABLE_SIZE);
   if (cli_options->table_opt.value == OPTIMIZE_TIME.value) {
     PRNT3("Reallocating storage for TIME table, adding %ld entries", ctp->table_size - old_size);
@@ -1716,7 +1716,7 @@ void reallocate(struct CLIOptions *cli_options, struct CTabsProps* ctp, struct N
   long *n = Allocate_long_array(ctp->table_size + 1);
   long *p = Allocate_long_array(ctp->table_size + 1);
   // Copy old information
-  for (register int i = 1; i <= old_size; i++) {
+  for (int i = 1; i <= old_size; i++) {
     n[i] = np->next[i];
     p[i] = np->previous[i];
   }
@@ -1732,7 +1732,7 @@ void reallocate(struct CLIOptions *cli_options, struct CTabsProps* ctp, struct N
     np->previous[old_size + 1] = ia->last_index;
   }
   np->next[old_size + 1] = old_size + 2;
-  for (register int i = old_size + 2; i < (int) ctp->table_size; i++) {
+  for (int i = old_size + 2; i < (int) ctp->table_size; i++) {
     np->next[i] = i + 1;
     np->previous[i] = i - 1;
   }

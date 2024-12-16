@@ -69,7 +69,7 @@ static bool verify_is_digit(const char *item) {
 /// TRANSLATE takes as arguments a character array, which it folds to upper
 /// to uppercase and returns.
 static char *translate(char *str, const int len) {
-  for (register int i = 0; i < len; i++) {
+  for (int i = 0; i < len; i++) {
     str[i] = TOUPPER(str[i]);
   }
   return str;
@@ -111,7 +111,7 @@ static void options(char *file_prefix, struct CLIOptions *cli_options, char *par
     }
   }
   *c = '\0';
-  register int i = 0;
+  int i = 0;
   while (parm[i] != '\0' && /* Clean front of string */ (parm[i] == ',' || parm[i] == '/' || parm[i] == ' ')) {
     i++;
   }
@@ -140,7 +140,7 @@ static void options(char *file_prefix, struct CLIOptions *cli_options, char *par
     } else {
       delim = ' ';
     }
-    register int token_len = strlen(token);
+    int token_len = strlen(token);
     if (token_len > MAX_PARM_SIZE) {
       token[MAX_PARM_SIZE] = '\0';
     }
@@ -249,7 +249,7 @@ static void options(char *file_prefix, struct CLIOptions *cli_options, char *par
       } else if (strcmp(token, "HBLOCKE") == 0) {
         strcpy(cli_options->hblocke, temp);
       } else if (memcmp("LALR", token, token_len) == 0) {
-        register int token_len = strlen(temp);
+        int token_len = strlen(temp);
         if (token_len > MAX_PARM_SIZE) {
           temp[MAX_PARM_SIZE - 1] = '\0';
         }
@@ -277,7 +277,7 @@ static void options(char *file_prefix, struct CLIOptions *cli_options, char *par
           PRNTERR2("\"%s\" is an invalid value for %s", temp, token);
         }
       } else if (memcmp("NAMES", token, token_len) == 0) {
-        register int token_len = strlen(temp);
+        int token_len = strlen(temp);
         if (memcmp("MAXIMUM", translate(temp, token_len), token_len) == 0) {
           cli_options->names_opt = MAXIMUM_NAMES;
         } else if (memcmp("MINIMUM", translate(temp, token_len), token_len) == 0) {
@@ -300,7 +300,7 @@ static void options(char *file_prefix, struct CLIOptions *cli_options, char *par
       } else if (memcmp(token, "SUFFIX", token_len) == 0) {
         strcpy(cli_options->suffix, temp);
       } else if (memcmp(token, "TABLE", token_len) == 0) {
-        register int token_len = strlen(temp);
+        int token_len = strlen(temp);
         if (token_len > MAX_PARM_SIZE) {
           temp[MAX_PARM_SIZE - 1] = '\0';
         }
@@ -556,9 +556,9 @@ static void process_options_lines(char *grm_file, struct OutputFiles *of, char *
 /// HASH takes as argument a symbol and hashes it into a location in
 /// HASH_TABLE.
 static int hash(const char *symbl) {
-  register unsigned long hash_value = 0;
+  unsigned long hash_value = 0;
   for (; *symbl != '\0'; symbl++) {
-    const register unsigned short k = *symbl;
+    const unsigned short k = *symbl;
     symbl++;
     hash_value += (k << 7) + *symbl;
     if (*symbl == '\0') {
@@ -606,13 +606,13 @@ static bool EQUAL_STRING(const char *symb, const struct hash_type *p) {
 ///   ASSIGN_SYMBOL_NO takes as arguments a pointer to a node and an image
 /// number and assigns a symbol number to the symbol pointed to by the node.
 void assign_symbol_no(const char *string_ptr, const int image) {
-  register struct hash_type *p;
-  const register int i = hash(string_ptr);
+  struct hash_type *p;
+  const int i = hash(string_ptr);
   for (p = hash_table[i]; p != NULL; p = p->link) {
     if (EQUAL_STRING(string_ptr, p)) /* Are they the same */
       return;
   }
-  talloc0(p, struct hash_type);
+  talloc0p(&p, struct hash_type);
   if (image == OMEGA) {
     num_symbols++;
     p->number = num_symbols;
@@ -630,7 +630,7 @@ void assign_symbol_no(const char *string_ptr, const int image) {
 /// symbol whose number is IMAGE. Otherwise, it invokes PROCESS_SYMBOL and
 /// ASSIGN SYMBOL_NO to enter stringptr into the table and then we alias it.
 void alias_map(const char *stringptr, const int image) {
-  for (register struct hash_type *q = hash_table[hash(stringptr)]; q != NULL; q = q->link) {
+  for (struct hash_type *q = hash_table[hash(stringptr)]; q != NULL; q = q->link) {
     if (EQUAL_STRING(stringptr, q)) {
       q->number = -image; /* Mark alias of image */
       return;
@@ -643,7 +643,7 @@ void alias_map(const char *stringptr, const int image) {
 /// in the HASH_TABLE, and if found, it returns its image; otherwise, it
 /// returns OMEGA.
 int symbol_image(const char *item) {
-  for (const register struct hash_type *q = hash_table[hash(item)]; q != NULL; q = q->link) {
+  for (const struct hash_type *q = hash_table[hash(item)]; q != NULL; q = q->link) {
     if (EQUAL_STRING(item, q))
       return ABS(q->number);
   }
@@ -655,8 +655,8 @@ int symbol_image(const char *item) {
 /// assigned a NAME_INDEX number if it did not yet have one.  The name index
 /// assigned is returned.
 int name_map(const char *symb) {
-  register struct hash_type *p;
-  const register int i = hash(symb);
+  struct hash_type *p;
+  const int i = hash(symb);
   for (p = hash_table[i]; p != NULL; p = p->link) {
     if (EQUAL_STRING(symb, p)) {
       if (p->name_index != OMEGA) {
@@ -870,7 +870,7 @@ scan_token:
         return;
       } else if (*ss->p1 == cli_options->escape) /* escape character? */
       {
-        register char *p3 = ss->p2 + 1;
+        char *p3 = ss->p2 + 1;
         switch (*ss->p2) {
           case 't':
           case 'T':
@@ -996,7 +996,7 @@ check_symbol_length:
 
 /// This function allocates a line_elemt structure and returns a pointer to it.
 static struct line_elemt *alloc_line(struct LinePool* lp) {
-  register struct line_elemt *p = lp->line_pool_root;
+  struct line_elemt *p = lp->line_pool_root;
   if (p != NULL) {
     lp->line_pool_root = p->link;
   } else {
@@ -1017,21 +1017,21 @@ static void free_line(struct line_elemt *p, struct LinePool* lp) {
 /// If the name is not found, then a message is printed, a new definition is
 /// entered to avoid more messages and NULL is returned.
 static struct line_elemt *find_macro(char *name, short *macro_table, struct LinePool* lp) {
-  register struct line_elemt *root = NULL;
+  struct line_elemt *root = NULL;
   char macro_name[MAX_LINE_SIZE + 1];
-  register char *s = macro_name;
-  for (register char *ptr = name; *ptr != '\0'; ptr++) {
+  char *s = macro_name;
+  for (char *ptr = name; *ptr != '\0'; ptr++) {
     *s++ = isupper(*ptr) ? tolower(*ptr) : *ptr;
   }
   *s = '\0';
-  const register int i = hash(macro_name);
-  for (register int j = macro_table[i]; j != NIL; j = defelmt[j].next) {
+  const int i = hash(macro_name);
+  for (int j = macro_table[i]; j != NIL; j = defelmt[j].next) {
     if (strcmp(macro_name, defelmt[j].name) == 0) {
-      register char *ptr = defelmt[j].macro;
+      char *ptr = defelmt[j].macro;
       /* undefined macro? */
       if (ptr) {
         while (*ptr != '\0') {
-          register struct line_elemt *q = alloc_line(lp);
+          struct line_elemt *q = alloc_line(lp);
           s = q->line;
           while (*ptr != '\n')
             *s++ = *ptr++;
@@ -1084,8 +1084,8 @@ static void process_action_line(FILE *sysout, char *text, const int line_no, con
   struct line_elemt *input_line_root = NULL;
 next_line: {
   }
-  register int text_len = strlen(text);
-  register int k = 0; /* k is the cursor */
+  int text_len = strlen(text);
+  int k = 0; /* k is the cursor */
   while (k < text_len) {
     // all macro names begin with the ESCAPE
     if (text[k] == cli_options->escape) {
@@ -1144,7 +1144,7 @@ next_line: {
             temp1[0] = '\0';
             jj = 0;
           }
-          const register int max_len = output_size - k - jj;
+          const int max_len = output_size - k - jj;
           restore_symbol(temp2, RETRIEVE_STRING(rules[rule_no].lhs), cli_options->ormark, cli_options->escape);
           // if a single production
           if (rules[rule_no].sp) {
@@ -1344,8 +1344,8 @@ static void mapmacro(const int def_index, short *macro_table) {
       strcmp(defelmt[def_index].name, knext_line) == 0) {
     PRNTWNG2("predefined macro \"%s\" cannot be redefined. Line %ld", defelmt[def_index].name, defelmt[def_index].start_line);
   } else {
-    const register int i = hash(defelmt[def_index].name);
-    for (register int j = macro_table[i]; j != NIL; j = defelmt[j].next) {
+    const int i = hash(defelmt[def_index].name);
+    for (int j = macro_table[i]; j != NIL; j = defelmt[j].next) {
       if (strcmp(defelmt[j].name, defelmt[def_index].name) == 0) {
         PRNTWNG2("Redefinition of macro \"%s\" in line %ld", defelmt[def_index].name, defelmt[def_index].start_line);
         break;
@@ -1361,7 +1361,7 @@ static void process_actions(char *grm_file, struct CLIOptions *cli_options, stru
   struct LinePool lp = (struct LinePool) {
     .line_pool_root = NULL,
   };
-  register char *p;
+  char *p;
   char line[MAX_LINE_SIZE + 1];
   FILE *sysact = fopen(cli_options->act_file, "w");
   FILE *syshact = fopen(cli_options->hact_file, "w");
@@ -1409,7 +1409,7 @@ static void process_actions(char *grm_file, struct CLIOptions *cli_options, stru
       ss->linestart = ss->p1 - 1;
     }
     ss->p1 = ss->linestart + defelmt[i].start_column;
-    for (register int j = 0; j < defelmt[i].length; j++) {
+    for (int j = 0; j < defelmt[i].length; j++) {
       defelmt[i].macro[j] = *ss->p1;
       if (*ss->p1++ == '\n') {
         if (ss->bufend == ss->input_buffer + IOBUFFER_SIZE) {
@@ -1552,8 +1552,8 @@ static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *
         }
       }
       calloc0(name, num_names + 1, int);
-      for (register int i = 0; i < HT_SIZE; i++) {
-        for (const register struct hash_type *p = hash_table[i]; p != NULL; p = p->link) {
+      for (int i = 0; i < HT_SIZE; i++) {
+        for (const struct hash_type *p = hash_table[i]; p != NULL; p = p->link) {
           if (p->name_index != OMEGA) {
             name[p->name_index] = p->st_ptr;
           }
@@ -1567,16 +1567,16 @@ static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *
   // correct value.  Recall that the first rule is numbered 0; therefore we
   // increase the number of items by 1 to reflect this numbering.
   {
-    register struct node *ptr;
-    register int rhs_ct = 0;
+    struct node *ptr;
+    int rhs_ct = 0;
     calloc0(rules, num_rules + 2, struct ruletab_type);
     *rhs_sym = Allocate_short_array(num_items + 1);
     num_items += num_rules + 1;
-    register int ii = 0;
+    int ii = 0;
     // Put starting rules from start symbol linked list in rule and rhs table
     if (start_symbol_root != NULL) {
       // Turn circular list into linear
-      register struct node *q = start_symbol_root;
+      struct node *q = start_symbol_root;
       start_symbol_root = q->next;
       q->next = NULL;
       for (ptr = start_symbol_root; ptr != NULL; ptr = ptr->next) {
@@ -1656,7 +1656,7 @@ void process_input(char *grm_file, struct OutputFiles *output_files, const int a
     // name and we try again. If no file can be found an error message is
     // issued and the program halts.
     if ((sysgrm = fopen(grm_file, "r")) == (FILE *) NULL) {
-      register int ii;
+      int ii;
       for (ii = strlen(grm_file); ii > 0 && grm_file[ii] != '.' && grm_file[ii] != '/' && /* Unix */ grm_file[ii] != '\\'; /* Dos  */ ii--) {
       }
       if (grm_file[ii] != '.') {
@@ -1744,7 +1744,7 @@ void process_input(char *grm_file, struct OutputFiles *output_files, const int a
     // places in the rulehdr structure.
     short state_stack[STACK_SIZE];
     scanner(grm_file, sysgrm, cli_options, &ss); /* Get first token */
-    register int act = START_STATE;
+    int act = START_STATE;
   process_terminal:
     // Note that this driver assumes that the tables are LPG SPACE
     // tables with no GOTO-DEFAULTS.
@@ -1762,7 +1762,7 @@ void process_input(char *grm_file, struct OutputFiles *output_files, const int a
           // parse stack called TERMINAL. Note that in case of a BLOCK_, the name of
           // the token is not copied since blocks are processed separately on a
           // second pass.
-          const register int top = stack_top + 1;
+          const int top = stack_top + 1;
           terminal[top].kind = ss.ct;
           terminal[top].start_line = ss.ct_start_line;
           terminal[top].start_column = ss.ct_start_col;
@@ -1806,7 +1806,7 @@ void process_input(char *grm_file, struct OutputFiles *output_files, const int a
     }
   process_non_terminal:
     do {
-      const register int lhs_sym = lhs[act]; /* to bypass IBMC12 bug */
+      const int lhs_sym = lhs[act]; /* to bypass IBMC12 bug */
       stack_top -= rhs[act] - 1;
       rule_action[act]();
       act = nt_action(state_stack[stack_top], lhs_sym);

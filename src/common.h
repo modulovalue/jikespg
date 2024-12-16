@@ -8,14 +8,19 @@
 #include <stdio.h>
 
 
-#define galloc0(into, x, times) \
-  into = (x *) galloc((times) * sizeof(x)); \
-  if ((into) == (x *) NULL) \
+#define galloc0p(into, x, times) \
+  (*into) = (x *) galloc((times) * sizeof(x)); \
+  if ((*into) == (x *) NULL) \
     nospace();
 
 #define talloc0(into, x) \
   into = (x *) talloc(sizeof(x)); \
   if ((into) == (x *) NULL) \
+    nospace();
+
+#define talloc0p(into, x) \
+  (*into) = (x *) talloc(sizeof(x)); \
+  if ((*into) == (x *) NULL) \
     nospace();
 
 #define realloc0(into, times, t) \
@@ -429,7 +434,6 @@ struct SRTable {
 };
 
 extern short *gd_index;
-extern short *gd_range;
 
 /// STATSET is a mapping from state number to state information.
 extern struct statset_type *statset;
@@ -628,7 +632,7 @@ void la_traverse(int state_no, int goto_indx, int *stack_top, struct StackRoot* 
 
 void remove_single_productions(struct DetectedSetSizes* dss, struct StackRoot* sr, JBitset first, struct LAIndex* lai, struct node **conflict_symbols, JBitset la_set, struct node **adequate_item, struct SRTable* srt, struct statset_type *statset, struct lastats_type *lastats, short *gd_index, struct node **in_stat, struct ruletab_type *rules, struct itemtab *item_table, short *rhs_sym);
 
-void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, JBitset first, struct scope_type *scope, struct node **clitems, struct node **closure, struct SRTable* srt, long *scope_right_side, bool *null_nt, short **scope_state, struct itemtab *item_table, struct ruletab_type *rules, short *rhs_sym);
+void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, JBitset first, struct scope_type *scope, struct node **clitems, struct node **closure, struct SRTable* srt, long *scope_right_side, bool *null_nt, short **scope_state, struct itemtab *item_table, struct ruletab_type *rules, short *rhs_sym, short **gd_range, short **gd_index);
 
 void nospace();
 
@@ -703,7 +707,7 @@ static struct node *Allocate_node() {
     // Is free list not empty?
     gs.node_pool = p->next;
   } else {
-    galloc0(p, struct node, 1);
+    galloc0p(&p, struct node, 1);
   }
   return p;
 }
@@ -716,7 +720,7 @@ static struct node *Allocate_node() {
 static struct goto_header_type Allocate_goto_map(const long n) {
   struct goto_header_type go_to;
   go_to.size = n;
-  galloc0(go_to.map, struct goto_type, n);
+  galloc0p(&go_to.map, struct goto_type, n);
   go_to.map--; /* map will be indexed in range 1..size */
   return go_to;
 }
@@ -729,7 +733,7 @@ static struct goto_header_type Allocate_goto_map(const long n) {
 static struct shift_header_type Allocate_shift_map(const long n) {
   struct shift_header_type sh;
   sh.size = n;
-  galloc0(sh.map, struct shift_type, n)
+  galloc0p(&sh.map, struct shift_type, n)
   sh.map--; /* map will be indexed in range 1..size */
   return sh;
 }
@@ -739,7 +743,7 @@ static struct shift_header_type Allocate_shift_map(const long n) {
 /// a reduce map is used for the default reduction.
 static struct reduce_header_type Allocate_reduce_map(const long n) {
   struct reduce_header_type red;
-  galloc0(red.map, struct reduce_type, n + 1);
+  galloc0p(&red.map, struct reduce_type, n + 1);
   red.size = n;
   return red;
 }

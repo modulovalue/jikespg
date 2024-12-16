@@ -51,12 +51,6 @@ struct itemtab *item_table = NULL;
 // TODO wrap
 bool *null_nt = NULL;
 
-// TODO wrap
-short *gd_index = NULL;
-
-// TODO wrap
-short *gd_range = NULL;
-
 // TODO wrap?
 struct statset_type *statset = NULL;
 

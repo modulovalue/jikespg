@@ -55,7 +55,7 @@ static struct remsp_action_element *allocate_action_element(struct AEPool* pool)
   if (p != NULL) {
     pool->action_element_pool = p->next;
   } else {
-    talloc0(p, struct remsp_action_element);
+    talloc0p(&p, struct remsp_action_element);
   }
   return p;
 }
@@ -323,7 +323,7 @@ static void compute_update_actions(const short source_state, const short state_n
       // common ancestor of the initial reduce action and the two
       // contending updates as the update action.
       if (p == NULL) {
-        talloc0(p, struct update_action_element);
+        talloc0p(&p, struct update_action_element);
         p->next = update_action[state_no];
         update_action[state_no] = p;
         p->symbol = red.map[i].symbol;
@@ -433,7 +433,7 @@ static short sp_state_map(const int rule_head, const int item_no, const int sp_r
   // If we did not find a compatible state, construct a new one.
   // Add it to the list of state and add it to the hash table.
   if (state == NULL) {
-    talloc0(state, struct sp_state_element);
+    talloc0p(&state, struct sp_state_element);
     state->next = state_map->sp_state_root;
     state_map->sp_state_root = state;
     state->link = sp_table[hash_address];

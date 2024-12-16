@@ -122,6 +122,7 @@ int main(const int argc, char *argv[]) {
       .clitems = NULL,
       .closure = NULL,
     };
+
     struct DetectedSetSizes dss = mkbasic(&cli_options, follow, &rmpself, &first, &fd, rules, rhs_sym);
 
     struct SRTable srt = (struct SRTable) {
@@ -133,7 +134,10 @@ int main(const int argc, char *argv[]) {
 
     short *scope_state = NULL;
 
-    mkstats(&cli_options, &dss, first, scope, fd.clitems, fd.closure, &srt, scope_right_side, null_nt, &scope_state, item_table, rules, rhs_sym);
+    // TODO wrap
+    short *gd_range = NULL;
+    short *gd_index;
+    mkstats(&cli_options, &dss, first, scope, fd.clitems, fd.closure, &srt, scope_right_side, null_nt, &scope_state, item_table, rules, rhs_sym, &gd_range, &gd_index);
 
     struct SourcesElementSources ses = (struct SourcesElementSources) {
       .sources = NULL,
