@@ -47,6 +47,15 @@ struct actelmt_type {
   bool header_block;
 };
 
+struct ParserState {
+  struct hash_type **hash_table;
+  struct node *start_symbol_root;
+  struct terminal_type *terminal;
+  struct rulehdr_type *rulehdr;
+  struct defelmt_type *defelmt;
+  struct actelmt_type *actelmt;
+};
+
 /// structure used to hash grammar symbols
 struct hash_type {
   struct hash_type *link;
@@ -126,20 +135,12 @@ struct terminal_type {
   char name[SYMBOL_SIZE + 1];
 };
 
-static struct rulehdr_type *rulehdr = NULL;
-static struct defelmt_type *defelmt = NULL;
-static struct actelmt_type *actelmt = NULL;
+void assign_symbol_no(const char *string_ptr, int image, struct hash_type **hash_table);
 
-static struct node *start_symbol_root;
-static struct hash_type **hash_table;
-static struct terminal_type *terminal;
+static void alias_map(const char *stringptr, int image, struct ParserState* ps);
 
-void assign_symbol_no(const char *string_ptr, int image);
+int symbol_image(const char *item, struct ParserState* ps);
 
-static void alias_map(const char *stringptr, int image);
+int name_map(const char *symb, struct ParserState* ps);
 
-int symbol_image(const char *item);
-
-int name_map(const char *symb);
-
-void build_symno(void);
+void build_symno(struct ParserState* ps);

@@ -1019,9 +1019,9 @@ static void overlap_t_rows(struct CLIOptions *cli_options, struct TableOutput *t
 void cmprspa(struct CLIOptions *cli_options, struct TableOutput *toutput, struct DetectedSetSizes *dss, struct CTabsProps *ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, long *scope_right_side, struct lastats_type *lastats, short *shiftdf, long *gotodef, short *gd_index, short *gd_range, short *scope_state, struct statset_type *statset, struct ruletab_type *rules, struct itemtab *item_table) {
   bool *shift_on_error_symbol = Allocate_boolean_array(max_la_state + 1);
   struct new_state_type *new_state_element;
-  calloc0(new_state_element, max_la_state + 1, struct new_state_type);
+  calloc0p(&new_state_element, max_la_state + 1, struct new_state_type);
   struct node **new_state_element_reduce_nodes;
-  calloc0(new_state_element_reduce_nodes, max_la_state + 1, struct node *);
+  calloc0p(&new_state_element_reduce_nodes, max_la_state + 1, struct node *);
   long last_symbol = remap_non_terminals(cli_options, toutput, gotodef, statset);
   struct NumTableEntries nte = (struct NumTableEntries){
     .value = 0,

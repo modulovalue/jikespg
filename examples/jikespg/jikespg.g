@@ -58,14 +58,14 @@ $Rules
 
 /// BUILD_SYMNO constructs the SYMNO table which is a mapping from each
 /// symbol number into that symbol.
-void build_symno(void) {
+void build_symno(struct ParserState* ps) {
   const long symno_size = num_symbols + 1;
-  calloc0(symno, symno_size, struct symno_type);
+  calloc0p(&symno, symno_size, struct symno_type);
   // Go through entire hash table. For each non_empty bucket, go through
   // linked list in that bucket.
-  for (register int i = 0; i < HT_SIZE; ++i) {
-    for (const register struct hash_type *p = hash_table[i]; p != NULL; p = p->link) {
-      const register int symbol = p->number;
+  for (int i = 0; i < HT_SIZE; ++i) {
+    for (const struct hash_type *p = ps->hash_table[i]; p != NULL; p = p->link) {
+      const int symbol = p->number;
       // Not an alias
       if (symbol >= 0) {
         symno[symbol].name_index = OMEGA;
@@ -77,7 +77,7 @@ void build_symno(void) {
 
 :/
 
-/:static void (*rule_action[]) (void) = {NULL,:/
+/:static void (*rule_action[]) (struct ParserState* ps) = {NULL,:/
 
 /.
 #line $next_line "$input_file"
@@ -85,51 +85,51 @@ void build_symno(void) {
 #define SYM2 terminal[stack_top + 2]
 #define SYM3 terminal[stack_top + 3]
 
-static void null_action(void)
+static void null_action(struct ParserState* ps)
 {
 }
 
-static void add_macro_definition(const char *name, const struct terminal_type *term)
+static void add_macro_definition(const char *name, const struct terminal_type *term, struct ParserState* ps)
 {
     if (num_defs >= (int)defelmt_size)
     {
         defelmt_size += DEFELMT_INCREMENT;
-        defelmt = (struct defelmt_type *)
-            (defelmt == (struct defelmt_type *) NULL
+        ps->defelmt = (struct defelmt_type *)
+            (ps->defelmt == (struct defelmt_type *) NULL
              ? malloc(defelmt_size * sizeof(struct defelmt_type))
-             : realloc(defelmt, defelmt_size * sizeof(struct defelmt_type)));
-        if (defelmt == (struct defelmt_type *) NULL)
-            nospace(__FILE__, __LINE__);
+             : realloc(ps->defelmt, defelmt_size * sizeof(struct defelmt_type)));
+        if (ps->defelmt == (struct defelmt_type *) NULL)
+            nospace();
     }
 
-    defelmt[num_defs].length       = term->length;
-    defelmt[num_defs].start_line   = term->start_line;
-    defelmt[num_defs].start_column = term->start_column;
-    defelmt[num_defs].end_line     = term->end_line;
-    defelmt[num_defs].end_column   = term->end_column;
-    strcpy(defelmt[num_defs].name, name);
+    ps->defelmt[num_defs].length       = term->length;
+    ps->defelmt[num_defs].start_line   = term->start_line;
+    ps->defelmt[num_defs].start_column = term->start_column;
+    ps->defelmt[num_defs].end_line     = term->end_line;
+    ps->defelmt[num_defs].end_column   = term->end_column;
+    strcpy(ps->defelmt[num_defs].name, name);
     num_defs++;
 }
 
-static void add_block_definition(const struct terminal_type *term)
+static void add_block_definition(const struct terminal_type *term, struct ParserState* ps)
 {
     if (num_acts >= (int) actelmt_size)
     {
         actelmt_size += ACTELMT_INCREMENT;
-        actelmt = (struct actelmt_type *)
-            (actelmt == (struct actelmt_type *) NULL
+        ps->actelmt = (struct actelmt_type *)
+            (ps->actelmt == (struct actelmt_type *) NULL
              ? malloc(actelmt_size * sizeof(struct actelmt_type))
-             : realloc(actelmt, actelmt_size * sizeof(struct actelmt_type)));
-        if (actelmt == (struct actelmt_type *) NULL)
-            nospace(__FILE__, __LINE__);
+             : realloc(ps->actelmt, actelmt_size * sizeof(struct actelmt_type)));
+        if (ps->actelmt == (struct actelmt_type *) NULL)
+            nospace();
     }
 
-    actelmt[num_acts].rule_number  = num_rules;
-    actelmt[num_acts].start_line   = term->start_line;
-    actelmt[num_acts].start_column = term->start_column;
-    actelmt[num_acts].end_line     = term->end_line;
-    actelmt[num_acts].end_column   = term->end_column;
-    actelmt[num_acts].header_block = term->kind == HBLOCK_TK;
+    ps->actelmt[num_acts].rule_number  = num_rules;
+    ps->actelmt[num_acts].start_line   = term->start_line;
+    ps->actelmt[num_acts].start_column = term->start_column;
+    ps->actelmt[num_acts].end_line     = term->end_line;
+    ps->actelmt[num_acts].end_column   = term->end_column;
+    ps->actelmt[num_acts].header_block = term->kind == HBLOCK_TK;
     num_acts++;
 }
 ./
@@ -147,7 +147,7 @@ static void add_block_definition(const struct terminal_type *term)
     bad_symbol ::= EQUIVALENCE
 /:$offset bad_first_symbol, /* $rule_number */:/
 /.$location
-static void bad_first_symbol(void)
+static void bad_first_symbol(struct ParserState* ps)
 {
     PRNTERR2("First symbol: \"%s\" found in file is illegal. Line %ld, column %d", SYM1.name, SYM1.start_line, SYM1.start_column);
     exit(12);
@@ -168,7 +168,7 @@ static void bad_first_symbol(void)
                  | BLOCK
 /:$offset $action:/
 /.$location
-static void act$rule_number(void)
+static void act$rule_number(struct ParserState* ps)
 {
     PRNTERR2("Action block cannot be first object in file. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
@@ -183,17 +183,17 @@ static void act$rule_number(void)
     macro_list ::= macro_name_symbol macro_block
 /:$offset $action:/
 /.$location
-static void act$rule_number(void)
+static void act$rule_number(struct ParserState* ps)
 {
-    add_macro_definition(SYM1.name, &(SYM2));
+    add_macro_definition(SYM1.name, &(SYM2), ps);
 }
 ./
                  | macro_list macro_name_symbol macro_block
 /:$offset $action:/
 /.$location
-static void act$rule_number(void)
+static void act$rule_number(struct ParserState* ps)
 {
-    add_macro_definition(SYM2.name, &(SYM3));
+    add_macro_definition(SYM2.name, &(SYM3), ps);
 }
 ./
 
@@ -202,7 +202,7 @@ static void act$rule_number(void)
                         | SYMBOL          -- Warning, Escape missing !
 /:$offset $action:/
 /.$location
-static void act$rule_number(void)
+static void act$rule_number(struct ParserState* ps)
 {
     PRNTWNG2("Macro name \"%s\" does not start with the escape character. Line %ld, column %d", SYM1.name, SYM1.start_line, SYM1.start_column);
 }
@@ -210,7 +210,7 @@ static void act$rule_number(void)
                         | '|'             -- No Good !!!
 /:$offset bad_macro_name, /* $rule_number */:/
 /.$location
-static void bad_macro_name(void)
+static void bad_macro_name(struct ParserState* ps)
 {
     PRNTERR2("Reserved symbol cannot be used as macro name. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
@@ -225,7 +225,7 @@ static void bad_macro_name(void)
                         | BLOCK           -- No good !!!
 /:$offset $action:/
 /.$location
-static void act$rule_number(void)
+static void act$rule_number(struct ParserState* ps)
 {
     PRNTERR2("Macro name not supplied for macro definition. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
@@ -234,7 +234,7 @@ static void act$rule_number(void)
                         | DEFINE_KEY         -- No good !!!
 /:$offset $action:/
 /.$location
-static void act$rule_number(void)
+static void act$rule_number(struct ParserState* ps)
 {
     PRNTERR2("Macro keyword misplaced. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
@@ -246,7 +246,7 @@ static void act$rule_number(void)
                   | '|'            -- No Good !!!
 /:$offset definition_expected, /* $rule_number */:/
 /.$location
-static void definition_expected(void)
+static void definition_expected(struct ParserState* ps)
 {
     PRNTERR2("Definition block expected where symbol found. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
@@ -272,9 +272,9 @@ static void definition_expected(void)
     terminal_symbol ::= SYMBOL
 /:$offset process_terminal, /* $rule_number */:/
 /.$location
-static void process_terminal(void)
+static void process_terminal(struct ParserState* ps)
 {
-    assign_symbol_no(SYM1.name, OMEGA);
+    assign_symbol_no(SYM1.name, OMEGA, ps->hash_table);
 }
 ./
                       | '|'
@@ -284,7 +284,7 @@ static void process_terminal(void)
                       | DEFINE_KEY         -- No Good !!!
 /:$offset bad_terminal, /* $rule_number */:/
 /.$location
-static void bad_terminal(void)
+static void bad_terminal(struct ParserState* ps)
 {
     PRNTERR2("Keyword  has been misplaced in Terminal section.  Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
@@ -295,7 +295,7 @@ static void bad_terminal(void)
                       | BLOCK           -- No good !!!
 /:$offset $action:/
 /.$location
-static void act$rule_number(void)
+static void act$rule_number(struct ParserState* ps)
 {
     PRNTERR2("Misplaced block found in TERMINALS section.  Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
@@ -308,9 +308,9 @@ static void act$rule_number(void)
    alias_definition ::= alias_lhs produces alias_rhs
 /:$offset $action:/
 /.$location
-static void act$rule_number(void)
+static void act$rule_number(struct ParserState* ps)
 {
-    register int image;
+    int image;
     char tok_string[SYMBOL_SIZE + 1];
 
     switch(SYM3.kind)
@@ -320,8 +320,8 @@ static void act$rule_number(void)
             break;
 
         case SYMBOL_TK:
-            assign_symbol_no(SYM3.name, OMEGA);
-            image = symbol_image(SYM3.name);
+            assign_symbol_no(SYM3.name, OMEGA, ps->hash_table);
+            image = symbol_image(SYM3.name, ps);
             break;
 
         case ERROR_SYMBOL_TK:
@@ -354,20 +354,20 @@ static void act$rule_number(void)
             break;
 
         default: /* if SYM3.kind == symbol */
-            image = symbol_image(SYM3.name);
+            image = symbol_image(SYM3.name, ps);
             break;
     }
 
     switch(SYM1.kind)
     {
         case SYMBOL_TK:
-            if (symbol_image(SYM1.name) != OMEGA)
+            if (symbol_image(SYM1.name, ps) != OMEGA)
             {
                 restore_symbol(tok_string, SYM1.name, ormark, escape);
                 PRNTERR2("Symbol %s was previously defined. Line %ld, column %d", tok_string, SYM1.start_line, SYM1.start_column);
                 exit(12);
             }
-            assign_symbol_no(SYM1.name, image);
+            assign_symbol_no(SYM1.name, image, ps->hash_table);
             break;
 
         case ERROR_SYMBOL_TK:
@@ -380,7 +380,7 @@ static void act$rule_number(void)
                     PRNTERR2("Illegal alias for symbol %s. Line %ld, column %d.", tok_string, SYM1.start_line, SYM1.start_column);
                     exit(12);
                 }
-                alias_map(kerror, image);
+                alias_map(kerror, image, ps);
                 error_image = image;
             }
             else
@@ -401,7 +401,7 @@ static void act$rule_number(void)
                     PRNTERR2("Illegal alias for symbol %s. Line %ld, column %d.", tok_string, SYM1.start_line, SYM1.start_column);
                     exit(12);
                 }
-                alias_map(keoft, image);
+                alias_map(keoft, image, ps);
                 eoft_image = image;
             }
             else
@@ -468,7 +468,7 @@ static void act$rule_number(void)
     bad_alias_rhs ::= DEFINE_KEY
 /:$offset bad_alias_rhs, /* $rule_number */:/
 /.$location
-static void bad_alias_rhs(void)
+static void bad_alias_rhs(struct ParserState* ps)
 {
     PRNTERR2("Misplaced keyword found in Alias section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
@@ -481,7 +481,7 @@ static void bad_alias_rhs(void)
                     | BLOCK
 /:$offset $action:/
 /.$location
-static void act$rule_number(void)
+static void act$rule_number(struct ParserState* ps)
 {
     PRNTERR2("Misplaced block found in Alias section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
@@ -494,7 +494,7 @@ static void act$rule_number(void)
                     | EMPTY_SYMBOL
 /:$offset $action:/
 /.$location
-static void act$rule_number(void)
+static void act$rule_number(struct ParserState* ps)
 {
     PRNTERR2("Empty symbol cannot be aliased. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
@@ -503,7 +503,7 @@ static void act$rule_number(void)
                     | produces
 /:$offset missing_quote, /* $rule_number */:/
 /.$location
-static void missing_quote(void)
+static void missing_quote(struct ParserState* ps)
 {
     PRNTERR2("Symbol must be quoted when used as a grammar symbol. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
@@ -519,19 +519,19 @@ static void missing_quote(void)
     start_symbol ::= SYMBOL
 /:$offset $action:/
 /.$location
-static void act$rule_number(void)
+static void act$rule_number(struct ParserState* ps)
 {
-    assign_symbol_no(SYM1.name, OMEGA);
-    register struct node *q = Allocate_node();
-    q -> value = symbol_image(SYM1.name);
-    if (start_symbol_root == NULL)
+    assign_symbol_no(SYM1.name, OMEGA, ps->hash_table);
+    struct node *q = Allocate_node();
+    q -> value = symbol_image(SYM1.name, ps);
+    if (ps->start_symbol_root == NULL)
         q -> next = q;
     else
     {
-        q -> next = start_symbol_root -> next;
-        start_symbol_root -> next = q;
+        q -> next = ps->start_symbol_root -> next;
+        ps->start_symbol_root -> next = q;
     }
-    start_symbol_root = q;
+    ps->start_symbol_root = q;
     num_rules++;
     num_items++;
 }
@@ -539,7 +539,7 @@ static void act$rule_number(void)
                   | '|'            -- No Good !!!
 /:$offset bad_start_symbol, /* $rule_number */:/
 /.$location
-static void bad_start_symbol(void)
+static void bad_start_symbol(struct ParserState* ps)
 {
     PRNTERR2("Symbol cannot be used as Start symbol. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
@@ -554,7 +554,7 @@ static void bad_start_symbol(void)
                   | BLOCK          -- No good !!!
 /:$offset $action:/
 /.$location
-static void act$rule_number(void)
+static void act$rule_number(struct ParserState* ps)
 {
     PRNTERR2("Misplaced block found in Start section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
@@ -563,7 +563,7 @@ static void act$rule_number(void)
                   | DEFINE_KEY        -- No good !!!
 /:$offset misplaced_keyword_found_in_START_section, /* $rule_number */:/
 /.$location
-static void misplaced_keyword_found_in_START_section(void)
+static void misplaced_keyword_found_in_START_section(struct ParserState* ps)
 {
     PRNTERR2("Misplaced keyword found in START section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
@@ -579,27 +579,27 @@ static void misplaced_keyword_found_in_START_section(void)
     rules_block ::= RULES_KEY
 /:$offset $action:/
 /.$location
-static void act$rule_number(void)
+static void act$rule_number(struct ParserState* ps)
 {
 
-    if (start_symbol_root == NULL)
+    if (ps->start_symbol_root == NULL)
     {
-        register struct node *q = Allocate_node();
+        struct node *q = Allocate_node();
         q -> value = empty;
         q -> next = q;
-        start_symbol_root = q;
+        ps->start_symbol_root = q;
         num_rules = 0;                 // One rule
         num_items = 0;                 // 0 items
     }
-    build_symno();
+    build_symno(ps);
 }
 ./
                   | RULES_KEY rule_list
 /:$offset $action:/
 /.$location
-static void act$rule_number(void)
+static void act$rule_number(struct ParserState* ps)
 {
-    build_symno();
+    build_symno(ps);
 }
 ./
 
@@ -611,16 +611,16 @@ static void act$rule_number(void)
     rule_list ::= {action_block} SYMBOL produces
 /:$offset $action:/
 /.$location
-static void act$rule_number(void)
+static void act$rule_number(struct ParserState* ps)
 {
-    assign_symbol_no(SYM2.name, OMEGA);
-    if (start_symbol_root == NULL)
+    assign_symbol_no(SYM2.name, OMEGA, ps->hash_table);
+    if (ps->start_symbol_root == NULL)
     {
-        register struct node *q = Allocate_node();
-        q -> value = symbol_image(SYM2.name);
+        struct node *q = Allocate_node();
+        q -> value = symbol_image(SYM2.name, ps);
         q -> next = q;
 
-        start_symbol_root = q;
+        ps->start_symbol_root = q;
 
         num_rules = 1;
         num_items = 1;
@@ -633,61 +633,61 @@ static void act$rule_number(void)
     while (num_rules >= (int)rulehdr_size)
     {
         rulehdr_size += RULEHDR_INCREMENT;
-        rulehdr = (struct rulehdr_type *)
-            (rulehdr == (struct rulehdr_type *) NULL
+        ps->rulehdr = (struct rulehdr_type *)
+            (ps->rulehdr == (struct rulehdr_type *) NULL
              ? malloc(rulehdr_size * sizeof(struct rulehdr_type))
-             : realloc(rulehdr, rulehdr_size * sizeof(struct rulehdr_type)));
-        if (rulehdr == (struct rulehdr_type *) NULL)
-            nospace(__FILE__, __LINE__);
+             : realloc(ps->rulehdr, rulehdr_size * sizeof(struct rulehdr_type)));
+        if (ps->rulehdr == (struct rulehdr_type *) NULL)
+            nospace();
     }
 
-    rulehdr[num_rules].sp = ((SYM3.kind == ARROW_TK) ? true : false);
-    rulehdr[num_rules].lhs = symbol_image(SYM2.name);
-    rulehdr[num_rules].rhs_root = NULL;
+    ps->rulehdr[num_rules].sp = ((SYM3.kind == ARROW_TK) ? true : false);
+    ps->rulehdr[num_rules].lhs = symbol_image(SYM2.name, ps);
+    ps->rulehdr[num_rules].rhs_root = NULL;
 }
 ./
 
                 | rule_list '|'
 /:$offset $action:/
 /.$location
-static void act$rule_number(void)
+static void act$rule_number(struct ParserState* ps)
 {
     num_rules++;
     if (num_rules >= (int)rulehdr_size)
     {
         rulehdr_size += RULEHDR_INCREMENT;
-        rulehdr = (struct rulehdr_type *)
-            (rulehdr == (struct rulehdr_type *) NULL
+        ps->rulehdr = (struct rulehdr_type *)
+            (ps->rulehdr == (struct rulehdr_type *) NULL
              ? malloc(rulehdr_size * sizeof(struct rulehdr_type))
-             : realloc(rulehdr, rulehdr_size * sizeof(struct rulehdr_type)));
-        if (rulehdr == (struct rulehdr_type *) NULL)
-            nospace(__FILE__, __LINE__);
+             : realloc(ps->rulehdr, rulehdr_size * sizeof(struct rulehdr_type)));
+        if (ps->rulehdr == (struct rulehdr_type *) NULL)
+            nospace();
     }
-    rulehdr[num_rules].sp = rulehdr[num_rules - 1].sp;
-    rulehdr[num_rules].lhs = OMEGA;
-    rulehdr[num_rules].rhs_root = NULL;
+    ps->rulehdr[num_rules].sp = ps->rulehdr[num_rules - 1].sp;
+    ps->rulehdr[num_rules].lhs = OMEGA;
+    ps->rulehdr[num_rules].rhs_root = NULL;
 }
 ./
                 | rule_list SYMBOL produces
 /:$offset $action:/
 /.$location
-static void act$rule_number(void)
+static void act$rule_number(struct ParserState* ps)
 {
     num_rules++;
     if (num_rules >= (int)rulehdr_size)
     {
         rulehdr_size += RULEHDR_INCREMENT;
-        rulehdr = (struct rulehdr_type *)
-            (rulehdr == (struct rulehdr_type *) NULL
+        ps->rulehdr = (struct rulehdr_type *)
+            (ps->rulehdr == (struct rulehdr_type *) NULL
              ? malloc(rulehdr_size * sizeof(struct rulehdr_type))
-             : realloc(rulehdr, rulehdr_size * sizeof(struct rulehdr_type)));
-        if (rulehdr == (struct rulehdr_type *) NULL)
-            nospace(__FILE__, __LINE__);
+             : realloc(ps->rulehdr, rulehdr_size * sizeof(struct rulehdr_type)));
+        if (ps->rulehdr == (struct rulehdr_type *) NULL)
+            nospace();
     }
-    rulehdr[num_rules].sp = ((SYM3.kind == ARROW_TK) ? true : false);
-    assign_symbol_no(SYM2.name, OMEGA);
-    rulehdr[num_rules].lhs = symbol_image(SYM2.name);
-    rulehdr[num_rules].rhs_root = NULL;
+    ps->rulehdr[num_rules].sp = ((SYM3.kind == ARROW_TK) ? true : false);
+    assign_symbol_no(SYM2.name, OMEGA, ps->hash_table);
+    ps->rulehdr[num_rules].lhs = symbol_image(SYM2.name, ps);
+    ps->rulehdr[num_rules].rhs_root = NULL;
 }
 ./
 
@@ -698,7 +698,7 @@ static void act$rule_number(void)
                 | rule_list ERROR_SYMBOL
 /:$offset $action:/
 /.$location
-static void act$rule_number(void)
+static void act$rule_number(struct ParserState* ps)
 {
     if (error_image == DEFAULT_SYMBOL)
     {
@@ -707,26 +707,26 @@ static void act$rule_number(void)
         PRNTERR2("%s not declared or aliased to terminal symbol. Line %ld, column %d", tok_string, SYM2.start_line, SYM2.start_column);
         exit(12);
     }
-    register struct node *q = Allocate_node();
+    struct node *q = Allocate_node();
     q -> value = error_image;
     num_items++;
-    if (rulehdr[num_rules].rhs_root == NULL)
+    if (ps->rulehdr[num_rules].rhs_root == NULL)
         q -> next = q;
     else
     {
-        q -> next = rulehdr[num_rules].rhs_root -> next;
-         rulehdr[num_rules].rhs_root -> next = q;
+        q -> next = ps->rulehdr[num_rules].rhs_root -> next;
+         ps->rulehdr[num_rules].rhs_root -> next = q;
     }
-    rulehdr[num_rules].rhs_root = q;
+    ps->rulehdr[num_rules].rhs_root = q;
 }
 ./
                 | rule_list SYMBOL
 /:$offset $action:/
 /.$location
-static void act$rule_number(void)
+static void act$rule_number(struct ParserState* ps)
 {
-    assign_symbol_no(SYM2.name, OMEGA);
-    register int sym = symbol_image(SYM2.name);
+    assign_symbol_no(SYM2.name, OMEGA, ps->hash_table);
+    int sym = symbol_image(SYM2.name, ps);
     if (sym != empty)
     {
         if (sym == eoft_image)
@@ -734,24 +734,24 @@ static void act$rule_number(void)
             PRNTERR2("End-of-file symbol cannot be used in rule. Line %ld, column %d", SYM2.start_line, SYM2.start_column);
             exit(12);
         }
-        register struct node *q = Allocate_node();
+        struct node *q = Allocate_node();
         q -> value = sym;
         num_items++;
-        if (rulehdr[num_rules].rhs_root == NULL)
+        if (ps->rulehdr[num_rules].rhs_root == NULL)
             q -> next = q;
         else
         {
-            q -> next = rulehdr[num_rules].rhs_root -> next;
-            rulehdr[num_rules].rhs_root -> next = q;
+            q -> next = ps->rulehdr[num_rules].rhs_root -> next;
+            ps->rulehdr[num_rules].rhs_root -> next = q;
         }
-        rulehdr[num_rules].rhs_root = q;
+        ps->rulehdr[num_rules].rhs_root = q;
     }
 }
 ./
                 | '|'                    -- can't be first SYMBOL
 /:$offset bad_first_symbol_in_RULES_section, /* $rule_number */:/
 /.$location
-static void bad_first_symbol_in_RULES_section(void)
+static void bad_first_symbol_in_RULES_section(struct ParserState* ps)
 {
     PRNTERR2("First symbol in Rules section is not a valid left-hand side.\n Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
@@ -766,7 +766,7 @@ static void bad_first_symbol_in_RULES_section(void)
                 | rule_list '|' produces            -- No good !!!
 /:$offset rule_without_left_hand_side, /* $rule_number */:/
 /.$location
-static void rule_without_left_hand_side(void)
+static void rule_without_left_hand_side(struct ParserState* ps)
 {
     PRNTERR2("Rule without left-hand-side.  Line %ld, column %d", SYM3.start_line, SYM3.start_column);
     exit(12);
@@ -779,7 +779,7 @@ static void rule_without_left_hand_side(void)
                 | rule_list keyword produces        -- No good !!!
 /:$offset $action:/
 /.$location
-static void act$rule_number(void)
+static void act$rule_number(struct ParserState* ps)
 {
     PRNTWNG2("Misplaced keyword found in Rules section Line %ld, column %d",  SYM2.start_line, SYM2.start_column);
     exit(12);
@@ -789,24 +789,24 @@ static void act$rule_number(void)
     action_block ::= BLOCK
 /:$offset $action:/
 /.$location
-static void act$rule_number(void)
+static void act$rule_number(struct ParserState* ps)
 {
-    add_block_definition(&(SYM1));
+    add_block_definition(&(SYM1), ps);
 }
 ./
                    | HBLOCK
 /:$offset $action:/
 /.$location
-static void act$rule_number(void)
+static void act$rule_number(struct ParserState* ps)
 {
-    add_block_definition(&(SYM1));
+    add_block_definition(&(SYM1), ps);
 }
 ./
 
     keyword ::= DEFINE_KEY
 /:$offset misplaced_keyword_found_in_RULES_section, /* $rule_number */:/
 /.$location
-static void misplaced_keyword_found_in_RULES_section(void)
+static void misplaced_keyword_found_in_RULES_section(struct ParserState* ps)
 {
     PRNTWNG2("Misplaced keyword found in RULES section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
@@ -827,7 +827,7 @@ static void misplaced_keyword_found_in_RULES_section(void)
     names_definition ::= name produces name
 /:$offset $action:/
 /.$location
-static void act$rule_number(void)
+static void act$rule_number(struct ParserState* ps)
 {
     if (error_maps_bit)
     {
@@ -852,7 +852,7 @@ static void act$rule_number(void)
                 break;
 
             default:
-                symbol = symbol_image(SYM1.name);
+                symbol = symbol_image(SYM1.name, ps);
                 break;
         }
 
@@ -867,7 +867,7 @@ static void act$rule_number(void)
             PRNTERR2("Symbol %s has been named more than once. Line %ld, column %d.", SYM1.name, SYM1.start_line, SYM1.start_column);
             exit(12);
         }
-         symno[symbol].name_index = name_map(SYM3.name);
+         symno[symbol].name_index = name_map(SYM3.name, ps);
      }
 }
 ./
@@ -894,7 +894,7 @@ static void act$rule_number(void)
       bad_name ::= DEFINE_KEY
 /:$offset misplaced_keyword_found_in_NAMES_section, /* $rule_number */:/
 /.$location
-static void misplaced_keyword_found_in_NAMES_section(void)
+static void misplaced_keyword_found_in_NAMES_section(struct ParserState* ps)
 {
     PRNTERR2("Keyword  has been misplaced in NAMES section.  Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
@@ -913,7 +913,7 @@ static void misplaced_keyword_found_in_NAMES_section(void)
                  | BLOCK
 /:$offset $action:/
 /.$location
-static void act$rule_number(void)
+static void act$rule_number(struct ParserState* ps)
 {
     PRNTERR2("Misplaced action block found in NAMES section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
@@ -922,7 +922,7 @@ static void act$rule_number(void)
                  | MACRO_NAME
 /:$offset $action:/
 /.$location
-static void act$rule_number(void)
+static void act$rule_number(struct ParserState* ps)
 {
     PRNTERR2("Misplaced macro name found in NAMES section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
     exit(12);
@@ -939,21 +939,21 @@ static void act$rule_number(void)
 [terminals_block] ::= $EMPTY
 /:$offset process_TERMINALS_section, /* $rule_number */:/
 /.$location
-static void process_TERMINALS_section(void)
+static void process_TERMINALS_section(struct ParserState* ps)
 {
     num_terminals = num_symbols;
-    assign_symbol_no(keoft, OMEGA);
-    eoft_image = symbol_image(keoft);
+    assign_symbol_no(keoft, OMEGA, ps->hash_table);
+    eoft_image = symbol_image(keoft, ps);
 
     if (error_maps_bit)
     {
-        assign_symbol_no(kerror, OMEGA);
-        error_image = symbol_image(kerror);
+        assign_symbol_no(kerror, OMEGA, ps->hash_table);
+        error_image = symbol_image(kerror, ps);
     }
     else error_image = DEFAULT_SYMBOL;   // should be 0
 
-    assign_symbol_no(kaccept, OMEGA);
-    accept_image = symbol_image(kaccept);
+    assign_symbol_no(kaccept, OMEGA, ps->hash_table);
+    accept_image = symbol_image(kaccept, ps);
 }
 ./
                     | terminals_block
@@ -962,14 +962,15 @@ static void process_TERMINALS_section(void)
 [alias_block] ::= $EMPTY
 /:$offset process_ALIAS_section, /* $rule_number */:/
 /.$location
-static void process_ALIAS_section(void)
+static void process_ALIAS_section(struct ParserState* ps)
 {
 
-    register int k = 0;
-    if (eoft_image <= num_terminals)
+    int k = 0;
+    if (eoft_image <= num_terminals) {
         k++;
-    else
+    } else {
         num_terminals++;
+    }
 
     if (error_maps_bit)
     {
@@ -985,9 +986,9 @@ static void process_ALIAS_section(void)
 
     if (k > 0)
     {
-        for (register int i = 0; i < HT_SIZE; i++)
+        for (int i = 0; i < HT_SIZE; i++)
         {
-            register struct hash_type* p = hash_table[i];
+            struct hash_type* p = ps->hash_table[i];
             while(p != NULL)
             {
                 if (p -> number > num_terminals)
@@ -1003,7 +1004,7 @@ static void process_ALIAS_section(void)
     if (eolt_image == OMEGA)
         eolt_image = eoft_image;
     if (error_image == DEFAULT_SYMBOL)
-        alias_map(kerror, DEFAULT_SYMBOL);
+        alias_map(kerror, DEFAULT_SYMBOL, ps);
 }
 ./
                 | alias_block
@@ -1034,10 +1035,10 @@ static void process_ALIAS_section(void)
 {terminal_symbol} ::= $EMPTY
 /:$offset $action:/
 /.$location
-static void act$rule_number(void)
+static void act$rule_number(struct ParserState* ps)
 {
-    assign_symbol_no(kempty, OMEGA);
-    empty = symbol_image(kempty);
+    assign_symbol_no(kempty, OMEGA, ps->hash_table);
+    empty = symbol_image(kempty, ps);
 }
 ./
                     | {terminal_symbol} terminal_symbol

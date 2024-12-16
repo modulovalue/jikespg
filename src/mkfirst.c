@@ -403,10 +403,11 @@ void compute_follow(const int nt, struct DetectedSetSizes *dss, short *stack, sh
 
 /// MKFIRST constructs the FIRST and FOLLOW maps, the CLOSURE map,
 /// ADEQUATE_ITEM and ITEM_TABLE maps and all other basic maps.
-struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first, bool * *rmpself, JBitset* first, struct FirstDeps* fd, struct ruletab_type *rules, short *rhs_sym) {
+struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first, bool * *rmpself, JBitset* first, struct FirstDeps* fd, struct ruletab_type *rules, short *rhs_sym, struct itemtab **item_tablep) {
   struct DetectedSetSizes dss = {
     .non_term_set_size = num_non_terminals / SIZEOF_BC + (num_non_terminals % SIZEOF_BC ? 1 : 0),
     .term_set_size = num_terminals / SIZEOF_BC + (num_terminals % SIZEOF_BC ? 1 : 0),
+    .null_nt = NULL,
   };
   // allocate various arrays
   short *lhs_rule = Allocate_short_array(num_non_terminals);
@@ -427,8 +428,9 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
   short *nt_list = Allocate_short_array(num_non_terminals);
   nt_list -= num_terminals + 1;
   struct f_element_type *first_element;
-  calloc0(first_element, num_items + 1, struct f_element_type);
-  calloc0(item_table, num_items + 1, struct itemtab);
+  calloc0p(&first_element, num_items + 1, struct f_element_type);
+  calloc0p(item_tablep, num_items + 1, struct itemtab);
+  struct itemtab *item_table = *item_tablep;
   for ALL_NON_TERMINALS3(symbol) {
     lhs_rule[symbol] = NIL;
   }
@@ -448,7 +450,7 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
   // any rules.
   no_rules_produced(cli_options, lhs_rule, nt_list);
   // Construct the CLOSURE map of non-terminals.
-  calloc0(fd->closure, num_non_terminals, struct node *);
+  calloc0p(&(fd->closure), num_non_terminals, struct node *);
   fd->closure -= num_terminals + 1;
   for ALL_NON_TERMINALS3(symbol) {
     index_of[symbol] = OMEGA;
@@ -463,8 +465,8 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
   // A non-terminal B is said to be nullable if either:
   //    B -> %empty  or  B -> B1 B2 B3 ... Bk  where Bi is
   //                         nullable for 1 <= i <= k
-  null_nt = Allocate_boolean_array(num_non_terminals);
-  null_nt -= num_terminals + 1;
+  dss.null_nt = Allocate_boolean_array(num_non_terminals);
+  dss.null_nt -= num_terminals + 1;
   // Calculate nullables
   {
     ///   This procedure computes the set of non-terminal symbols that can
@@ -481,7 +483,7 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
     // into the next symbol in its right-hand side that has not yet
     // proven to be nullable.
     for ALL_NON_TERMINALS3(nt) {
-      null_nt[nt] = false;
+      dss.null_nt[nt] = false;
     }
     for ALL_RULES3(rule_no) {
       rhs_start[rule_no] = rules[rule_no].rhs;
@@ -503,11 +505,11 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
       changed = false;
       for ALL_NON_TERMINALS3(nt) {
         int rule_no;
-        for (bool end_node = (rule_no = lhs_rule[nt]) == NIL; !null_nt[nt] && !end_node; end_node = rule_no == lhs_rule[nt]) {
+        for (bool end_node = (rule_no = lhs_rule[nt]) == NIL; !dss.null_nt[nt] && !end_node; end_node = rule_no == lhs_rule[nt]) {
           rule_no = next_rule[rule_no];
-          if (is_nullable_rhs(rhs_start, rule_no, null_nt, rules, rhs_sym)) {
+          if (is_nullable_rhs(rhs_start, rule_no, dss.null_nt, rules, rhs_sym)) {
             changed = true;
-            null_nt[nt] = true;
+            dss.null_nt[nt] = true;
           }
         }
       }
@@ -522,14 +524,14 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
   topp.top = 0;
   for ALL_NON_TERMINALS3(nt) {
     if (index_of[nt] == OMEGA) {
-      compute_first(nt, &dss, stack, index_of, &topp, nt_first, lhs_rule, next_rule, null_nt, rules, rhs_sym);
+      compute_first(nt, &dss, stack, index_of, &topp, nt_first, lhs_rule, next_rule, dss.null_nt, rules, rhs_sym);
     }
   }
   //  Since every input source will be followed by the EOFT
   //  symbol, FIRST[accept_image] cannot contain empty but
   //  instead must contain the EOFT symbol.
-  if (null_nt[accept_image]) {
-    null_nt[accept_image] = false;
+  if (dss.null_nt[accept_image]) {
+    dss.null_nt[accept_image] = false;
     RESET_BIT_IN(nt_first, accept_image, empty);
     SET_BIT_IN(nt_first, accept_image, eoft_image);
   }
@@ -641,7 +643,7 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
   // non-terminal as their left-hand side are not considered
   // to let the Accept action remain as a Reduce action
   // instead of a Goto/Reduce action.
-  calloc0(fd->adequate_item, num_rules + 1, struct node *);
+  calloc0p(&(fd->adequate_item), num_rules + 1, struct node *);
   if (cli_options->read_reduce_bit) {
     for ALL_RULES3(rule_no) {
       const int j = RHS_SIZE(rule_no, rules);
@@ -660,7 +662,7 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
   /// CL_ITEMS is a mapping from each non-terminal to a set (linked list)
   /// of items which are the first item of the rules generated by the
   /// non-terminal in question.
-  calloc0(fd->clitems, num_non_terminals, struct node *);
+  calloc0p(&(fd->clitems), num_non_terminals, struct node *);
   fd->clitems -= num_terminals + 1;
   for ALL_NON_TERMINALS3(nt) {
     fd->clitems[nt] = NULL;
@@ -687,7 +689,7 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
     calloc0_set(produces, num_non_terminals, dss.non_term_set_size);
     produces.raw -= (num_terminals + 1) * dss.non_term_set_size;
     struct node **direct_produces;
-    calloc0(direct_produces, num_non_terminals, struct node *);
+    calloc0p(&direct_produces, num_non_terminals, struct node *);
     direct_produces -= num_terminals + 1;
     for ALL_NON_TERMINALS3(sym_b) {
       struct node *p;

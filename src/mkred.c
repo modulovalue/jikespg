@@ -2,6 +2,10 @@
 #include "lpgparse.h"
 #include "common.h"
 
+struct LATop {
+  long la_top;
+};
+
 long la_top = 0;
 
 /// The structure STATE_ELEMENT is used to construct lookahead states.
@@ -115,7 +119,7 @@ static void *allocate_conflict_element(struct ConflictPool* cp) {
   if (p != NULL) {
     cp->conflict_element_pool = ((struct sr_conflict_element *) p)->next;
   } else {
-    talloc0_raw(p, void, MAX(sizeof(struct sr_conflict_element), sizeof(struct rr_conflict_element)));
+    talloc0p_raw(&p, void, MAX(sizeof(struct sr_conflict_element), sizeof(struct rr_conflict_element)));
   }
   return p;
 }
@@ -176,9 +180,9 @@ static void free_dangling_stack_elements(struct StackPool* sp) {
 /// See definition of SOURCE_ELEMENT above.
 static struct sources_element allocate_sources(void) {
   struct sources_element sources;
-  calloc0(sources.configs, num_rules + num_rules + num_states + 1, struct stack_element *);
+  calloc0p(&sources.configs, num_rules + num_rules + num_states + 1, struct stack_element *);
   sources.configs += num_rules;
-  calloc0(sources.stack_seen, STATE_TABLE_SIZE, struct stack_element *);
+  calloc0p(&sources.stack_seen, STATE_TABLE_SIZE, struct stack_element *);
   sources.list = Allocate_short_array(num_rules + num_rules + num_states + 1);
   sources.list += num_rules;
   sources.root = NIL;
@@ -810,14 +814,14 @@ static bool stack_was_seen(struct stack_element **stack_seen, struct stack_eleme
 static struct state_element *state_to_resolve_conflicts(struct sources_element sources, int la_symbol, int level, struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct state_element **shift_table, bool *cyclic, struct StackPool* sp, struct visited_element* visited, struct STRS* strs, struct StackRoot* sr, bool *rmpself, JBitset first, JBitset read_set, struct LAIndex* lai, struct node **adequate_item, struct SRTable* srt, bool *null_nt, struct ruletab_type *rules, struct itemtab *item_table, struct node **in_stat, struct statset_type *statset) {
   struct sources_element new_sources = allocate_sources();
   struct node **action;
-  calloc0(action, num_terminals + 1, struct node *);
+  calloc0p(&action, num_terminals + 1, struct node *);
   short *symbol_list = Allocate_short_array(num_terminals + 1);
   short *action_list = Allocate_short_array(num_terminals + 1);
   short *rule_count = Allocate_short_array(num_rules + 1);
   JBitset look_ahead;
   calloc0_set(look_ahead, 1, dss->term_set_size);
   struct state_element **la_shift_state;
-  calloc0(la_shift_state, num_terminals + 1, struct state_element *);
+  calloc0p(&la_shift_state, num_terminals + 1, struct state_element *);
   // Initialize new lookahead state. Initialize counters. Check and
   // adjust HIGHEST_LEVEL reached so far, if necessary.
   struct state_element *state = NULL;
@@ -1394,17 +1398,17 @@ struct ConflictCounter resolve_conflicts(const int state_no, struct node **actio
 /// Transfer the look-ahead states to their permanent destination, the
 /// array LASTATS and update the original automaton with the relevant
 /// transitions into the lookahead states.
-void create_lastats(struct STRS* strs, struct SRTable* srt, struct statset_type *statset) {
+void create_lastats(struct STRS* strs, struct SRTable* srt, struct statset_type *statset, struct LaStats* las) {
   // Allocate LASTATS structure to permanently construct lookahead
   // states and reallocate SHIFT map as we may have to construct
   // new shift maps.
-  calloc0(lastats, max_la_state - num_states, struct lastats_type);
-  lastats -= num_states + 1;
-  realloc0(srt->shift, max_la_state + 1, struct shift_header_type);
+  calloc0p(&las->lastats, max_la_state - num_states, struct lastats_type);
+  las->lastats -= num_states + 1;
+  realloc0p(&srt->shift, max_la_state + 1, struct shift_header_type);
   // Allocate temporary space used to construct final lookahead
   // states.
   struct state_element **new_shift_actions;
-  calloc0(new_shift_actions, num_states + 1, struct state_element *);
+  calloc0p(&new_shift_actions, num_states + 1, struct state_element *);
   short *shift_action = Allocate_short_array(num_terminals + 1);
   short *shift_list = Allocate_short_array(num_terminals + 1);
   short *shift_count = Allocate_short_array(max_la_state + 1);
@@ -1429,9 +1433,9 @@ void create_lastats(struct STRS* strs, struct SRTable* srt, struct statset_type 
   // initial states in a list headed by state_root.
   int state_root = NIL;
   for (struct state_element *p = strs->la_state_root; p != NULL; p = p->link) {
-    lastats[p->state_number].in_state = p->in_state;
-    lastats[p->state_number].shift_number = p->shift_number;
-    lastats[p->state_number].reduce = p->reduce;
+    las->lastats[p->state_number].in_state = p->in_state;
+    las->lastats[p->state_number].shift_number = p->shift_number;
+    las->lastats[p->state_number].reduce = p->reduce;
     if (p->shift.size != 0) {
       srt->shift[p->shift_number] = p->shift;
     }
@@ -1609,7 +1613,7 @@ void compute_read(struct CLIOptions *cli_options, const struct DetectedSetSizes*
   // allocated, and shared for all pairs (S, B) whose follow set is F.
   la_top = 0;
   int *la_base;
-  calloc0(la_base, num_states + 1, int);
+  calloc0p(&la_base, num_states + 1, int);
   for ALL_STATES3(state_no) {
     la_base[state_no] = OMEGA;
   }
@@ -1889,7 +1893,7 @@ void la_traverse(const int state_no, const int goto_indx, int *stack_top, struct
 ///
 /// For a complete description of the lookahead algorithm used in this
 /// program, see Charles, PhD thesis, NYU 1991.
-struct ConflictCounter mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct SourcesElementSources* ses, bool *rmpself, JBitset first, struct node **adequate_item, struct SRTable* srt, struct lastats_type *lastats, bool *null_nt, short *gd_index, struct ruletab_type *rules, struct statset_type *statset, struct itemtab *item_table, short *rhs_sym) {
+struct ConflictCounter mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct SourcesElementSources* ses, bool *rmpself, JBitset first, struct node **adequate_item, struct SRTable* srt, bool *null_nt, short *gd_index, struct ruletab_type *rules, struct statset_type *statset, struct itemtab *item_table, short *rhs_sym, struct LaStats* las) {
   struct STRS strs = (struct STRS) {
     .highest_level = 0,
     .la_state_root = NULL,
@@ -1931,7 +1935,7 @@ struct ConflictCounter mkrdcts(struct CLIOptions *cli_options, struct DetectedSe
   short *nt_items = NULL;
   struct visited_element visited;
   if (cli_options->lalr_level > 1) {
-    calloc0(shift_table, SHIFT_TABLE_SIZE, struct state_element *);
+    calloc0p(&shift_table, SHIFT_TABLE_SIZE, struct state_element *);
     for ALL_NON_TERMINALS3(symbol) {
       not_lrk = not_lrk || rmpself[symbol];
     }
@@ -1950,7 +1954,7 @@ struct ConflictCounter mkrdcts(struct CLIOptions *cli_options, struct DetectedSe
     ffree(stack);
     ffree(index_of);
     ses->sources = allocate_sources();
-    calloc0(visited.map, num_states + 1, struct node *);
+    calloc0p(&visited.map, num_states + 1, struct node *);
     visited.list = Allocate_short_array(num_states + 1);
     visited.root = NIL;
   }
@@ -1959,7 +1963,7 @@ struct ConflictCounter mkrdcts(struct CLIOptions *cli_options, struct DetectedSe
   // IN_STAT is used to construct a reverse transition map. See
   // BUILD_IN_STAT for more detail.
   struct node **in_stat = NULL;
-  calloc0(in_stat, num_states + 1, struct node *);
+  calloc0p(&in_stat, num_states + 1, struct node *);
   // RULE_COUNT is an array used to count the number of reductions on
   // particular rules within a given state.
   short *rule_count = Allocate_short_array(num_rules + 1);
@@ -1979,7 +1983,7 @@ struct ConflictCounter mkrdcts(struct CLIOptions *cli_options, struct DetectedSe
   // ACTION is an array that is used as the base for a mapping from
   // each terminal symbol into a list of actions that can be executed
   // on that symbol in a given state.
-  calloc0(action, num_terminals + 1, struct node *);
+  calloc0p(&action, num_terminals + 1, struct node *);
   // LOOK_AHEAD is used to compute lookahead sets.
   JBitset look_ahead;
   calloc0_set(look_ahead, 1, dss->term_set_size);
@@ -1994,7 +1998,7 @@ struct ConflictCounter mkrdcts(struct CLIOptions *cli_options, struct DetectedSe
   /// question.
   struct node **conflict_symbols = NULL;
   if (cli_options->single_productions_bit) {
-    calloc0(conflict_symbols, num_states + 1, struct node *);
+    calloc0p(&conflict_symbols, num_states + 1, struct node *);
   }
   // First, construct the IN_STAT map. Next, iterate over the states to
   // construct two boolean vectors.  One indicates whether there is a
@@ -2051,7 +2055,7 @@ struct ConflictCounter mkrdcts(struct CLIOptions *cli_options, struct DetectedSe
   // into its reduce map. We also initialize RULE_COUNT which
   // will be used to count the number of reduce actions on each
   // rule with in a given state.
-  calloc0(srt->reduce, num_states + 1, struct reduce_header_type);
+  calloc0p(&srt->reduce, num_states + 1, struct reduce_header_type);
   for ALL_RULES3(i) {
     rule_count[i] = 0;
   }
@@ -2152,7 +2156,7 @@ struct ConflictCounter mkrdcts(struct CLIOptions *cli_options, struct DetectedSe
       // element (if the conflicts were reduce-reduce conflicts, only
       // the first element in the ACTION(t) list is returned).
       if (symbol_root != NIL) {
-        struct ConflictCounter cc_ = resolve_conflicts(state_no, action, symbol_list, symbol_root, cli_options, dss, shift_table, cyclic, item_list, nt_items, &sp, &cp, &visited, ses, &strs, &sr, rmpself, first, read_set, &lai, conflict_symbols, adequate_item, srt, lastats, null_nt, in_stat, rules, item_table, statset, rhs_sym);
+        struct ConflictCounter cc_ = resolve_conflicts(state_no, action, symbol_list, symbol_root, cli_options, dss, shift_table, cyclic, item_list, nt_items, &sp, &cp, &visited, ses, &strs, &sr, rmpself, first, read_set, &lai, conflict_symbols, adequate_item, srt, las->lastats, null_nt, in_stat, rules, item_table, statset, rhs_sym);
         num_rr_conflicts += cc_.num_rr_conflicts;
         num_sr_conflicts += cc_.num_sr_conflicts;
         for (symbol = symbol_root; symbol != NIL; symbol = symbol_list[symbol]) {
@@ -2246,7 +2250,7 @@ struct ConflictCounter mkrdcts(struct CLIOptions *cli_options, struct DetectedSe
   // If the automaton required multiple lookahead, construct the
   // permanent lookahead states.
   if (max_la_state > num_states) {
-    create_lastats(&strs, srt, statset);
+    create_lastats(&strs, srt, statset, las);
   }
   // We are now finished with the LALR(k) construction of the
   // automaton. Clear all temporary space that was used in that
@@ -2257,7 +2261,7 @@ struct ConflictCounter mkrdcts(struct CLIOptions *cli_options, struct DetectedSe
   cli_options->lalr_level = strs.highest_level;
   // If the removal of single productions is requested, do that.
   if (cli_options->single_productions_bit) {
-    remove_single_productions(dss, &sr, first, &lai, conflict_symbols, lai.la_set, adequate_item, srt, statset, lastats, gd_index, in_stat, rules, item_table, rhs_sym);
+    remove_single_productions(dss, &sr, first, &lai, conflict_symbols, lai.la_set, adequate_item, srt, statset, las->lastats, gd_index, in_stat, rules, item_table, rhs_sym);
   }
   // If either more than one lookahead was needed or the removal
   // of single productions was requested, the automaton was

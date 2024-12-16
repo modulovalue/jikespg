@@ -490,19 +490,19 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
     short link;
     short shift_number;
   } *new_shift;
-  calloc0(new_shift, max_la_state + 1, struct new_shift_element);
+  calloc0p(&new_shift, max_la_state + 1, struct new_shift_element);
   JBitset look_ahead;
   calloc0_set(look_ahead, 1, dss->term_set_size);
   short **sp_action;
-  calloc0(sp_action, num_symbols + 1, short *);
+  calloc0p(&sp_action, num_symbols + 1, short *);
   bool *is_conflict_symbol;
-  calloc0(is_conflict_symbol, num_symbols + 1, bool);
+  calloc0p(&is_conflict_symbol, num_symbols + 1, bool);
   struct sp_state_element **sp_table;
-  calloc0(sp_table, STATE_TABLE_SIZE, struct sp_state_element *);
+  calloc0p(&sp_table, STATE_TABLE_SIZE, struct sp_state_element *);
   struct remsp_action_element **new_action;
-  calloc0(new_action, num_states + 1, struct remsp_action_element *);
+  calloc0p(&new_action, num_states + 1, struct remsp_action_element *);
   struct update_action_element **update_action;
-  calloc0(update_action, num_states + 1, struct update_action_element *);
+  calloc0p(&update_action, num_states + 1, struct update_action_element *);
   // Initialize all relevant sets and maps to the empty set.
   int symbol_root = NIL;
   for ALL_RULES3(rule_no) {
@@ -784,11 +784,11 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
   }
   // We are now ready to extend all global maps based on states and
   // permanently install the new states.
-  realloc0(statset, state_map.max_sp_state + 1, struct statset_type);
-  realloc0(srt->reduce, state_map.max_sp_state + 1, struct reduce_header_type);
+  realloc0p(&statset, state_map.max_sp_state + 1, struct statset_type);
+  realloc0p(&srt->reduce, state_map.max_sp_state + 1, struct reduce_header_type);
   // see routine PRODUCE
   if (gd_index != NULL) {
-    realloc0(gd_index, state_map.max_sp_state + 2, short);
+    realloc0p(&gd_index, state_map.max_sp_state + 2, short);
     // Each element gd_index[i] points to the starting location
     // of a slice in another array. The last element of the slice
     // can be computed as (gd_index[i+1] - 1). After extending
@@ -799,7 +799,7 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
       gd_index[state_no] = gd_index[state_no - 1];
     }
   }
-  realloc0(in_stat, state_map.max_sp_state + 1, struct node*);
+  realloc0p(&in_stat, state_map.max_sp_state + 1, struct node*);
   for (int state_no = num_states + 1; state_no <= state_map.max_sp_state; state_no++) {
     in_stat[state_no] = NULL;
   }
@@ -882,7 +882,7 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
   // At most, the shift array contains 1..num_states elements. As,
   // each of these elements might be (theoretically) replaced by a
   // new one, we need to double its size.
-  realloc0(srt->shift, 2 * (num_states + 1), struct shift_header_type);
+  realloc0p(&srt->shift, 2 * (num_states + 1), struct shift_header_type);
   // For each state with updates or new actions, take appropriate
   // actions.
   for ALL_STATES3(state_no) {

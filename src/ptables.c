@@ -45,7 +45,7 @@ static void compute_shift_default(struct SRTable* srt, struct lastats_type *last
   int shift_reduce_count = 0;
   shiftdf = Allocate_short_array(num_terminals + 1);
   struct ptables_action_element **action_count;
-  calloc0(action_count, num_terminals + 1, struct ptables_action_element *);
+  calloc0p(&action_count, num_terminals + 1, struct ptables_action_element *);
   // For each state, invoke PROCESS_SHIFT_ACTIONS to process the
   // shift map associated with that state.
   for ALL_STATES3(state_no) {
@@ -94,7 +94,7 @@ static void compute_goto_default(long *gotodef, struct statset_type *statset) {
   gotodef = Allocate_long_array(num_non_terminals);
   gotodef -= num_terminals + 1;
   struct ptables_action_element **action_count;
-  calloc0(action_count, num_non_terminals, struct ptables_action_element *);
+  calloc0p(&action_count, num_non_terminals, struct ptables_action_element *);
   action_count -= num_terminals + 1;
   if (action_count == NULL) {
     nospace();
@@ -259,7 +259,7 @@ void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLI
   }
   // Release the pool of temporary space.
   free_temporary_space();
-  calloc0(output_buffer, IOBUFFER_SIZE, char);
+  calloc0p(&output_buffer, IOBUFFER_SIZE, char);
   FILE *systab;
   if (!cli_options->c_bit && !cli_options->cpp_bit && !cli_options->java_bit) {
     if ((systab = fopen(tab_file, "w")) == NULL) {

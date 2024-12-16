@@ -74,6 +74,8 @@ int main(const int argc, char *argv[]) {
 
     short *rhs_sym = NULL;
 
+    struct ruletab_type *rules;
+
     // Process input.
     {
       char grm_file[80];
@@ -107,7 +109,7 @@ int main(const int argc, char *argv[]) {
         tab_file[dot - tmpbuf] = '\0';
       }
       strcat(tab_file, ".t"); /* add .t extension for table file */
-      process_input(grm_file, &of, argc, argv, file_prefix, &cli_options, &rhs_sym);
+      process_input(grm_file, &of, argc, argv, file_prefix, &cli_options, &rhs_sym, &rules);
     }
 
     /// FOLLOW is a mapping from non-terminals to a set of terminals that
@@ -123,7 +125,9 @@ int main(const int argc, char *argv[]) {
       .closure = NULL,
     };
 
-    struct DetectedSetSizes dss = mkbasic(&cli_options, follow, &rmpself, &first, &fd, rules, rhs_sym);
+    struct itemtab *item_table = NULL;
+
+    struct DetectedSetSizes dss = mkbasic(&cli_options, follow, &rmpself, &first, &fd, rules, rhs_sym, &item_table);
 
     struct SRTable srt = (struct SRTable) {
       .reduce = NULL,
@@ -137,13 +141,20 @@ int main(const int argc, char *argv[]) {
     // TODO wrap
     short *gd_range = NULL;
     short *gd_index;
-    mkstats(&cli_options, &dss, first, scope, fd.clitems, fd.closure, &srt, scope_right_side, null_nt, &scope_state, item_table, rules, rhs_sym, &gd_range, &gd_index);
+
+    struct StatSet ss = (struct StatSet) {
+      .statset = NULL,
+    };
+
+    mkstats(&cli_options, &dss, first, scope, fd.clitems, fd.closure, &srt, scope_right_side, dss.null_nt, &scope_state, item_table, rules, rhs_sym, &gd_range, &gd_index, &ss);
 
     struct SourcesElementSources ses = (struct SourcesElementSources) {
       .sources = NULL,
     };
-
-    struct ConflictCounter conflicts = mkrdcts(&cli_options, &dss, &ses, rmpself, first, fd.adequate_item, &srt, lastats, null_nt, gd_index, rules, statset, item_table, rhs_sym);
+    struct LaStats las = (struct LaStats) {
+      .lastats = NULL,
+    };
+    struct ConflictCounter conflicts = mkrdcts(&cli_options, &dss, &ses, rmpself, first, fd.adequate_item, &srt, dss.null_nt, gd_index, rules, ss.statset, item_table, rhs_sym, &las);
 
     // Output more basic statistics.
     {
@@ -205,8 +216,8 @@ int main(const int argc, char *argv[]) {
           }
           ffree(conflicts.in_stat);
           ffree(first.raw);
-          null_nt += num_terminals + 1;
-          ffree(null_nt);
+          dss.null_nt += num_terminals + 1;
+          ffree(dss.null_nt);
           if (follow.raw != NULL) {
             if (!error_maps_bit || cli_options.c_bit || cli_options.cpp_bit || cli_options.java_bit) {
               follow.raw += (num_terminals + 1) * dss.term_set_size;
@@ -225,7 +236,7 @@ int main(const int argc, char *argv[]) {
 
         short *shiftdf = NULL;
         long *gotodef = NULL;
-        process_tables(tab_file, &of, &cli_options, &dss, &ctp, &of, &np, scope, gd_range, &srt, scope_right_side, lastats, shiftdf, gotodef, gd_index, statset, scope_state, rules, item_table);
+        process_tables(tab_file, &of, &cli_options, &dss, &ctp, &of, &np, scope, gd_range, &srt, scope_right_side, las.lastats, shiftdf, gotodef, gd_index, ss.statset, scope_state, rules, item_table);
       }
     }
 

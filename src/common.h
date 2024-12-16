@@ -7,15 +7,11 @@
 #include <assert.h>
 #include <stdio.h>
 
+void nospace();
 
 #define galloc0p(into, x, times) \
   (*into) = (x *) galloc((times) * sizeof(x)); \
   if ((*into) == (x *) NULL) \
-    nospace();
-
-#define talloc0(into, x) \
-  into = (x *) talloc(sizeof(x)); \
-  if ((into) == (x *) NULL) \
     nospace();
 
 #define talloc0p(into, x) \
@@ -23,20 +19,21 @@
   if ((*into) == (x *) NULL) \
     nospace();
 
-#define realloc0(into, times, t) \
-  into = (t *) realloc(into, (times) * sizeof(t)); \
-  if ((into) == (t *) NULL) \
+#define talloc0p_raw(into, xyz, s) \
+  (*into) = (xyz *) talloc(s); \
+  if ((*into) == (xyz *) NULL) \
     nospace();
 
-#define talloc0_raw(into, xyz, s) \
-  into = (xyz *) talloc(s); \
-  if ((into) == (xyz *) NULL) \
+#define realloc0p(into, times, t) \
+  (*into) = (t *) realloc((*into), (times) * sizeof(t)); \
+  if ((*into) == (t *) NULL) \
     nospace();
 
-#define calloc0(into, size, x) \
-  (into) = (x *) calloc((size), sizeof(x)); \
-  if ((into) == (x *) NULL) \
+#define calloc0p(into, size, x) \
+  (*into) = (x *) calloc((size), sizeof(x)); \
+  if ((*into) == (x *) NULL) \
     nospace();
+
 
 static const int MAX_PARM_SIZE = 22;
 static const int SYMBOL_SIZE = 256;
@@ -44,6 +41,10 @@ static const int MAX_MSG_SIZE = 256 + SYMBOL_SIZE;
 static const int PRINT_LINE_SIZE = 80;
 static const int PARSER_LINE_SIZE = 80;
 static const int MAX_LINE_SIZE = 512;
+
+struct LaStats {
+  struct lastats_type *lastats;
+};
 
 
 
@@ -336,7 +337,7 @@ static struct CLIOptions init_cli_options() {
   };
 }
 
-void process_input(char *grm_file, struct OutputFiles *output_files, int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options, short **rhs_sym);
+void process_input(char *grm_file, struct OutputFiles *output_files, int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options, short **rhs_sym, struct ruletab_type **rulesp);
 
 static char msg_line[MAX_MSG_SIZE];
 
@@ -392,8 +393,6 @@ extern long num_goto_reduces;
 extern long num_reductions;
 extern long num_entries;
 
-extern struct ruletab_type *rules;
-
 static int RHS_SIZE(const int rule_no, struct ruletab_type *rules) {
   return rules[rule_no + 1].rhs - rules[rule_no].rhs;
 }
@@ -414,16 +413,12 @@ struct FirstDeps {
 /// number one can retrieve the rule the item belongs to, the position
 /// of the dot,  the symbol following the dot, and FIRST of the suffix
 /// following the "dot symbol".
-extern struct itemtab {
+struct itemtab {
   short symbol;
   short rule_number;
   short suffix_index;
   short dot;
-} *item_table;
-
-/// NULL_NT is a boolean vector that indicates whether a given
-/// non-terminal is nullable.
-extern bool *null_nt;
+};
 
 struct SRTable {
   /// SHIFT is an array used to hold the complete set of all shift maps
@@ -435,11 +430,10 @@ struct SRTable {
 
 extern short *gd_index;
 
-/// STATSET is a mapping from state number to state information.
-extern struct statset_type *statset;
-
-/// LASTATS is a similar mapping for look-ahead states.
-extern struct lastats_type *lastats;
+struct StatSet {
+  /// STATSET is a mapping from state number to state information.
+  struct statset_type *statset;
+};
 
 extern long num_scopes;
 extern long scope_rhs_size;
@@ -499,7 +493,10 @@ void *talloc(long size);
 struct DetectedSetSizes {
   long term_set_size;
   long non_term_set_size;
-} mkbasic(struct CLIOptions *cli_options, JBitset nt_first, bool* * rmpself, JBitset* first, struct FirstDeps* fd, struct ruletab_type *rules, short *rhs_sym);
+  /// NULL_NT is a boolean vector that indicates whether a given
+  /// non-terminal is nullable.
+  bool *null_nt;
+} mkbasic(struct CLIOptions *cli_options, JBitset nt_first, bool* * rmpself, JBitset* first, struct FirstDeps* fd, struct ruletab_type *rules, short *rhs_sym, struct itemtab **item_tablep);
 
 extern char ormark;
 extern char escape;
@@ -615,7 +612,7 @@ void fill_in(char string[], int amount, char character);
 
 void free_nodes(struct node *head, struct node *tail);
 
-struct ConflictCounter mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct SourcesElementSources* ses, bool *rmpself, JBitset first, struct node **adequate_item, struct SRTable* srt, struct lastats_type *lastats, bool *null_nt, short *gd_index, struct ruletab_type *rules, struct statset_type *statset, struct itemtab *item_table, short *rhs_sym);
+struct ConflictCounter mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct SourcesElementSources* ses, bool *rmpself, JBitset first, struct node **adequate_item, struct SRTable* srt, bool *null_nt, short *gd_index, struct ruletab_type *rules, struct statset_type *statset, struct itemtab *item_table, short *rhs_sym, struct LaStats* las);
 
 /// LA_INDEX and LA_SET are temporary look-ahead sets, each of which will
 /// be pointed to by a GOTO action, and the associated set will be
@@ -632,9 +629,7 @@ void la_traverse(int state_no, int goto_indx, int *stack_top, struct StackRoot* 
 
 void remove_single_productions(struct DetectedSetSizes* dss, struct StackRoot* sr, JBitset first, struct LAIndex* lai, struct node **conflict_symbols, JBitset la_set, struct node **adequate_item, struct SRTable* srt, struct statset_type *statset, struct lastats_type *lastats, short *gd_index, struct node **in_stat, struct ruletab_type *rules, struct itemtab *item_table, short *rhs_sym);
 
-void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, JBitset first, struct scope_type *scope, struct node **clitems, struct node **closure, struct SRTable* srt, long *scope_right_side, bool *null_nt, short **scope_state, struct itemtab *item_table, struct ruletab_type *rules, short *rhs_sym, short **gd_range, short **gd_index);
-
-void nospace();
+void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, JBitset first, struct scope_type *scope, struct node **clitems, struct node **closure, struct SRTable* srt, long *scope_right_side, bool *null_nt, short **scope_state, struct itemtab *item_table, struct ruletab_type *rules, short *rhs_sym, short **gd_range, short **gd_index, struct StatSet* ss);
 
 int number_len(int state_no);
 
@@ -670,14 +665,14 @@ struct long_array {
 /// This function allocates an array of size "size" of int integers.
 static long *Allocate_long_array(const long n) {
   long *p;
-  calloc0(p, n, long);
+  calloc0p(&p, n, long);
   return &p[0];
 }
 
 /// This function allocates an array of size "size" of int integers.
 static ArrayLong Allocate_long_array2(const long n) {
   long *p;
-  calloc0(p, n, long);
+  calloc0p(&p, n, long);
   return (struct long_array) {
     .raw = &p[0],
     .size = n,
@@ -687,14 +682,14 @@ static ArrayLong Allocate_long_array2(const long n) {
 /// This function allocates an array of size "size" of short integers.
 static short *Allocate_short_array(const long n) {
   short *p;
-  calloc0(p, n, short);
+  calloc0p(&p, n, short);
   return &p[0];
 }
 
 /// This function allocates an array of size "size" of type boolean.
 static bool *Allocate_boolean_array(const long n) {
   bool *p;
-  calloc0(p, n, bool);
+  calloc0p(&p, n, bool);
   return &p[0];
 }
 

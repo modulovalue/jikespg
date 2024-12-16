@@ -1,6 +1,7 @@
 #include "bitset.h"
 #include <stdbool.h>
 
+// TODO propagate some global state struct through all the routines of the parser?
 long num_items = 0;
 long num_states = 0;
 long max_la_state;
@@ -33,6 +34,7 @@ long scope_rhs_size = 0;
 long scope_state_size = 0;
 long num_error_rules = 0;
 
+
 bool error_maps_bit = false;
 
 int increment = 30;
@@ -41,20 +43,5 @@ int increment = 30;
 char ormark;
 // Used by the parser because C doesn't have classes.
 char escape;
-
-// TODO segfaults?
-struct ruletab_type *rules = NULL;
-
-// TODO segfaults?
-struct itemtab *item_table = NULL;
-
-// TODO wrap
-bool *null_nt = NULL;
-
-// TODO wrap?
-struct statset_type *statset = NULL;
-
-// TODO wrap
-struct lastats_type *lastats = NULL;
 
 char *output_buffer = NULL;
