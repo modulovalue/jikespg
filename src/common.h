@@ -29,7 +29,7 @@
     nospace();
 
 #define calloc0(into, size, x) \
-  into = (x *) calloc(size, sizeof(x)); \
+  (into) = (x *) calloc((size), sizeof(x)); \
   if ((into) == (x *) NULL) \
     nospace();
 
@@ -121,7 +121,7 @@ static const int IOBUFFER_SIZE = 655360;
 
 #define ALL_RULES_BACKWARDS3(x) (int (x) = num_rules; (x) >= 0; (x)--)
 
-#define ENTIRE_RHS3(x, rule_no) (int (x) = rules[rule_no].rhs; (x) < rules[(rule_no) + 1].rhs; (x)++)
+#define ENTIRE_RHS3(x, rule_no, rules) (int (x) = (rules)[rule_no].rhs; (x) < rules[(rule_no) + 1].rhs; (x)++)
 
 extern const long MAX_TABLE_SIZE;
 
@@ -331,7 +331,7 @@ static struct CLIOptions init_cli_options() {
   };
 }
 
-void process_input(char *grm_file, struct OutputFiles *output_files, int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options);
+void process_input(char *grm_file, struct OutputFiles *output_files, int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options, short **rhs_sym);
 
 static char msg_line[MAX_MSG_SIZE];
 
@@ -377,6 +377,7 @@ extern long num_shift_maps;
 struct ConflictCounter {
   long num_sr_conflicts;
   long num_rr_conflicts;
+  struct node **in_stat;
 };
 
 extern long num_shifts;
@@ -386,11 +387,9 @@ extern long num_goto_reduces;
 extern long num_reductions;
 extern long num_entries;
 
-extern short *rhs_sym;
-
 extern struct ruletab_type *rules;
 
-static int RHS_SIZE(const int rule_no) {
+static int RHS_SIZE(const int rule_no, struct ruletab_type *rules) {
   return rules[rule_no + 1].rhs - rules[rule_no].rhs;
 }
 
@@ -437,10 +436,6 @@ extern struct statset_type *statset;
 
 /// LASTATS is a similar mapping for look-ahead states.
 extern struct lastats_type *lastats;
-
-/// IN_STAT is a mapping from each state to the set of states that have
-/// a transition into the state in question.
-extern struct node **in_stat;
 
 extern long num_scopes;
 extern long scope_rhs_size;
@@ -500,7 +495,7 @@ void *talloc(long size);
 struct DetectedSetSizes {
   long term_set_size;
   long non_term_set_size;
-} mkbasic(struct CLIOptions *cli_options, JBitset nt_first, bool* * rmpself, JBitset* first, struct FirstDeps* fd, struct ruletab_type *rules);
+} mkbasic(struct CLIOptions *cli_options, JBitset nt_first, bool* * rmpself, JBitset* first, struct FirstDeps* fd, struct ruletab_type *rules, short *rhs_sym);
 
 extern char ormark;
 extern char escape;
@@ -606,9 +601,9 @@ struct StackRoot {
 
 extern int increment;
 
-void cmprtim(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, long *scope_right_side, struct lastats_type *lastats, long *gotodef, short *gd_index, short *gd_range);
+void cmprtim(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, long *scope_right_side, struct lastats_type *lastats, long *gotodef, short *gd_index, short *gd_range, short *scope_state, struct statset_type *statset,struct ruletab_type *rules, struct itemtab *item_table);
 
-void cmprspa(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, long *scope_right_side, struct lastats_type *lastats, short *shiftdf, long *gotodef, short *gd_index, short *gd_range);
+void cmprspa(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, long *scope_right_side, struct lastats_type *lastats, short *shiftdf, long *gotodef, short *gd_index, short *gd_range, short *scope_state, struct statset_type *statset,struct ruletab_type *rules, struct itemtab *item_table);
 
 bool* init_rmpself(JBitset produces);
 
@@ -616,7 +611,7 @@ void fill_in(char string[], int amount, char character);
 
 void free_nodes(struct node *head, struct node *tail);
 
-struct ConflictCounter mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct SourcesElementSources* ses, bool *rmpself, JBitset first, struct node **adequate_item, struct SRTable* srt, struct lastats_type *lastats, bool *null_nt, short *gd_index, struct ruletab_type *rules);
+struct ConflictCounter mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct SourcesElementSources* ses, bool *rmpself, JBitset first, struct node **adequate_item, struct SRTable* srt, struct lastats_type *lastats, bool *null_nt, short *gd_index, struct ruletab_type *rules, struct statset_type *statset, struct itemtab *item_table, short *rhs_sym);
 
 /// LA_INDEX and LA_SET are temporary look-ahead sets, each of which will
 /// be pointed to by a GOTO action, and the associated set will be
@@ -629,11 +624,11 @@ struct LAIndex {
   JBitset la_set;
 };
 
-void la_traverse(int state_no, int goto_indx, int *stack_top, struct StackRoot* sr, JBitset first, struct LAIndex* lai, struct node **adequate_item);
+void la_traverse(int state_no, int goto_indx, int *stack_top, struct StackRoot* sr, JBitset first, struct LAIndex* lai, struct node **adequate_item, struct node **in_stat, struct statset_type *statset, struct ruletab_type *rules, struct itemtab *item_table);
 
-void remove_single_productions(struct DetectedSetSizes* dss, struct StackRoot* sr, JBitset first, struct LAIndex* lai, struct node **conflict_symbols, JBitset la_set, struct node **adequate_item, struct SRTable* srt, struct statset_type *statset, struct lastats_type *lastats, short *gd_index, struct node **in_stat, struct ruletab_type *rules);
+void remove_single_productions(struct DetectedSetSizes* dss, struct StackRoot* sr, JBitset first, struct LAIndex* lai, struct node **conflict_symbols, JBitset la_set, struct node **adequate_item, struct SRTable* srt, struct statset_type *statset, struct lastats_type *lastats, short *gd_index, struct node **in_stat, struct ruletab_type *rules, struct itemtab *item_table, short *rhs_sym);
 
-void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, JBitset first, struct scope_type *scope, struct node **clitems, struct node **closure, struct SRTable* srt, long *scope_right_side, bool *null_nt);
+void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, JBitset first, struct scope_type *scope, struct node **clitems, struct node **closure, struct SRTable* srt, long *scope_right_side, bool *null_nt, short **scope_state, struct itemtab *item_table, struct ruletab_type *rules, short *rhs_sym);
 
 void nospace();
 
@@ -641,21 +636,21 @@ int number_len(int state_no);
 
 void partset(JBitset collection, const long *element_size, const long *list, long *start, long *stack, long set_size, bool from_process_scopes);
 
-void print_item(int item_no, struct CLIOptions* cli_options, struct ruletab_type *rules);
+void print_item(int item_no, struct CLIOptions* cli_options, struct ruletab_type *rules, struct itemtab *item_table, short *rhs_sym);
 
 void print_large_token(char *line, char *token, const char *indent, int len);
 
-void print_state(int state_no, struct CLIOptions* cli_options, struct node **adequate_item, struct SRTable* srt, struct lastats_type *lastats, struct statset_type *statset, struct node **in_stat, struct ruletab_type *rules);
+void print_state(int state_no, struct CLIOptions* cli_options, struct node **adequate_item, struct SRTable* srt, struct lastats_type *lastats, struct statset_type *statset, struct node **in_stat, struct ruletab_type *rules, struct itemtab *item_table, short *rhs_sym);
 
 void process_error_maps(struct CLIOptions *cli_options, FILE *systab, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp);
 
-void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, long *term_state_index, long *shift_check_index, struct CTabsProps* ctp, struct new_state_type *new_state_element, short *shift_image, short *real_shift_number, struct OutputFiles* of, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, long *scope_right_side, short *shiftdf, long *gotodef, short *gd_index, short *gd_range, struct ruletab_type *rules);
+void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, long *term_state_index, long *shift_check_index, struct CTabsProps* ctp, struct new_state_type *new_state_element, short *shift_image, short *real_shift_number, struct OutputFiles* of, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, long *scope_right_side, short *shiftdf, long *gotodef, short *gd_index, short *gd_range, struct ruletab_type *rules, short *scope_state, struct statset_type *statset, struct itemtab *item_table);
 
-void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, long *scope_right_side, struct lastats_type *lastats, long *gotodef, short *gd_index, short *gd_range, struct ruletab_type *rules);
+void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, long *scope_right_side, struct lastats_type *lastats, long *gotodef, short *gd_index, short *gd_range, struct ruletab_type *rules, short *scope_state, struct statset_type *statset, struct itemtab *item_table);
 
 void populate_start_file(FILE **file, char *file_tag, struct CLIOptions *cli_options);
 
-void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, short *gd_range, struct SRTable* srt, long *scope_right_side, struct lastats_type *lastats, short *shiftdf, long *gotodef, short *gd_index, struct statset_type *statset);
+void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, short *gd_range, struct SRTable* srt, long *scope_right_side, struct lastats_type *lastats, short *shiftdf, long *gotodef, short *gd_index, struct statset_type *statset, short *scope_state, struct ruletab_type *rules, struct itemtab *item_table);
 
 void sortdes(long array[], long count[], long low, long high, long max);
 

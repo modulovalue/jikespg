@@ -72,7 +72,7 @@ struct state_element *lr0_state_map(struct node *kernel, struct state_element **
 }
 
 /// This procedure constructs an LR(0) automaton.
-void mklr0(struct CLIOptions *cli_options, struct shift_header_type* no_shifts_ptr, struct goto_header_type* no_gotos_ptr, struct node **clitems, struct node **closure, struct SRTable* srt, struct ruletab_type *rules) {
+void mklr0(struct CLIOptions *cli_options, struct shift_header_type* no_shifts_ptr, struct goto_header_type* no_gotos_ptr, struct node **clitems, struct node **closure, struct SRTable* srt, struct ruletab_type *rules, struct itemtab *item_table) {
   // STATE_TABLE is the array used to hash the states. States are
   // identified by their Kernel set of items. Hash locations are
   // computed for the states. As states are inserted in the table,
@@ -460,7 +460,7 @@ struct Produced {
 ///                               and
 ///
 ///                     SOURCE ->rm+ TARGET
-bool scope_check(const int lhs_symbol, const int target, const int source, bool* symbol_seen, struct Produced* produced, short *item_of, short *next_item, struct ruletab_type *rules) {
+bool scope_check(const int lhs_symbol, const int target, const int source, bool* symbol_seen, struct Produced* produced, short *item_of, short *next_item, struct ruletab_type *rules, struct itemtab *item_table) {
   symbol_seen[source] = true;
   if (IS_IN_SET(produced->right_produces, target, source - num_terminals) &&
       IS_IN_SET(produced->right_produces, lhs_symbol, source - num_terminals)) {
@@ -475,7 +475,7 @@ bool scope_check(const int lhs_symbol, const int target, const int source, bool*
     const int symbol = rules[rule_no].lhs;
     if (!symbol_seen[symbol]) {
       // not yet processed
-      if (scope_check(lhs_symbol, target, symbol, symbol_seen, produced, item_of, next_item, rules)) {
+      if (scope_check(lhs_symbol, target, symbol, symbol_seen, produced, item_of, next_item, rules, item_table)) {
         return 1;
       }
     }
@@ -494,7 +494,7 @@ bool scope_check(const int lhs_symbol, const int target, const int source, bool*
 /// 3) it is not the case that whenever A is introduced through
 ///    closure, it is introduced by a nonterminal C where C =>rm* A
 ///    and C =>rm+ B.
-bool is_scope(const int item_no, bool *symbol_seen, struct Produced* produced, short *item_of, short *next_item, bool *null_nt, struct ruletab_type *rules) {
+bool is_scope(const int item_no, bool *symbol_seen, struct Produced* produced, short *item_of, short *next_item, bool *null_nt, struct ruletab_type *rules, struct itemtab *item_table) {
   for (int i = item_no - item_table[item_no].dot; i < item_no; i++) {
     const int symbol = item_table[i].symbol;
     if (IS_A_TERMINAL(symbol)) {
@@ -515,12 +515,12 @@ bool is_scope(const int item_no, bool *symbol_seen, struct Produced* produced, s
   for ALL_NON_TERMINALS3(nt) {
     symbol_seen[nt] = false;
   }
-  return scope_check(lhs_symbol, target, lhs_symbol, symbol_seen, produced, item_of, next_item, rules);
+  return scope_check(lhs_symbol, target, lhs_symbol, symbol_seen, produced, item_of, next_item, rules, item_table);
 }
 
 /// This boolean function takes two items as arguments and checks
 /// whether they have the same prefix.
-bool is_prefix_equal(const int item_no, const int item_no2, struct ruletab_type *rules) {
+bool is_prefix_equal(const int item_no, const int item_no2, struct ruletab_type *rules, struct itemtab *item_table, short *rhs_sym) {
   // a suffix
   if (item_no > 0) {
     return false;
@@ -549,7 +549,7 @@ bool is_prefix_equal(const int item_no, const int item_no2, struct ruletab_type 
 /// NOTE that since both prefixes and suffixes are entered in the
 /// table, the prefix of a given item, ITEM_NO, is encoded as
 /// -ITEM_NO, whereas the suffix of that item is encoded as +ITEM_NO.
-int insert_prefix(const int item_no, struct scope_elmt *scope_element, short *scope_table, struct ScopeTop* st, struct ruletab_type *rules) {
+int insert_prefix(const int item_no, struct scope_elmt *scope_element, short *scope_table, struct ScopeTop* st, struct ruletab_type *rules, struct itemtab *item_table, short *rhs_sym) {
   unsigned long hash_address = 0;
   const int rule_no = item_table[item_no].rule_number;
   int ii;
@@ -558,7 +558,7 @@ int insert_prefix(const int item_no, struct scope_elmt *scope_element, short *sc
     hash_address += rhs_sym[ii];
   ii = hash_address % SCOPE_SIZE;
   for (int j = scope_table[ii]; j != NIL; j = scope_element[j].link) {
-    if (is_prefix_equal(scope_element[j].item, item_no, rules)) {
+    if (is_prefix_equal(scope_element[j].item, item_no, rules, item_table, rhs_sym)) {
       return scope_element[j].index;
     }
   }
@@ -573,7 +573,7 @@ int insert_prefix(const int item_no, struct scope_elmt *scope_element, short *sc
 
 /// This boolean function takes two items as arguments and checks
 /// whether they have the same suffix.
-bool is_suffix_equal(const int item_no1, const int item_no2, bool *null_nt, struct ruletab_type *rules) {
+bool is_suffix_equal(const int item_no1, const int item_no2, bool *null_nt, struct ruletab_type *rules, struct itemtab *item_table, short *rhs_sym) {
   if (item_no1 < 0) {
     // a prefix
     return false;
@@ -637,7 +637,7 @@ bool is_suffix_equal(const int item_no1, const int item_no2, bool *null_nt, stru
 /// In any case, it returns the index associated with the suffix.
 /// When inserting a suffix into the table, all nullable nonterminals
 /// in the suffix are disregarded.
-int insert_suffix(const int item_no, struct scope_elmt *scope_element, short *scope_table, struct ScopeTop* st, bool *null_nt, struct ruletab_type *rules) {
+int insert_suffix(const int item_no, struct scope_elmt *scope_element, short *scope_table, struct ScopeTop* st, bool *null_nt, struct ruletab_type *rules, struct itemtab *item_table, short *rhs_sym) {
   int num_elements = 0;
   unsigned long hash_address = 0;
   const int rule_no = item_table[item_no].rule_number;
@@ -657,7 +657,7 @@ int insert_suffix(const int item_no, struct scope_elmt *scope_element, short *sc
   }
   ii = hash_address % SCOPE_SIZE;
   for (int j = scope_table[ii]; j != NIL; j = scope_element[j].link) {
-    if (is_suffix_equal(scope_element[j].item, item_no, null_nt, rules)) {
+    if (is_suffix_equal(scope_element[j].item, item_no, null_nt, rules, item_table, rhs_sym)) {
       return scope_element[j].index;
     }
   }
@@ -674,7 +674,7 @@ int insert_suffix(const int item_no, struct scope_elmt *scope_element, short *sc
 /// determines whether there is a terminal symbol t such that
 /// LHS_SYMBOL can rightmost produce a string tX.  If so, t is
 /// returned, otherwise EMPTY is returned.
-int get_shift_symbol(const int lhs_symbol, bool *symbol_seen, struct node **clitems, struct ruletab_type *rules) {
+int get_shift_symbol(const int lhs_symbol, bool *symbol_seen, struct node **clitems, struct ruletab_type *rules, struct itemtab *item_table, short *rhs_sym) {
   if (!symbol_seen[lhs_symbol]) {
     struct node *p;
     symbol_seen[lhs_symbol] = true;
@@ -682,12 +682,12 @@ int get_shift_symbol(const int lhs_symbol, bool *symbol_seen, struct node **clit
       p = p->next;
       const int item_no = p->value;
       const int rule_no = item_table[item_no].rule_number;
-      if (RHS_SIZE(rule_no) > 0) {
+      if (RHS_SIZE(rule_no, rules) > 0) {
         int symbol = rhs_sym[rules[rule_no].rhs];
         if (IS_A_TERMINAL(symbol)) {
           return symbol;
         } else {
-          symbol = get_shift_symbol(symbol, symbol_seen, clitems, rules);
+          symbol = get_shift_symbol(symbol, symbol_seen, clitems, rules, item_table, rhs_sym);
           if (symbol != empty) {
             return symbol;
           }
@@ -702,7 +702,7 @@ int get_shift_symbol(const int lhs_symbol, bool *symbol_seen, struct node **clit
 /// that are required as candidates for secondary error recovery.  If the
 /// option NAMES=OPTIMIZED is requested, the NAME map is optimized and SYMNO
 /// is updated accordingly.
-void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct Produced* produced, struct ScopeTop* st, JBitset first, struct scope_type *scope, struct node **clitems, bool *null_nt, long *scope_right_side, struct ruletab_type *rules) {
+void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct Produced* produced, struct ScopeTop* st, JBitset first, struct scope_type *scope, struct node **clitems, bool *null_nt, long *scope_right_side, struct ruletab_type *rules, short **scope_state, struct statset_type *statset, struct itemtab *item_table, short *rhs_sym) {
   // TOP, STACK, and INDEX are used for the digraph algorithm
   // in the routines COMPUTE_PRODUCES.
   //
@@ -765,7 +765,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
       }
       int rule_no = item_table[item_no].rule_number;
       int ii;
-      for (ii = 0; ii < RHS_SIZE(rule_no); ii++) {
+      for (ii = 0; ii < RHS_SIZE(rule_no, rules); ii++) {
         if (item_table[item_no + ii].symbol == error_image) {
           break;
         }
@@ -795,7 +795,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
       printf("*** These error rules are not in manual format:\n\n");
     }
     for (int item_no = item_root; item_no != NIL; item_no = item_list[item_no]) {
-      print_item(item_no, cli_options, rules);
+      print_item(item_no, cli_options, rules, item_table, rhs_sym);
     }
   }
   // Complete the construction of the RIGHT_MOST_PRODUCES map for
@@ -851,7 +851,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
           rule_no = item_table[item_no].rule_number;
         }
       }
-      if (rule_no == 0 || RHS_SIZE(rule_no) != 1) {
+      if (rule_no == 0 || RHS_SIZE(rule_no, rules) != 1) {
         nt_list[symbol] = nt_root;
         nt_root = symbol;
         SET_UNION(set, 0, produces, symbol);
@@ -1088,7 +1088,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
         } else if (IS_A_NON_TERMINAL(dot_symbol)) {
           int symbol = rules[item_table[item_no].rule_number].lhs;
           if (!IS_IN_SET(first, item_table[item_no].suffix_index, empty) && IS_IN_SET(produces, dot_symbol, symbol - num_terminals)) {
-            if (is_scope(item_no, symbol_seen, produced, item_of, next_item, null_nt, rules)) {
+            if (is_scope(item_no, symbol_seen, produced, item_of, next_item, null_nt, rules, item_table)) {
               int ii;
               for (ii = item_no + 1; ; ii++) {
                 symbol = item_table[ii].symbol;
@@ -1103,7 +1103,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
                 for ALL_NON_TERMINALS3(nt) {
                   symbol_seen[nt] = false;
                 }
-                symbol = get_shift_symbol(symbol, symbol_seen, clitems, rules);
+                symbol = get_shift_symbol(symbol, symbol_seen, clitems, rules, item_table, rhs_sym);
               }
               if (symbol != empty && item_list[ii] == OMEGA) {
                 item_list[ii] = item_root;
@@ -1130,8 +1130,8 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
         int symbol = rules[rule_no].lhs;
         num_scopes = num_scopes + 1;
         symbol_seen[symbol] = true;
-        prefix_index[item_no] = insert_prefix(item_no, scope_element, scope_table, st, rules);
-        suffix_index[item_no] = insert_suffix(item_no, scope_element, scope_table, st, null_nt, rules);
+        prefix_index[item_no] = insert_prefix(item_no, scope_element, scope_table, st, rules, item_table, rhs_sym);
+        suffix_index[item_no] = insert_suffix(item_no, scope_element, scope_table, st, null_nt, rules, item_table, rhs_sym);
       }
       ffree(scope_table);
       // We now construct a mapping from each nonterminal symbol that is
@@ -1208,7 +1208,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
         scope_state_size = start[num_state_sets + 1] - 1;
         calloc0(scope, num_scopes + 1, struct scope_type);
         scope_right_side = Allocate_long_array(scope_rhs_size + 1);
-        scope_state = Allocate_short_array(scope_state_size + 1);
+        *scope_state = Allocate_short_array(scope_state_size + 1);
         int k = 0;
         for (int i = 0; i <= num_states; i++) {
           state_list[i] = OMEGA;
@@ -1233,7 +1233,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
               state_root = state_list[state_no_inner];
               state_list[state_no_inner] = OMEGA;
               k++;
-              scope_state[k] = state_no_inner;
+              *scope_state[k] = state_no_inner;
             }
           }
         }
@@ -1262,8 +1262,8 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
           k = item_table[item_no].dot;
           int ii;
           for (ii = bucket[k]; ii != NIL; tail = ii, ii = next_item[ii]) {
-            if (RHS_SIZE(item_table[item_no].rule_number) >=
-                RHS_SIZE(item_table[ii].rule_number)) {
+            if (RHS_SIZE(item_table[item_no].rule_number, rules) >=
+                RHS_SIZE(item_table[ii].rule_number, rules)) {
               break;
             }
           }
@@ -1308,7 +1308,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
           for ALL_NON_TERMINALS3(j) {
             symbol_seen[j] = false;
           }
-          scope[i].look_ahead = get_shift_symbol(symbol, symbol_seen, clitems, rules);
+          scope[i].look_ahead = get_shift_symbol(symbol, symbol_seen, clitems, rules, item_table, rhs_sym);
         }
         scope[i].state_set = state_index[scope[i].lhs_symbol];
         item_no = item_list[item_no];
@@ -1408,7 +1408,7 @@ void compute_produces(const int symbol, struct node **direct_produces, short *st
 
 
 /// In this procedure, we first construct the LR(0) automaton.
-void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, JBitset first,  struct scope_type *scope, struct node **clitems, struct node **closure, struct SRTable* srt, long *scope_right_side, bool *null_nt) {
+void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, JBitset first,  struct scope_type *scope, struct node **clitems, struct node **closure, struct SRTable* srt, long *scope_right_side, bool *null_nt, short **scope_state, struct itemtab *item_table, struct ruletab_type *rules, short *rhs_sym) {
   struct ScopeTop st = (struct ScopeTop) {
     .top = 0
   };
@@ -1422,10 +1422,10 @@ void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, JBits
     .size = 0,
     .map = NULL,
   };
-  mklr0(cli_options, &no_shifts_ptr, &no_gotos_ptr, clitems, closure, srt, rules);
+  mklr0(cli_options, &no_shifts_ptr, &no_gotos_ptr, clitems, closure, srt, rules, item_table);
   struct Produced produced = {};
   if (error_maps_bit && (cli_options->table_opt.value == OPTIMIZE_TIME.value || cli_options->table_opt.value == OPTIMIZE_SPACE.value)) {
-    produce(cli_options, dss, &produced, &st, first, scope, clitems, null_nt, scope_right_side, rules);
+    produce(cli_options, dss, &produced, &st, first, scope, clitems, null_nt, scope_right_side, rules, scope_state, statset, item_table, rhs_sym);
   }
   // Free space trapped by the CLOSURE and CLITEMS maps.
   for ALL_NON_TERMINALS3(j) {

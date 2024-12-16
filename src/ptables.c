@@ -86,7 +86,7 @@ static void compute_shift_default(struct SRTable* srt, struct lastats_type *last
 /// the non-terminals in the grammar. Its task is to assign to each element
 /// of the array the Action which is most frequently defined on the symbol in
 /// question, and remove all such actions from the state automaton.
-static void compute_goto_default(long *gotodef) {
+static void compute_goto_default(long *gotodef, struct statset_type *statset) {
   // Set up a pool of temporary space.
   reset_temporary_space();
   int goto_count = 0;
@@ -184,7 +184,7 @@ static void init_file(FILE **file, char *file_name, char *file_tag) {
 
 /// Remap symbols, apply transition default actions  and call
 /// appropriate table compression routine.
-void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, short *gd_range, struct SRTable* srt, long *scope_right_side, struct lastats_type *lastats, short *shiftdf, long *gotodef, short *gd_index, struct statset_type *statset) {
+void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, short *gd_range, struct SRTable* srt, long *scope_right_side, struct lastats_type *lastats, short *shiftdf, long *gotodef, short *gd_index, struct statset_type *statset, short *scope_state, struct ruletab_type *rules, struct itemtab *item_table) {
   // First, we decrease by 1 the constants NUM_SYMBOLS
   // and NUM_TERMINALS, remove the EMPTY symbol(1) and remap the
   // other symbols beginning at 1.  If default reduction is
@@ -255,7 +255,7 @@ void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLI
     compute_shift_default(srt, lastats, shiftdf, statset);
   }
   if (cli_options->goto_default_bit) {
-    compute_goto_default(gotodef);
+    compute_goto_default(gotodef, statset);
   }
   // Release the pool of temporary space.
   free_temporary_space();
@@ -274,9 +274,9 @@ void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLI
   init_file(&of->sysprs, output_files->prs_file, of->prs_tag);
   struct ImportantAspects ia = (struct ImportantAspects) {};
   if (cli_options->table_opt.value == OPTIMIZE_SPACE.value) {
-    cmprspa(cli_options, &toutput, dss, ctp, of, np, scope, &ia, srt, scope_right_side, lastats, shiftdf, gotodef, gd_index, gd_range);
+    cmprspa(cli_options, &toutput, dss, ctp, of, np, scope, &ia, srt, scope_right_side, lastats, shiftdf, gotodef, gd_index, gd_range, scope_state, statset, rules, item_table);
   } else if (cli_options->table_opt.value == OPTIMIZE_TIME.value) {
-    cmprtim(cli_options, &toutput, dss, ctp, of, np, scope, &ia, srt, scope_right_side, lastats, gotodef, gd_index, gd_range);
+    cmprtim(cli_options, &toutput, dss, ctp, of, np, scope, &ia, srt, scope_right_side, lastats, gotodef, gd_index, gd_range, scope_state, statset, rules, item_table);
   } else {
     exit(999);
   }

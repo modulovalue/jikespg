@@ -72,6 +72,8 @@ int main(const int argc, char *argv[]) {
 
     struct scope_type *scope;
 
+    short *rhs_sym = NULL;
+
     // Process input.
     {
       char grm_file[80];
@@ -105,7 +107,7 @@ int main(const int argc, char *argv[]) {
         tab_file[dot - tmpbuf] = '\0';
       }
       strcat(tab_file, ".t"); /* add .t extension for table file */
-      process_input(grm_file, &of, argc, argv, file_prefix, &cli_options);
+      process_input(grm_file, &of, argc, argv, file_prefix, &cli_options, &rhs_sym);
     }
 
     /// FOLLOW is a mapping from non-terminals to a set of terminals that
@@ -120,7 +122,7 @@ int main(const int argc, char *argv[]) {
       .clitems = NULL,
       .closure = NULL,
     };
-    struct DetectedSetSizes dss = mkbasic(&cli_options, follow, &rmpself, &first, &fd, rules);
+    struct DetectedSetSizes dss = mkbasic(&cli_options, follow, &rmpself, &first, &fd, rules, rhs_sym);
 
     struct SRTable srt = (struct SRTable) {
       .reduce = NULL,
@@ -129,13 +131,15 @@ int main(const int argc, char *argv[]) {
 
     long *scope_right_side = NULL;
 
-    mkstats(&cli_options, &dss, first, scope, fd.clitems, fd.closure, &srt, scope_right_side, null_nt);
+    short *scope_state = NULL;
+
+    mkstats(&cli_options, &dss, first, scope, fd.clitems, fd.closure, &srt, scope_right_side, null_nt, &scope_state, item_table, rules, rhs_sym);
 
     struct SourcesElementSources ses = (struct SourcesElementSources) {
       .sources = NULL,
     };
 
-    struct ConflictCounter conflicts = mkrdcts(&cli_options, &dss, &ses, rmpself, first, fd.adequate_item, &srt, lastats, null_nt, gd_index, rules);
+    struct ConflictCounter conflicts = mkrdcts(&cli_options, &dss, &ses, rmpself, first, fd.adequate_item, &srt, lastats, null_nt, gd_index, rules, statset, item_table, rhs_sym);
 
     // Output more basic statistics.
     {
@@ -189,13 +193,13 @@ int main(const int argc, char *argv[]) {
             ffree(item_table);
           }
           for ALL_STATES3(state_no) {
-            struct node *head = in_stat[state_no];
+            struct node *head = conflicts.in_stat[state_no];
             if (head != NULL) {
               head = head->next;
-              free_nodes(head, in_stat[state_no]);
+              free_nodes(head, conflicts.in_stat[state_no]);
             }
           }
-          ffree(in_stat);
+          ffree(conflicts.in_stat);
           ffree(first.raw);
           null_nt += num_terminals + 1;
           ffree(null_nt);
@@ -217,7 +221,7 @@ int main(const int argc, char *argv[]) {
 
         short *shiftdf = NULL;
         long *gotodef = NULL;
-        process_tables(tab_file, &of, &cli_options, &dss, &ctp, &of, &np, scope, gd_range, &srt, scope_right_side, lastats, shiftdf, gotodef, gd_index, statset);
+        process_tables(tab_file, &of, &cli_options, &dss, &ctp, &of, &np, scope, gd_range, &srt, scope_right_side, lastats, shiftdf, gotodef, gd_index, statset, scope_state, rules, item_table);
       }
     }
 

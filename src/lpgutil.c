@@ -278,7 +278,7 @@ void print_large_token(char *line, char *token, const char *indent, int len) {
 }
 
 /// PRINT_ITEM takes as parameter an ITEM_NO which it prints.
-void print_item(const int item_no, struct CLIOptions* cli_options, struct ruletab_type *rules) {
+void print_item(const int item_no, struct CLIOptions* cli_options, struct ruletab_type *rules, struct itemtab *item_table, short *rhs_sym) {
   char tempstr[PRINT_LINE_SIZE + 1];
   char line[PRINT_LINE_SIZE + 1];
   char tok[SYMBOL_SIZE + 1];
@@ -351,7 +351,7 @@ void print_item(const int item_no, struct CLIOptions* cli_options, struct ruleta
 /// replaced by say the GOTO or GOTO_REDUCE of A, the item above can no longer
 /// be retrieved, since transitions in a given state are reconstructed from
 /// the KERNEL and ADEQUATE items of the actions in the GOTO and SHIFT maps.
-void print_state(const int state_no, struct CLIOptions* cli_options, struct node **adequate_item, struct SRTable* srt, struct lastats_type *lastats, struct statset_type *statset, struct node **in_stat, struct ruletab_type *rules) {
+void print_state(const int state_no, struct CLIOptions* cli_options, struct node **adequate_item, struct SRTable* srt, struct lastats_type *lastats, struct statset_type *statset, struct node **in_stat, struct ruletab_type *rules, struct itemtab *item_table, short *rhs_sym) {
   char buffer[PRINT_LINE_SIZE + 1];
   char line[PRINT_LINE_SIZE + 1];
   // ITEM_SEEN is used to construct sets of items, to help avoid
@@ -473,13 +473,13 @@ void print_state(const int state_no, struct CLIOptions* cli_options, struct node
   // line, sort then, then print them.  The kernel items are in sorted
   // order.
   for (int item_no = 1; item_no <= kernel_size; item_no++) {
-    print_item(item_list[item_no], cli_options, rules);
+    print_item(item_list[item_no], cli_options, rules, item_table, rhs_sym);
   }
   if (kernel_size < n) {
     printf("\n");
     qcksrt(item_list, kernel_size + 1, n);
     for (int item_no = kernel_size + 1; item_no <= n; item_no++) {
-      print_item(item_list[item_no], cli_options, rules);
+      print_item(item_list[item_no], cli_options, rules, item_table, rhs_sym);
     }
   }
   ffree(item_list);

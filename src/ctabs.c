@@ -190,7 +190,7 @@ static void exit_file(FILE **file, char *file_tag, struct CLIOptions *cli_option
   }
 }
 
-static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct ByteTerminalRange* btr, struct scope_type *scope, struct SRTable* srt, long *scope_right_side, struct statset_type *statset, short *gd_index, short *gd_range) {
+static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct ByteTerminalRange* btr, struct scope_type *scope, struct SRTable* srt, long *scope_right_side, struct statset_type *statset, short *gd_index, short *gd_range, short *scope_state, struct itemtab *item_table) {
   long *state_start = Allocate_long_array(num_states + 2);
   long *state_stack = Allocate_long_array(num_states + 1);
   PRNT("\nError maps storage:");
@@ -854,15 +854,14 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
   }
 }
 
-static void common(const bool byte_check_bit, struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, long *scope_right_side, struct statset_type *statset, short *gd_index, short *gd_range) {
+static void common(const bool byte_check_bit, struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, long *scope_right_side, struct statset_type *statset, short *gd_index, short *gd_range, short *scope_state, struct itemtab *item_table) {
   struct ByteTerminalRange btr = (struct ByteTerminalRange) {
     .value = true
   };
-
   // Write table common.
   {
     if (error_maps_bit) {
-      print_error_maps(cli_options, toutput, dss, ctp, of, &btr, scope, srt, scope_right_side, statset, gd_index, gd_range);
+      print_error_maps(cli_options, toutput, dss, ctp, of, &btr, scope, srt, scope_right_side, statset, gd_index, gd_range, scope_state, item_table);
     }
     if (byte_check_bit) {
       // Do nothing.
@@ -1742,7 +1741,7 @@ void reallocate(struct CLIOptions *cli_options, struct CTabsProps* ctp, struct N
   np->previous[ia->last_index] = ia->last_index - 1;
 }
 
-void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, long *term_state_index, long *shift_check_index, struct CTabsProps* ctp, struct new_state_type *new_state_element, short *shift_image, short *real_shift_number, struct OutputFiles* of, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, long *scope_right_side, short *shiftdf, long *gotodef, short *gd_index, short *gd_range, struct ruletab_type *rules)  {
+void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, long *term_state_index, long *shift_check_index, struct CTabsProps* ctp, struct new_state_type *new_state_element, short *shift_image, short *real_shift_number, struct OutputFiles* of, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, long *scope_right_side, short *shiftdf, long *gotodef, short *gd_index, short *gd_range, struct ruletab_type *rules, short *scope_state, struct statset_type *statset, struct itemtab *item_table)  {
   bool byte_check_bit = true;
   populate_start_file(&of->sysdcl, of->dcl_tag, cli_options);
   populate_start_file(&of->syssym, of->sym_tag, cli_options);
@@ -1867,7 +1866,7 @@ void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* tout
       padline();
       k = 1;
     }
-    itoc(RHS_SIZE(i));
+    itoc(RHS_SIZE(i, rules));
     *output_ptr++ = ',';
   }
   *(output_ptr - 1) = '\n';
@@ -2274,10 +2273,10 @@ void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* tout
   }
   ffree(check);
   ffree(action);
-  common(byte_check_bit, cli_options, toutput, dss, ctp, of, scope, ia, srt, scope_right_side, statset, gd_index, gd_range);
+  common(byte_check_bit, cli_options, toutput, dss, ctp, of, scope, ia, srt, scope_right_side, statset, gd_index, gd_range, scope_state, item_table);
 }
 
-void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, long *scope_right_side, struct lastats_type *lastats, long *gotodef, short *gd_index, short *gd_range, struct ruletab_type *rules) {
+void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, long *scope_right_side, struct lastats_type *lastats, long *gotodef, short *gd_index, short *gd_range, struct ruletab_type *rules, short *scope_state, struct statset_type *statset, struct itemtab *item_table) {
   bool byte_check_bit = true;
   populate_start_file(&of->sysdcl, of->dcl_tag, cli_options);
   populate_start_file(&of->syssym, of->sym_tag, cli_options);
@@ -2453,7 +2452,7 @@ void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutp
       padline();
       k = 1;
     }
-    itoc(RHS_SIZE(i));
+    itoc(RHS_SIZE(i, rules));
     *output_ptr++ = ',';
   }
   *(output_ptr - 1) = '\n';
@@ -2634,7 +2633,7 @@ void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutp
   }
   ffree(np->next);
   ffree(np->previous);
-  common(byte_check_bit, cli_options, toutput, dss, ctp, of, scope, ia, srt, scope_right_side, statset, gd_index, gd_range);
+  common(byte_check_bit, cli_options, toutput, dss, ctp, of, scope, ia, srt, scope_right_side, statset, gd_index, gd_range, scope_state, item_table);
 }
 
 void populate_start_file(FILE **file, char *file_tag, struct CLIOptions *cli_options) {

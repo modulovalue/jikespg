@@ -42,10 +42,10 @@ char ormark;
 // Used by the parser because C doesn't have classes.
 char escape;
 
-short *rhs_sym = NULL;
-
+// TODO segfaults?
 struct ruletab_type *rules = NULL;
 
+// TODO segfaults?
 struct itemtab *item_table = NULL;
 
 // TODO wrap
@@ -57,13 +57,10 @@ short *gd_index = NULL;
 // TODO wrap
 short *gd_range = NULL;
 
+// TODO wrap?
 struct statset_type *statset = NULL;
 
 // TODO wrap
 struct lastats_type *lastats = NULL;
-
-struct node **in_stat = NULL;
-
-short *scope_state = NULL;
 
 char *output_buffer = NULL;

@@ -7,7 +7,7 @@
 struct DefaultSaves {
   int default_saves;
   int last_symbol;
-} remap_symbols(struct TableOutput* toutput, bool* is_terminal, struct SRTable* srt, struct lastats_type *lastats) {
+} remap_symbols(struct TableOutput* toutput, bool* is_terminal, struct SRTable* srt, struct lastats_type *lastats, struct statset_type *statset) {
   int default_saves = 0;
   long *frequency_symbol = Allocate_long_array(num_symbols + 1);
   long *frequency_count = Allocate_long_array(num_symbols + 1);
@@ -162,7 +162,7 @@ struct DefaultSaves {
 /// compute the starting position in a vector where each of its rows
 /// may be placed without clobbering elements in another row.
 /// The starting positions are stored in the vector STATE_INDEX.
-static void overlap_tables(struct CLIOptions *cli_options, struct TableOutput* toutput, bool* is_terminal, struct DefaultSaves default_saves, struct CTabsProps* ctp, long last_symbol, struct NextPrevious* np, struct ImportantAspects* ia, struct SRTable* srt, struct lastats_type *lastats) {
+static void overlap_tables(struct CLIOptions *cli_options, struct TableOutput* toutput, bool* is_terminal, struct DefaultSaves default_saves, struct CTabsProps* ctp, long last_symbol, struct NextPrevious* np, struct ImportantAspects* ia, struct SRTable* srt, struct lastats_type *lastats, struct statset_type *statset) {
   long *symbol_list = Allocate_long_array(num_symbols + 1);
   num_entries -= default_saves.default_saves;
   ctp->increment_size = MAX(num_entries * increment / 100, num_symbols + 1);
@@ -319,9 +319,9 @@ static void overlap_tables(struct CLIOptions *cli_options, struct TableOutput* t
 /// together, to achieve maximum speed efficiency.
 /// Otherwise, the compression technique used in this table is
 /// analogous to the technique used in the routine CMPRSPA.
-void cmprtim(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, long *scope_right_side, struct lastats_type *lastats, long *gotodef, short *gd_index, short *gd_range) {
+void cmprtim(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, long *scope_right_side, struct lastats_type *lastats, long *gotodef, short *gd_index, short *gd_range, short *scope_state, struct statset_type *statset, struct ruletab_type *rules, struct itemtab *item_table) {
   bool *is_terminal = Allocate_boolean_array(num_symbols + 1);
-  struct DefaultSaves default_saves = remap_symbols(toutput, is_terminal, srt, lastats);
-  overlap_tables(cli_options, toutput, is_terminal, default_saves, ctp, default_saves.last_symbol, np, ia, srt, lastats);
-  print_time_parser(cli_options, toutput, dss, ctp, of, np, scope, ia, srt, scope_right_side, lastats, gotodef, gd_index, gd_range, rules);
+  struct DefaultSaves default_saves = remap_symbols(toutput, is_terminal, srt, lastats, statset);
+  overlap_tables(cli_options, toutput, is_terminal, default_saves, ctp, default_saves.last_symbol, np, ia, srt, lastats, statset);
+  print_time_parser(cli_options, toutput, dss, ctp, of, np, scope, ia, srt, scope_right_side, lastats, gotodef, gd_index, gd_range, rules, scope_state, statset, item_table);
 }

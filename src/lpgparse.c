@@ -1074,7 +1074,7 @@ static struct line_elemt *find_macro(char *name, short *macro_table, struct Line
 /// user defined macro names. If one is found, the macro definition is
 /// substituted for the name. The modified action text is then printed out in
 /// the action file.
-static void process_action_line(FILE *sysout, char *text, const int line_no, const int rule_no, char *grm_file, struct CLIOptions* cli_options, short *macro_table, struct LinePool* lp, struct ruletab_type *rules) {
+static void process_action_line(FILE *sysout, char *text, const int line_no, const int rule_no, char *grm_file, struct CLIOptions* cli_options, short *macro_table, struct LinePool* lp, struct ruletab_type *rules, short *rhs_sym) {
   char temp1[MAX_LINE_SIZE + 1];
   char suffix[MAX_LINE_SIZE + 1];
   char symbol[SYMBOL_SIZE + 1];
@@ -1156,7 +1156,7 @@ next_line: {
             strcpy(temp2, " ... ");
           } else /* Copy right-hand-side symbols to temp2 */
           {
-            for ENTIRE_RHS3(j, rule_no) {
+            for ENTIRE_RHS3(j, rule_no, rules) {
               restore_symbol(symbol, RETRIEVE_STRING(rhs_sym[j]), cli_options->ormark, cli_options->escape);
               if (strlen(temp2) + strlen(symbol) + 1 < max_len) {
                 strcat(temp2, " ");
@@ -1178,9 +1178,9 @@ next_line: {
         if (strxeq(text + k, krule_size)) {
           strcpy(temp1, text + k + 10);
           if (k + 10 != text_len) {
-            sprintf(text + k, "%d%s", RHS_SIZE(rule_no), temp1);
+            sprintf(text + k, "%d%s", RHS_SIZE(rule_no, rules), temp1);
           } else {
-            sprintf(text + k, "%d", RHS_SIZE(rule_no));
+            sprintf(text + k, "%d", RHS_SIZE(rule_no, rules));
           }
           goto proceed;
         }
@@ -1357,7 +1357,7 @@ static void mapmacro(const int def_index, short *macro_table) {
 }
 
 /// Process all semantic actions and generate action file.
-static void process_actions(char *grm_file, struct CLIOptions *cli_options, struct ScannerState* ss, struct ruletab_type *rules) {
+static void process_actions(char *grm_file, struct CLIOptions *cli_options, struct ScannerState* ss, struct ruletab_type *rules, short *rhs_sym) {
   struct LinePool lp = (struct LinePool) {
     .line_pool_root = NULL,
   };
@@ -1466,9 +1466,9 @@ static void process_actions(char *grm_file, struct CLIOptions *cli_options, stru
       *p = '\0';
     }
     if (actelmt[i].header_block) {
-      process_action_line(syshact, line, ss->line_no, actelmt[i].rule_number, grm_file, cli_options, macro_table, &lp, rules);
+      process_action_line(syshact, line, ss->line_no, actelmt[i].rule_number, grm_file, cli_options, macro_table, &lp, rules, rhs_sym);
     } else {
-      process_action_line(sysact, line, ss->line_no, actelmt[i].rule_number, grm_file, cli_options, macro_table, &lp, rules);
+      process_action_line(sysact, line, ss->line_no, actelmt[i].rule_number, grm_file, cli_options, macro_table, &lp, rules, rhs_sym);
     }
     if (ss->line_no != actelmt[i].end_line) {
       while (ss->line_no < actelmt[i].end_line) {
@@ -1491,9 +1491,9 @@ static void process_actions(char *grm_file, struct CLIOptions *cli_options, stru
           }
           *p = '\0';
           if (actelmt[i].header_block) {
-            process_action_line(syshact, line, ss->line_no, actelmt[i].rule_number, grm_file, cli_options, macro_table, &lp, rules);
+            process_action_line(syshact, line, ss->line_no, actelmt[i].rule_number, grm_file, cli_options, macro_table, &lp, rules, rhs_sym);
           } else {
-            process_action_line(sysact, line, ss->line_no, actelmt[i].rule_number, grm_file, cli_options, macro_table, &lp, rules);
+            process_action_line(sysact, line, ss->line_no, actelmt[i].rule_number, grm_file, cli_options, macro_table, &lp, rules, rhs_sym);
           }
         }
       }
@@ -1502,9 +1502,9 @@ static void process_actions(char *grm_file, struct CLIOptions *cli_options, stru
         memcpy(line, ss->p1, len);
         line[len] = '\0';
         if (actelmt[i].header_block) {
-          process_action_line(syshact, line, ss->line_no, actelmt[i].rule_number, grm_file, cli_options, macro_table, &lp, rules);
+          process_action_line(syshact, line, ss->line_no, actelmt[i].rule_number, grm_file, cli_options, macro_table, &lp, rules, rhs_sym);
         } else {
-          process_action_line(sysact, line, ss->line_no, actelmt[i].rule_number, grm_file, cli_options, macro_table, &lp, rules);
+          process_action_line(sysact, line, ss->line_no, actelmt[i].rule_number, grm_file, cli_options, macro_table, &lp, rules, rhs_sym);
         }
       }
     }
@@ -1520,7 +1520,7 @@ static void process_actions(char *grm_file, struct CLIOptions *cli_options, stru
 }
 
 /// Actions to be taken if grammar is successfully parsed.
-static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *sysgrm, struct ScannerState* ss) {
+static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *sysgrm, struct ScannerState* ss, short **rhs_sym) {
   if (rulehdr == NULL) {
     printf("Informative: Empty grammar read in. Processing stopped.\n");
     fclose(sysgrm);
@@ -1570,7 +1570,7 @@ static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *
     register struct node *ptr;
     register int rhs_ct = 0;
     calloc0(rules, num_rules + 2, struct ruletab_type);
-    rhs_sym = Allocate_short_array(num_items + 1);
+    *rhs_sym = Allocate_short_array(num_items + 1);
     num_items += num_rules + 1;
     register int ii = 0;
     // Put starting rules from start symbol linked list in rule and rhs table
@@ -1584,7 +1584,7 @@ static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *
         rules[ii].sp = 0;
         rules[ii++].rhs = rhs_ct;
         if (ptr->value != empty) {
-          rhs_sym[rhs_ct++] = ptr->value;
+          (*rhs_sym)[rhs_ct++] = ptr->value;
         }
       }
       free_nodes(start_symbol_root, q);
@@ -1599,7 +1599,7 @@ static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *
         // not am empty right-hand side?
         do {
           ptr = ptr->next;
-          rhs_sym[rhs_ct++] = ptr->value;
+          (*rhs_sym)[rhs_ct++] = ptr->value;
         } while (ptr != rulehdr[ii].rhs_root);
         ptr = ptr->next; /* point to 1st element */
         rules[ii].sp = rulehdr[ii].sp && ptr == rulehdr[ii].rhs_root;
@@ -1622,11 +1622,11 @@ static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *
     rules[num_rules + 1].rhs = rhs_ct; /* Fence !! */
   }
   fclose(sysgrm); /* Close grammar input file. */
-  process_actions(grm_file, cli_options, ss, rules);
+  process_actions(grm_file, cli_options, ss, rules, *rhs_sym);
 }
 
 /// This procedure opens all relevant files and processes the input grammar.
-void process_input(char *grm_file, struct OutputFiles *output_files, const int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options) {
+void process_input(char *grm_file, struct OutputFiles *output_files, const int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options, short **rhs_sym) {
   char parm[256] = "";
 
   // Parse args.
@@ -1783,7 +1783,7 @@ void process_input(char *grm_file, struct OutputFiles *output_files, const int a
       }
       act -= ERROR_ACTION;
     } else if (act == ACCEPT_ACTION) {
-      accept_action(grm_file, cli_options, sysgrm, &ss);
+      accept_action(grm_file, cli_options, sysgrm, &ss, rhs_sym);
       goto end;
     } else {
       // error_action
