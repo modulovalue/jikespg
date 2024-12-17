@@ -80,10 +80,14 @@ void build_symno(struct ParserState* ps) {
 /:static void (*rule_action[]) (struct ParserState* ps) = {NULL,:/
 
 /.
+#include "common.h"
+#include "lpgparse.h"
+
 #line $next_line "$input_file"
-#define SYM1 terminal[stack_top + 1]
-#define SYM2 terminal[stack_top + 2]
-#define SYM3 terminal[stack_top + 3]
+
+#define SYM1 (ps->terminal[stack_top + 1])
+#define SYM2 (ps->terminal[stack_top + 2])
+#define SYM3 (ps->terminal[stack_top + 3])
 
 static void null_action(struct ParserState* ps)
 {
@@ -327,7 +331,7 @@ static void act$rule_number(struct ParserState* ps)
         case ERROR_SYMBOL_TK:
             if (error_image > num_terminals)
             {
-                restore_symbol(tok_string, kerror, ormark, escape);
+                restore_symbol(tok_string, kerror, ps->ormark, ps->escape);
                 PRNTERR2("Illegal aliasing to %s prior to its definition.  Line %ld, column %d", tok_string, SYM3.start_line, SYM3.start_column);
                 exit(12);
             }
@@ -337,7 +341,7 @@ static void act$rule_number(struct ParserState* ps)
         case EOF_SYMBOL_TK:
             if (eoft_image > num_terminals)
             {
-                restore_symbol(tok_string, keoft, ormark, escape);
+                restore_symbol(tok_string, keoft, ps->ormark, ps->escape);
                 PRNTERR2("Illegal aliasing to %s prior to its definition. Line %ld, column %d", tok_string, SYM3.start_line, SYM3.start_column);
                 exit(12);
             }
@@ -363,7 +367,7 @@ static void act$rule_number(struct ParserState* ps)
         case SYMBOL_TK:
             if (symbol_image(SYM1.name, ps) != OMEGA)
             {
-                restore_symbol(tok_string, SYM1.name, ormark, escape);
+                restore_symbol(tok_string, SYM1.name, ps->ormark, ps->escape);
                 PRNTERR2("Symbol %s was previously defined. Line %ld, column %d", tok_string, SYM1.start_line, SYM1.start_column);
                 exit(12);
             }
@@ -371,12 +375,12 @@ static void act$rule_number(struct ParserState* ps)
             break;
 
         case ERROR_SYMBOL_TK:
-            if (error_image > num_terminals || ! error_maps_bit)
+            if (error_image > num_terminals || ! ps->error_maps_bit)
             {
                 if (image == empty      || image == eolt_image ||
                     image == eoft_image || image > num_terminals)
                 {
-                    restore_symbol(tok_string, kerror, ormark, escape);
+                    restore_symbol(tok_string, kerror, ps->ormark, ps->escape);
                     PRNTERR2("Illegal alias for symbol %s. Line %ld, column %d.", tok_string, SYM1.start_line, SYM1.start_column);
                     exit(12);
                 }
@@ -385,7 +389,7 @@ static void act$rule_number(struct ParserState* ps)
             }
             else
             {
-                restore_symbol(tok_string, kerror, ormark, escape);
+                restore_symbol(tok_string, kerror, ps->ormark, ps->escape);
                 PRNTERR2("Symbol %s was previously defined. Line %ld, column %d", tok_string, SYM1.start_line, SYM1.start_column);
                 exit(12);
             }
@@ -397,7 +401,7 @@ static void act$rule_number(struct ParserState* ps)
                 if (image == empty       || image == eolt_image  ||
                     image == error_image || image > num_terminals)
                 {
-                    restore_symbol(tok_string, keoft, ormark, escape);
+                    restore_symbol(tok_string, keoft, ps->ormark, ps->escape);
                     PRNTERR2("Illegal alias for symbol %s. Line %ld, column %d.", tok_string, SYM1.start_line, SYM1.start_column);
                     exit(12);
                 }
@@ -406,7 +410,7 @@ static void act$rule_number(struct ParserState* ps)
             }
             else
             {
-                restore_symbol(tok_string, keoft, ormark, escape);
+                restore_symbol(tok_string, keoft, ps->ormark, ps->escape);
                 PRNTERR2("Symbol %s was previously defined.  %ld, column %d", tok_string, SYM1.start_line, SYM1.start_column);
                 exit(12);
             }
@@ -703,7 +707,7 @@ static void act$rule_number(struct ParserState* ps)
     if (error_image == DEFAULT_SYMBOL)
     {
         char tok_string[SYMBOL_SIZE + 1];
-        restore_symbol(tok_string, kerror, ormark, escape);
+        restore_symbol(tok_string, kerror, ps->ormark, ps->escape);
         PRNTERR2("%s not declared or aliased to terminal symbol. Line %ld, column %d", tok_string, SYM2.start_line, SYM2.start_column);
         exit(12);
     }
@@ -829,7 +833,7 @@ static void misplaced_keyword_found_in_RULES_section(struct ParserState* ps)
 /.$location
 static void act$rule_number(struct ParserState* ps)
 {
-    if (error_maps_bit)
+    if (ps->error_maps_bit)
     {
         int symbol;
 
@@ -945,7 +949,7 @@ static void process_TERMINALS_section(struct ParserState* ps)
     assign_symbol_no(keoft, OMEGA, ps->hash_table);
     eoft_image = symbol_image(keoft, ps);
 
-    if (error_maps_bit)
+    if (ps->error_maps_bit)
     {
         assign_symbol_no(kerror, OMEGA, ps->hash_table);
         error_image = symbol_image(kerror, ps);
@@ -972,7 +976,7 @@ static void process_ALIAS_section(struct ParserState* ps)
         num_terminals++;
     }
 
-    if (error_maps_bit)
+    if (ps->error_maps_bit)
     {
         if (error_image <= num_terminals)
             k++;

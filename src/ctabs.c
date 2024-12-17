@@ -57,12 +57,12 @@ static void mystrcpy(const char *str, struct OutputFiles* of) {
   BUFFER_CHECK(of->syssym);
 }
 
-static void prnt_longs(const char *title, const int init, const int bound, const int perline, const long *array, struct CLIOptions *cli_options, struct OutputFiles* of) {
+static void prnt_longs(const char *title, const int init, const int bound, const int perline, ArrayLong array, struct CLIOptions *cli_options, struct OutputFiles* of) {
   mystrcpy(title, of);
   padline();
   int k = 0;
   for (int i = init; i <= bound; i++) {
-    itoc(array[i]);
+    itoc(array.raw[i]);
     *output_ptr++ = ',';
     k++;
     if (k == perline && i != bound) {
@@ -93,95 +93,95 @@ static void prnt_longs(const char *title, const int init, const int bound, const
 /// the partition created by PARTSET.  Each element of the partition
 /// is organized as a circular list where the smallest sets appear
 /// first in the list.
-static void compute_action_symbols_range(const long *state_start, const long *state_stack, const long *state_list, long *action_symbols_range, struct SRTable* srt, struct statset_type *statset) {
-  short *symbol_list = Allocate_short_array(num_symbols + 1);
+static void compute_action_symbols_range(const ArrayLong state_start, const ArrayLong state_stack, const ArrayLong state_list, ArrayLong action_symbols_range, struct SRTable* srt, struct statset_type *statset) {
+  ArrayShort symbol_list = Allocate_short_array2(num_symbols + 1);
   // We now write out the range elements of the ACTION_SYMBOLS map.
   // Recall that if STATE_START has a negative value, then the set in
   // question is sharing elements and does not need to be processed.
   int k = 0;
   for ALL_SYMBOLS3(j) {
-    symbol_list[j] = OMEGA; /* Initialize all links to OMEGA */
+    symbol_list.raw[j] = OMEGA; /* Initialize all links to OMEGA */
   }
   for ALL_STATES3(state_no) {
-    const int state_no__ = state_list[state_no];
-    if (state_start[state_no__] > 0) {
+    const int state_no__ = state_list.raw[state_no];
+    if (state_start.raw[state_no__] > 0) {
       int symbol_root = 0; /* Add "fence" element: 0 to list */
-      symbol_list[symbol_root] = NIL;
+      symbol_list.raw[symbol_root] = NIL;
       // Pop a state from the stack,  and add each of its elements
       // that has not yet been processed into the list.
       // Continue until stack is empty...
       // Recall that the stack is represented by a circular queue.
       int state;
       for (bool end_node = (state = state_no__) == NIL; !end_node; end_node = state == state_no__) {
-        state = state_stack[state];
+        state = state_stack.raw[state];
         const struct shift_header_type sh = srt->shift[statset[state].shift_number];
         for (int j = 1; j <= sh.size; j++) {
           int symbol = sh.map[j].symbol;
-          if (symbol_list[symbol] == OMEGA) {
-            symbol_list[symbol] = symbol_root;
+          if (symbol_list.raw[symbol] == OMEGA) {
+            symbol_list.raw[symbol] = symbol_root;
             symbol_root = symbol;
           }
         }
         const struct reduce_header_type red = srt->reduce[state];
         for (int j = 1; j <= red.size; j++) {
           int symbol = red.map[j].symbol;
-          if (symbol_list[symbol] == OMEGA) {
-            symbol_list[symbol] = symbol_root;
+          if (symbol_list.raw[symbol] == OMEGA) {
+            symbol_list.raw[symbol] = symbol_root;
             symbol_root = symbol;
           }
         }
       }
       // Write the list out.
       for (int symbol = symbol_root; symbol != NIL; symbol = symbol_root) {
-        symbol_root = symbol_list[symbol];
-        symbol_list[symbol] = OMEGA;
-        action_symbols_range[k++] = symbol;
+        symbol_root = symbol_list.raw[symbol];
+        symbol_list.raw[symbol] = OMEGA;
+        action_symbols_range.raw[k++] = symbol;
       }
     }
   }
-  ffree(symbol_list);
+  ffree(symbol_list.raw);
 }
 
 /// This procedure computes the range of the NACTION_SYMBOLS map. It
 /// organization is analoguous to COMPUTE_ACTION_SYMBOLS_RANGE.
-static void compute_naction_symbols_range(const long *state_start, const long *state_stack, const long *state_list, long *naction_symbols_range, short *gd_index, short *gd_range) {
-  short *symbol_list = Allocate_short_array(num_symbols + 1);
+static void compute_naction_symbols_range(const ArrayLong state_start, const ArrayLong state_stack, const ArrayLong state_list, ArrayLong naction_symbols_range, ArrayShort gd_index, ArrayShort gd_range) {
+  ArrayShort symbol_list = Allocate_short_array2(num_symbols + 1);
   // We now write out the range elements of the NACTION_SYMBOLS map.
   // Recall that if STATE_START has a negative value, then the set in
   // question is sharing elements and does not need to be processed.
   int k = 0;
   for ALL_SYMBOLS3(j) {
-    symbol_list[j] = OMEGA; /* Initialize all links to OMEGA */
+    symbol_list.raw[j] = OMEGA; /* Initialize all links to OMEGA */
   }
   for ALL_STATES3(state_no) {
-    const int state_no__ = state_list[state_no];
-    if (state_start[state_no__] > 0) {
+    const int state_no__ = state_list.raw[state_no];
+    if (state_start.raw[state_no__] > 0) {
       int symbol_root = 0; /* Add "fence" element: 0 to list */
-      symbol_list[symbol_root] = NIL;
+      symbol_list.raw[symbol_root] = NIL;
       // Pop a state from the stack,  and add each of its elements
       // that has not yet been processed into the list.
       // Continue until stack is empty...
       // Recall that the stack is represented by a circular queue.
       int state;
       for (bool end_node = (state = state_no__) == NIL; !end_node; end_node = state == state_no__) {
-        state = state_stack[state];
-        for (int j = gd_index[state]; j <= gd_index[state + 1] - 1; j++) {
-          int symbol = gd_range[j];
-          if (symbol_list[symbol] == OMEGA) {
-            symbol_list[symbol] = symbol_root;
+        state = state_stack.raw[state];
+        for (int j = gd_index.raw[state]; j <= gd_index.raw[state + 1] - 1; j++) {
+          int symbol = gd_range.raw[j];
+          if (symbol_list.raw[symbol] == OMEGA) {
+            symbol_list.raw[symbol] = symbol_root;
             symbol_root = symbol;
           }
         }
       }
       // Write the list out.
       for (int symbol = symbol_root; symbol != NIL; symbol = symbol_root) {
-        symbol_root = symbol_list[symbol];
-        symbol_list[symbol] = OMEGA;
-        naction_symbols_range[k++] = symbol;
+        symbol_root = symbol_list.raw[symbol];
+        symbol_list.raw[symbol] = OMEGA;
+        naction_symbols_range.raw[k++] = symbol;
       }
     }
   }
-  ffree(symbol_list);
+  ffree(symbol_list.raw);
 }
 
 static void exit_file(FILE **file, char *file_tag, struct CLIOptions *cli_options) {
@@ -190,17 +190,17 @@ static void exit_file(FILE **file, char *file_tag, struct CLIOptions *cli_option
   }
 }
 
-static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct ByteTerminalRange* btr, struct scope_type *scope, struct SRTable* srt, long *scope_right_side, struct statset_type *statset, short *gd_index, short *gd_range, short *scope_state, struct itemtab *item_table) {
-  long *state_start = Allocate_long_array(num_states + 2);
-  long *state_stack = Allocate_long_array(num_states + 1);
+static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct ByteTerminalRange* btr, struct scope_type *scope, struct SRTable* srt, ArrayLong scope_right_side, struct statset_type *statset, ArrayShort gd_index, ArrayShort gd_range, ArrayShort scope_state, struct itemtab *item_table, struct symno_type *symno, bool error_maps_bit, struct ScopeCounter* sc) {
+  ArrayLong state_start = Allocate_long_array2(num_states + 2);
+  ArrayLong state_stack = Allocate_long_array2(num_states + 1);
   PRNT("\nError maps storage:");
   // We now construct a bit map for the set of terminal symbols that
   // may appear in each state. Then, we invoke PARTSET to apply the
   // Partition Heuristic and print it.
-  long *as_size = Allocate_long_array(num_states + 1);
-  long *original;
+  ArrayLong as_size = Allocate_long_array2(num_states + 1);
+  ArrayLong original;
   if (cli_options->table_opt.value == OPTIMIZE_TIME.value) {
-    original = Allocate_long_array(num_symbols + 1);
+    original = Allocate_long_array2(num_symbols + 1);
     // In a compressed TIME table, the terminal and non-terminal
     // symbols are mixed together when they are remapped.
     // We shall now recover the original number associated with
@@ -210,7 +210,7 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
     // as well as time when operations are performed on those
     // bit-strings.
     for ALL_TERMINALS3(symbol) {
-      original[toutput->symbol_map[symbol]] = symbol;
+      original.raw[toutput->symbol_map.raw[symbol]] = symbol;
     }
   }
   JBitset action_symbols;
@@ -221,22 +221,22 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
     struct shift_header_type sh;
     struct reduce_header_type red;
     sh = srt->shift[statset[state_no].shift_number];
-    as_size[state_no] = sh.size;
+    as_size.raw[state_no] = sh.size;
     for (int i = 1; i <= sh.size; i++) {
       int symbol;
       if (cli_options->table_opt.value == OPTIMIZE_TIME.value) {
-        symbol = original[sh.map[i].symbol];
+        symbol = original.raw[sh.map[i].symbol];
       } else {
         symbol = sh.map[i].symbol;
       }
       SET_BIT_IN(action_symbols, state_no, symbol);
     }
     red = srt->reduce[state_no];
-    as_size[state_no] += red.size;
+    as_size.raw[state_no] += red.size;
     for (int i = 1; i <= red.size; i++) {
       int symbol;
       if (cli_options->table_opt.value == OPTIMIZE_TIME.value) {
-        symbol = original[red.map[i].symbol];
+        symbol = original.raw[red.map[i].symbol];
       } else {
         symbol = red.map[i].symbol;
       }
@@ -246,22 +246,22 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
   partset(action_symbols, as_size, toutput->state_list, state_start, state_stack, num_terminals, false);
   ffree(action_symbols.raw);
   // Compute and write out the base of the ACTION_SYMBOLS map.
-  long *action_symbols_base = Allocate_long_array(num_states + 1);
+  ArrayLong action_symbols_base = Allocate_long_array2(num_states + 1);
   for ALL_STATES3(state_no) {
-    action_symbols_base[toutput->state_list[state_no]] = ABS(state_start[toutput->state_list[state_no]]);
+    action_symbols_base.raw[toutput->state_list.raw[state_no]] = ABS(state_start.raw[toutput->state_list.raw[state_no]]);
   }
   if (cli_options->java_bit) {
     prnt_longs("\n    public final static char asb[] = {0,\n", 1, num_states, 10, action_symbols_base, cli_options, of);
   } else {
     prnt_longs("\nconst unsigned short CLASS_HEADER asb[] = {0,\n", 1, num_states, 10, action_symbols_base, cli_options, of);
   }
-  ffree(action_symbols_base);
+  ffree(action_symbols_base.raw);
   // Compute and write out the range of the ACTION_SYMBOLS map.
-  int offset = state_start[num_states + 1];
-  long *action_symbols_range = Allocate_long_array(offset);
+  int offset = state_start.raw[num_states + 1];
+  ArrayLong action_symbols_range = Allocate_long_array2(offset);
   compute_action_symbols_range(state_start, state_stack, toutput->state_list, action_symbols_range, srt, statset);
   for (int i = 0; i < offset - 1; i++) {
-    if (action_symbols_range[i] > (cli_options->java_bit ? 127 : 255)) {
+    if (action_symbols_range.raw[i] > (cli_options->java_bit ? 127 : 255)) {
       btr->value = 0;
       break;
     }
@@ -289,44 +289,44 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
     num_bytes = 2 * (offset - 1);
   }
   PRNT3("    Storage required for ACTION_SYMBOLS_RANGE map: %ld Bytes", num_bytes);
-  ffree(action_symbols_range);
+  ffree(action_symbols_range.raw);
   JBitset naction_symbols;
   if (error_maps_bit) {
     calloc0_set(naction_symbols, num_states + 1, dss->non_term_set_size);
   }
   // We now repeat the same process for the domain of the GOTO table.
   for ALL_STATES3(state_no) {
-    as_size[state_no] = gd_index[state_no + 1] - gd_index[state_no];
-    for (int i = gd_index[state_no]; i <= gd_index[state_no + 1] - 1; i++) {
-      int symbol = gd_range[i] - num_terminals;
+    as_size.raw[state_no] = gd_index.raw[state_no + 1] - gd_index.raw[state_no];
+    for (int i = gd_index.raw[state_no]; i <= gd_index.raw[state_no + 1] - 1; i++) {
+      int symbol = gd_range.raw[i] - num_terminals;
       SET_BIT_IN(naction_symbols, state_no, symbol);
     }
   }
   partset(naction_symbols, as_size, toutput->state_list, state_start, state_stack, num_non_terminals, false);
-  ffree(as_size);
+  ffree(as_size.raw);
   ffree(naction_symbols.raw);
   // Remap non-terminals
   for (int i = 1; i <= gotodom_size; i++) {
     if (cli_options->table_opt.value == OPTIMIZE_SPACE.value) {
-      gd_range[i] = toutput->symbol_map[gd_range[i]] - num_terminals;
+      gd_range.raw[i] = toutput->symbol_map.raw[gd_range.raw[i]] - num_terminals;
     } else {
-      gd_range[i] = toutput->symbol_map[gd_range[i]];
+      gd_range.raw[i] = toutput->symbol_map.raw[gd_range.raw[i]];
     }
   }
   // Compute and write out the base of the NACTION_SYMBOLS map.
-  long *naction_symbols_base = Allocate_long_array(num_states + 1);
+  ArrayLong naction_symbols_base = Allocate_long_array2(num_states + 1);
   for ALL_STATES3(state_no) {
-    naction_symbols_base[toutput->state_list[state_no]] = ABS(state_start[toutput->state_list[state_no]]);
+    naction_symbols_base.raw[toutput->state_list.raw[state_no]] = ABS(state_start.raw[toutput->state_list.raw[state_no]]);
   }
   if (cli_options->java_bit) {
     prnt_longs("\n    public final static char nasb[] = {0,\n", 1, num_states, 10, naction_symbols_base, cli_options, of);
   } else {
     prnt_longs("\nconst unsigned short CLASS_HEADER nasb[] = {0,\n", 1, num_states, 10, naction_symbols_base, cli_options, of);
   }
-  ffree(naction_symbols_base);
+  ffree(naction_symbols_base.raw);
   // Compute and write out the range of the NACTION_SYMBOLS map.
-  offset = state_start[num_states + 1];
-  long *naction_symbols_range = Allocate_long_array(offset);
+  offset = state_start.raw[num_states + 1];
+  ArrayLong naction_symbols_range = Allocate_long_array2(offset);
   compute_naction_symbols_range(state_start, state_stack, toutput->state_list, naction_symbols_range, gd_index, gd_range);
   if (cli_options->java_bit) {
     prnt_longs("\n    public final static char nasr[] = {0,\n", 0, offset - 2, 10, naction_symbols_range, cli_options, of);
@@ -335,15 +335,15 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
   }
   PRNT3("    Storage required for NACTION_SYMBOLS_BASE map: %ld Bytes", 2 * num_states);
   PRNT3("    Storage required for NACTION_SYMBOLS_RANGE map: %d Bytes", 2 * (offset - 1));
-  ffree(naction_symbols_range);
+  ffree(naction_symbols_range.raw);
   // We write the name_index of each terminal symbol.  The array TEMP
   // is used to remap the NAME_INDEX values based on the new symbol
   // numberings. If time tables are requested, the terminals and non-
   // terminals are mixed together.
-  long *temp = Allocate_long_array(num_symbols + 1);
+  ArrayLong temp = Allocate_long_array2(num_symbols + 1);
   if (cli_options->table_opt.value == OPTIMIZE_SPACE.value) {
     for ALL_TERMINALS3(symbol) {
-      temp[toutput->symbol_map[symbol]] = symno[symbol].name_index;
+      temp.raw[toutput->symbol_map.raw[symbol]] = symno[symbol].name_index;
     }
     if (num_names <= (cli_options->java_bit ? 127 : 255)) {
       if (cli_options->java_bit) {
@@ -366,7 +366,7 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
     // TEMP is used to remap the NAME_INDEX values based on the new
     // symbol numberings.
     for ALL_NON_TERMINALS3(symbol) {
-      temp[toutput->symbol_map[symbol]] = symno[symbol].name_index;
+      temp.raw[toutput->symbol_map.raw[symbol]] = symno[symbol].name_index;
     }
     if (num_names <= (cli_options->java_bit ? 127 : 255)) {
       if (cli_options->java_bit) {
@@ -387,7 +387,7 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
     PRNT3("    Storage required for NON_TERMINAL_INDEX map: %ld Bytes", num_bytes);
   } else {
     for ALL_SYMBOLS3(symbol) {
-      temp[toutput->symbol_map[symbol]] = symno[symbol].name_index;
+      temp.raw[toutput->symbol_map.raw[symbol]] = symno[symbol].name_index;
     }
     if (num_names <= (cli_options->java_bit ? 127 : 255)) {
       if (cli_options->java_bit) {
@@ -415,40 +415,39 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
     // Compute and list space required for SYMBOL_INDEX map.
     PRNT3("    Storage required for SYMBOL_INDEX map: %ld Bytes", num_bytes);
   }
-  if (num_scopes > 0) {
+  if (sc->num_scopes > 0) {
     short root = 0;
-    short *list;
-    list = Allocate_short_array(scope_rhs_size + 1);
-    for (int i = 1; i <= scope_rhs_size; i++) {
-      if (scope_right_side[i] != 0) {
-        scope_right_side[i] = toutput->symbol_map[scope_right_side[i]];
+    ArrayShort list = Allocate_short_array2(sc->scope_rhs_size + 1);
+    for (int i = 1; i <= sc->scope_rhs_size; i++) {
+      if (scope_right_side.raw[i] != 0) {
+        scope_right_side.raw[i] = toutput->symbol_map.raw[scope_right_side.raw[i]];
       }
     }
-    for (int i = 1; i <= num_scopes; i++) {
-      scope[i].look_ahead = toutput->symbol_map[scope[i].look_ahead];
+    for (int i = 1; i <= sc->num_scopes; i++) {
+      scope[i].look_ahead = toutput->symbol_map.raw[scope[i].look_ahead];
       if (cli_options->table_opt.value == OPTIMIZE_SPACE.value) {
-        scope[i].lhs_symbol = toutput->symbol_map[scope[i].lhs_symbol] - num_terminals;
+        scope[i].lhs_symbol = toutput->symbol_map.raw[scope[i].lhs_symbol] - num_terminals;
       } else {
-        scope[i].lhs_symbol = toutput->symbol_map[scope[i].lhs_symbol];
+        scope[i].lhs_symbol = toutput->symbol_map.raw[scope[i].lhs_symbol];
       }
     }
     // Mark all elements of prefix strings.
-    for (int i = 1; i <= scope_rhs_size; i++) {
-      list[i] = -1;
+    for (int i = 1; i <= sc->scope_rhs_size; i++) {
+      list.raw[i] = -1;
     }
-    for (int i = 1; i <= num_scopes; i++) {
-      if (list[scope[i].suffix] < 0) {
-        list[scope[i].suffix] = root;
+    for (int i = 1; i <= sc->num_scopes; i++) {
+      if (list.raw[scope[i].suffix] < 0) {
+        list.raw[scope[i].suffix] = root;
         root = scope[i].suffix;
       }
     }
-    for (; root != 0; root = list[root]) {
-      for (int j = root; scope_right_side[j] != 0; j++) {
-        int k = scope_right_side[j];
-        scope_right_side[j] = temp[k];
+    for (; root != 0; root = list.raw[root]) {
+      for (int j = root; scope_right_side.raw[j] != 0; j++) {
+        int k = scope_right_side.raw[j];
+        scope_right_side.raw[j] = temp.raw[k];
       }
     }
-    ffree(list);
+    ffree(list.raw);
   }
   if (cli_options->java_bit) {
     // Print java names.
@@ -503,7 +502,7 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
     PRNT3("    Storage required for STRING_BUFFER map: %ld Bytes", num_bytes);
   } else {
     // Print C names.
-    long *name_len = Allocate_long_array(num_names + 1);
+    ArrayLong name_len = Allocate_long_array2(num_names + 1);
     long num_bytes = 0;
     long max_name_length = 0;
     mystrcpy("\nconst char  CLASS_HEADER string_buffer[] = {0,\n", of);
@@ -512,13 +511,13 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
     for (int i = 1; i <= num_names; i++) {
       char tok[SYMBOL_SIZE + 1];
       strcpy(tok, RETRIEVE_NAME(i));
-      name_len[i] = strlen(tok);
-      num_bytes += name_len[i];
-      if (max_name_length < name_len[i]) {
-        max_name_length = name_len[i];
+      name_len.raw[i] = strlen(tok);
+      num_bytes += name_len.raw[i];
+      if (max_name_length < name_len.raw[i]) {
+        max_name_length = name_len.raw[i];
       }
       int k = 0;
-      for (int j = 0; j < name_len[i]; j++) {
+      for (int j = 0; j < name_len.raw[i]; j++) {
         *output_ptr++ = '\'';
         if (tok[k] == '\'' || tok[k] == '\\') {
           *output_ptr++ = '\\';
@@ -532,7 +531,7 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
         *output_ptr++ = '\'';
         *output_ptr++ = ',';
         n++;
-        if (n == 10 && !(i == num_names && j == name_len[i] - 1)) {
+        if (n == 10 && !(i == num_names && j == name_len.raw[i] - 1)) {
           n = 0;
           *output_ptr++ = '\n';
           BUFFER_CHECK(of->sysdcl);
@@ -557,7 +556,7 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
     for (int i = 1; i <= num_names; i++) {
       itoc(j);
       *output_ptr++ = ',';
-      j += name_len[i];
+      j += name_len.raw[i];
       k++;
       if (k == 10 && i != num_names) {
         *output_ptr++ = '\n';
@@ -581,10 +580,10 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
     prnt_longs("\nconst unsigned char  CLASS_HEADER name_length[] = {0,\n", 1, num_names, 10, name_len, cli_options, of);
     // Compute and list space required for NAME_LENGTH map.
     PRNT3("    Storage required for NAME_LENGTH map: %ld Bytes", num_names);
-    ffree(name_len);
+    ffree(name_len.raw);
   }
-  if (num_scopes > 0) {
-    if (scope_rhs_size <= (cli_options->java_bit ? 127 : 255)) {
+  if (sc->num_scopes > 0) {
+    if (sc->scope_rhs_size <= (cli_options->java_bit ? 127 : 255)) {
       if (cli_options->java_bit) {
         mystrcpy("\n    public final static byte scope_prefix[] = {\n", of);
       } else {
@@ -599,11 +598,11 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
     }
     padline();
     int k = 0;
-    for (int i = 1; i <= num_scopes; i++) {
+    for (int i = 1; i <= sc->num_scopes; i++) {
       itoc(scope[i].prefix);
       *output_ptr++ = ',';
       k++;
-      if (k == 10 && i != num_scopes) {
+      if (k == 10 && i != sc->num_scopes) {
         *output_ptr++ = '\n';
         BUFFER_CHECK(of->sysdcl);
         padline();
@@ -619,7 +618,7 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
     } else {
       mystrcpy("                          };\n", of);
     }
-    if (scope_rhs_size <= (cli_options->java_bit ? 127 : 255)) {
+    if (sc->scope_rhs_size <= (cli_options->java_bit ? 127 : 255)) {
       if (cli_options->java_bit) {
         mystrcpy("\n    public final static byte scope_suffix[] = {\n", of);
       } else {
@@ -634,11 +633,11 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
     }
     padline();
     k = 0;
-    for (int i = 1; i <= num_scopes; i++) {
+    for (int i = 1; i <= sc->num_scopes; i++) {
       itoc(scope[i].suffix);
       *output_ptr++ = ',';
       k++;
-      if (k == 10 && i != num_scopes) {
+      if (k == 10 && i != sc->num_scopes) {
         *output_ptr++ = '\n';
         BUFFER_CHECK(of->sysdcl);
         padline();
@@ -669,11 +668,11 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
     }
     padline();
     k = 0;
-    for (int i = 1; i <= num_scopes; i++) {
+    for (int i = 1; i <= sc->num_scopes; i++) {
       itoc(scope[i].lhs_symbol);
       *output_ptr++ = ',';
       k++;
-      if (k == 10 && i != num_scopes) {
+      if (k == 10 && i != sc->num_scopes) {
         *output_ptr++ = '\n';
         BUFFER_CHECK(of->sysdcl);
         padline();
@@ -704,11 +703,11 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
     }
     padline();
     k = 0;
-    for (int i = 1; i <= num_scopes; i++) {
+    for (int i = 1; i <= sc->num_scopes; i++) {
       itoc(scope[i].look_ahead);
       *output_ptr++ = ',';
       k++;
-      if (k == 10 && i != num_scopes) {
+      if (k == 10 && i != sc->num_scopes) {
         *output_ptr++ = '\n';
         BUFFER_CHECK(of->sysdcl);
         padline();
@@ -724,7 +723,7 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
     } else {
       mystrcpy("                          };\n", of);
     }
-    if (scope_state_size <= (cli_options->java_bit ? 127 : 255)) {
+    if (sc->scope_state_size <= (cli_options->java_bit ? 127 : 255)) {
       if (cli_options->java_bit) {
         mystrcpy("\n    public final static byte scope_state_set[] = {\n", of);
       } else {
@@ -739,11 +738,11 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
     }
     padline();
     k = 0;
-    for (int i = 1; i <= num_scopes; i++) {
+    for (int i = 1; i <= sc->num_scopes; i++) {
       itoc(scope[i].state_set);
       *output_ptr++ = ',';
       k++;
-      if (k == 10 && i != num_scopes) {
+      if (k == 10 && i != sc->num_scopes) {
         *output_ptr++ = '\n';
         BUFFER_CHECK(of->sysdcl);
         padline();
@@ -761,15 +760,15 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
     }
     if (num_symbols <= (cli_options->java_bit ? 127 : 255)) {
       if (cli_options->java_bit) {
-        prnt_longs("\n    public final static byte scope_rhs[] = {0,\n", 1, scope_rhs_size, 10, scope_right_side, cli_options, of);
+        prnt_longs("\n    public final static byte scope_rhs[] = {0,\n", 1, sc->scope_rhs_size, 10, scope_right_side, cli_options, of);
       } else {
-        prnt_longs("\nconst unsigned char  CLASS_HEADER scope_rhs[] = {0,\n", 1, scope_rhs_size, 10, scope_right_side, cli_options, of);
+        prnt_longs("\nconst unsigned char  CLASS_HEADER scope_rhs[] = {0,\n", 1, sc->scope_rhs_size, 10, scope_right_side, cli_options, of);
       }
     } else {
       if (cli_options->java_bit) {
-        prnt_longs("\n    public final static char scope_rhs[] = {0,\n", 1, scope_rhs_size, 10, scope_right_side, cli_options, of);
+        prnt_longs("\n    public final static char scope_rhs[] = {0,\n", 1, sc->scope_rhs_size, 10, scope_right_side, cli_options, of);
       } else {
-        prnt_longs("\nconst unsigned short CLASS_HEADER scope_rhs[] = {0,\n", 1, scope_rhs_size, 10, scope_right_side, cli_options, of);
+        prnt_longs("\nconst unsigned short CLASS_HEADER scope_rhs[] = {0,\n", 1, sc->scope_rhs_size, 10, scope_right_side, cli_options, of);
       }
     }
     if (cli_options->java_bit) {
@@ -779,15 +778,15 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
     }
     padline();
     k = 0;
-    for (int i = 1; i <= scope_state_size; i++) {
-      if (scope_state[i] == 0) {
+    for (int i = 1; i <= sc->scope_state_size; i++) {
+      if (scope_state.raw[i] == 0) {
         itoc(0);
       } else {
-        itoc(toutput->state_index[scope_state[i]] + num_rules);
+        itoc(toutput->state_index.raw[scope_state.raw[i]] + num_rules);
       }
       *output_ptr++ = ',';
       k++;
-      if (k == 10 && i != scope_state_size) {
+      if (k == 10 && i != sc->scope_state_size) {
         *output_ptr++ = '\n';
         BUFFER_CHECK(of->sysdcl);
         padline();
@@ -832,7 +831,7 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
       } else {
         i = 0;
       }
-      itoc(toutput->symbol_map[i]);
+      itoc(toutput->symbol_map.raw[i]);
       *output_ptr++ = ',';
       k++;
       if (k == 10 && state_no != num_states) {
@@ -854,14 +853,14 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
   }
 }
 
-static void common(const bool byte_check_bit, struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, long *scope_right_side, struct statset_type *statset, short *gd_index, short *gd_range, short *scope_state, struct itemtab *item_table) {
+static void common(const bool byte_check_bit, struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ArrayLong scope_right_side, struct statset_type *statset, ArrayShort gd_index, ArrayShort gd_range, ArrayShort scope_state, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer) {
   struct ByteTerminalRange btr = (struct ByteTerminalRange) {
     .value = true
   };
   // Write table common.
   {
-    if (error_maps_bit) {
-      print_error_maps(cli_options, toutput, dss, ctp, of, &btr, scope, srt, scope_right_side, statset, gd_index, gd_range, scope_state, item_table);
+    if (cli_options->error_maps_bit) {
+      print_error_maps(cli_options, toutput, dss, ctp, of, &btr, scope, srt, scope_right_side, statset, gd_index, gd_range, scope_state, item_table, symno, cli_options->error_maps_bit, sc);
     }
     if (byte_check_bit) {
       // Do nothing.
@@ -911,7 +910,7 @@ static void common(const bool byte_check_bit, struct CLIOptions *cli_options, st
       } else if (strpbrk(tok, "!%^&*()-+={}[];:\"`~|\\,.<>/?\'") != NULL) {
         PRNT4(line, line_size, "%s may be an invalid variable name.\n", tok);
       }
-      snprintf(line, sizeof(line), "      %s%s%s = %li,\n", cli_options->prefix, tok, cli_options->suffix, toutput->symbol_map[symbol]);
+      snprintf(line, sizeof(line), "      %s%s%s = %li,\n", cli_options->prefix, tok, cli_options->suffix, toutput->symbol_map.raw[symbol]);
       if (cli_options->c_bit || cli_options->cpp_bit) {
         while (strlen(line) > PARSER_LINE_SIZE) {
           fwrite(line, sizeof(char), PARSER_LINE_SIZE - 2, of->syssym);
@@ -931,7 +930,7 @@ static void common(const bool byte_check_bit, struct CLIOptions *cli_options, st
     } else {
       fprintf(of->sysdef, "enum {\n");
     }
-    if (error_maps_bit) {
+    if (cli_options->error_maps_bit) {
       if (cli_options->java_bit) {
         fprintf(of->sysdef,
                 "      ERROR_SYMBOL      = %d,\n"
@@ -968,8 +967,8 @@ static void common(const bool byte_check_bit, struct CLIOptions *cli_options, st
               "      ERROR_ACTION      = %ld;\n"
               "};\n\n",
               cli_options->table_opt.value == OPTIMIZE_SPACE.value ? num_terminals : num_symbols,
-              num_scopes - 1,
-              num_scopes,
+              sc->num_scopes - 1,
+              sc->num_scopes,
               cli_options->read_reduce_bit && cli_options->lalr_level > 1
                 ? ia->error_act + num_rules
                 : ia->error_act,
@@ -978,7 +977,7 @@ static void common(const bool byte_check_bit, struct CLIOptions *cli_options, st
               num_terminals,
               num_non_terminals,
               num_symbols,
-              toutput->state_index[1] + num_rules,
+              toutput->state_index.raw[1] + num_rules,
               eoft_image,
               eolt_image,
               ia->accept_act,
@@ -1009,8 +1008,8 @@ static void common(const bool byte_check_bit, struct CLIOptions *cli_options, st
               cli_options->maximum_distance + cli_options->lalr_level,
               cli_options->stack_size - 1,
               cli_options->stack_size,
-              num_scopes - 1,
-              num_scopes,
+              sc->num_scopes - 1,
+              sc->num_scopes,
               cli_options->read_reduce_bit && cli_options->lalr_level > 1
                 ? ia->error_act + num_rules
                 : ia->error_act,
@@ -1019,7 +1018,7 @@ static void common(const bool byte_check_bit, struct CLIOptions *cli_options, st
               num_terminals,
               num_non_terminals,
               num_symbols,
-              toutput->state_index[1] + num_rules,
+              toutput->state_index.raw[1] + num_rules,
               eoft_image,
               eolt_image,
               ia->accept_act,
@@ -1034,8 +1033,8 @@ static void common(const bool byte_check_bit, struct CLIOptions *cli_options, st
               "%s SCOPE_REPAIR\n"
               "%s FULL_DIAGNOSIS\n"
               "%s SPACE_TABLES\n\n",
-              num_scopes > 0 ? "#define" : "#undef ",
-              error_maps_bit ? "#define" : "#undef ",
+              sc->num_scopes > 0 ? "#define" : "#undef ",
+              cli_options->error_maps_bit ? "#define" : "#undef ",
               cli_options->table_opt.value == OPTIMIZE_SPACE.value ? "#define" : "#undef ");
     }
     if (cli_options->c_bit) {
@@ -1051,16 +1050,16 @@ static void common(const bool byte_check_bit, struct CLIOptions *cli_options, st
               "class %s_table\n"
               "{\n"
               "public:\n", of->prs_tag);
-      if (error_maps_bit) {
+      if (cli_options->error_maps_bit) {
         fprintf(of->sysprs, "    static int original_state(int state) { return -%s[state]; }\n", cli_options->table_opt.value == OPTIMIZE_TIME.value ? "check" : "base_check");
       }
-      if (error_maps_bit) {
+      if (cli_options->error_maps_bit) {
         fprintf(of->sysprs,
                 "    static int asi(int state) "
                 "{ return asb[original_state(state)]; }\n"
                 "    static int nasi(int state) "
                 "{ return nasb[original_state(state)]; }\n");
-        if (num_scopes > 0) {
+        if (sc->num_scopes > 0) {
           fprintf(of->sysprs,
                   "    static int in_symbol(int state) "
                   "{ return in_symb[original_state(state)]; }\n");
@@ -1069,12 +1068,12 @@ static void common(const bool byte_check_bit, struct CLIOptions *cli_options, st
       fprintf(of->sysprs, "\n");
     } else if (cli_options->java_bit) {
       fprintf(of->sysprs, "abstract class %s extends %s implements %s\n{\n", of->prs_tag, of->dcl_tag, of->def_tag);
-      if (error_maps_bit) {
+      if (cli_options->error_maps_bit) {
         fprintf(of->sysprs, "    public final static int original_state(int state) { return -%s(state); }\n", cli_options->table_opt.value == OPTIMIZE_TIME.value ? "check" : "base_check");
-        if (error_maps_bit) {
+        if (cli_options->error_maps_bit) {
           fprintf(of->sysprs, "    public final static int asi(int state) { return asb[original_state(state)]; }\n");
           fprintf(of->sysprs, "    static int nasi(int state) { return nasb[original_state(state)]; }\n");
-          if (num_scopes > 0)
+          if (sc->num_scopes > 0)
             fprintf(of->sysprs, "    public final static int in_symbol(int state) { return in_symb[original_state(state)]; }\n");
         }
         fprintf(of->sysprs, "\n");
@@ -1083,7 +1082,7 @@ static void common(const bool byte_check_bit, struct CLIOptions *cli_options, st
     if (cli_options->c_bit || cli_options->cpp_bit) {
       fprintf(of->sysprs, "%s const unsigned char  rhs[];\n", cli_options->c_bit ? "extern" : "    static");
       if (ctp->check_size > 0 || cli_options->table_opt.value == OPTIMIZE_TIME.value) {
-        const bool small = byte_check_bit && !error_maps_bit;
+        const bool small = byte_check_bit && !cli_options->error_maps_bit;
         fprintf(of->sysprs, "%s const %s check_table[];\n"
                 "%s const %s *%s;\n",
                 cli_options->c_bit ? "extern" : "    static",
@@ -1110,7 +1109,7 @@ static void common(const bool byte_check_bit, struct CLIOptions *cli_options, st
           fprintf(of->sysprs, "%s const unsigned short default_shift[];\n", cli_options->c_bit ? "extern" : "    static");
         }
       }
-      if (error_maps_bit) {
+      if (cli_options->error_maps_bit) {
         fprintf(of->sysprs,
                 "\n"
                 "%s const unsigned short asb[];\n"
@@ -1147,7 +1146,7 @@ static void common(const bool byte_check_bit, struct CLIOptions *cli_options, st
                   cli_options->c_bit ? "extern" : "    static",
                   num_names <= (cli_options->java_bit ? 127 : 255) ? "char " : "short");
         }
-        if (num_scopes > 0) {
+        if (sc->num_scopes > 0) {
           fprintf(of->sysprs, "%s const unsigned %s scope_prefix[];\n"
                   "%s const unsigned %s scope_suffix[];\n"
                   "%s const unsigned %s scope_lhs[];\n"
@@ -1157,15 +1156,15 @@ static void common(const bool byte_check_bit, struct CLIOptions *cli_options, st
                   "%s const unsigned short scope_state[];\n"
                   "%s const unsigned %s in_symb[];\n",
                   cli_options->c_bit ? "extern" : "    static",
-                  scope_rhs_size <= (cli_options->java_bit ? 127 : 255) ? "char " : "short",
+                  sc->scope_rhs_size <= (cli_options->java_bit ? 127 : 255) ? "char " : "short",
                   cli_options->c_bit ? "extern" : "    static",
-                  scope_rhs_size <= (cli_options->java_bit ? 127 : 255) ? "char " : "short",
+                  sc->scope_rhs_size <= (cli_options->java_bit ? 127 : 255) ? "char " : "short",
                   cli_options->c_bit ? "extern" : "    static",
                   num_symbols <= (cli_options->java_bit ? 127 : 255) ? "char " : "short",
                   cli_options->c_bit ? "extern" : "    static",
                   num_terminals <= (cli_options->java_bit ? 127 : 255) ? "char " : "short",
                   cli_options->c_bit ? "extern" : "    static",
-                  scope_state_size <= (cli_options->java_bit ? 127 : 255) ? "char " : "short",
+                  sc->scope_state_size <= (cli_options->java_bit ? 127 : 255) ? "char " : "short",
                   cli_options->c_bit ? "extern" : "    static",
                   num_symbols <= (cli_options->java_bit ? 127 : 255) ? "char " : "short",
                   cli_options->c_bit ? "extern" : "    static",
@@ -1663,7 +1662,7 @@ static void common(const bool byte_check_bit, struct CLIOptions *cli_options, st
 /// based on the values of the elements of COUNT. Knowing that the maximum
 /// value of the elements of count cannot exceed MAX and cannot be lower
 /// than zero, we can use a bucket sort technique.
-void sortdes(long array[], long count[], const long low, const long high, const long max) {
+void sortdes(ArrayLong array, ArrayLong count, const long low, const long high, const long max) {
   // BUCKET is used to hold the roots of lists that contain the
   // elements of each bucket.  LIST is used to hold these lists.
   ArrayLong bucket = Allocate_long_array2(max + 1);
@@ -1679,8 +1678,8 @@ void sortdes(long array[], long count[], const long low, const long high, const 
   //   NOTE that it is known that the values of the elements of ARRAY
   // also lie in the range LOW..HIGH.
   for (long i = high; i >= low; i--) {
-    const long k = count[i];
-    const long element = array[i];
+    const long k = count.raw[i];
+    const long element = array.raw[i];
     list.raw[element - low] = bucket.raw[k];
     bucket.raw[k] = element;
   }
@@ -1690,8 +1689,8 @@ void sortdes(long array[], long count[], const long low, const long high, const 
   long k = low;
   for (long i = max; i >= 0; i--) {
     for (long element = bucket.raw[i]; element != NIL; element = list.raw[element - low], k++) {
-      array[k] = element;
-      count[k] = i;
+      array.raw[k] = element;
+      count.raw[k] = i;
     }
   }
   ffree(bucket.raw);
@@ -1713,35 +1712,35 @@ void reallocate(struct CLIOptions *cli_options, struct CTabsProps* ctp, struct N
   } else {
     PRNT3("Reallocating storage for SPACE table, adding %ld entries", ctp->table_size - old_size);
   }
-  long *n = Allocate_long_array(ctp->table_size + 1);
-  long *p = Allocate_long_array(ctp->table_size + 1);
+  ArrayLong n = Allocate_long_array2(ctp->table_size + 1);
+  ArrayLong p = Allocate_long_array2(ctp->table_size + 1);
   // Copy old information
   for (int i = 1; i <= old_size; i++) {
-    n[i] = np->next[i];
-    p[i] = np->previous[i];
+    n.raw[i] = np->next.raw[i];
+    p.raw[i] = np->previous.raw[i];
   }
-  ffree(np->next);
-  ffree(np->previous);
+  ffree(np->next.raw);
+  ffree(np->previous.raw);
   np->next = n;
   np->previous = p;
   if (ia->first_index == NIL) {
     ia->first_index = old_size + 1;
-    np->previous[ia->first_index] = NIL;
+    np->previous.raw[ia->first_index] = NIL;
   } else {
-    np->next[ia->last_index] = old_size + 1;
-    np->previous[old_size + 1] = ia->last_index;
+    np->next.raw[ia->last_index] = old_size + 1;
+    np->previous.raw[old_size + 1] = ia->last_index;
   }
-  np->next[old_size + 1] = old_size + 2;
+  np->next.raw[old_size + 1] = old_size + 2;
   for (int i = old_size + 2; i < (int) ctp->table_size; i++) {
-    np->next[i] = i + 1;
-    np->previous[i] = i - 1;
+    np->next.raw[i] = i + 1;
+    np->previous.raw[i] = i - 1;
   }
   ia->last_index = ctp->table_size;
-  np->next[ia->last_index] = NIL;
-  np->previous[ia->last_index] = ia->last_index - 1;
+  np->next.raw[ia->last_index] = NIL;
+  np->previous.raw[ia->last_index] = ia->last_index - 1;
 }
 
-void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, long *term_state_index, long *shift_check_index, struct CTabsProps* ctp, struct new_state_type *new_state_element, short *shift_image, short *real_shift_number, struct OutputFiles* of, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, long *scope_right_side, short *shiftdf, long *gotodef, short *gd_index, short *gd_range, struct ruletab_type *rules, short *scope_state, struct statset_type *statset, struct itemtab *item_table)  {
+void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, ArrayLong term_state_index, ArrayLong shift_check_index, struct CTabsProps* ctp, struct new_state_type *new_state_element, ArrayShort shift_image, ArrayShort real_shift_number, struct OutputFiles* of, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ArrayLong scope_right_side, ArrayShort shiftdf, ArrayLong gotodef, ArrayShort gd_index, ArrayShort gd_range, struct ruletab_type *rules, ArrayShort scope_state, struct statset_type *statset, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer)  {
   bool byte_check_bit = true;
   populate_start_file(&of->sysdcl, of->dcl_tag, cli_options);
   populate_start_file(&of->syssym, of->sym_tag, cli_options);
@@ -1754,8 +1753,8 @@ void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* tout
   int la_shift_count = 0;
   int shift_count = 0;
   int shift_reduce_count = 0;
-  long *check = Allocate_long_array(ctp->table_size + 1);
-  long *action = Allocate_long_array(ctp->table_size + 1);
+  ArrayLong check = Allocate_long_array2(ctp->table_size + 1);
+  ArrayLong action = Allocate_long_array2(ctp->table_size + 1);
   output_ptr = &output_buffer[0];
   // Prepare header card with proper information, and write it out.
   long offset = ia->error_act;
@@ -1773,15 +1772,15 @@ void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* tout
     exit(12);
   }
   for (int i = 1; i <= ctp->check_size; i++) {
-    check[i] = DEFAULT_SYMBOL;
+    check.raw[i] = DEFAULT_SYMBOL;
   }
   for (int i = 1; i <= (int) ctp->action_size; i++) {
-    action[i] = ia->error_act;
+    action.raw[i] = ia->error_act;
   }
   //    Update the default non-terminal action of each state with the
   // appropriate corresponding terminal state starting index.
   for (int i = 1; i <= ctp->num_terminal_states; i++) {
-    int indx = term_state_index[i];
+    int indx = term_state_index.raw[i];
     int state_no = new_state_element[i].image;
     // Update the action link between the non-terminal and terminal
     // tables. If error-maps are requested, an indirect linking is made
@@ -1790,50 +1789,50 @@ void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* tout
     // a new vector START_TERMINAL_STATE indexable by state numbers
     // identifies the starting point of each state in the terminal table.
     if (state_no <= num_states) {
-      for (; state_no != NIL; state_no = toutput->state_list[state_no]) {
-        action[toutput->state_index[state_no]] = indx;
+      for (; state_no != NIL; state_no = toutput->state_list.raw[state_no]) {
+        action.raw[toutput->state_index.raw[state_no]] = indx;
       }
     } else {
-      for (; state_no != NIL; state_no = toutput->state_list[state_no]) {
+      for (; state_no != NIL; state_no = toutput->state_list.raw[state_no]) {
         int act = la_state_offset + indx;
-        toutput->state_index[state_no] = act;
+        toutput->state_index.raw[state_no] = act;
       }
     }
   }
   //  Now update the non-terminal tables with the non-terminal actions.
   for ALL_STATES3(state_no) {
     struct goto_header_type go_to;
-    int indx = toutput->state_index[state_no];
+    int indx = toutput->state_index.raw[state_no];
     go_to = statset[state_no].go_to;
     for (int j = 1; j <= go_to.size; j++) {
       int symbol = go_to.map[j].symbol;
       int i = indx + symbol;
       if (cli_options->goto_default_bit || cli_options->nt_check_bit) {
-        check[i] = symbol;
+        check.raw[i] = symbol;
       }
       int act = go_to.map[j].action;
       if (act > 0) {
-        action[i] = toutput->state_index[act] + num_rules;
+        action.raw[i] = toutput->state_index.raw[act] + num_rules;
         goto_count++;
       } else {
-        action[i] = -act;
+        action.raw[i] = -act;
         goto_reduce_count++;
       }
     }
   }
-  if (error_maps_bit) {
+  if (cli_options->error_maps_bit) {
     if (ctp->check_size == 0) {
       ctp->check_size = ctp->action_size;
       for (int i = 0; i <= ctp->check_size; i++) {
-        check[i] = 0;
+        check.raw[i] = 0;
       }
     }
     for ALL_STATES3(state_no) {
-      check[toutput->state_index[state_no]] = -state_no;
+      check.raw[toutput->state_index.raw[state_no]] = -state_no;
     }
   }
   for (int i = 1; i <= ctp->check_size; i++) {
-    if (check[i] < 0 || check[i] > (cli_options->java_bit ? 127 : 255)) {
+    if (check.raw[i] < 0 || check.raw[i] > (cli_options->java_bit ? 127 : 255)) {
       byte_check_bit = false;
     }
   }
@@ -1878,7 +1877,7 @@ void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* tout
   }
   *output_ptr++ = '\n';
   if (ctp->check_size > 0) {
-    if (byte_check_bit && !error_maps_bit) {
+    if (byte_check_bit && !cli_options->error_maps_bit) {
       if (cli_options->java_bit) {
         mystrcpy("    public final static byte check_table[] = {\n", of);
       } else {
@@ -1901,7 +1900,7 @@ void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* tout
         padline();
         k = 1;
       }
-      itoc(check[i]);
+      itoc(check.raw[i]);
       *output_ptr++ = ',';
     }
     *(output_ptr - 1) = '\n';
@@ -1912,7 +1911,7 @@ void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* tout
       mystrcpy("                 };\n", of);
     }
     *output_ptr++ = '\n';
-    if (byte_check_bit && !error_maps_bit) {
+    if (byte_check_bit && !cli_options->error_maps_bit) {
       if (cli_options->java_bit) {
         mystrcpy("    public final static byte base_check(int i)\n    {\n        return check_table[i - (NUM_RULES + 1)];\n    }\n", of);
       } else {
@@ -1936,7 +1935,7 @@ void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* tout
   padline();
   k = 0;
   for (int i = 1; i <= num_rules; i++) {
-    itoc(toutput->symbol_map[rules[i].lhs] - num_terminals);
+    itoc(toutput->symbol_map.raw[rules[i].lhs] - num_terminals);
     *output_ptr++ = ',';
     k++;
     if (k == 15) {
@@ -1951,27 +1950,27 @@ void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* tout
   BUFFER_CHECK(of->sysdcl);
   padline();
   k = 0;
-  if (error_maps_bit) {
+  if (cli_options->error_maps_bit) {
     int max_indx;
     max_indx = ia->accept_act - num_rules - 1;
     for (int i = 1; i <= max_indx; i++) {
-      check[i] = OMEGA;
+      check.raw[i] = OMEGA;
     }
     for ALL_STATES3(state_no) {
-      check[toutput->state_index[state_no]] = state_no;
+      check.raw[toutput->state_index.raw[state_no]] = state_no;
     }
     int j = num_states + 1;
     for (int i = max_indx; i >= 1; i--) {
-      int state_no = check[i];
+      int state_no = check.raw[i];
       if (state_no != OMEGA) {
         j--;
-        toutput->ordered_state[j] = i + num_rules;
-        toutput->state_list[j] = state_no;
+        toutput->ordered_state.raw[j] = i + num_rules;
+        toutput->state_list.raw[j] = state_no;
       }
     }
   }
   for (int i = 1; i <= (int) ctp->action_size; i++) {
-    itoc(action[i]);
+    itoc(action.raw[i]);
     *output_ptr++ = ',';
     k++;
     if (k == 10 && i != (int) ctp->action_size) {
@@ -2000,28 +1999,28 @@ void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* tout
   *output_ptr++ = '\n';
   // Initialize the terminal tables,and update with terminal actions.
   for (int i = 1; i <= ctp->term_check_size; i++) {
-    check[i] = DEFAULT_SYMBOL;
+    check.raw[i] = DEFAULT_SYMBOL;
   }
   for (int i = 1; i <= ctp->term_action_size; i++) {
-    action[i] = ia->error_act;
+    action.raw[i] = ia->error_act;
   }
   for (int state_no = 1; state_no <= ctp->num_terminal_states; state_no++) {
     struct shift_header_type sh;
     struct reduce_header_type red;
-    int indx = term_state_index[state_no];
+    int indx = term_state_index.raw[state_no];
     sh = srt->shift[new_state_element[state_no].shift_number];
     for (int j = 1; j <= sh.size; j++) {
       int symbol = sh.map[j].symbol;
       int act = sh.map[j].action;
-      if (!cli_options->shift_default_bit || act != shiftdf[symbol]) {
+      if (!cli_options->shift_default_bit || act != shiftdf.raw[symbol]) {
         int i = indx + symbol;
-        check[i] = symbol;
+        check.raw[i] = symbol;
         long result_act;
         if (act > num_states) {
-          result_act = toutput->state_index[act];
+          result_act = toutput->state_index.raw[act];
           la_shift_count++;
         } else if (act > 0) {
-          result_act = toutput->state_index[act] + num_rules;
+          result_act = toutput->state_index.raw[act] + num_rules;
           shift_count++;
         } else {
           result_act = -act + ia->error_act;
@@ -2031,7 +2030,7 @@ void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* tout
           PRNTERR2("Table contains look-ahead shift entry that is >%ld; Processing stopped.", MAX_TABLE_SIZE + 1);
           return;
         }
-        action[i] = result_act;
+        action.raw[i] = result_act;
       }
     }
     red = new_state_element[state_no].reduce;
@@ -2039,19 +2038,19 @@ void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* tout
       int symbol = red.map[j].symbol;
       int rule_no = red.map[j].rule_number;
       int i = indx + symbol;
-      check[i] = symbol;
-      action[i] = rule_no;
+      check.raw[i] = symbol;
+      action.raw[i] = rule_no;
       reduce_count++;
     }
     int rule_no = red.map[0].rule_number;
     if (rule_no != ia->error_act) {
       default_count++;
     }
-    check[indx] = DEFAULT_SYMBOL;
+    check.raw[indx] = DEFAULT_SYMBOL;
     if (cli_options->shift_default_bit) {
-      action[indx] = state_no;
+      action.raw[indx] = state_no;
     } else {
-      action[indx] = rule_no;
+      action.raw[indx] = rule_no;
     }
   }
   PRNT("\n\nActions in Compressed Tables:");
@@ -2094,14 +2093,14 @@ void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* tout
     padline();
     k = 0;
     for ALL_NON_TERMINALS3(symbol) {
-      int act = gotodef[symbol];
+      int act = gotodef.raw[symbol];
       long result_act;
       if (act < 0) {
         result_act = -act;
       } else if (act == 0) {
         result_act = ia->error_act;
       } else {
-        result_act = toutput->state_index[act] + num_rules;
+        result_act = toutput->state_index.raw[act] + num_rules;
       }
       itoc(result_act);
       *output_ptr++ = ',';
@@ -2161,7 +2160,7 @@ void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* tout
     padline();
     k = 0;
     for (int i = 1; i <= ctp->num_terminal_states; i++) {
-      itoc(shift_check_index[shift_image[i]]);
+      itoc(shift_check_index.raw[shift_image.raw[i]]);
       *output_ptr++ = ',';
       k++;
       if (k == 10 && i != ctp->num_terminal_states) {
@@ -2181,15 +2180,15 @@ void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* tout
       mystrcpy("                 };\n", of);
     }
     for (int i = 1; i <= ctp->shift_check_size; i++) {
-      check[i] = DEFAULT_SYMBOL;
+      check.raw[i] = DEFAULT_SYMBOL;
     }
     for (int i = 1; i <= ctp->shift_domain_count; i++) {
       struct shift_header_type sh;
-      int indx = shift_check_index[i];
-      sh = srt->shift[real_shift_number[i]];
+      int indx = shift_check_index.raw[i];
+      sh = srt->shift[real_shift_number.raw[i]];
       for (int j = 1; j <= sh.size; j++) {
         int symbol = sh.map[j].symbol;
-        check[indx + symbol] = symbol;
+        check.raw[indx + symbol] = symbol;
       }
     }
     if (num_terminals <= (cli_options->java_bit ? 127 : 255)) {
@@ -2209,7 +2208,7 @@ void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* tout
     k = 0;
     int ii;
     for (ii = 1; ii <= ctp->shift_check_size; ii++) {
-      itoc(check[ii]);
+      itoc(check.raw[ii]);
       *output_ptr++ = ',';
       k++;
       if (k == 10 && ii != ctp->shift_check_size) {
@@ -2236,16 +2235,16 @@ void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* tout
     padline();
     k = 0;
     for ALL_TERMINALS3(symbol) {
-      int act = shiftdf[symbol];
+      int act = shiftdf.raw[symbol];
       long result_act;
       if (act < 0) {
         result_act = -act + ia->error_act;
       } else if (act == 0) {
         result_act = ia->error_act;
       } else if (act > num_states) {
-        result_act = toutput->state_index[act];
+        result_act = toutput->state_index.raw[act];
       } else {
-        result_act = toutput->state_index[act] + num_rules;
+        result_act = toutput->state_index.raw[act] + num_rules;
       }
       if (result_act > MAX_TABLE_SIZE + 1) {
         PRNTERR2("Table contains look-ahead shift entry that is >%ld; Processing stopped.", MAX_TABLE_SIZE + 1);
@@ -2271,12 +2270,12 @@ void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* tout
       mystrcpy("                 };\n", of);
     }
   }
-  ffree(check);
-  ffree(action);
-  common(byte_check_bit, cli_options, toutput, dss, ctp, of, scope, ia, srt, scope_right_side, statset, gd_index, gd_range, scope_state, item_table);
+  ffree(check.raw);
+  ffree(action.raw);
+  common(byte_check_bit, cli_options, toutput, dss, ctp, of, scope, ia, srt, scope_right_side, statset, gd_index, gd_range, scope_state, item_table, sc, output_buffer);
 }
 
-void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, long *scope_right_side, struct lastats_type *lastats, long *gotodef, short *gd_index, short *gd_range, struct ruletab_type *rules, short *scope_state, struct statset_type *statset, struct itemtab *item_table) {
+void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ArrayLong scope_right_side, struct lastats_type *lastats, ArrayLong gotodef, ArrayShort gd_index, ArrayShort gd_range, struct ruletab_type *rules, ArrayShort scope_state, struct statset_type *statset, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer) {
   bool byte_check_bit = true;
   populate_start_file(&of->sysdcl, of->dcl_tag, cli_options);
   populate_start_file(&of->syssym, of->sym_tag, cli_options);
@@ -2290,8 +2289,8 @@ void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutp
   int shift_reduce_count = 0;
   int goto_reduce_count = 0;
   output_ptr = &output_buffer[0];
-  long *check = np->next;
-  long *action = np->previous;
+  ArrayLong check = np->next;
+  ArrayLong action = np->previous;
   long offset = ia->error_act;
   int la_state_offset;
   if (cli_options->lalr_level > 1) {
@@ -2311,18 +2310,18 @@ void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutp
   long indx;
   indx = ia->first_index;
   for (long i = indx; i != NIL && i <= ctp->action_size; i = indx) {
-    indx = np->next[i];
-    check[i] = DEFAULT_SYMBOL;
-    action[i] = ia->error_act;
+    indx = np->next.raw[i];
+    check.raw[i] = DEFAULT_SYMBOL;
+    action.raw[i] = ia->error_act;
   }
   for (long i = ctp->action_size + 1; i <= ctp->table_size; i++) {
-    check[i] = DEFAULT_SYMBOL;
+    check.raw[i] = DEFAULT_SYMBOL;
   }
   // We set the rest of the table with the proper table entries.
   for (int state_no = 1; state_no <= max_la_state; state_no++) {
     struct shift_header_type sh;
     struct reduce_header_type red;
-    indx = toutput->state_index[state_no];
+    indx = toutput->state_index.raw[state_no];
     if (state_no > num_states) {
       sh = srt->shift[lastats[state_no].shift_number];
       red = lastats[state_no].reduce;
@@ -2332,16 +2331,16 @@ void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutp
         int symbol = go_to.map[j].symbol;
         long i = indx + symbol;
         if (cli_options->goto_default_bit || cli_options->nt_check_bit) {
-          check[i] = symbol;
+          check.raw[i] = symbol;
         } else {
-          check[i] = DEFAULT_SYMBOL;
+          check.raw[i] = DEFAULT_SYMBOL;
         }
         int act = go_to.map[j].action;
         if (act > 0) {
-          action[i] = toutput->state_index[act] + num_rules;
+          action.raw[i] = toutput->state_index.raw[act] + num_rules;
           goto_count++;
         } else {
-          action[i] = -act;
+          action.raw[i] = -act;
           goto_reduce_count++;
         }
       }
@@ -2351,14 +2350,14 @@ void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutp
     for (int j = 1; j <= sh.size; j++) {
       int symbol = sh.map[j].symbol;
       long i = indx + symbol;
-      check[i] = symbol;
+      check.raw[i] = symbol;
       int act = sh.map[j].action;
       long result_act;
       if (act > num_states) {
-        result_act = la_state_offset + toutput->state_index[act];
+        result_act = la_state_offset + toutput->state_index.raw[act];
         la_shift_count++;
       } else if (act > 0) {
-        result_act = toutput->state_index[act] + num_rules;
+        result_act = toutput->state_index.raw[act] + num_rules;
         shift_count++;
       } else {
         result_act = -act + ia->error_act;
@@ -2368,7 +2367,7 @@ void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutp
         PRNTERR2("Table contains look-ahead shift entry that is >%ld; Processing stopped.", MAX_TABLE_SIZE + 1);
         return;
       }
-      action[i] = result_act;
+      action.raw[i] = result_act;
     }
     //   We now initialize the elements reserved for reduce actions in
     // the current state.
@@ -2377,12 +2376,12 @@ void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutp
       if (red.map[j].rule_number != default_rule) {
         int symbol = red.map[j].symbol;
         long i = indx + symbol;
-        check[i] = symbol;
+        check.raw[i] = symbol;
         int act = red.map[j].rule_number;
         if (rules[act].lhs == accept_image) {
-          action[i] = ia->accept_act;
+          action.raw[i] = ia->accept_act;
         } else {
-          action[i] = act;
+          action.raw[i] = act;
         }
         reduce_count++;
       }
@@ -2393,12 +2392,12 @@ void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutp
     // corresponding element of the DEFAULT_REDUCE array is initialized.
     // Otherwise it is initialized to the rule number in question.
     int i = indx + DEFAULT_SYMBOL;
-    check[i] = DEFAULT_SYMBOL;
+    check.raw[i] = DEFAULT_SYMBOL;
     int act = red.map[0].rule_number;
     if (act == OMEGA) {
-      action[i] = ia->error_act;
+      action.raw[i] = ia->error_act;
     } else {
-      action[i] = act;
+      action.raw[i] = act;
       default_count++;
     }
   }
@@ -2413,13 +2412,13 @@ void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutp
   PRNT3("     Number of Goto/Reduces: %d", goto_reduce_count);
   PRNT3("     Number of Reduces: %d", reduce_count);
   PRNT3("     Number of Defaults: %d", default_count);
-  if (error_maps_bit) {
+  if (cli_options->error_maps_bit) {
     for ALL_STATES3(state_no) {
-      check[toutput->state_index[state_no]] = -state_no;
+      check.raw[toutput->state_index.raw[state_no]] = -state_no;
     }
   }
   for (int i = 1; i <= (int) ctp->table_size; i++) {
-    if (check[i] < 0 || check[i] > (cli_options->java_bit ? 127 : 255)) {
+    if (check.raw[i] < 0 || check.raw[i] > (cli_options->java_bit ? 127 : 255)) {
       byte_check_bit = 0;
     }
   }
@@ -2464,7 +2463,7 @@ void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutp
   }
   *output_ptr++ = '\n';
   // Write CHECK table.
-  if (byte_check_bit && !error_maps_bit) {
+  if (byte_check_bit && !cli_options->error_maps_bit) {
     if (cli_options->java_bit) {
       mystrcpy("    public final static byte check_table[] = {\n", of);
     } else {
@@ -2487,7 +2486,7 @@ void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutp
       padline();
       k = 1;
     }
-    itoc(check[i]);
+    itoc(check.raw[i]);
     *output_ptr++ = ',';
   }
   *(output_ptr - 1) = '\n';
@@ -2499,7 +2498,7 @@ void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutp
   }
   *output_ptr++ = '\n';
   BUFFER_CHECK(of->sysdcl);
-  if (byte_check_bit && !error_maps_bit) {
+  if (byte_check_bit && !cli_options->error_maps_bit) {
     if (cli_options->java_bit) {
       mystrcpy("    public final static byte check(int i) \n    {\n        return check_table[i - (NUM_RULES + 1)];\n    }\n", of);
     } else {
@@ -2522,7 +2521,7 @@ void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutp
   padline();
   k = 0;
   for (int i = 1; i <= num_rules; i++) {
-    itoc(toutput->symbol_map[rules[i].lhs]);
+    itoc(toutput->symbol_map.raw[rules[i].lhs]);
     *output_ptr++ = ',';
     k++;
     if (k == 15) {
@@ -2537,28 +2536,28 @@ void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutp
   BUFFER_CHECK(of->sysdcl);
   padline();
   k = 0;
-  if (error_maps_bit) {
+  if (cli_options->error_maps_bit) {
     long max_indx;
     // Construct a map from new state numbers into original
     //   state numbers using the array check[]
     max_indx = ia->accept_act - num_rules - 1;
     for (int i = 1; i <= max_indx; i++) {
-      check[i] = OMEGA;
+      check.raw[i] = OMEGA;
     }
     for ALL_STATES3(state_no) {
-      check[toutput->state_index[state_no]] = state_no;
+      check.raw[toutput->state_index.raw[state_no]] = state_no;
     }
     int j = num_states + 1;
     for (int i = max_indx; i >= 1; i--) {
-      int state_no = check[i];
+      int state_no = check.raw[i];
       if (state_no != OMEGA) {
-        toutput->ordered_state[--j] = i + num_rules;
-        toutput->state_list[j] = state_no;
+        toutput->ordered_state.raw[--j] = i + num_rules;
+        toutput->state_list.raw[j] = state_no;
       }
     }
   }
   for (int i = 1; i <= (int) ctp->action_size; i++) {
-    itoc(action[i]);
+    itoc(action.raw[i]);
     *output_ptr++ = ',';
     k++;
     if (k == 10 && i != (int) ctp->action_size) {
@@ -2587,7 +2586,7 @@ void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutp
   *output_ptr++ = '\n';
   // If GOTO_DEFAULT is requested, we print out the GOTODEF vector.
   if (cli_options->goto_default_bit) {
-    short *default_map = Allocate_short_array(num_symbols + 1);
+    ArrayShort default_map = Allocate_short_array2(num_symbols + 1);
     if (cli_options->java_bit) {
       mystrcpy("\n    public final static char default_goto[] = {0,\n", of);
     } else {
@@ -2596,22 +2595,22 @@ void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutp
     padline();
     k = 0;
     for (int i = 0; i <= num_symbols; i++) {
-      default_map[i] = ia->error_act;
+      default_map.raw[i] = ia->error_act;
     }
     for ALL_NON_TERMINALS3(symbol) {
-      int act = gotodef[symbol];
+      int act = gotodef.raw[symbol];
       int result_act;
       if (act < 0) {
         result_act = -act;
       } else if (act > 0) {
-        result_act = toutput->state_index[act] + num_rules;
+        result_act = toutput->state_index.raw[act] + num_rules;
       } else {
         result_act = ia->error_act;
       }
-      default_map[toutput->symbol_map[symbol]] = result_act;
+      default_map.raw[toutput->symbol_map.raw[symbol]] = result_act;
     }
     for (int symbol = 1; symbol <= num_symbols; symbol++) {
-      itoc(default_map[symbol]);
+      itoc(default_map.raw[symbol]);
       *output_ptr++ = ',';
       k++;
       if (k == 10 && symbol != num_symbols) {
@@ -2631,9 +2630,9 @@ void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutp
       mystrcpy("                 };\n", of);
     }
   }
-  ffree(np->next);
-  ffree(np->previous);
-  common(byte_check_bit, cli_options, toutput, dss, ctp, of, scope, ia, srt, scope_right_side, statset, gd_index, gd_range, scope_state, item_table);
+  ffree(np->next.raw);
+  ffree(np->previous.raw);
+  common(byte_check_bit, cli_options, toutput, dss, ctp, of, scope, ia, srt, scope_right_side, statset, gd_index, gd_range, scope_state, item_table, sc, output_buffer);
 }
 
 void populate_start_file(FILE **file, char *file_tag, struct CLIOptions *cli_options) {

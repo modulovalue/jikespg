@@ -7,6 +7,11 @@
 #include <assert.h>
 #include <stdio.h>
 
+struct symno_type {
+  int ptr;
+  int name_index;
+};
+
 void nospace();
 
 #define galloc0p(into, x, times) \
@@ -131,6 +136,61 @@ static const int IOBUFFER_SIZE = 655360;
 
 extern const long MAX_TABLE_SIZE;
 
+// region long array
+struct long_array {
+  long *raw;
+  long size;
+};
+
+#define ArrayLong struct long_array
+
+/// This function allocates an array of size "size" of int integers.
+static ArrayLong Allocate_long_array2(const long n) {
+  long *p;
+  calloc0p(&p, n, long);
+  return (struct long_array) {
+    .raw = &p[0],
+    .size = n,
+  };
+}
+// endregion
+
+// region short array
+struct short_array {
+  short *raw;
+  long size;
+};
+
+#define ArrayShort struct short_array
+
+static ArrayShort Allocate_short_array2(const long n) {
+  short *p;
+  calloc0p(&p, n, short);
+  return (struct short_array) {
+    .raw = &p[0],
+    .size = n,
+  };
+}
+// endregion
+
+// region boolean array
+struct bool_array {
+  bool *raw;
+  long size;
+};
+
+#define ArrayBool struct bool_array
+
+static ArrayBool Allocate_bool_array2(const long n) {
+  bool *p;
+  calloc0p(&p, n, bool);
+  return (struct bool_array) {
+    .raw = &p[0],
+    .size = n,
+  };
+}
+// endregion
+
 struct node {
   struct node *next;
   int value;
@@ -181,7 +241,7 @@ struct stack_element {
 struct sources_element {
   struct stack_element **configs;
   struct stack_element **stack_seen;
-  short *list;
+  ArrayShort list;
   short root;
 };
 
@@ -267,6 +327,7 @@ struct OutputFiles {
 struct CLIOptions {
   bool nt_check_bit;
   bool conflicts_bit;
+  bool error_maps_bit;
   // TODO • have a union for c/cpp/java.
   bool c_bit;
   bool cpp_bit;
@@ -314,6 +375,7 @@ static struct CLIOptions init_cli_options() {
     .shift_default_bit = false,
     .byte_bit = true,
     .single_productions_bit = false,
+    .error_maps_bit = false,
     .lalr_level = 1,
     .default_opt = 5,
     .trace_opt = TRACE_CONFLICTS,
@@ -337,7 +399,7 @@ static struct CLIOptions init_cli_options() {
   };
 }
 
-void process_input(char *grm_file, struct OutputFiles *output_files, int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options, short **rhs_sym, struct ruletab_type **rulesp);
+void process_input(char *grm_file, struct OutputFiles *output_files, int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options, ArrayShort *rhs_sym, struct ruletab_type **rulesp);
 
 static char msg_line[MAX_MSG_SIZE];
 
@@ -369,8 +431,6 @@ static bool IS_A_NON_TERMINAL(const int i) {
   return i > num_terminals;
 }
 
-extern bool error_maps_bit;
-
 // The variables below are used to hold information about special grammar symbols.
 extern int accept_image;
 extern int eoft_image;
@@ -379,6 +439,13 @@ extern int empty;
 extern int error_image;
 
 extern long num_shift_maps;
+extern long num_shifts;
+extern long num_shift_reduces;
+extern long num_gotos;
+extern long num_goto_reduces;
+extern long num_reductions;
+extern long num_entries;
+extern long num_error_rules;
 
 struct ConflictCounter {
   long num_sr_conflicts;
@@ -386,12 +453,11 @@ struct ConflictCounter {
   struct node **in_stat;
 };
 
-extern long num_shifts;
-extern long num_shift_reduces;
-extern long num_gotos;
-extern long num_goto_reduces;
-extern long num_reductions;
-extern long num_entries;
+struct ScopeCounter {
+  long num_scopes;
+  long scope_rhs_size;
+  long scope_state_size;
+};
 
 static int RHS_SIZE(const int rule_no, struct ruletab_type *rules) {
   return rules[rule_no + 1].rhs - rules[rule_no].rhs;
@@ -428,17 +494,10 @@ struct SRTable {
   struct reduce_header_type *reduce;
 };
 
-extern short *gd_index;
-
 struct StatSet {
   /// STATSET is a mapping from state number to state information.
   struct statset_type *statset;
 };
-
-extern long num_scopes;
-extern long scope_rhs_size;
-extern long scope_state_size;
-extern long num_error_rules;
 
 struct scope_type {
   short prefix;
@@ -462,14 +521,7 @@ struct CTabsProps {
   long increment_size;
 };
 
-extern short *scope_state;
-
 extern char *output_buffer;
-
-struct NextPrevious {
-  long *next;
-  long *previous;
-};
 
 struct ImportantAspects {
   long accept_act;
@@ -482,7 +534,12 @@ struct ProduceTop {
   int top;
 };
 
-void compute_produces(int symbol, struct node **direct_produces, short *stack, short *index_of, JBitset produces, struct ProduceTop* top_value);
+struct NextPrevious {
+  ArrayLong next;
+  ArrayLong previous;
+};
+
+void compute_produces(int symbol, struct node **direct_produces, ArrayShort stack, ArrayShort index_of, JBitset produces, struct ProduceTop* top_value);
 
 void reset_temporary_space(void);
 
@@ -495,11 +552,8 @@ struct DetectedSetSizes {
   long non_term_set_size;
   /// NULL_NT is a boolean vector that indicates whether a given
   /// non-terminal is nullable.
-  bool *null_nt;
-} mkbasic(struct CLIOptions *cli_options, JBitset nt_first, bool* * rmpself, JBitset* first, struct FirstDeps* fd, struct ruletab_type *rules, short *rhs_sym, struct itemtab **item_tablep);
-
-extern char ormark;
-extern char escape;
+  ArrayBool null_nt;
+} mkbasic(struct CLIOptions *cli_options, JBitset nt_first, ArrayBool * rmpself, JBitset* first, struct FirstDeps* fd, struct ruletab_type *rules, ArrayShort rhs_sym, struct itemtab **item_tablep);
 
 void restore_symbol(char *out, const char *in, char ormark, char escape);
 
@@ -527,10 +581,10 @@ struct GlobalSpace {
 } gs;
 
 struct TableOutput {
-  long *ordered_state;
-  long *symbol_map;
-  long *state_index;
-  long *state_list;
+  ArrayLong ordered_state;
+  ArrayLong symbol_map;
+  ArrayLong state_index;
+  ArrayLong state_list;
 };
 
 static void ffree(void *y) {
@@ -602,17 +656,17 @@ struct StackRoot {
 
 extern int increment;
 
-void cmprtim(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, long *scope_right_side, struct lastats_type *lastats, long *gotodef, short *gd_index, short *gd_range, short *scope_state, struct statset_type *statset,struct ruletab_type *rules, struct itemtab *item_table);
+void cmprtim(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ArrayLong scope_right_side, struct lastats_type *lastats,                     ArrayLong gotodef, ArrayShort gd_index, ArrayShort gd_range, ArrayShort scope_state, struct statset_type *statset, struct ruletab_type *rules, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer);
 
-void cmprspa(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, long *scope_right_side, struct lastats_type *lastats, short *shiftdf, long *gotodef, short *gd_index, short *gd_range, short *scope_state, struct statset_type *statset,struct ruletab_type *rules, struct itemtab *item_table);
+void cmprspa(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ArrayLong scope_right_side, struct lastats_type *lastats, ArrayShort shiftdf, ArrayLong gotodef, ArrayShort gd_index, ArrayShort gd_range, ArrayShort scope_state, struct statset_type *statset, struct ruletab_type *rules, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer);
 
-bool* init_rmpself(JBitset produces);
+ArrayBool init_rmpself(JBitset produces);
 
 void fill_in(char string[], int amount, char character);
 
 void free_nodes(struct node *head, struct node *tail);
 
-struct ConflictCounter mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct SourcesElementSources* ses, bool *rmpself, JBitset first, struct node **adequate_item, struct SRTable* srt, bool *null_nt, short *gd_index, struct ruletab_type *rules, struct statset_type *statset, struct itemtab *item_table, short *rhs_sym, struct LaStats* las);
+struct ConflictCounter mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct SourcesElementSources* ses, ArrayBool rmpself, JBitset first, struct node **adequate_item, struct SRTable* srt, ArrayBool null_nt, ArrayShort gd_index, struct ruletab_type *rules, struct statset_type *statset, struct itemtab *item_table, ArrayShort rhs_sym, struct LaStats* las);
 
 /// LA_INDEX and LA_SET are temporary look-ahead sets, each of which will
 /// be pointed to by a GOTO action, and the associated set will be
@@ -621,77 +675,39 @@ struct ConflictCounter mkrdcts(struct CLIOptions *cli_options, struct DetectedSe
 /// is defined in state S. See COMPUTE_READ for more details.
 /// LA_TOP is used to compute the number of such sets needed.
 struct LAIndex {
-  short *la_index;
+  ArrayShort la_index;
   JBitset la_set;
 };
 
 void la_traverse(int state_no, int goto_indx, int *stack_top, struct StackRoot* sr, JBitset first, struct LAIndex* lai, struct node **adequate_item, struct node **in_stat, struct statset_type *statset, struct ruletab_type *rules, struct itemtab *item_table);
 
-void remove_single_productions(struct DetectedSetSizes* dss, struct StackRoot* sr, JBitset first, struct LAIndex* lai, struct node **conflict_symbols, JBitset la_set, struct node **adequate_item, struct SRTable* srt, struct statset_type *statset, struct lastats_type *lastats, short *gd_index, struct node **in_stat, struct ruletab_type *rules, struct itemtab *item_table, short *rhs_sym);
+void remove_single_productions(struct DetectedSetSizes* dss, struct StackRoot* sr, JBitset first, struct LAIndex* lai, struct node **conflict_symbols, JBitset la_set, struct node **adequate_item, struct SRTable* srt, struct statset_type *statset, struct lastats_type *lastats, ArrayShort gd_index, struct node **in_stat, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym);
 
-void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, JBitset first, struct scope_type *scope, struct node **clitems, struct node **closure, struct SRTable* srt, long *scope_right_side, bool *null_nt, short **scope_state, struct itemtab *item_table, struct ruletab_type *rules, short *rhs_sym, short **gd_range, short **gd_index, struct StatSet* ss);
+void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, JBitset first, struct scope_type *scope, struct node **clitems, struct node **closure, struct SRTable* srt, ArrayLong* scope_right_side, ArrayBool null_nt, ArrayShort *scope_state, struct itemtab *item_table, struct ruletab_type *rules, ArrayShort rhs_sym, ArrayShort* gd_range, ArrayShort*gd_index, struct StatSet* ss, struct ScopeCounter* sc);
 
 int number_len(int state_no);
 
-void partset(JBitset collection, const long *element_size, const long *list, long *start, long *stack, long set_size, bool from_process_scopes);
+void partset(JBitset collection, ArrayLong element_size, ArrayLong list, ArrayLong start, ArrayLong stack, long set_size, bool from_process_scopes);
 
-void print_item(int item_no, struct CLIOptions* cli_options, struct ruletab_type *rules, struct itemtab *item_table, short *rhs_sym);
+void print_item(int item_no, struct CLIOptions* cli_options, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym);
 
 void print_large_token(char *line, char *token, const char *indent, int len);
 
-void print_state(int state_no, struct CLIOptions* cli_options, struct node **adequate_item, struct SRTable* srt, struct lastats_type *lastats, struct statset_type *statset, struct node **in_stat, struct ruletab_type *rules, struct itemtab *item_table, short *rhs_sym);
+void print_state(int state_no, struct CLIOptions* cli_options, struct node **adequate_item, struct SRTable* srt, struct lastats_type *lastats, struct statset_type *statset, struct node **in_stat, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym);
 
 void process_error_maps(struct CLIOptions *cli_options, FILE *systab, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp);
 
-void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, long *term_state_index, long *shift_check_index, struct CTabsProps* ctp, struct new_state_type *new_state_element, short *shift_image, short *real_shift_number, struct OutputFiles* of, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, long *scope_right_side, short *shiftdf, long *gotodef, short *gd_index, short *gd_range, struct ruletab_type *rules, short *scope_state, struct statset_type *statset, struct itemtab *item_table);
+void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, ArrayLong term_state_index, ArrayLong shift_check_index, struct CTabsProps* ctp, struct new_state_type *new_state_element, ArrayShort shift_image, ArrayShort real_shift_number, struct OutputFiles* of, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ArrayLong scope_right_side, ArrayShort shiftdf, ArrayLong gotodef, ArrayShort gd_index, ArrayShort gd_range, struct ruletab_type *rules, ArrayShort scope_state, struct statset_type *statset, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer);
 
-void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, long *scope_right_side, struct lastats_type *lastats, long *gotodef, short *gd_index, short *gd_range, struct ruletab_type *rules, short *scope_state, struct statset_type *statset, struct itemtab *item_table);
+void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ArrayLong scope_right_side, struct lastats_type *lastats, ArrayLong gotodef, ArrayShort gd_index, ArrayShort gd_range, struct ruletab_type *rules, ArrayShort scope_state, struct statset_type *statset, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer);
 
 void populate_start_file(FILE **file, char *file_tag, struct CLIOptions *cli_options);
 
-void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, short *gd_range, struct SRTable* srt, long *scope_right_side, struct lastats_type *lastats, short *shiftdf, long *gotodef, short *gd_index, struct statset_type *statset, short *scope_state, struct ruletab_type *rules, struct itemtab *item_table);
+void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, ArrayShort gd_range, struct SRTable* srt, ArrayLong scope_right_side, struct lastats_type *lastats, ArrayShort* shiftdf, ArrayLong* gotodef, ArrayShort gd_index, struct statset_type *statset, ArrayShort scope_state, struct ruletab_type *rules, struct itemtab *item_table, struct symno_type *symno, struct ScopeCounter* sc);
 
-void sortdes(long array[], long count[], long low, long high, long max);
+void sortdes(ArrayLong array, ArrayLong count, long low, long high, long max);
 
 void reallocate(struct CLIOptions *cli_options, struct CTabsProps* ctp, struct NextPrevious* np, struct ImportantAspects* ia);
-
-struct long_array {
-  long *raw;
-  long size;
-};
-
-#define ArrayLong struct long_array
-
-/// This function allocates an array of size "size" of int integers.
-static long *Allocate_long_array(const long n) {
-  long *p;
-  calloc0p(&p, n, long);
-  return &p[0];
-}
-
-/// This function allocates an array of size "size" of int integers.
-static ArrayLong Allocate_long_array2(const long n) {
-  long *p;
-  calloc0p(&p, n, long);
-  return (struct long_array) {
-    .raw = &p[0],
-    .size = n,
-  };
-}
-
-/// This function allocates an array of size "size" of short integers.
-static short *Allocate_short_array(const long n) {
-  short *p;
-  calloc0p(&p, n, short);
-  return &p[0];
-}
-
-/// This function allocates an array of size "size" of type boolean.
-static bool *Allocate_boolean_array(const long n) {
-  bool *p;
-  calloc0p(&p, n, bool);
-  return &p[0];
-}
 
 /// This function allocates a node structure and returns a pointer to it.
 /// If there are nodes in the free pool, one of them is returned. Otherwise,
@@ -745,10 +761,10 @@ static struct reduce_header_type Allocate_reduce_map(const long n) {
 
 static struct TableOutput init_table_output() {
   return (struct TableOutput) {
-    .ordered_state = Allocate_long_array(max_la_state + 1),
-    .state_index = Allocate_long_array(max_la_state + 1),
-    .symbol_map = Allocate_long_array(num_symbols + 1),
-    .state_list = Allocate_long_array(max_la_state + 1),
+    .ordered_state = Allocate_long_array2(max_la_state + 1),
+    .state_index = Allocate_long_array2(max_la_state + 1),
+    .symbol_map = Allocate_long_array2(num_symbols + 1),
+    .state_list = Allocate_long_array2(max_la_state + 1),
   };
 }
 

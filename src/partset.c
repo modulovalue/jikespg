@@ -44,7 +44,7 @@
 ///    which is a subset of the subset on top of the stack, currently
 ///    being constructed, remove it from the partition, and push it
 ///    into the stack. Repeat step 2 until the partition is empty.
-void partset(const JBitset collection, const long *element_size, const long *list, long *start, long *stack, long set_size, const bool from_process_scopes) {
+void partset(JBitset collection, ArrayLong element_size, ArrayLong list, ArrayLong start, ArrayLong stack, long set_size, bool from_process_scopes) {
   int collection_size;
   // TODO • Remove this unnecessary indirection.
   if (from_process_scopes) {
@@ -54,12 +54,12 @@ void partset(const JBitset collection, const long *element_size, const long *lis
     collection_size = num_states;
   }
   const int bctype = collection.size;
-  short *size_list = Allocate_short_array(set_size + 1);
-  short *partition = Allocate_short_array(set_size + 1);
-  short *domain_link = Allocate_short_array(collection_size + 1);
-  short *head = Allocate_short_array(collection_size + 1);
-  short *next = Allocate_short_array(collection_size + 1);
-  bool *is_a_base = Allocate_boolean_array(collection_size + 1);
+  ArrayShort size_list = Allocate_short_array2(set_size + 1);
+  ArrayShort partition = Allocate_short_array2(set_size + 1);
+  ArrayShort domain_link = Allocate_short_array2(collection_size + 1);
+  ArrayShort head = Allocate_short_array2(collection_size + 1);
+  ArrayShort next = Allocate_short_array2(collection_size + 1);
+  ArrayBool is_a_base = Allocate_bool_array2(collection_size + 1);
   JBitset temp_set;
   calloc0_set(temp_set, 1, bctype);
   // DOMAIN_TABLE is the base of a hash table used to compute the set
@@ -88,19 +88,19 @@ void partset(const JBitset collection, const long *element_size, const long *lis
     // add INDEX to a list associated with the subset found and
     // mark it as a duplicate by setting the head of its list to
     // OMEGA.  Otherwise, we have a new set...
-    for (int i = domain_table[hash_address]; i != NIL; i = domain_link[i]) {
+    for (int i = domain_table[hash_address]; i != NIL; i = domain_link.raw[i]) {
       if (equal_sets(collection, index, collection, i, bctype)) {
-        head[index] = OMEGA;
-        next[index] = head[i];
-        head[i] = index;
+        head.raw[index] = OMEGA;
+        next.raw[index] = head.raw[i];
+        head.raw[i] = index;
         goto continu;
       }
     }
     //  ...Subset indicated by INDEX not previously seen. Insert
     // it into the hash table, and initialize a new list with it.
-    domain_link[index] = domain_table[hash_address];
+    domain_link.raw[index] = domain_table[hash_address];
     domain_table[hash_address] = index;
-    head[index] = NIL; /* Start a new list */
+    head.raw[index] = NIL; /* Start a new list */
   continu: ;
   }
   // We now partition all the unique sets in the hash table
@@ -110,14 +110,14 @@ void partset(const JBitset collection, const long *element_size, const long *lis
   // corresponding HEAD elements are used, but their
   // corresponding NEXT field is still unused.
   for (int i = 0; i <= set_size; i++) {
-    partition[i] = NIL;
+    partition.raw[i] = NIL;
   }
   for (int index = 1; index <= collection_size; index++) {
-    if (head[index] != OMEGA) {
+    if (head.raw[index] != OMEGA) {
       /* Subset representative */
-      int size = element_size[index];
-      next[index] = partition[size];
-      partition[size] = index;
+      int size = element_size.raw[index];
+      next.raw[index] = partition.raw[size];
+      partition.raw[size] = index;
     }
   }
   //     ...Construct a list of all the elements of PARTITION
@@ -128,8 +128,8 @@ void partset(const JBitset collection, const long *element_size, const long *lis
   // resulting list will be sorted in descending order.
   int size_root = NIL;
   for (int i = 0; i <= set_size; i++) {
-    if (partition[i] != NIL) {
-      size_list[i] = size_root;
+    if (partition.raw[i] != NIL) {
+      size_list.raw[i] = size_root;
       size_root = i;
     }
   }
@@ -137,20 +137,19 @@ void partset(const JBitset collection, const long *element_size, const long *lis
   // above.  The vector IS_A_BASE is used to mark subsets
   // chosen as bases.
   for (int i = 0; i <= collection_size; i++) {
-    is_a_base[i] = false;
+    is_a_base.raw[i] = false;
   }
-  for (int size = size_root; size != NIL; size = size_list[size]) {
+  for (int size = size_root; size != NIL; size = size_list.raw[size]) {
     // For biggest partition there is
-    for (int base_set = partition[size]; base_set != NIL; base_set = next[base_set]) {
+    for (int base_set = partition.raw[size]; base_set != NIL; base_set = next.raw[base_set]) {
       // For each set in it...
       // Mark the state as a base state, and initialize
       // its stack.  The list representing the stack will
       // be circular...
-      is_a_base[base_set] = true;
-      stack[base_set] = base_set;
+      is_a_base.raw[base_set] = true;
+      stack.raw[base_set] = base_set;
       // For remaining elements in partitions in decreasing order...
-      for (int next_size = size_list[size];
-           next_size != NIL; next_size = size_list[next_size]) {
+      for (int next_size = size_list.raw[size]; next_size != NIL; next_size = size_list.raw[next_size]) {
         int previous = NIL; /* mark head of list */
         // Iterate over subsets in the partition until we
         // find one that is a subset of the subset on top
@@ -160,21 +159,19 @@ void partset(const JBitset collection, const long *element_size, const long *lis
         // go on to the next element of the partition.
         // INDEX identifies the state currently on top
         // of the stack.
-        for (int subset = partition[next_size];
-             subset != NIL;
-             previous = subset, subset = next[subset]) {
-          int index = stack[base_set];
+        for (int subset = partition.raw[next_size]; subset != NIL; previous = subset, subset = next.raw[subset]) {
+          int index = stack.raw[base_set];
           B_ASSIGN_SET(temp_set, 0, collection, index, bctype);
           B_SET_UNION(temp_set, 0, collection, subset, bctype);
           // SUBSET is a subset of INDEX?
           if (equal_sets(temp_set, 0, collection, index, bctype)) {
             if (previous == NIL) {
-              partition[next_size] = next[subset];
+              partition.raw[next_size] = next.raw[subset];
             } else {
-              next[previous] = next[subset];
+              next.raw[previous] = next.raw[subset];
             }
-            stack[subset] = stack[base_set];
-            stack[base_set] = subset;
+            stack.raw[subset] = stack.raw[base_set];
+            stack.raw[base_set] = subset;
             break; /* for (subset = partition[next_size]... */
           }
         }
@@ -187,17 +184,17 @@ void partset(const JBitset collection, const long *element_size, const long *lis
   // base subset for the "fence" element.
   int offset = 1;
   for (int i = 1; i <= collection_size; i++) {
-    int base_set = list[i];
-    if (is_a_base[base_set]) {
-      start[base_set] = offset;
+    int base_set = list.raw[i];
+    if (is_a_base.raw[base_set]) {
+      start.raw[base_set] = offset;
       // Assign the same offset to each subset that is
       // identical to the BASE_SET subset in question. Also,
       // mark the fact that this is a copy by using the negative
       // value of the OFFSET.
-      for (int index = head[base_set]; index != NIL; index = next[index]) {
-        start[index] = -start[base_set];
+      for (int index = head.raw[base_set]; index != NIL; index = next.raw[index]) {
+        start.raw[index] = -start.raw[base_set];
       }
-      int size = element_size[base_set] + 1;
+      int size = element_size.raw[base_set] + 1;
       offset += size;
       // Now, assign offset values to each subset of the
       // BASE_SET. Once again, we mark them as sharing elements
@@ -206,23 +203,23 @@ void partset(const JBitset collection, const long *element_size, const long *lis
       // list.  Therefore, its end is reached when we go back
       // to the root... In this case, the root is already
       // processed, so we stop when we reach it.
-      for (int index = stack[base_set]; index != base_set; index = stack[index]) {
-        size = element_size[index] + 1;
-        start[index] = -(offset - size);
+      for (int index = stack.raw[base_set]; index != base_set; index = stack.raw[index]) {
+        size = element_size.raw[index] + 1;
+        start.raw[index] = -(offset - size);
         // INDEX identifies a subset of BASE_SET. Assign the
         // same offset as INDEX to each subset j that is
         // identical to the subset INDEX.
-        for (int j = head[index]; j != NIL; j = next[j])
-          start[j] = start[index];
+        for (int j = head.raw[index]; j != NIL; j = next.raw[j])
+          start.raw[j] = start.raw[index];
       }
     }
   }
-  start[collection_size + 1] = offset;
-  ffree(size_list);
-  ffree(partition);
-  ffree(domain_link);
-  ffree(head);
-  ffree(next);
-  ffree(is_a_base);
+  start.raw[collection_size + 1] = offset;
+  ffree(size_list.raw);
+  ffree(partition.raw);
+  ffree(domain_link.raw);
+  ffree(head.raw);
+  ffree(next.raw);
+  ffree(is_a_base.raw);
   ffree(temp_set.raw);
 }

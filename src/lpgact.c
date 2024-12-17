@@ -1,10 +1,11 @@
 #include "common.h"
 #include "lpgparse.h"
 
-#line 85 "jikespg.g"
-#define SYM1 ps->terminal[stack_top + 1]
-#define SYM2 ps->terminal[stack_top + 2]
-#define SYM3 ps->terminal[stack_top + 3]
+#line 87 "jikespg.g"
+
+#define SYM1 (ps->terminal[stack_top + 1])
+#define SYM2 (ps->terminal[stack_top + 2])
+#define SYM3 (ps->terminal[stack_top + 3])
 
 static void null_action(struct ParserState* ps)
 {
@@ -55,7 +56,7 @@ static void add_block_definition(const struct terminal_type *term, struct Parser
 }
 
 /// bad_symbol ::= EQUIVALENCE
-#line 151 "jikespg.g"
+#line 154 "jikespg.g"
 static void bad_first_symbol(struct ParserState* ps)
 {
     PRNTERR2("First symbol: \"%s\" found in file is illegal. Line %ld, column %d", SYM1.name, SYM1.start_line, SYM1.start_column);
@@ -63,7 +64,7 @@ static void bad_first_symbol(struct ParserState* ps)
 }
 
 /// bad_symbol ::= BLOCK
-#line 172 "jikespg.g"
+#line 175 "jikespg.g"
 static void act10(struct ParserState* ps)
 {
     PRNTERR2("Action block cannot be first object in file. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -71,28 +72,28 @@ static void act10(struct ParserState* ps)
 }
 
 /// macro_list ::= macro_name_symbol macro_block
-#line 187 "jikespg.g"
+#line 190 "jikespg.g"
 static void act13(struct ParserState* ps)
 {
     add_macro_definition(SYM1.name, &(SYM2), ps);
 }
 
 /// macro_list ::= macro_list macro_name_symbol macro_block
-#line 195 "jikespg.g"
+#line 198 "jikespg.g"
 static void act14(struct ParserState* ps)
 {
     add_macro_definition(SYM2.name, &(SYM3), ps);
 }
 
 /// macro_name_symbol ::= SYMBOL
-#line 206 "jikespg.g"
+#line 209 "jikespg.g"
 static void act16(struct ParserState* ps)
 {
     PRNTWNG2("Macro name \"%s\" does not start with the escape character. Line %ld, column %d", SYM1.name, SYM1.start_line, SYM1.start_column);
 }
 
 /// macro_name_symbol ::= OR
-#line 214 "jikespg.g"
+#line 217 "jikespg.g"
 static void bad_macro_name(struct ParserState* ps)
 {
     PRNTERR2("Reserved symbol cannot be used as macro name. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -100,7 +101,7 @@ static void bad_macro_name(struct ParserState* ps)
 }
 
 /// macro_name_symbol ::= BLOCK
-#line 229 "jikespg.g"
+#line 232 "jikespg.g"
 static void act21(struct ParserState* ps)
 {
     PRNTERR2("Macro name not supplied for macro definition. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -108,7 +109,7 @@ static void act21(struct ParserState* ps)
 }
 
 /// macro_name_symbol ::= DEFINE_KEY
-#line 238 "jikespg.g"
+#line 241 "jikespg.g"
 static void act22(struct ParserState* ps)
 {
     PRNTERR2("Macro keyword misplaced. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -116,7 +117,7 @@ static void act22(struct ParserState* ps)
 }
 
 /// macro_block ::= OR
-#line 250 "jikespg.g"
+#line 253 "jikespg.g"
 static void definition_expected(struct ParserState* ps)
 {
     PRNTERR2("Definition block expected where symbol found. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -124,14 +125,14 @@ static void definition_expected(struct ParserState* ps)
 }
 
 /// terminal_symbol ::= SYMBOL
-#line 276 "jikespg.g"
+#line 279 "jikespg.g"
 static void process_terminal(struct ParserState* ps)
 {
     assign_symbol_no(SYM1.name, OMEGA, ps->hash_table);
 }
 
 /// terminal_symbol ::= DEFINE_KEY
-#line 288 "jikespg.g"
+#line 291 "jikespg.g"
 static void bad_terminal(struct ParserState* ps)
 {
     PRNTERR2("Keyword  has been misplaced in Terminal section.  Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -139,7 +140,7 @@ static void bad_terminal(struct ParserState* ps)
 }
 
 /// terminal_symbol ::= BLOCK
-#line 299 "jikespg.g"
+#line 302 "jikespg.g"
 static void act37(struct ParserState* ps)
 {
     PRNTERR2("Misplaced block found in TERMINALS section.  Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -147,7 +148,7 @@ static void act37(struct ParserState* ps)
 }
 
 /// alias_definition ::= alias_lhs produces alias_rhs
-#line 312 "jikespg.g"
+#line 315 "jikespg.g"
 static void act39(struct ParserState* ps)
 {
     int image;
@@ -167,7 +168,7 @@ static void act39(struct ParserState* ps)
         case ERROR_SYMBOL_TK:
             if (error_image > num_terminals)
             {
-                restore_symbol(tok_string, kerror, ormark, escape);
+                restore_symbol(tok_string, kerror, ps->ormark, ps->escape);
                 PRNTERR2("Illegal aliasing to %s prior to its definition.  Line %ld, column %d", tok_string, SYM3.start_line, SYM3.start_column);
                 exit(12);
             }
@@ -177,7 +178,7 @@ static void act39(struct ParserState* ps)
         case EOF_SYMBOL_TK:
             if (eoft_image > num_terminals)
             {
-                restore_symbol(tok_string, keoft, ormark, escape);
+                restore_symbol(tok_string, keoft, ps->ormark, ps->escape);
                 PRNTERR2("Illegal aliasing to %s prior to its definition. Line %ld, column %d", tok_string, SYM3.start_line, SYM3.start_column);
                 exit(12);
             }
@@ -203,7 +204,7 @@ static void act39(struct ParserState* ps)
         case SYMBOL_TK:
             if (symbol_image(SYM1.name, ps) != OMEGA)
             {
-                restore_symbol(tok_string, SYM1.name, ormark, escape);
+                restore_symbol(tok_string, SYM1.name, ps->ormark, ps->escape);
                 PRNTERR2("Symbol %s was previously defined. Line %ld, column %d", tok_string, SYM1.start_line, SYM1.start_column);
                 exit(12);
             }
@@ -211,12 +212,12 @@ static void act39(struct ParserState* ps)
             break;
 
         case ERROR_SYMBOL_TK:
-            if (error_image > num_terminals || ! error_maps_bit)
+            if (error_image > num_terminals || ! ps->error_maps_bit)
             {
                 if (image == empty      || image == eolt_image ||
                     image == eoft_image || image > num_terminals)
                 {
-                    restore_symbol(tok_string, kerror, ormark, escape);
+                    restore_symbol(tok_string, kerror, ps->ormark, ps->escape);
                     PRNTERR2("Illegal alias for symbol %s. Line %ld, column %d.", tok_string, SYM1.start_line, SYM1.start_column);
                     exit(12);
                 }
@@ -225,7 +226,7 @@ static void act39(struct ParserState* ps)
             }
             else
             {
-                restore_symbol(tok_string, kerror, ormark, escape);
+                restore_symbol(tok_string, kerror, ps->ormark, ps->escape);
                 PRNTERR2("Symbol %s was previously defined. Line %ld, column %d", tok_string, SYM1.start_line, SYM1.start_column);
                 exit(12);
             }
@@ -237,7 +238,7 @@ static void act39(struct ParserState* ps)
                 if (image == empty       || image == eolt_image  ||
                     image == error_image || image > num_terminals)
                 {
-                    restore_symbol(tok_string, keoft, ormark, escape);
+                    restore_symbol(tok_string, keoft, ps->ormark, ps->escape);
                     PRNTERR2("Illegal alias for symbol %s. Line %ld, column %d.", tok_string, SYM1.start_line, SYM1.start_column);
                     exit(12);
                 }
@@ -246,7 +247,7 @@ static void act39(struct ParserState* ps)
             }
             else
             {
-                restore_symbol(tok_string, keoft, ormark, escape);
+                restore_symbol(tok_string, keoft, ps->ormark, ps->escape);
                 PRNTERR2("Symbol %s was previously defined.  %ld, column %d", tok_string, SYM1.start_line, SYM1.start_column);
                 exit(12);
             }
@@ -275,7 +276,7 @@ static void act39(struct ParserState* ps)
 }
 
 /// bad_alias_rhs ::= DEFINE_KEY
-#line 472 "jikespg.g"
+#line 475 "jikespg.g"
 static void bad_alias_rhs(struct ParserState* ps)
 {
     PRNTERR2("Misplaced keyword found in Alias section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -283,7 +284,7 @@ static void bad_alias_rhs(struct ParserState* ps)
 }
 
 /// bad_alias_rhs ::= BLOCK
-#line 485 "jikespg.g"
+#line 488 "jikespg.g"
 static void act57(struct ParserState* ps)
 {
     PRNTERR2("Misplaced block found in Alias section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -291,7 +292,7 @@ static void act57(struct ParserState* ps)
 }
 
 /// bad_alias_lhs ::= EMPTY_SYMBOL
-#line 498 "jikespg.g"
+#line 501 "jikespg.g"
 static void act59(struct ParserState* ps)
 {
     PRNTERR2("Empty symbol cannot be aliased. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -299,7 +300,7 @@ static void act59(struct ParserState* ps)
 }
 
 /// bad_alias_lhs ::= produces
-#line 507 "jikespg.g"
+#line 510 "jikespg.g"
 static void missing_quote(struct ParserState* ps)
 {
     PRNTERR2("Symbol must be quoted when used as a grammar symbol. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -307,7 +308,7 @@ static void missing_quote(struct ParserState* ps)
 }
 
 /// start_symbol ::= SYMBOL
-#line 523 "jikespg.g"
+#line 526 "jikespg.g"
 static void act63(struct ParserState* ps)
 {
     assign_symbol_no(SYM1.name, OMEGA, ps->hash_table);
@@ -326,7 +327,7 @@ static void act63(struct ParserState* ps)
 }
 
 /// start_symbol ::= OR
-#line 544 "jikespg.g"
+#line 546 "jikespg.g"
 static void bad_start_symbol(struct ParserState* ps)
 {
     PRNTERR2("Symbol cannot be used as Start symbol. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -334,7 +335,7 @@ static void bad_start_symbol(struct ParserState* ps)
 }
 
 /// start_symbol ::= BLOCK
-#line 559 "jikespg.g"
+#line 561 "jikespg.g"
 static void act68(struct ParserState* ps)
 {
     PRNTERR2("Misplaced block found in Start section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -342,7 +343,7 @@ static void act68(struct ParserState* ps)
 }
 
 /// start_symbol ::= DEFINE_KEY
-#line 568 "jikespg.g"
+#line 570 "jikespg.g"
 static void misplaced_keyword_found_in_START_section(struct ParserState* ps)
 {
     PRNTERR2("Misplaced keyword found in START section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -350,7 +351,7 @@ static void misplaced_keyword_found_in_START_section(struct ParserState* ps)
 }
 
 /// rules_block ::= RULES_KEY
-#line 584 "jikespg.g"
+#line 586 "jikespg.g"
 static void act73(struct ParserState* ps)
 {
 
@@ -367,14 +368,14 @@ static void act73(struct ParserState* ps)
 }
 
 /// rules_block ::= RULES_KEY rule_list
-#line 602 "jikespg.g"
+#line 604 "jikespg.g"
 static void act74(struct ParserState* ps)
 {
     build_symno(ps);
 }
 
 /// rule_list ::= {action_block} SYMBOL produces
-#line 616 "jikespg.g"
+#line 618 "jikespg.g"
 static void act77(struct ParserState* ps)
 {
     assign_symbol_no(SYM2.name, OMEGA, ps->hash_table);
@@ -411,7 +412,7 @@ static void act77(struct ParserState* ps)
 }
 
 /// rule_list ::= rule_list OR
-#line 655 "jikespg.g"
+#line 657 "jikespg.g"
 static void act78(struct ParserState* ps)
 {
     num_rules++;
@@ -431,7 +432,7 @@ static void act78(struct ParserState* ps)
 }
 
 /// rule_list ::= rule_list SYMBOL produces
-#line 676 "jikespg.g"
+#line 678 "jikespg.g"
 static void act79(struct ParserState* ps)
 {
     num_rules++;
@@ -452,13 +453,13 @@ static void act79(struct ParserState* ps)
 }
 
 /// rule_list ::= rule_list ERROR_SYMBOL
-#line 703 "jikespg.g"
+#line 705 "jikespg.g"
 static void act82(struct ParserState* ps)
 {
     if (error_image == DEFAULT_SYMBOL)
     {
         char tok_string[SYMBOL_SIZE + 1];
-        restore_symbol(tok_string, kerror, ormark, escape);
+        restore_symbol(tok_string, kerror, ps->ormark, ps->escape);
         PRNTERR2("%s not declared or aliased to terminal symbol. Line %ld, column %d", tok_string, SYM2.start_line, SYM2.start_column);
         exit(12);
     }
@@ -476,7 +477,7 @@ static void act82(struct ParserState* ps)
 }
 
 /// rule_list ::= rule_list SYMBOL
-#line 729 "jikespg.g"
+#line 730 "jikespg.g"
 static void act83(struct ParserState* ps)
 {
     assign_symbol_no(SYM2.name, OMEGA, ps->hash_table);
@@ -552,7 +553,7 @@ static void misplaced_keyword_found_in_RULES_section(struct ParserState* ps)
 #line 834 "jikespg.g"
 static void act100(struct ParserState* ps)
 {
-    if (error_maps_bit)
+    if (ps->error_maps_bit)
     {
         int symbol;
 
@@ -626,7 +627,7 @@ static void process_TERMINALS_section(struct ParserState* ps)
     assign_symbol_no(keoft, OMEGA, ps->hash_table);
     eoft_image = symbol_image(keoft, ps);
 
-    if (error_maps_bit)
+    if (ps->error_maps_bit)
     {
         assign_symbol_no(kerror, OMEGA, ps->hash_table);
         error_image = symbol_image(kerror, ps);
@@ -649,7 +650,7 @@ static void process_ALIAS_section(struct ParserState* ps)
         num_terminals++;
     }
 
-    if (error_maps_bit)
+    if (ps->error_maps_bit)
     {
         if (error_image <= num_terminals)
             k++;
@@ -685,7 +686,7 @@ static void process_ALIAS_section(struct ParserState* ps)
 }
 
 /// {terminal_symbol} ::=
-#line 1041 "jikespg.g"
+#line 1042 "jikespg.g"
 static void act132(struct ParserState* ps)
 {
     assign_symbol_no(kempty, OMEGA, ps->hash_table);

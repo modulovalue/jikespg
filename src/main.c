@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "common.h"
+#include "lpgparse.h"
 
 /// This fork of jikespg was meant to clean up jikespg while maintaining its functionality.
 /// Unfortunately, the lack of an expressive type system in C makes it very difficult
@@ -72,7 +73,7 @@ int main(const int argc, char *argv[]) {
 
     struct scope_type *scope;
 
-    short *rhs_sym = NULL;
+    ArrayShort rhs_sym;
 
     struct ruletab_type *rules;
 
@@ -116,7 +117,7 @@ int main(const int argc, char *argv[]) {
     /// may appear immediately after the non-terminal.
     JBitset follow = {.raw = NULL};
 
-    bool *rmpself;
+    ArrayBool rmpself;
     JBitset first;
 
     struct FirstDeps fd = (struct FirstDeps) {
@@ -134,19 +135,24 @@ int main(const int argc, char *argv[]) {
       .shift = NULL,
     };
 
-    long *scope_right_side = NULL;
+    ArrayLong scope_right_side;
 
-    short *scope_state = NULL;
+    ArrayShort scope_state;
 
-    // TODO wrap
-    short *gd_range = NULL;
-    short *gd_index;
+    ArrayShort gd_range;
+    ArrayShort gd_index;
 
     struct StatSet ss = (struct StatSet) {
       .statset = NULL,
     };
 
-    mkstats(&cli_options, &dss, first, scope, fd.clitems, fd.closure, &srt, scope_right_side, dss.null_nt, &scope_state, item_table, rules, rhs_sym, &gd_range, &gd_index, &ss);
+    struct ScopeCounter sc = (struct ScopeCounter) {
+      .num_scopes = 0,
+      .scope_rhs_size = 0,
+      .scope_state_size = 0,
+    };
+
+    mkstats(&cli_options, &dss, first, scope, fd.clitems, fd.closure, &srt, &scope_right_side, dss.null_nt, &scope_state, item_table, rules, rhs_sym, &gd_range, &gd_index, &ss, &sc);
 
     struct SourcesElementSources ses = (struct SourcesElementSources) {
       .sources = NULL,
@@ -155,18 +161,18 @@ int main(const int argc, char *argv[]) {
       .lastats = NULL,
     };
     struct ConflictCounter conflicts = mkrdcts(&cli_options, &dss, &ses, rmpself, first, fd.adequate_item, &srt, dss.null_nt, gd_index, rules, ss.statset, item_table, rhs_sym, &las);
-
     // Output more basic statistics.
     {
       PRNT3("Number of Terminals: %ld", num_terminals - 1); /*-1 for %empty */
       PRNT3("Number of Nonterminals: %ld", num_non_terminals - 1); /* -1 for %ACC */
       PRNT3("Number of Productions: %ld", num_rules + 1);
+      PRNT3("Number of Terminals: %ld", num_error_rules);
       if (cli_options.single_productions_bit) {
         PRNT3("Number of Single Productions: %ld", num_single_productions);
       }
       PRNT3("Number of Items: %ld", num_items);
       if (cli_options.scopes_bit) {
-        PRNT3("Number of Scopes: %ld", num_scopes);
+        PRNT3("Number of Scopes: %ld", sc.num_scopes);
       }
       PRNT3("Number of States: %ld", num_states);
       if (max_la_state > num_states) {
@@ -194,7 +200,7 @@ int main(const int argc, char *argv[]) {
           // map, ITEM_TABLE (if we don't have to dump error maps),
           // IN_STAT, FIRST, NULL_NT and FOLLOW (if it's no longer
           // needed).
-          ffree(rhs_sym);
+          ffree(rhs_sym.raw);
           if (fd.adequate_item != NULL) {
             for ALL_RULES3(rule_no) {
               struct node *q = fd.adequate_item[rule_no];
@@ -204,7 +210,7 @@ int main(const int argc, char *argv[]) {
             }
             ffree(fd.adequate_item);
           }
-          if (!error_maps_bit) {
+          if (!cli_options.error_maps_bit) {
             ffree(item_table);
           }
           for ALL_STATES3(state_no) {
@@ -216,10 +222,10 @@ int main(const int argc, char *argv[]) {
           }
           ffree(conflicts.in_stat);
           ffree(first.raw);
-          dss.null_nt += num_terminals + 1;
-          ffree(dss.null_nt);
+          dss.null_nt.raw += num_terminals + 1;
+          ffree(dss.null_nt.raw);
           if (follow.raw != NULL) {
-            if (!error_maps_bit || cli_options.c_bit || cli_options.cpp_bit || cli_options.java_bit) {
+            if (!cli_options.error_maps_bit || cli_options.c_bit || cli_options.cpp_bit || cli_options.java_bit) {
               follow.raw += (num_terminals + 1) * dss.term_set_size;
               ffree(follow.raw);
             }
@@ -234,9 +240,9 @@ int main(const int argc, char *argv[]) {
           .next = NULL,
         };
 
-        short *shiftdf = NULL;
-        long *gotodef = NULL;
-        process_tables(tab_file, &of, &cli_options, &dss, &ctp, &of, &np, scope, gd_range, &srt, scope_right_side, las.lastats, shiftdf, gotodef, gd_index, ss.statset, scope_state, rules, item_table);
+        ArrayShort shiftdf;
+        ArrayLong gotodef;
+        process_tables(tab_file, &of, &cli_options, &dss, &ctp, &of, &np, scope, gd_range, &srt, scope_right_side, las.lastats, &shiftdf, &gotodef, gd_index, ss.statset, scope_state, rules, item_table, symno, &sc);
       }
     }
 

@@ -38,12 +38,12 @@ static void process_shift_actions(struct ptables_action_element **action_count, 
 /// This procedure updates the vector SHIFTDF, indexable by the terminals in
 /// the grammar. Its task is to assign to each element of SHIFTDF, the action
 /// most frequently defined on the symbol in question.
-static void compute_shift_default(struct SRTable* srt, struct lastats_type *lastats, short *shiftdf, struct statset_type *statset) {
+static void compute_shift_default(struct SRTable* srt, struct lastats_type *lastats, ArrayShort* shiftdf, struct statset_type *statset) {
   // Set up a pool of temporary space.
   reset_temporary_space();
   int shift_count = 0;
   int shift_reduce_count = 0;
-  shiftdf = Allocate_short_array(num_terminals + 1);
+  *shiftdf = Allocate_short_array2(num_terminals + 1);
   struct ptables_action_element **action_count;
   calloc0p(&action_count, num_terminals + 1, struct ptables_action_element *);
   // For each state, invoke PROCESS_SHIFT_ACTIONS to process the
@@ -66,7 +66,7 @@ static void compute_shift_default(struct SRTable* srt, struct lastats_type *last
         default_action = q->action;
       }
     }
-    shiftdf[symbol] = default_action;
+    shiftdf->raw[symbol] = default_action;
     // A state number ?
     if (default_action > 0) {
       shift_count += max_count;
@@ -86,13 +86,13 @@ static void compute_shift_default(struct SRTable* srt, struct lastats_type *last
 /// the non-terminals in the grammar. Its task is to assign to each element
 /// of the array the Action which is most frequently defined on the symbol in
 /// question, and remove all such actions from the state automaton.
-static void compute_goto_default(long *gotodef, struct statset_type *statset) {
+static void compute_goto_default(ArrayLong* gotodef, struct statset_type *statset) {
   // Set up a pool of temporary space.
   reset_temporary_space();
   int goto_count = 0;
   int goto_reduce_count = 0;
-  gotodef = Allocate_long_array(num_non_terminals);
-  gotodef -= num_terminals + 1;
+  *gotodef = Allocate_long_array2(num_non_terminals);
+  gotodef->raw -= num_terminals + 1;
   struct ptables_action_element **action_count;
   calloc0p(&action_count, num_non_terminals, struct ptables_action_element *);
   action_count -= num_terminals + 1;
@@ -140,7 +140,7 @@ static void compute_goto_default(long *gotodef, struct statset_type *statset) {
         default_action = q->action;
       }
     }
-    gotodef[symbol] = default_action;
+    (*gotodef).raw[symbol] = default_action;
     if (default_action > 0) {
       /* A state number? */
       goto_count += max_count;
@@ -154,7 +154,7 @@ static void compute_goto_default(long *gotodef, struct statset_type *statset) {
     int k = 0;
     struct goto_header_type go_to = statset[state_no].go_to;
     for (int i = 1; i <= go_to.size; i++) {
-      if (gotodef[go_to.map[i].symbol] != go_to.map[i].action) {
+      if ((*gotodef).raw[go_to.map[i].symbol] != go_to.map[i].action) {
         k++;
         go_to.map[k].symbol = go_to.map[i].symbol;
         go_to.map[k].action = go_to.map[i].action;
@@ -184,14 +184,14 @@ static void init_file(FILE **file, char *file_name, char *file_tag) {
 
 /// Remap symbols, apply transition default actions  and call
 /// appropriate table compression routine.
-void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, short *gd_range, struct SRTable* srt, long *scope_right_side, struct lastats_type *lastats, short *shiftdf, long *gotodef, short *gd_index, struct statset_type *statset, short *scope_state, struct ruletab_type *rules, struct itemtab *item_table) {
+void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, ArrayShort gd_range, struct SRTable* srt, ArrayLong scope_right_side, struct lastats_type *lastats, ArrayShort* shiftdf, ArrayLong* gotodef, ArrayShort gd_index, struct statset_type *statset, ArrayShort scope_state, struct ruletab_type *rules, struct itemtab *item_table, struct symno_type *symno, struct ScopeCounter* sc) {
   // First, we decrease by 1 the constants NUM_SYMBOLS
   // and NUM_TERMINALS, remove the EMPTY symbol(1) and remap the
   // other symbols beginning at 1.  If default reduction is
   // requested, we assume a special DEFAULT_SYMBOL with number zero.
   eoft_image--;
   accept_image--;
-  if (error_maps_bit) {
+  if (cli_options->error_maps_bit) {
     error_image--;
     eolt_image--;
   }
@@ -217,15 +217,15 @@ void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLI
       red.map[i].symbol--;
   }
   for (int i = 1; i <= gotodom_size; i++) {
-    gd_range[i]--;
+    gd_range.raw[i]--;
   }
-  for (int i = 1; i <= num_scopes; i++) {
+  for (int i = 1; i <= sc->num_scopes; i++) {
     scope[i].lhs_symbol--;
     scope[i].look_ahead--;
   }
-  for (int i = 1; i <= scope_rhs_size; i++) {
-    if (scope_right_side[i] != 0) {
-      scope_right_side[i]--;
+  for (int i = 1; i <= sc->scope_rhs_size; i++) {
+    if (scope_right_side.raw[i] != 0) {
+      scope_right_side.raw[i]--;
     }
   }
   // Remap all symbols in the domain of the Shift maps.
@@ -240,7 +240,7 @@ void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLI
     rules[rule_no].lhs--;
   }
   // Remap the dot symbols in ITEM_TABLE.
-  if (error_maps_bit) {
+  if (cli_options->error_maps_bit) {
     for ALL_ITEMS3(item_no) {
       item_table[item_no].symbol--;
     }
@@ -274,9 +274,9 @@ void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLI
   init_file(&of->sysprs, output_files->prs_file, of->prs_tag);
   struct ImportantAspects ia = (struct ImportantAspects) {};
   if (cli_options->table_opt.value == OPTIMIZE_SPACE.value) {
-    cmprspa(cli_options, &toutput, dss, ctp, of, np, scope, &ia, srt, scope_right_side, lastats, shiftdf, gotodef, gd_index, gd_range, scope_state, statset, rules, item_table);
+    cmprspa(cli_options, &toutput, dss, ctp, of, np, scope, &ia, srt, scope_right_side, lastats, *shiftdf, *gotodef, gd_index, gd_range, scope_state, statset, rules, item_table, sc, output_buffer);
   } else if (cli_options->table_opt.value == OPTIMIZE_TIME.value) {
-    cmprtim(cli_options, &toutput, dss, ctp, of, np, scope, &ia, srt, scope_right_side, lastats, gotodef, gd_index, gd_range, scope_state, statset, rules, item_table);
+    cmprtim(cli_options, &toutput, dss, ctp, of, np, scope, &ia, srt, scope_right_side, lastats, *gotodef, gd_index, gd_range, scope_state, statset, rules, item_table, sc, output_buffer);
   } else {
     exit(999);
   }

@@ -90,11 +90,11 @@ void mklr0(struct CLIOptions *cli_options, struct shift_header_type* no_shifts_p
   // NT_LIST and NT_ROOT are used to build temporary lists of non-terminals.
   // Set up a pool of temporary space.
   reset_temporary_space();
-  short *list = Allocate_short_array(num_symbols + 1);
-  short *shift_action = Allocate_short_array(num_terminals + 1);
-  short *shift_list = Allocate_short_array(num_terminals + 1);
-  short *nt_list = Allocate_short_array(num_non_terminals);
-  nt_list -= num_terminals + 1;
+  ArrayShort list = Allocate_short_array2(num_symbols + 1);
+  ArrayShort shift_action = Allocate_short_array2(num_terminals + 1);
+  ArrayShort shift_list = Allocate_short_array2(num_terminals + 1);
+  ArrayShort nt_list = Allocate_short_array2(num_non_terminals);
+  nt_list.raw -= num_terminals + 1;
   struct node **partition;
   calloc0p(&partition, num_symbols + 1, struct node *);
   struct state_element **state_table;
@@ -109,11 +109,11 @@ void mklr0(struct CLIOptions *cli_options, struct shift_header_type* no_shifts_p
     .state_tail = NULL,
   };
   for (int i = 0; i <= num_terminals; i++) {
-    shift_action[i] = OMEGA;
+    shift_action.raw[i] = OMEGA;
   }
   int nt_root = NIL;
   for ALL_NON_TERMINALS3(i) {
-    nt_list[i] = OMEGA;
+    nt_list.raw[i] = OMEGA;
   }
   // PARTITION, STATE_TABLE and SHIFT_TABLE are initialized by calloc
   //
@@ -141,15 +141,15 @@ void mklr0(struct CLIOptions *cli_options, struct shift_header_type* no_shifts_p
       int symbol = item_table[item_no].symbol; /* symbol after dot */
       if (IS_A_NON_TERMINAL(symbol)) /* Dot symbol */
       {
-        if (nt_list[symbol] == OMEGA) /* not yet seen */
+        if (nt_list.raw[symbol] == OMEGA) /* not yet seen */
         {
-          nt_list[symbol] = nt_root;
+          nt_list.raw[symbol] = nt_root;
           nt_root = symbol;
           for (bool end_node = (p = closure[symbol]) == NULL; !end_node; /* Loop over circular list */ end_node = p == closure[symbol]) {
             // add its closure to list
             p = p->next;
-            if (nt_list[p->value] == OMEGA) {
-              nt_list[p->value] = nt_root;
+            if (nt_list.raw[p->value] == OMEGA) {
+              nt_list.raw[p->value] = nt_root;
               nt_root = p->value;
             }
           }
@@ -163,8 +163,8 @@ void mklr0(struct CLIOptions *cli_options, struct shift_header_type* no_shifts_p
     // items are placed in a temporary list rooted at CLOSURE_ROOT.
     struct node *closure_root = NULL; /* used to construct list of closure items */
     struct node *closure_tail;
-    for (int symbol = nt_root; symbol != NIL; nt_list[symbol] = OMEGA, symbol = nt_root) {
-      nt_root = nt_list[symbol];
+    for (int symbol = nt_root; symbol != NIL; nt_list.raw[symbol] = OMEGA, symbol = nt_root) {
+      nt_root = nt_list.raw[symbol];
       for (bool end_node = (p = clitems[symbol]) == NULL; !end_node; /* Loop over circular list */ end_node = p == clitems[symbol]) {
         p = p->next;
         int item_no = p->value;
@@ -210,7 +210,7 @@ void mklr0(struct CLIOptions *cli_options, struct shift_header_type* no_shifts_p
         int next_item_no = item_no + 1;
         if (partition[symbol] == NULL) {
           // PARTITION not defined on symbol
-          list[symbol] = root; /* add to list */
+          list.raw[symbol] = root; /* add to list */
           root = symbol;
           if (IS_A_TERMINAL(symbol)) /* Update transition count */
           {
@@ -256,7 +256,7 @@ void mklr0(struct CLIOptions *cli_options, struct shift_header_type* no_shifts_p
       state->lr0_goto = *no_gotos_ptr;
     }
     int shift_root = NIL;
-    for (int symbol = root; symbol != NIL; /* symbols on which transition is defined */ symbol = list[symbol]) {
+    for (int symbol = root; symbol != NIL; /* symbols on which transition is defined */ symbol = list.raw[symbol]) {
       short action = OMEGA;
       // If the partition contains only one item, and it is adequate
       // (i.e. the dot immediately follows the last symbol), and
@@ -296,8 +296,8 @@ void mklr0(struct CLIOptions *cli_options, struct shift_header_type* no_shifts_p
       // separate entities.
       if (IS_A_TERMINAL(symbol)) {
         /* terminal? add to SHIFT map */
-        shift_action[symbol] = action;
-        shift_list[symbol] = shift_root;
+        shift_action.raw[symbol] = action;
+        shift_list.raw[symbol] = shift_root;
         shift_root = symbol;
         if (action > 0) {
           num_shifts++;
@@ -341,8 +341,8 @@ void mklr0(struct CLIOptions *cli_options, struct shift_header_type* no_shifts_p
   update_shift_maps: {
       unsigned long hash_address;
       hash_address = shift_size;
-      for (int symbol = shift_root; symbol != NIL; symbol = shift_list[symbol]) {
-        hash_address += ABS(shift_action[symbol]);
+      for (int symbol = shift_root; symbol != NIL; symbol = shift_list.raw[symbol]) {
+        hash_address += ABS(shift_action.raw[symbol]);
       }
       struct shift_header_type sh;
       struct state_element *p_inner;
@@ -355,7 +355,7 @@ void mklr0(struct CLIOptions *cli_options, struct shift_header_type* no_shifts_p
           int ii;
           // Compare shift maps
           for (ii = 1; ii <= shift_size; ii++) {
-            if (sh.map[ii].action != shift_action[sh.map[ii].symbol]) {
+            if (sh.map[ii].action != shift_action.raw[sh.map[ii].symbol]) {
               break;
             }
           }
@@ -363,9 +363,9 @@ void mklr0(struct CLIOptions *cli_options, struct shift_header_type* no_shifts_p
           if (ii > shift_size) {
             state->lr0_shift = sh;
             state->shift_number = p_inner->shift_number;
-            for (int symbol = shift_root; symbol != NIL; symbol = shift_list[symbol]) {
+            for (int symbol = shift_root; symbol != NIL; symbol = shift_list.raw[symbol]) {
               // Clear SHIFT_ACTION
-              shift_action[symbol] = OMEGA;
+              shift_action.raw[symbol] = OMEGA;
             }
             shift_size = 0; /* Reset for next round */
             goto leave_update_shift_maps;
@@ -383,10 +383,10 @@ void mklr0(struct CLIOptions *cli_options, struct shift_header_type* no_shifts_p
       state->lr0_shift = sh;
       state->next_shift = shift_table[hash_address];
       shift_table[hash_address] = state;
-      for (int symbol = shift_root; symbol != NIL; symbol = shift_list[symbol]) {
+      for (int symbol = shift_root; symbol != NIL; symbol = shift_list.raw[symbol]) {
         sh.map[shift_size].symbol = symbol;
-        sh.map[shift_size].action = shift_action[symbol];
-        shift_action[symbol] = OMEGA;
+        sh.map[shift_size].action = shift_action.raw[symbol];
+        shift_action.raw[symbol] = OMEGA;
         shift_size--;
       }
     } /*end update_shift_maps */
@@ -417,11 +417,11 @@ void mklr0(struct CLIOptions *cli_options, struct shift_header_type* no_shifts_p
       ss->statset[state_no].go_to = p_inner->lr0_goto;
     }
   }
-  ffree(list);
-  ffree(shift_action);
-  ffree(shift_list);
-  nt_list += num_terminals + 1;
-  ffree(nt_list);
+  ffree(list.raw);
+  ffree(shift_action.raw);
+  ffree(shift_list.raw);
+  nt_list.raw += num_terminals + 1;
+  ffree(nt_list.raw);
   ffree(partition);
   ffree(state_table);
   ffree(shift_table);
@@ -460,20 +460,18 @@ struct Produced {
 ///                               and
 ///
 ///                     SOURCE ->rm+ TARGET
-bool scope_check(const int lhs_symbol, const int target, const int source, bool* symbol_seen, struct Produced* produced, short *item_of, short *next_item, struct ruletab_type *rules, struct itemtab *item_table) {
-  symbol_seen[source] = true;
-  if (IS_IN_SET(produced->right_produces, target, source - num_terminals) &&
-      IS_IN_SET(produced->right_produces, lhs_symbol, source - num_terminals)) {
+bool scope_check(const int lhs_symbol, const int target, const int source, ArrayBool symbol_seen, struct Produced* produced, ArrayShort item_of, ArrayShort next_item, struct ruletab_type *rules, struct itemtab *item_table) {
+  symbol_seen.raw[source] = true;
+  if (IS_IN_SET(produced->right_produces, target, source - num_terminals) && IS_IN_SET(produced->right_produces, lhs_symbol, source - num_terminals)) {
     return false;
   }
-  for (int item_no = item_of[source];
-       item_no != NIL; item_no = next_item[item_no]) {
+  for (int item_no = item_of.raw[source]; item_no != NIL; item_no = next_item.raw[item_no]) {
     if (item_table[item_no].dot != 0) {
       return true;
     }
     const int rule_no = item_table[item_no].rule_number;
     const int symbol = rules[rule_no].lhs;
-    if (!symbol_seen[symbol]) {
+    if (!symbol_seen.raw[symbol]) {
       // not yet processed
       if (scope_check(lhs_symbol, target, symbol, symbol_seen, produced, item_of, next_item, rules, item_table)) {
         return 1;
@@ -494,13 +492,13 @@ bool scope_check(const int lhs_symbol, const int target, const int source, bool*
 /// 3) it is not the case that whenever A is introduced through
 ///    closure, it is introduced by a nonterminal C where C =>rm* A
 ///    and C =>rm+ B.
-bool is_scope(const int item_no, bool *symbol_seen, struct Produced* produced, short *item_of, short *next_item, bool *null_nt, struct ruletab_type *rules, struct itemtab *item_table) {
+bool is_scope(const int item_no, ArrayBool symbol_seen, struct Produced* produced, ArrayShort item_of, ArrayShort next_item, ArrayBool null_nt, struct ruletab_type *rules, struct itemtab *item_table) {
   for (int i = item_no - item_table[item_no].dot; i < item_no; i++) {
     const int symbol = item_table[i].symbol;
     if (IS_A_TERMINAL(symbol)) {
       return true;
     }
-    if (!null_nt[symbol]) {
+    if (!null_nt.raw[symbol]) {
       return true;
     }
   }
@@ -513,14 +511,14 @@ bool is_scope(const int item_no, bool *symbol_seen, struct Produced* produced, s
     return true;
   }
   for ALL_NON_TERMINALS3(nt) {
-    symbol_seen[nt] = false;
+    symbol_seen.raw[nt] = false;
   }
   return scope_check(lhs_symbol, target, lhs_symbol, symbol_seen, produced, item_of, next_item, rules, item_table);
 }
 
 /// This boolean function takes two items as arguments and checks
 /// whether they have the same prefix.
-bool is_prefix_equal(const int item_no, const int item_no2, struct ruletab_type *rules, struct itemtab *item_table, short *rhs_sym) {
+bool is_prefix_equal(const int item_no, const int item_no2, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym) {
   // a suffix
   if (item_no > 0) {
     return false;
@@ -534,7 +532,7 @@ bool is_prefix_equal(const int item_no, const int item_no2, struct ruletab_type 
   const int dot = start + item_table[item_no2].dot - 1;
   for (int i = start; i <= dot; i++) {
     // symbols before dot
-    if (rhs_sym[i] != rhs_sym[j]) {
+    if (rhs_sym.raw[i] != rhs_sym.raw[j]) {
       return false;
     }
     j++;
@@ -549,31 +547,31 @@ bool is_prefix_equal(const int item_no, const int item_no2, struct ruletab_type 
 /// NOTE that since both prefixes and suffixes are entered in the
 /// table, the prefix of a given item, ITEM_NO, is encoded as
 /// -ITEM_NO, whereas the suffix of that item is encoded as +ITEM_NO.
-int insert_prefix(const int item_no, struct scope_elmt *scope_element, short *scope_table, struct ScopeTop* st, struct ruletab_type *rules, struct itemtab *item_table, short *rhs_sym) {
+int insert_prefix(const int item_no, struct scope_elmt *scope_element, ArrayShort scope_table, struct ScopeTop* st, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym, struct ScopeCounter* sc) {
   unsigned long hash_address = 0;
   const int rule_no = item_table[item_no].rule_number;
   int ii;
   for (ii = rules[rule_no].rhs; /* symbols before dot */
        ii < rules[rule_no].rhs + item_table[item_no].dot; ii++)
-    hash_address += rhs_sym[ii];
+    hash_address += rhs_sym.raw[ii];
   ii = hash_address % SCOPE_SIZE;
-  for (int j = scope_table[ii]; j != NIL; j = scope_element[j].link) {
+  for (int j = scope_table.raw[ii]; j != NIL; j = scope_element[j].link) {
     if (is_prefix_equal(scope_element[j].item, item_no, rules, item_table, rhs_sym)) {
       return scope_element[j].index;
     }
   }
   st->top++;
   scope_element[st->top].item = -item_no;
-  scope_element[st->top].index = scope_rhs_size + 1;
-  scope_element[st->top].link = scope_table[ii];
-  scope_table[ii] = st->top;
-  scope_rhs_size += item_table[item_no].dot + 1;
+  scope_element[st->top].index = sc->scope_rhs_size + 1;
+  scope_element[st->top].link = scope_table.raw[ii];
+  scope_table.raw[ii] = st->top;
+  sc->scope_rhs_size += item_table[item_no].dot + 1;
   return scope_element[st->top].index;
 }
 
 /// This boolean function takes two items as arguments and checks
 /// whether they have the same suffix.
-bool is_suffix_equal(const int item_no1, const int item_no2, bool *null_nt, struct ruletab_type *rules, struct itemtab *item_table, short *rhs_sym) {
+bool is_suffix_equal(const int item_no1, const int item_no2, ArrayBool null_nt, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym) {
   if (item_no1 < 0) {
     // a prefix
     return false;
@@ -586,45 +584,45 @@ bool is_suffix_equal(const int item_no1, const int item_no2, bool *null_nt, stru
   const int dot2 = rules[rule_no + 1].rhs - 1;
   while (i <= dot1 && j <= dot2) {
     // non-nullable syms before dot
-    if (IS_A_NON_TERMINAL(rhs_sym[i])) {
-      if (null_nt[rhs_sym[i]]) {
+    if (IS_A_NON_TERMINAL(rhs_sym.raw[i])) {
+      if (null_nt.raw[rhs_sym.raw[i]]) {
         i++;
         continue;
       }
-    } else if (rhs_sym[i] == error_image) {
+    } else if (rhs_sym.raw[i] == error_image) {
       i++;
       continue;
     }
-    if (IS_A_NON_TERMINAL(rhs_sym[j])) {
-      if (null_nt[rhs_sym[j]]) {
+    if (IS_A_NON_TERMINAL(rhs_sym.raw[j])) {
+      if (null_nt.raw[rhs_sym.raw[j]]) {
         j++;
         continue;
       }
-    } else if (rhs_sym[j] == error_image) {
+    } else if (rhs_sym.raw[j] == error_image) {
       j++;
       continue;
     }
-    if (rhs_sym[i] != rhs_sym[j]) {
+    if (rhs_sym.raw[i] != rhs_sym.raw[j]) {
       return false;
     }
     j++;
     i++;
   }
   for (; i <= dot1; i++) {
-    if (IS_A_NON_TERMINAL(rhs_sym[i])) {
-      if (!null_nt[rhs_sym[i]]) {
+    if (IS_A_NON_TERMINAL(rhs_sym.raw[i])) {
+      if (!null_nt.raw[rhs_sym.raw[i]]) {
         return false;
       }
-    } else if (rhs_sym[i] != error_image) {
+    } else if (rhs_sym.raw[i] != error_image) {
       return false;
     }
   }
   for (; j <= dot2; j++) {
-    if (IS_A_NON_TERMINAL(rhs_sym[j])) {
-      if (!null_nt[rhs_sym[j]]) {
+    if (IS_A_NON_TERMINAL(rhs_sym.raw[j])) {
+      if (!null_nt.raw[rhs_sym.raw[j]]) {
         return false;
       }
-    } else if (rhs_sym[j] != error_image) {
+    } else if (rhs_sym.raw[j] != error_image) {
       return false;
     }
   }
@@ -637,36 +635,34 @@ bool is_suffix_equal(const int item_no1, const int item_no2, bool *null_nt, stru
 /// In any case, it returns the index associated with the suffix.
 /// When inserting a suffix into the table, all nullable nonterminals
 /// in the suffix are disregarded.
-int insert_suffix(const int item_no, struct scope_elmt *scope_element, short *scope_table, struct ScopeTop* st, bool *null_nt, struct ruletab_type *rules, struct itemtab *item_table, short *rhs_sym) {
+int insert_suffix(const int item_no, struct scope_elmt *scope_element, ArrayShort scope_table, struct ScopeTop* st, ArrayBool null_nt, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym, struct ScopeCounter* sc) {
   int num_elements = 0;
   unsigned long hash_address = 0;
   const int rule_no = item_table[item_no].rule_number;
   int ii;
-  for (ii = rules[rule_no].rhs + item_table[item_no].dot;
-       ii < rules[rule_no + 1].rhs; /* symbols after dot */
-       ii++) {
-    if (IS_A_NON_TERMINAL(rhs_sym[ii])) {
-      if (!null_nt[rhs_sym[ii]]) {
-        hash_address += rhs_sym[ii];
+  for (ii = rules[rule_no].rhs + item_table[item_no].dot; ii < rules[rule_no + 1].rhs; /* symbols after dot */ ii++) {
+    if (IS_A_NON_TERMINAL(rhs_sym.raw[ii])) {
+      if (!null_nt.raw[rhs_sym.raw[ii]]) {
+        hash_address += rhs_sym.raw[ii];
         num_elements++;
       }
-    } else if (rhs_sym[ii] != error_image) {
-      hash_address += rhs_sym[ii];
+    } else if (rhs_sym.raw[ii] != error_image) {
+      hash_address += rhs_sym.raw[ii];
       num_elements++;
     }
   }
   ii = hash_address % SCOPE_SIZE;
-  for (int j = scope_table[ii]; j != NIL; j = scope_element[j].link) {
+  for (int j = scope_table.raw[ii]; j != NIL; j = scope_element[j].link) {
     if (is_suffix_equal(scope_element[j].item, item_no, null_nt, rules, item_table, rhs_sym)) {
       return scope_element[j].index;
     }
   }
   st->top++;
   scope_element[st->top].item = item_no;
-  scope_element[st->top].index = scope_rhs_size + 1;
-  scope_element[st->top].link = scope_table[ii];
-  scope_table[ii] = st->top;
-  scope_rhs_size += num_elements + 1;
+  scope_element[st->top].index = sc->scope_rhs_size + 1;
+  scope_element[st->top].link = scope_table.raw[ii];
+  scope_table.raw[ii] = st->top;
+  sc->scope_rhs_size += num_elements + 1;
   return scope_element[st->top].index;
 }
 
@@ -674,16 +670,16 @@ int insert_suffix(const int item_no, struct scope_elmt *scope_element, short *sc
 /// determines whether there is a terminal symbol t such that
 /// LHS_SYMBOL can rightmost produce a string tX.  If so, t is
 /// returned, otherwise EMPTY is returned.
-int get_shift_symbol(const int lhs_symbol, bool *symbol_seen, struct node **clitems, struct ruletab_type *rules, struct itemtab *item_table, short *rhs_sym) {
-  if (!symbol_seen[lhs_symbol]) {
+int get_shift_symbol(const int lhs_symbol, ArrayBool symbol_seen, struct node **clitems, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym) {
+  if (!symbol_seen.raw[lhs_symbol]) {
     struct node *p;
-    symbol_seen[lhs_symbol] = true;
+    symbol_seen.raw[lhs_symbol] = true;
     for (bool end_node = (p = clitems[lhs_symbol]) == NULL; !end_node; end_node = p == clitems[lhs_symbol]) {
       p = p->next;
       const int item_no = p->value;
       const int rule_no = item_table[item_no].rule_number;
       if (RHS_SIZE(rule_no, rules) > 0) {
-        int symbol = rhs_sym[rules[rule_no].rhs];
+        int symbol = rhs_sym.raw[rules[rule_no].rhs];
         if (IS_A_TERMINAL(symbol)) {
           return symbol;
         } else {
@@ -702,7 +698,7 @@ int get_shift_symbol(const int lhs_symbol, bool *symbol_seen, struct node **clit
 /// that are required as candidates for secondary error recovery.  If the
 /// option NAMES=OPTIMIZED is requested, the NAME map is optimized and SYMNO
 /// is updated accordingly.
-void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct Produced* produced, struct ScopeTop* st, JBitset first, struct scope_type *scope, struct node **clitems, bool *null_nt, long *scope_right_side, struct ruletab_type *rules, short **scope_state, struct statset_type *statset, struct itemtab *item_table, short *rhs_sym, short **gd_range, short **gd_index) {
+void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct Produced* produced, struct ScopeTop* st, JBitset first, struct scope_type *scope, struct node **clitems, ArrayBool null_nt, ArrayLong* scope_right_side, struct ruletab_type *rules, ArrayShort *scope_state, struct statset_type *statset, struct itemtab *item_table, ArrayShort rhs_sym, ArrayShort *gd_range, ArrayShort *gd_index, struct symno_type *symno, struct ScopeCounter* sc) {
   // TOP, STACK, and INDEX are used for the digraph algorithm
   // in the routines COMPUTE_PRODUCES.
   //
@@ -721,13 +717,13 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
   // NOTE: This is really a reverse right-most produces mapping,
   //       since given the above rule, we say that
   //       C right-most produces A.
-  short *stack = Allocate_short_array(num_symbols + 1);
-  short *index_of = Allocate_short_array(num_symbols + 1);
-  short *names_map = Allocate_short_array(num_names + 1);
-  bool *name_used = Allocate_boolean_array(num_names + 1);
-  short *item_list = Allocate_short_array(num_items + 1);
-  short *nt_list = Allocate_short_array(num_non_terminals + 1);
-  nt_list -= num_terminals + 1;
+  ArrayShort stack = Allocate_short_array2(num_symbols + 1);
+  ArrayShort index_of = Allocate_short_array2(num_symbols + 1);
+  ArrayShort names_map = Allocate_short_array2(num_names + 1);
+  ArrayBool name_used = Allocate_bool_array2(num_names + 1);
+  ArrayShort item_list = Allocate_short_array2(num_items + 1);
+  ArrayShort nt_list = Allocate_short_array2(num_non_terminals + 1);
+  nt_list.raw -= num_terminals + 1;
   JBitset set;
   calloc0_set(set, 1, dss->non_term_set_size);
   JBitset produces;
@@ -780,7 +776,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
           }
         }
         if (sym_b != empty) {
-          item_list[item_no] = item_root;
+          item_list.raw[item_no] = item_root;
           item_root = item_no;
         }
       }
@@ -789,12 +785,12 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
   }
   // If some error rules are in the wrong format and report them.
   if (item_root != NIL) {
-    if (item_list[item_root] == NIL) {
+    if (item_list.raw[item_root] == NIL) {
       printf("*** This error rule is not in manual format:\n\n");
     } else {
       printf("*** These error rules are not in manual format:\n\n");
     }
-    for (int item_no = item_root; item_no != NIL; item_no = item_list[item_no]) {
+    for (int item_no = item_root; item_no != NIL; item_no = item_list.raw[item_no]) {
       print_item(item_no, cli_options, rules, item_table, rhs_sym);
     }
   }
@@ -804,11 +800,11 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
   // PRODUCES set since we are interested in the non-reflexive
   // (positive) transitive closure.
   for ALL_SYMBOLS3(symbol) {
-    index_of[symbol] = OMEGA;
+    index_of.raw[symbol] = OMEGA;
   }
   struct ProduceTop top = {.top = 0};
   for ALL_NON_TERMINALS3(nt) {
-    if (index_of[nt] == OMEGA) {
+    if (index_of.raw[nt] == OMEGA) {
       compute_produces(nt, direct_produces, stack, index_of, produced->produces, &top);
     }
     RESET_BIT_IN(produces, nt, nt - num_terminals);
@@ -829,9 +825,9 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
   // NT_LIST values are still OMEGA are precisely the nonterminal
   // symbols that are never used as candidates.
   for ALL_NON_TERMINALS3(i) {
-    nt_list[i] = OMEGA;
+    nt_list.raw[i] = OMEGA;
   }
-  nt_list[accept_image] = NIL;
+  nt_list.raw[accept_image] = NIL;
   for ALL_STATES3(state_no) {
     const struct goto_header_type go_to = statset[state_no].go_to;
     int nt_root = NIL;
@@ -852,13 +848,13 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
         }
       }
       if (rule_no == 0 || RHS_SIZE(rule_no, rules) != 1) {
-        nt_list[symbol] = nt_root;
+        nt_list.raw[symbol] = nt_root;
         nt_root = symbol;
         SET_UNION(set, 0, produces, symbol);
       }
     }
     goto_domain[state_no] = NULL;
-    for (int symbol = nt_root; symbol != NIL; symbol = nt_list[symbol]) {
+    for (int symbol = nt_root; symbol != NIL; symbol = nt_list.raw[symbol]) {
       if (!IS_ELEMENT(set, symbol - num_terminals)) {
         struct node *q = Allocate_node();
         q->value = symbol;
@@ -871,20 +867,20 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
   // Allocate and construct the permanent goto domain structure:
   //   GD_INDEX and GD_RANGE.
   int n = 0;
-  *gd_index = Allocate_short_array(num_states + 2);
-  *gd_range = Allocate_short_array(gotodom_size + 1);
+  *gd_index = Allocate_short_array2(num_states + 2);
+  *gd_range = Allocate_short_array2(gotodom_size + 1);
   for ALL_STATES3(state_no) {
-    (*gd_index)[state_no] = n + 1;
+    (*gd_index).raw[state_no] = n + 1;
     struct node *p;
     struct node *q;
     for (p = goto_domain[state_no]; p != NULL; q = p, p = p->next) {
-      (*gd_range)[++n] = p->value;
+      (*gd_range).raw[++n] = p->value;
     }
     if (goto_domain[state_no] != NULL) {
       free_nodes(goto_domain[state_no], q);
     }
   }
-  (*gd_index)[num_states + 1] = n + 1;
+  (*gd_index).raw[num_states + 1] = n + 1;
   // Remove names assigned to nonterminals that are never used as
   // error candidates.
   if (cli_options->names_opt.value == OPTIMIZE_PHRASES.value) {
@@ -893,10 +889,10 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
     // (nonterminals that were "named" by default are identified
     // with negative indices), that name is also removed.
     for ALL_NON_TERMINALS3(symbol) {
-      if (nt_list[symbol] == OMEGA) {
+      if (nt_list.raw[symbol] == OMEGA) {
         symno[symbol].name_index = symno[accept_image].name_index;
       } else if (symno[symbol].name_index < 0) {
-        if (null_nt[symbol]) {
+        if (null_nt.raw[symbol]) {
           symno[symbol].name_index = symno[accept_image].name_index;
         } else {
           symno[symbol].name_index = -symno[symbol].name_index;
@@ -905,52 +901,43 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
     }
     // Adjust name map to remove unused elements and update SYMNO map.
     for (int i = 1; i <= num_names; i++) {
-      name_used[i] = false;
+      name_used.raw[i] = false;
     }
     for ALL_SYMBOLS3(symbol) {
-      name_used[symno[symbol].name_index] = true;
+      name_used.raw[symno[symbol].name_index] = true;
     }
     n = 0;
     for (int i = 1; i <= num_names; i++) {
-      if (name_used[i]) {
+      if (name_used.raw[i]) {
         name[++n] = name[i];
-        names_map[i] = n;
+        names_map.raw[i] = n;
       }
     }
     num_names = n;
     for ALL_SYMBOLS3(symbol) {
-      symno[symbol].name_index = names_map[symno[symbol].name_index];
+      symno[symbol].name_index = names_map.raw[symno[symbol].name_index];
     }
   }
   if (cli_options->scopes_bit) {
     // Process scopes.
     {
       // Compute set of "scopes" and use it to construct SCOPE map.
-      short *prefix_index;
-      short *suffix_index;
-      short *state_index;
-      struct node **states_of;
       int num_state_sets = 0;
       int n;
       int max_prefix_length = 0;
-      int dot_symbol;
       int item_root;
-      int rule_no;
-      int nt_root;
-      bool end_node;
-      struct node *p;
-      struct node *q;
-      prefix_index = Allocate_short_array(num_items + 1);
-      suffix_index = Allocate_short_array(num_items + 1);
-      short *item_of = Allocate_short_array(num_non_terminals);
-      item_of -= num_terminals + 1;
-      short *next_item = Allocate_short_array(num_items + 1);
-      bool* symbol_seen = Allocate_boolean_array(num_non_terminals);
-      symbol_seen -= num_terminals + 1;
+      ArrayShort prefix_index = Allocate_short_array2(num_items + 1);
+      ArrayShort suffix_index = Allocate_short_array2(num_items + 1);
+      ArrayShort item_of = Allocate_short_array2(num_non_terminals);
+      item_of.raw -= num_terminals + 1;
+      ArrayShort next_item = Allocate_short_array2(num_items + 1);
+      ArrayBool symbol_seen = Allocate_bool_array2(num_non_terminals);
+      symbol_seen.raw -= num_terminals + 1;
+      struct node **states_of;
       calloc0p(&states_of, num_non_terminals, struct node *);
       states_of -= num_terminals + 1;
-      state_index = Allocate_short_array(num_non_terminals);
-      state_index -= num_terminals + 1;
+      ArrayShort state_index = Allocate_short_array2(num_non_terminals);
+      state_index.raw -= num_terminals + 1;
       struct scope_elmt *scope_element;
       calloc0p(&scope_element, num_items + 1, struct scope_elmt);
       // Initially, PRODUCES was used to compute the right-most-produces
@@ -979,21 +966,19 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
         SET_BIT_IN(produced->right_produces, nt, nt - num_terminals);
         SET_BIT_IN(produces, nt, nt - num_terminals);
         direct_produces[nt] = NULL;
-        for (end_node = (p = clitems[nt]) == NULL;
-             !end_node; end_node = p == clitems[nt]) {
+        struct node *p;
+        for (bool end_node = (p = clitems[nt]) == NULL; !end_node; end_node = p == clitems[nt]) {
           p = p->next;
-          for (int item_no = p->value;
-               IS_A_NON_TERMINAL(item_table[item_no].symbol);
-               item_no++) {
+          for (int item_no = p->value; IS_A_NON_TERMINAL(item_table[item_no].symbol);item_no++) {
             int symbol = item_table[item_no].symbol;
             if (!IS_IN_SET(produces, nt, symbol - num_terminals)) {
               SET_BIT_IN(produces, nt, symbol - num_terminals);
-              q = Allocate_node();
+               struct node *q = Allocate_node();
               q->value = symbol;
               q->next = direct_produces[nt];
               direct_produces[nt] = q;
             }
-            if (!null_nt[symbol]) {
+            if (!null_nt.raw[symbol]) {
               break;
             }
           }
@@ -1002,11 +987,11 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
       // Complete the construction of the LEFT_produces map for
       // non_terminals using the digraph algorithm.
       for ALL_NON_TERMINALS3(nt) {
-        index_of[nt] = OMEGA;
+        index_of.raw[nt] = OMEGA;
       }
       top.top = 0;
       for ALL_NON_TERMINALS3(nt) {
-        if (index_of[nt] == OMEGA) {
+        if (index_of.raw[nt] == OMEGA) {
           compute_produces(nt, direct_produces, stack, index_of, produced->produces, &top);
         }
       }
@@ -1020,8 +1005,8 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
       for ALL_NON_TERMINALS3(nt) {
         SET_BIT_IN(produces, nt, nt - num_terminals);
         direct_produces[nt] = NULL;
-        for (end_node = (p = clitems[nt]) == NULL;
-             !end_node; end_node = p == clitems[nt]) {
+        struct node *p;
+        for (bool end_node = (p = clitems[nt]) == NULL; !end_node; end_node = p == clitems[nt]) {
           p = p->next;
           for (int item_no = p->value;
                item_table[item_no].symbol != empty; item_no++) {
@@ -1029,7 +1014,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
             if (IS_A_NON_TERMINAL(symbol)) {
               if (!IS_IN_SET(produces, nt, symbol - num_terminals)) {
                 SET_BIT_IN(produces, nt, symbol - num_terminals);
-                q = Allocate_node();
+                 struct node *q = Allocate_node();
                 q->value = symbol;
                 q->next = direct_produces[nt];
                 direct_produces[nt] = q;
@@ -1044,20 +1029,20 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
       // Since $ACC =>* x A y for all nonterminal A in the grammar, a
       // single call to COMPUTE_PRODUCES does the trick.
       for ALL_NON_TERMINALS3(nt) {
-        index_of[nt] = OMEGA;
+        index_of.raw[nt] = OMEGA;
       }
       top.top = 0;
       compute_produces(accept_image, direct_produces, stack, index_of, produced->produces, &top);
       // Construct a mapping from each non_terminal A into the set of
       // items of the form [B  ->  x . A y].
       for ALL_NON_TERMINALS3(nt) {
-        item_of[nt] = NIL;
+        item_of.raw[nt] = NIL;
       }
       for ALL_ITEMS3(item_no) {
-        dot_symbol = item_table[item_no].symbol;
+        int dot_symbol = item_table[item_no].symbol;
         if (IS_A_NON_TERMINAL(dot_symbol)) {
-          next_item[item_no] = item_of[dot_symbol];
-          item_of[dot_symbol] = item_no;
+          next_item.raw[item_no] = item_of.raw[dot_symbol];
+          item_of.raw[dot_symbol] = item_no;
         }
       }
       // Construct a list of scoped items in ITEM_LIST.
@@ -1071,16 +1056,15 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
       // bucket sort the scoped items in descending order of the length
       // of their prefixes.
       for ALL_ITEMS3(item_no) {
-        item_list[item_no] = OMEGA;
+        item_list.raw[item_no] = OMEGA;
       }
       item_root = NIL;
       for ALL_ITEMS3(item_no) {
-        dot_symbol = item_table[item_no].symbol;
+        int dot_symbol = item_table[item_no].symbol;
         if (dot_symbol == error_image) {
-          if (item_table[item_no].dot != 0 &&
-              !IS_IN_SET(first, item_table[item_no].suffix_index, empty)) {
-            if (item_list[item_no] == OMEGA) {
-              item_list[item_no] = item_root;
+          if (item_table[item_no].dot != 0 && !IS_IN_SET(first, item_table[item_no].suffix_index, empty)) {
+            if (item_list.raw[item_no] == OMEGA) {
+              item_list.raw[item_no] = item_root;
               item_root = item_no;
               max_prefix_length = MAX(max_prefix_length, item_table[item_no].dot);
             }
@@ -1095,18 +1079,18 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
                 if (IS_A_TERMINAL(symbol)) {
                   break;
                 }
-                if (!null_nt[symbol]) {
+                if (!null_nt.raw[symbol]) {
                   break;
                 }
               }
               if (IS_A_NON_TERMINAL(symbol)) {
                 for ALL_NON_TERMINALS3(nt) {
-                  symbol_seen[nt] = false;
+                  symbol_seen.raw[nt] = false;
                 }
                 symbol = get_shift_symbol(symbol, symbol_seen, clitems, rules, item_table, rhs_sym);
               }
-              if (symbol != empty && item_list[ii] == OMEGA) {
-                item_list[ii] = item_root;
+              if (symbol != empty && item_list.raw[ii] == OMEGA) {
+                item_list.raw[ii] = item_root;
                 item_root = ii;
                 max_prefix_length = MAX(max_prefix_length, item_table[ii].dot);
               }
@@ -1118,26 +1102,26 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
       // entered into a table.  We also use the SYMBOL_SEEN array to
       // identify the set of left-hand side symbols associated with the
       // scopes.
-      short *scope_table = Allocate_short_array(SCOPE_SIZE);
+      ArrayShort scope_table = Allocate_short_array2(SCOPE_SIZE);
       for (int i = 0; i < SCOPE_SIZE; i++) {
-        scope_table[i] = NIL;
+        scope_table.raw[i] = NIL;
       }
       for ALL_NON_TERMINALS3(nt) {
-        symbol_seen[nt] = false;
+        symbol_seen.raw[nt] = false;
       }
-      for (int item_no = item_root; item_no != NIL; item_no = item_list[item_no]) {
-        rule_no = item_table[item_no].rule_number;
+      for (int item_no = item_root; item_no != NIL; item_no = item_list.raw[item_no]) {
+        int rule_no = item_table[item_no].rule_number;
         int symbol = rules[rule_no].lhs;
-        num_scopes = num_scopes + 1;
-        symbol_seen[symbol] = true;
-        prefix_index[item_no] = insert_prefix(item_no, scope_element, scope_table, st, rules, item_table, rhs_sym);
-        suffix_index[item_no] = insert_suffix(item_no, scope_element, scope_table, st, null_nt, rules, item_table, rhs_sym);
+        sc->num_scopes = sc->num_scopes + 1;
+        symbol_seen.raw[symbol] = true;
+        prefix_index.raw[item_no] = insert_prefix(item_no, scope_element, scope_table, st, rules, item_table, rhs_sym, sc);
+        suffix_index.raw[item_no] = insert_suffix(item_no, scope_element, scope_table, st, null_nt, rules, item_table, rhs_sym, sc);
       }
-      ffree(scope_table);
+      ffree(scope_table.raw);
       // We now construct a mapping from each nonterminal symbol that is
       // the left-hand side of a rule containing scopes into the set of
       // states that has a transition on the nonterminal in question.
-      nt_root = NIL;
+      int nt_root = NIL;
       for ALL_NON_TERMINALS3(nt) {
         states_of[nt] = NULL;
       }
@@ -1146,13 +1130,13 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
         go_to = statset[state_no].go_to;
         for (int i = 1; i <= go_to.size; i++) {
           int symbol = go_to.map[i].symbol;
-          if (symbol_seen[symbol]) {
+          if (symbol_seen.raw[symbol]) {
             if (states_of[symbol] == NULL) {
-              nt_list[symbol] = nt_root;
+              nt_list.raw[symbol] = nt_root;
               nt_root = symbol;
               num_state_sets = num_state_sets + 1;
             }
-            q = Allocate_node();
+             struct node *q = Allocate_node();
             q->value = state_no;
             q->next = states_of[symbol];
             states_of[symbol] = q;
@@ -1172,72 +1156,69 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
       // will terminate quicker.
     process_scope_states: {
         JBitset collection;
-        long *element_size;
-        long *list;
-        long *start;
-        long *stack;
-        short *ordered_symbol;
-        short *state_list;
-        short *bucket;
         int state_root;
         int state_no_inner;
         long state_set_size = num_states / SIZEOF_BC + (num_states % SIZEOF_BC ? 1 : 0);
         calloc0_set(collection, num_state_sets + 1, state_set_size);
-        element_size = Allocate_long_array(num_state_sets + 1);
-        start = Allocate_long_array(num_state_sets + 2);
-        stack = Allocate_long_array(num_state_sets + 1);
-        ordered_symbol = Allocate_short_array(num_state_sets + 1);
-        list = Allocate_long_array(num_state_sets + 1);
-        state_list = Allocate_short_array(num_states + 1);
-        bucket = Allocate_short_array(max_prefix_length + 1);
-        for (int symbol = nt_root, i = 1; symbol != NIL; symbol = nt_list[symbol], i++) {
-          list[i] = i;
-          ordered_symbol[i] = symbol;
+        ArrayLong element_size = Allocate_long_array2(num_state_sets + 1);
+        ArrayLong start = Allocate_long_array2(num_state_sets + 2);
+        ArrayLong stack = Allocate_long_array2(num_state_sets + 1);
+        ArrayShort ordered_symbol = Allocate_short_array2(num_state_sets + 1);
+        ArrayLong list = Allocate_long_array2(num_state_sets + 1);
+        ArrayShort state_list = Allocate_short_array2(num_states + 1);
+        ArrayShort bucket = Allocate_short_array2(max_prefix_length + 1);
+        for (int symbol = nt_root, i = 1; symbol != NIL; symbol = nt_list.raw[symbol], i++) {
+          list.raw[i] = i;
+          ordered_symbol.raw[i] = symbol;
           INIT_BITSET(collection, i);
-          element_size[i] = 0;
+          element_size.raw[i] = 0;
+          struct node *p;
           for (p = states_of[symbol]; p != NULL; p = p->next) {
-            element_size[i]++;
+            element_size.raw[i]++;
             SET_BIT_IN(collection, i, p->value);
           }
         }
         partset(collection, element_size, list, start, stack, num_state_sets, true);
         for (int i = 1; i <= num_state_sets; i++) {
-          int symbol = ordered_symbol[i];
-          state_index[symbol] = ABS(start[i]);
+          int symbol = ordered_symbol.raw[i];
+          state_index.raw[symbol] = ABS(start.raw[i]);
         }
-        scope_state_size = start[num_state_sets + 1] - 1;
-        calloc0p(&scope, num_scopes + 1, struct scope_type);
-        scope_right_side = Allocate_long_array(scope_rhs_size + 1);
-        *scope_state = Allocate_short_array(scope_state_size + 1);
+        sc->scope_state_size = start.raw[num_state_sets + 1] - 1;
+        calloc0p(&scope, sc->num_scopes + 1, struct scope_type);
+        *scope_right_side = Allocate_long_array2(sc->scope_rhs_size + 1);
+        *scope_state = Allocate_short_array2(sc->scope_state_size + 1);
         int k = 0;
         for (int i = 0; i <= num_states; i++) {
-          state_list[i] = OMEGA;
+          state_list.raw[i] = OMEGA;
         }
         for (int i = 1; i <= num_state_sets; i++) {
-          if (start[i] > 0) {
+          if (start.raw[i] > 0) {
             state_root = 0;
-            state_list[state_root] = NIL;
+            state_list.raw[state_root] = NIL;
             int j;
-            for (end_node = (j = i) == NIL; !end_node; end_node = j == i) {
-              j = stack[j];
-              int symbol = ordered_symbol[j];
+            for (bool end_node = (j = i) == NIL; !end_node; end_node = j == i) {
+              j = stack.raw[j];
+              int symbol = ordered_symbol.raw[j];
+              struct node *p;
               for (p = states_of[symbol]; p != NULL; p = p->next) {
                 state_no_inner = p->value;
-                if (state_list[state_no_inner] == OMEGA) {
-                  state_list[state_no_inner] = state_root;
+                if (state_list.raw[state_no_inner] == OMEGA) {
+                  state_list.raw[state_no_inner] = state_root;
                   state_root = state_no_inner;
                 }
               }
             }
             for (state_no_inner = state_root; state_no_inner != NIL; state_no_inner = state_root) {
-              state_root = state_list[state_no_inner];
-              state_list[state_no_inner] = OMEGA;
+              state_root = state_list.raw[state_no_inner];
+              state_list.raw[state_no_inner] = OMEGA;
               k++;
-              *scope_state[k] = state_no_inner;
+              (*scope_state).raw[k] = state_no_inner;
             }
           }
         }
-        for (int symbol = nt_root; symbol != NIL; symbol = nt_list[symbol]) {
+        for (int symbol = nt_root; symbol != NIL; symbol = nt_list.raw[symbol]) {
+          struct node *p;
+          struct node *q;
           for (p = states_of[symbol]; p != NULL; q = p, p = p->next) {
           }
           free_nodes(states_of[symbol], q);
@@ -1255,23 +1236,23 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
         // and both of them are applicable in a given context with similar
         // result, then we always want A ::= x . y to be used.
         for (int i = 1; i <= max_prefix_length; i++) {
-          bucket[i] = NIL;
+          bucket.raw[i] = NIL;
         }
-        for (int item_no = item_root; item_no != NIL; item_no = item_list[item_no]) {
+        for (int item_no = item_root; item_no != NIL; item_no = item_list.raw[item_no]) {
           int tail;
           k = item_table[item_no].dot;
           int ii;
-          for (ii = bucket[k]; ii != NIL; tail = ii, ii = next_item[ii]) {
+          for (ii = bucket.raw[k]; ii != NIL; tail = ii, ii = next_item.raw[ii]) {
             if (RHS_SIZE(item_table[item_no].rule_number, rules) >=
                 RHS_SIZE(item_table[ii].rule_number, rules)) {
               break;
             }
           }
-          next_item[item_no] = ii;
-          if (ii == bucket[k]) {
-            bucket[k] = item_no; /* insert at the beginning */
+          next_item.raw[item_no] = ii;
+          if (ii == bucket.raw[k]) {
+            bucket.raw[k] = item_no; /* insert at the beginning */
           } else {
-            next_item[tail] = item_no; /* insert in middle or end */
+            next_item.raw[tail] = item_no; /* insert in middle or end */
           }
         }
         // Reconstruct list of scoped items in sorted order. Since we want
@@ -1280,87 +1261,84 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
         // bucket in LIFO order in ITEM_LIST.
         item_root = NIL;
         for (int k = 1; k <= max_prefix_length; k++) {
-          for (int item_no = bucket[k]; item_no != NIL; item_no = next_item[item_no]) {
-            item_list[item_no] = item_root;
+          for (int item_no = bucket.raw[k]; item_no != NIL; item_no = next_item.raw[item_no]) {
+            item_list.raw[item_no] = item_root;
             item_root = item_no;
           }
         }
         ffree(collection.raw);
-        ffree(element_size);
-        ffree(start);
-        ffree(stack);
-        ffree(ordered_symbol);
-        ffree(state_list);
-        ffree(list);
-        ffree(bucket);
+        ffree(element_size.raw);
+        ffree(start.raw);
+        ffree(stack.raw);
+        ffree(ordered_symbol.raw);
+        ffree(state_list.raw);
+        ffree(list.raw);
+        ffree(bucket.raw);
       } /* End PROCESS_SCOPE_STATES */
       // Next, we initialize the remaining fields of the SCOPE structure.
       int item_no = item_root;
       for (int i = 1; item_no != NIL; i++) {
-        scope[i].prefix = prefix_index[item_no];
-        scope[i].suffix = suffix_index[item_no];
-        rule_no = item_table[item_no].rule_number;
+        scope[i].prefix = prefix_index.raw[item_no];
+        scope[i].suffix = suffix_index.raw[item_no];
+        int rule_no = item_table[item_no].rule_number;
         scope[i].lhs_symbol = rules[rule_no].lhs;
-        int symbol = rhs_sym[rules[rule_no].rhs + item_table[item_no].dot];
+        int symbol = rhs_sym.raw[rules[rule_no].rhs + item_table[item_no].dot];
         if (IS_A_TERMINAL(symbol)) {
           scope[i].look_ahead = symbol;
         } else {
           for ALL_NON_TERMINALS3(j) {
-            symbol_seen[j] = false;
+            symbol_seen.raw[j] = false;
           }
           scope[i].look_ahead = get_shift_symbol(symbol, symbol_seen, clitems, rules, item_table, rhs_sym);
         }
-        scope[i].state_set = state_index[scope[i].lhs_symbol];
-        item_no = item_list[item_no];
+        scope[i].state_set = state_index.raw[scope[i].lhs_symbol];
+        item_no = item_list.raw[item_no];
       }
       for (int j = 1; j <= st->top; j++) {
         if (scope_element[j].item < 0) {
           item_no = -scope_element[j].item;
-          rule_no = item_table[item_no].rule_number;
+          int rule_no = item_table[item_no].rule_number;
           n = scope_element[j].index;
-          for (int k = rules[rule_no].rhs + item_table[item_no].dot - 1;
-               k >= rules[rule_no].rhs; /* symbols before dot*/
-               k--)
-            scope_right_side[n++] = rhs_sym[k];
+          for (int k = rules[rule_no].rhs + item_table[item_no].dot - 1; k >= rules[rule_no].rhs; /* symbols before dot*/ k--) {
+            (*scope_right_side).raw[n++] = rhs_sym.raw[k];
+          }
         } else {
           item_no = scope_element[j].item;
-          rule_no = item_table[item_no].rule_number;
+          int rule_no = item_table[item_no].rule_number;
           n = scope_element[j].index;
-          for (int k = rules[rule_no].rhs + item_table[item_no].dot;
-               k < rules[rule_no + 1].rhs; /* symbols after dot */
-               k++) {
-            int symbol = rhs_sym[k];
+          for (int k = rules[rule_no].rhs + item_table[item_no].dot; k < rules[rule_no + 1].rhs; /* symbols after dot */ k++) {
+            int symbol = rhs_sym.raw[k];
             if (IS_A_NON_TERMINAL(symbol)) {
-              if (!null_nt[symbol]) {
-                scope_right_side[n++] = rhs_sym[k];
+              if (!null_nt.raw[symbol]) {
+                (*scope_right_side).raw[n++] = rhs_sym.raw[k];
               }
             } else if (symbol != error_image) {
-              scope_right_side[n++] = rhs_sym[k];
+              (*scope_right_side).raw[n++] = rhs_sym.raw[k];
             }
           }
         }
-        scope_right_side[n] = 0;
+        (*scope_right_side).raw[n] = 0;
       }
-      ffree(prefix_index);
-      ffree(suffix_index);
-      item_of += num_terminals + 1;
-      ffree(item_of);
-      ffree(next_item);
-      symbol_seen += num_terminals + 1;
-      ffree(symbol_seen);
+      ffree(prefix_index.raw);
+      ffree(suffix_index.raw);
+      item_of.raw += num_terminals + 1;
+      ffree(item_of.raw);
+      ffree(next_item.raw);
+      symbol_seen.raw += num_terminals + 1;
+      ffree(symbol_seen.raw);
       states_of += num_terminals + 1;
       ffree(states_of);
-      state_index += num_terminals + 1;
-      ffree(state_index);
+      state_index.raw += num_terminals + 1;
+      ffree(state_index.raw);
       ffree(scope_element);
     }
   }
-  ffree(stack);
-  ffree(index_of);
-  ffree(names_map);
-  ffree(name_used);
-  nt_list += num_terminals + 1;
-  ffree(nt_list);
+  ffree(stack.raw);
+  ffree(index_of.raw);
+  ffree(names_map.raw);
+  ffree(name_used.raw);
+  nt_list.raw += num_terminals + 1;
+  ffree(nt_list.raw);
   ffree(set.raw);
   produces.raw += (num_terminals + 1) * dss->non_term_set_size;
   ffree(produces.raw);
@@ -1374,30 +1352,30 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
 ///
 /// This procedure is used to compute the transitive closure of
 /// the PRODUCES, LEFT_PRODUCES and RIGHT_MOST_PRODUCES maps.
-void compute_produces(const int symbol, struct node **direct_produces, short *stack, short *index_of, JBitset produces, struct ProduceTop* top_value) {
-  stack[++top_value->top] = symbol;
+void compute_produces(const int symbol, struct node **direct_produces, ArrayShort stack, ArrayShort index_of, JBitset produces, struct ProduceTop* top_value) {
+  stack.raw[++top_value->top] = symbol;
   const int indx = top_value->top;
-  index_of[symbol] = indx;
+  index_of.raw[symbol] = indx;
   struct node *q;
   for (struct node *p = direct_produces[symbol]; p != NULL; q = p, p = p->next) {
     int new_symbol = p->value;
     /* first time seen? */
-    if (index_of[new_symbol] == OMEGA) {
+    if (index_of.raw[new_symbol] == OMEGA) {
       compute_produces(new_symbol, direct_produces, stack, index_of, produces, top_value);
     }
-    index_of[symbol] = MIN(index_of[symbol], index_of[new_symbol]);
+    index_of.raw[symbol] = MIN(index_of.raw[symbol], index_of.raw[new_symbol]);
     SET_UNION(produces, symbol, produces, new_symbol);
   }
   if (direct_produces[symbol] != NULL) {
     free_nodes(direct_produces[symbol], q);
   }
   /* symbol is SCC root */
-  if (index_of[symbol] == indx) {
-    for (int new_symbol = stack[top_value->top]; new_symbol != symbol; new_symbol = stack[--top_value->top]) {
+  if (index_of.raw[symbol] == indx) {
+    for (int new_symbol = stack.raw[top_value->top]; new_symbol != symbol; new_symbol = stack.raw[--top_value->top]) {
       ASSIGN_SET(produces, new_symbol, produces, symbol);
-      index_of[new_symbol] = INFINITY;
+      index_of.raw[new_symbol] = INFINITY;
     }
-    index_of[symbol] = INFINITY;
+    index_of.raw[symbol] = INFINITY;
     top_value->top--;
   }
 }
@@ -1408,7 +1386,7 @@ void compute_produces(const int symbol, struct node **direct_produces, short *st
 
 
 /// In this procedure, we first construct the LR(0) automaton.
-void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, JBitset first,  struct scope_type *scope, struct node **clitems, struct node **closure, struct SRTable* srt, long *scope_right_side, bool *null_nt, short **scope_state, struct itemtab *item_table, struct ruletab_type *rules, short *rhs_sym, short **gd_range, short **gd_index, struct StatSet* ss) {
+void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, JBitset first, struct scope_type *scope, struct node **clitems, struct node **closure, struct SRTable* srt, ArrayLong* scope_right_side, ArrayBool null_nt, ArrayShort *scope_state, struct itemtab *item_table, struct ruletab_type *rules, ArrayShort rhs_sym, ArrayShort* gd_range, ArrayShort*gd_index, struct StatSet* ss, struct ScopeCounter* sc) {
   struct ScopeTop st = (struct ScopeTop) {
     .top = 0
   };
@@ -1424,8 +1402,8 @@ void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, JBits
   };
   mklr0(cli_options, &no_shifts_ptr, &no_gotos_ptr, clitems, closure, srt, rules, item_table, ss);
   struct Produced produced = {};
-  if (error_maps_bit && (cli_options->table_opt.value == OPTIMIZE_TIME.value || cli_options->table_opt.value == OPTIMIZE_SPACE.value)) {
-    produce(cli_options, dss, &produced, &st, first, scope, clitems, null_nt, scope_right_side, rules, scope_state, ss->statset, item_table, rhs_sym, gd_range, gd_index);
+  if (cli_options->error_maps_bit && (cli_options->table_opt.value == OPTIMIZE_TIME.value || cli_options->table_opt.value == OPTIMIZE_SPACE.value)) {
+    produce(cli_options, dss, &produced, &st, first, scope, clitems, null_nt, scope_right_side, rules, scope_state, ss->statset, item_table, rhs_sym, gd_range, gd_index, symno, sc);
   }
   // Free space trapped by the CLOSURE and CLITEMS maps.
   for ALL_NON_TERMINALS3(j) {

@@ -168,7 +168,7 @@ void fill_in(char string[], const int amount, const char character) {
 /// QCKSRT is a quicksort algorithm that takes as arguments an array of
 /// integers, two numbers L and H that indicate the lower and upper bound
 /// positions in ARRAY to be sorted.
-static void qcksrt(short array[], const int l, const int h) {
+static void qcksrt(ArrayShort array, const int l, const int h) {
   int lostack[14];
   int histack[14];
   // 2 ** 15 - 1 elements
@@ -180,15 +180,15 @@ static void qcksrt(short array[], const int l, const int h) {
     int upper = histack[top--];
     while (upper > lower) {
       int i = lower;
-      const int pivot = array[lower];
+      const int pivot = array.raw[lower];
       for (int j = lower + 1; j <= upper; j++) {
-        if (array[j] < pivot) {
-          array[i] = array[j];
+        if (array.raw[j] < pivot) {
+          array.raw[i] = array.raw[j];
           i++;
-          array[j] = array[i];
+          array.raw[j] = array.raw[i];
         }
       }
-      array[i] = pivot;
+      array.raw[i] = pivot;
       top++;
       if (i - lower < upper - i) {
         lostack[top] = i + 1;
@@ -278,7 +278,7 @@ void print_large_token(char *line, char *token, const char *indent, int len) {
 }
 
 /// PRINT_ITEM takes as parameter an ITEM_NO which it prints.
-void print_item(const int item_no, struct CLIOptions* cli_options, struct ruletab_type *rules, struct itemtab *item_table, short *rhs_sym) {
+void print_item(const int item_no, struct CLIOptions* cli_options, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym) {
   char tempstr[PRINT_LINE_SIZE + 1];
   char line[PRINT_LINE_SIZE + 1];
   char tok[SYMBOL_SIZE + 1];
@@ -297,7 +297,7 @@ void print_item(const int item_no, struct CLIOptions* cli_options, struct ruleta
   len = PRINT_LINE_SIZE - (offset + 4);
   int sbd = rules[rule_no].rhs; /* symbols before dot */
   for (const int k = rules[rule_no].rhs + item_table[item_no].dot - 1; sbd <= k; sbd++) {
-    symbol = rhs_sym[sbd];
+    symbol = rhs_sym.raw[sbd];
     restore_symbol(tok, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
     if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE - 4) {
       printf("\n%s", line);
@@ -321,7 +321,7 @@ void print_item(const int item_no, struct CLIOptions* cli_options, struct ruleta
   for (int i = rules[rule_no].rhs +
                item_table[item_no].dot; /* symbols after dot*/
        i <= rules[rule_no + 1].rhs - 1; i++) {
-    symbol = rhs_sym[i];
+    symbol = rhs_sym.raw[i];
     restore_symbol(tok, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
     if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE - 1) {
       printf("\n%s", line);
@@ -351,7 +351,7 @@ void print_item(const int item_no, struct CLIOptions* cli_options, struct ruleta
 /// replaced by say the GOTO or GOTO_REDUCE of A, the item above can no longer
 /// be retrieved, since transitions in a given state are reconstructed from
 /// the KERNEL and ADEQUATE items of the actions in the GOTO and SHIFT maps.
-void print_state(const int state_no, struct CLIOptions* cli_options, struct node **adequate_item, struct SRTable* srt, struct lastats_type *lastats, struct statset_type *statset, struct node **in_stat, struct ruletab_type *rules, struct itemtab *item_table, short *rhs_sym) {
+void print_state(const int state_no, struct CLIOptions* cli_options, struct node **adequate_item, struct SRTable* srt, struct lastats_type *lastats, struct statset_type *statset, struct node **in_stat, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym) {
   char buffer[PRINT_LINE_SIZE + 1];
   char line[PRINT_LINE_SIZE + 1];
   // ITEM_SEEN is used to construct sets of items, to help avoid
@@ -360,15 +360,15 @@ void print_state(const int state_no, struct CLIOptions* cli_options, struct node
   // complete item, or it will be a member of the Complete_items set.
   // Duplicates can also occur because of the elimination of single
   // productions.
-  bool *state_seen = Allocate_boolean_array(max_la_state + 1);
-  bool *item_seen = Allocate_boolean_array(num_items + 1);
-  short *item_list = Allocate_short_array(num_items + 1);
+  ArrayBool state_seen = Allocate_bool_array2(max_la_state + 1);
+  ArrayBool item_seen = Allocate_bool_array2(num_items + 1);
+  ArrayShort item_list = Allocate_short_array2(num_items + 1);
   // INITIALIZATION -----------------------------------------------------------
   for ALL_STATES3(state_no) {
-    state_seen[state_no] = false;
+    state_seen.raw[state_no] = false;
   }
   for ALL_ITEMS3(item_no) {
-    item_seen[item_no] = false;
+    item_seen.raw[item_no] = false;
   }
   int kernel_size = 0;
   // END OF INITIALIZATION ----------------------------------------------------
@@ -383,8 +383,8 @@ void print_state(const int state_no, struct CLIOptions* cli_options, struct node
        end_node = q == in_stat[state_no]) {
     // copy list of IN_STAT into array
     q = q->next;
-    if (!state_seen[q->value]) {
-      state_seen[q->value] = true;
+    if (!state_seen.raw[q->value]) {
+      state_seen.raw[q->value] = true;
       if (strlen(line) + number_len(q->value) > PRINT_LINE_SIZE - 2) {
         printf("\n%s", line);
         strcpy(line, "  ");
@@ -402,16 +402,16 @@ void print_state(const int state_no, struct CLIOptions* cli_options, struct node
   for (q = statset[state_no].kernel_items; q != NULL; q = q->next) {
     kernel_size++;
     int item_no = q->value;
-    item_list[kernel_size] = item_no; /* add to array */
-    item_seen[item_no] = true; /* Mark as "seen" */
+    item_list.raw[kernel_size] = item_no; /* add to array */
+    item_seen.raw[item_no] = true; /* Mark as "seen" */
   }
   // Add the Complete Items to the array ITEM_LIST, and mark used.
   n = kernel_size;
   for (q = statset[state_no].complete_items; q != NULL; q = q->next) {
     int item_no = q->value;
-    if (!item_seen[item_no]) {
-      item_seen[item_no] = true; /* Mark as "seen" */
-      item_list[++n] = item_no;
+    if (!item_seen.raw[item_no]) {
+      item_seen.raw[item_no] = true; /* Mark as "seen" */
+      item_list.raw[++n] = item_no;
     }
   }
   // Iterate over the shift map.  Shift-Reduce actions are identified
@@ -445,9 +445,9 @@ void print_state(const int state_no, struct CLIOptions* cli_options, struct node
     }
     for (; q != NULL; q = q->next) {
       int item_no = q->value - 1;
-      if (!item_seen[item_no]) {
-        item_seen[item_no] = true;
-        item_list[++n] = item_no;
+      if (!item_seen.raw[item_no]) {
+        item_seen.raw[item_no] = true;
+        item_list.raw[++n] = item_no;
       }
     }
   }
@@ -463,9 +463,9 @@ void print_state(const int state_no, struct CLIOptions* cli_options, struct node
     }
     for (; q != NULL; q = q->next) {
       int item_no = q->value - 1;
-      if (!item_seen[item_no]) {
-        item_seen[item_no] = true;
-        item_list[++n] = item_no;
+      if (!item_seen.raw[item_no]) {
+        item_seen.raw[item_no] = true;
+        item_list.raw[++n] = item_no;
       }
     }
   }
@@ -473,18 +473,18 @@ void print_state(const int state_no, struct CLIOptions* cli_options, struct node
   // line, sort then, then print them.  The kernel items are in sorted
   // order.
   for (int item_no = 1; item_no <= kernel_size; item_no++) {
-    print_item(item_list[item_no], cli_options, rules, item_table, rhs_sym);
+    print_item(item_list.raw[item_no], cli_options, rules, item_table, rhs_sym);
   }
   if (kernel_size < n) {
     printf("\n");
     qcksrt(item_list, kernel_size + 1, n);
     for (int item_no = kernel_size + 1; item_no <= n; item_no++) {
-      print_item(item_list[item_no], cli_options, rules, item_table, rhs_sym);
+      print_item(item_list.raw[item_no], cli_options, rules, item_table, rhs_sym);
     }
   }
-  ffree(item_list);
-  ffree(item_seen);
-  ffree(state_seen);
+  ffree(item_list.raw);
+  ffree(item_seen.raw);
+  ffree(state_seen.raw);
 }
 
 /// This procedure is invoked when a call to MALLOC, CALLOC or REALLOC fails.

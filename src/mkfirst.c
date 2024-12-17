@@ -23,9 +23,9 @@ struct f_element_type {
 /// symbol identified by the RHS_START element is a bad non-terminal it
 /// returns FALSE.  Otherwise, the whole right-hand side is traversed, and it
 /// returns the value TRUE.
-bool is_terminal_rhs(short *rhs_start, const bool *produces_terminals, const int rule_no, struct ruletab_type *rules, short *rhs_sym) {
-  for (; rhs_start[rule_no] <= rules[rule_no + 1].rhs - 1; rhs_start[rule_no]++) {
-    const int symbol = rhs_sym[rhs_start[rule_no]];
+bool is_terminal_rhs(ArrayShort rhs_start, const bool *produces_terminals, const int rule_no, struct ruletab_type *rules, ArrayShort rhs_sym) {
+  for (; rhs_start.raw[rule_no] <= rules[rule_no + 1].rhs - 1; rhs_start.raw[rule_no]++) {
+    const int symbol = rhs_sym.raw[rhs_start.raw[rule_no]];
     if (IS_A_NON_TERMINAL(symbol)) {
       if (!produces_terminals[symbol])
         return false;
@@ -45,20 +45,21 @@ bool is_terminal_rhs(short *rhs_start, const bool *produces_terminals, const int
 /// and Xi, for all i, is a terminal or a non-terminal that can generate a
 /// string of terminals.
 /// This routine is structurally identical to COMPUTE_NULLABLES.
-void check_non_terminals(struct CLIOptions *cli_options, short *lhs_rule, short *next_rule, short *nt_list, struct ruletab_type *rules, short *rhs_sym) {
+void check_non_terminals(struct CLIOptions *cli_options, ArrayShort lhs_rule, ArrayShort next_rule, ArrayShort nt_list, struct ruletab_type *rules, ArrayShort rhs_sym) {
   bool changed = true;
-  short *rhs_start = Allocate_short_array(NEXT_RULE_SIZE());
-  bool *produces_terminals = Allocate_boolean_array(num_non_terminals);
-  produces_terminals -= num_terminals + 1;
+  ArrayShort rhs_start = Allocate_short_array2(NEXT_RULE_SIZE());
+  ArrayBool produces_terminals = Allocate_bool_array2(num_non_terminals);
+  produces_terminals.raw -= num_terminals + 1;
   // First, mark all non-terminals as not producing terminals. Then
   // initialize RHS_START. RHS_START is a mapping from each rule in
   // the grammar into the next symbol in its right-hand side that
   // has not yet proven to be a symbol that generates terminals.
-  for ALL_NON_TERMINALS3(nt)
-    produces_terminals[nt] = false;
-  produces_terminals[accept_image] = true;
+  for ALL_NON_TERMINALS3(nt) {
+    produces_terminals.raw[nt] = false;
+  }
+  produces_terminals.raw[accept_image] = true;
   for ALL_RULES3(rule_no) {
-    rhs_start[rule_no] = rules[rule_no].rhs;
+    rhs_start.raw[rule_no] = rules[rule_no].rhs;
   }
   // We now iterate over the rules and try to advance the RHS_START
   // pointer to each right-hand side as far as we can.  If one or
@@ -77,11 +78,11 @@ void check_non_terminals(struct CLIOptions *cli_options, short *lhs_rule, short 
     changed = false;
     for ALL_NON_TERMINALS3(nt) {
       int rule_no;
-      for (bool end_node = (rule_no = lhs_rule[nt]) == NIL; !produces_terminals[nt] && !end_node; end_node = rule_no == lhs_rule[nt]) {
-        rule_no = next_rule[rule_no];
-        if (is_terminal_rhs(rhs_start, produces_terminals, rule_no, rules, rhs_sym)) {
+      for (bool end_node = (rule_no = lhs_rule.raw[nt]) == NIL; !produces_terminals.raw[nt] && !end_node; end_node = rule_no == lhs_rule.raw[nt]) {
+        rule_no = next_rule.raw[rule_no];
+        if (is_terminal_rhs(rhs_start, produces_terminals.raw, rule_no, rules, rhs_sym)) {
           changed = true;
-          produces_terminals[nt] = true;
+          produces_terminals.raw[nt] = true;
         }
       }
     }
@@ -91,11 +92,11 @@ void check_non_terminals(struct CLIOptions *cli_options, short *lhs_rule, short 
   int nt_root = NIL;
   int nt_last;
   for ALL_NON_TERMINALS3(nt) {
-    if (!produces_terminals[nt]) {
+    if (!produces_terminals.raw[nt]) {
       if (nt_root == NIL) {
         nt_root = nt;
       } else {
-        nt_list[nt_last] = nt;
+        nt_list.raw[nt_last] = nt;
       }
       nt_last = nt;
     }
@@ -104,16 +105,16 @@ void check_non_terminals(struct CLIOptions *cli_options, short *lhs_rule, short 
   // terminal strings, print them out and stop the program.
   if (nt_root != NIL) {
     char line[PRINT_LINE_SIZE + 1];
-    nt_list[nt_last] = NIL; /* mark end of list */
+    nt_list.raw[nt_last] = NIL; /* mark end of list */
     strcpy(line, "*** ERROR: The following Non-terminal");
-    if (nt_list[nt_root] == NIL) {
+    if (nt_list.raw[nt_root] == NIL) {
       strcat(line, " does not generate any terminal strings: ");
     } else {
       strcat(line, "s do not generate any terminal strings: ");
       PRNT(line);
       strcpy(line, "        "); /* 8 spaces */
     }
-    for (int symbol = nt_root; symbol != NIL; symbol = nt_list[symbol]) {
+    for (int symbol = nt_root; symbol != NIL; symbol = nt_list.raw[symbol]) {
       char tok[SYMBOL_SIZE + 1];
       restore_symbol(tok, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
       if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 1) {
@@ -127,21 +128,21 @@ void check_non_terminals(struct CLIOptions *cli_options, short *lhs_rule, short 
     PRNT(line);
     exit(12);
   }
-  produces_terminals += num_terminals + 1;
-  ffree(produces_terminals);
-  ffree(rhs_start);
+  produces_terminals.raw += num_terminals + 1;
+  ffree(produces_terminals.raw);
+  ffree(rhs_start.raw);
 }
 
-void no_rules_produced(struct CLIOptions *cli_options, short *lhs_rule, short *nt_list) {
+void no_rules_produced(struct CLIOptions *cli_options, ArrayShort lhs_rule, ArrayShort nt_list) {
   // Build a list of all non-terminals that do not produce any rules.
   int nt_root = NIL;
   int nt_last;
   for ALL_NON_TERMINALS3(symbol) {
-    if (lhs_rule[symbol] == NIL) {
+    if (lhs_rule.raw[symbol] == NIL) {
       if (nt_root == NIL) {
         nt_root = symbol;
       } else {
-        nt_list[nt_last] = symbol;
+        nt_list.raw[nt_last] = symbol;
       }
       nt_last = symbol;
     }
@@ -150,14 +151,14 @@ void no_rules_produced(struct CLIOptions *cli_options, short *lhs_rule, short *n
   // is not empty, signal error and stop.
   if (nt_root != NIL) {
     char line[PRINT_LINE_SIZE + 1];
-    nt_list[nt_last] = NIL;
-    if (nt_list[nt_root] == NIL) {
+    nt_list.raw[nt_last] = NIL;
+    if (nt_list.raw[nt_root] == NIL) {
       PRNTERR("The following Non-terminal does not produce any rules: ");
     } else {
       PRNTERR("The following Non-terminals do not produce any rules: ");
     }
     strcpy(line, "        ");
-    for (int symbol = nt_root; symbol != NIL; symbol = nt_list[symbol]) {
+    for (int symbol = nt_root; symbol != NIL; symbol = nt_list.raw[symbol]) {
       char tok[SYMBOL_SIZE + 1];
       restore_symbol(tok, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
       if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE) {
@@ -178,31 +179,31 @@ void no_rules_produced(struct CLIOptions *cli_options, short *lhs_rule, short *n
 /// The closure of a non-terminal A is the set of all non-terminals Bi that
 /// can directly or indirectly start a string generated by A.
 /// I.e., A *::= Bi X where X is an arbitrary string.
-void compute_closure(const int lhs_symbol, short *stack, short *index_of, struct ProduceTop *topp, short *lhs_rule, short *next_rule, struct node **closure, struct ruletab_type *rules, short *rhs_sym) {
-  short *nont_list = Allocate_short_array(num_non_terminals);
-  nont_list -= num_terminals + 1; /* Temporary direct        */
+void compute_closure(const int lhs_symbol, ArrayShort stack, ArrayShort index_of, struct ProduceTop *topp, ArrayShort lhs_rule, ArrayShort next_rule, struct node **closure, struct ruletab_type *rules, ArrayShort rhs_sym) {
+  ArrayShort nont_list = Allocate_short_array2(num_non_terminals);
+  nont_list.raw -= num_terminals + 1; /* Temporary direct        */
   // access set for closure.
-  stack[++topp->top] = lhs_symbol;
+  stack.raw[++topp->top] = lhs_symbol;
   const int indx = topp->top;
-  index_of[lhs_symbol] = indx;
+  index_of.raw[lhs_symbol] = indx;
   for ALL_NON_TERMINALS3(i) {
-    nont_list[i] = OMEGA;
+    nont_list.raw[i] = OMEGA;
   }
-  nont_list[lhs_symbol] = NIL;
+  nont_list.raw[lhs_symbol] = NIL;
   int nt_root = lhs_symbol;
   closure[lhs_symbol] = NULL; /* Permanent closure set. Linked list */
   int rule_no;
-  for (bool end_node = (rule_no = lhs_rule[lhs_symbol]) == NIL; !end_node; /* Iterate over all rules of LHS_SYMBOL */ end_node = rule_no == lhs_rule[lhs_symbol]) {
-    rule_no = next_rule[rule_no];
-    int symbol = RHS_SIZE(rule_no, rules) == 0 ? empty : rhs_sym[rules[rule_no].rhs];
+  for (bool end_node = (rule_no = lhs_rule.raw[lhs_symbol]) == NIL; !end_node; /* Iterate over all rules of LHS_SYMBOL */ end_node = rule_no == lhs_rule.raw[lhs_symbol]) {
+    rule_no = next_rule.raw[rule_no];
+    int symbol = RHS_SIZE(rule_no, rules) == 0 ? empty : rhs_sym.raw[rules[rule_no].rhs];
     if (IS_A_NON_TERMINAL(symbol)) {
-      if (nont_list[symbol] == OMEGA) {
+      if (nont_list.raw[symbol] == OMEGA) {
         /* if first time seen */
-        if (index_of[symbol] == OMEGA) {
+        if (index_of.raw[symbol] == OMEGA) {
           compute_closure(symbol, stack, index_of, topp, lhs_rule, next_rule, closure, rules, rhs_sym);
         }
-        index_of[lhs_symbol] = MIN(index_of[lhs_symbol], index_of[symbol]);
-        nont_list[symbol] = nt_root;
+        index_of.raw[lhs_symbol] = MIN(index_of.raw[lhs_symbol], index_of.raw[symbol]);
+        nont_list.raw[symbol] = nt_root;
         nt_root = symbol;
         // add closure[symbol] to closure of LHS_SYMBOL.
         struct node *q;
@@ -210,15 +211,15 @@ void compute_closure(const int lhs_symbol, short *stack, short *index_of, struct
              !end_node;
              end_node = q == closure[symbol]) {
           q = q->next;
-          if (nont_list[q->value] == OMEGA) {
-            nont_list[q->value] = nt_root;
+          if (nont_list.raw[q->value] == OMEGA) {
+            nont_list.raw[q->value] = nt_root;
             nt_root = q->value;
           }
         }
       }
     }
   }
-  for (; nt_root != lhs_symbol; nt_root = nont_list[nt_root]) {
+  for (; nt_root != lhs_symbol; nt_root = nont_list.raw[nt_root]) {
     struct node *p = Allocate_node();
     p->value = nt_root;
     if (closure[lhs_symbol] == NULL)
@@ -229,8 +230,8 @@ void compute_closure(const int lhs_symbol, short *stack, short *index_of, struct
     }
     closure[lhs_symbol] = p;
   }
-  if (index_of[lhs_symbol] == indx) {
-    for (int symbol = stack[topp->top]; symbol != lhs_symbol; symbol = stack[--topp->top]) {
+  if (index_of.raw[lhs_symbol] == indx) {
+    for (int symbol = stack.raw[topp->top]; symbol != lhs_symbol; symbol = stack.raw[--topp->top]) {
       struct node *q = closure[symbol];
       if (q != NULL) {
         struct node *p = q->next;
@@ -251,13 +252,13 @@ void compute_closure(const int lhs_symbol, short *stack, short *index_of, struct
           closure[symbol] = p;
         }
       }
-      index_of[symbol] = INFINITY;
+      index_of.raw[symbol] = INFINITY;
     }
-    index_of[lhs_symbol] = INFINITY;
+    index_of.raw[lhs_symbol] = INFINITY;
     topp->top--;
   }
-  nont_list += num_terminals + 1;
-  ffree(nont_list);
+  nont_list.raw += num_terminals + 1;
+  ffree(nont_list.raw);
 }
 
 /// This procedure tries to advance the RHS_START pointer.  If the current
@@ -265,12 +266,12 @@ void compute_closure(const int lhs_symbol, short *stack, short *index_of, struct
 /// to indicate that it cannot go any further.  If it encounters a  non-null-
 /// label non-terminal, it also returns FALSE. Otherwise, the whole right-hand
 /// side is consumed, and it returns the value TRUE.
-bool is_nullable_rhs(short *rhs_start, const int rule_no, bool *null_nt, struct ruletab_type *rules, short *rhs_sym) {
-  for (; rhs_start[rule_no] <= rules[rule_no + 1].rhs - 1; rhs_start[rule_no]++) {
-    const int symbol = rhs_sym[rhs_start[rule_no]];
+bool is_nullable_rhs(ArrayShort rhs_start, const int rule_no, ArrayBool null_nt, struct ruletab_type *rules, ArrayShort rhs_sym) {
+  for (; rhs_start.raw[rule_no] <= rules[rule_no + 1].rhs - 1; rhs_start.raw[rule_no]++) {
+    const int symbol = rhs_sym.raw[rhs_start.raw[rule_no]];
     if (IS_A_TERMINAL(symbol)) {
       return false;
-    } else if (!null_nt[symbol]) {
+    } else if (!null_nt.raw[symbol]) {
       /* when symbol is a non-terminal */
       return false;
     }
@@ -282,12 +283,12 @@ bool is_nullable_rhs(short *rhs_start, const int rule_no, bool *null_nt, struct 
 /// digraph algorithm.
 /// FIRST(NT) is the set of all terminals Ti that may start a string generated
 /// by NT. That is, NT *::= Ti X where X is an arbitrary string.
-void compute_first(const int nt, struct DetectedSetSizes *dss, short *stack, short *index_of, struct ProduceTop *topp, JBitset nt_first, short *lhs_rule, short *next_rule, bool *null_nt, struct ruletab_type *rules, short *rhs_sym) {
+void compute_first(const int nt, struct DetectedSetSizes *dss, ArrayShort stack, ArrayShort index_of, struct ProduceTop *topp, JBitset nt_first, ArrayShort lhs_rule, ArrayShort next_rule, ArrayBool null_nt, struct ruletab_type *rules, ArrayShort rhs_sym) {
   JBitset temp_set;
   calloc0_set(temp_set, 1, dss->term_set_size)
-  stack[++topp->top] = nt;
+  stack.raw[++topp->top] = nt;
   const int indx = topp->top;
-  index_of[nt] = indx;
+  index_of.raw[nt] = indx;
   // Iterate over all rules generated by non-terminal NT...
   // In this application of the transitive closure algorithm,
   //
@@ -299,20 +300,20 @@ void compute_first(const int nt, struct DetectedSetSizes *dss, short *stack, sho
   //
   // where Bi is nullable for 1 <= i <= k
   int rule_no;
-  for (bool end_node = (rule_no = lhs_rule[nt]) == NIL; !end_node; /* Iterate over all rules produced by NT */ end_node = rule_no == lhs_rule[nt]) {
-    rule_no = next_rule[rule_no];
+  for (bool end_node = (rule_no = lhs_rule.raw[nt]) == NIL; !end_node; /* Iterate over all rules produced by NT */ end_node = rule_no == lhs_rule.raw[nt]) {
+    rule_no = next_rule.raw[rule_no];
     bool blocked = false;
     for ENTIRE_RHS3(i, rule_no, rules) {
-      int symbol = rhs_sym[i];
+      int symbol = rhs_sym.raw[i];
       if (IS_A_NON_TERMINAL(symbol)) {
-        if (index_of[symbol] == OMEGA) {
+        if (index_of.raw[symbol] == OMEGA) {
           compute_first(symbol, dss, stack, index_of, topp, nt_first, lhs_rule, next_rule, null_nt, rules, rhs_sym);
         }
-        index_of[nt] = MIN(index_of[nt], index_of[symbol]);
+        index_of.raw[nt] = MIN(index_of.raw[nt], index_of.raw[symbol]);
         ASSIGN_SET(temp_set, 0, nt_first, symbol);
         RESET_BIT(temp_set, empty);
         SET_UNION(nt_first, nt, temp_set, 0);
-        blocked = !null_nt[symbol];
+        blocked = !null_nt.raw[symbol];
       } else {
         SET_BIT_IN(nt_first, nt, symbol);
         blocked = true;
@@ -324,12 +325,12 @@ void compute_first(const int nt, struct DetectedSetSizes *dss, short *stack, sho
       SET_BIT_IN(nt_first, nt, empty);
     }
   }
-  if (index_of[nt] == indx) {
-    for (int symbol = stack[topp->top]; symbol != nt; symbol = stack[--topp->top]) {
+  if (index_of.raw[nt] == indx) {
+    for (int symbol = stack.raw[topp->top]; symbol != nt; symbol = stack.raw[--topp->top]) {
       ASSIGN_SET(nt_first, symbol, nt_first, nt);
-      index_of[symbol] = INFINITY;
+      index_of.raw[symbol] = INFINITY;
     }
-    index_of[nt] = INFINITY;
+    index_of.raw[nt] = INFINITY;
     topp->top--;
   }
   ffree(temp_set.raw);
@@ -343,12 +344,12 @@ void compute_first(const int nt, struct DetectedSetSizes *dss, short *stack, sho
 /// last element in FIRST_ELEMENT that was allocated.
 /// NOTE: The suffix indentified by ROOT and TAIL is presumed not to be empty.
 ///       That is, ROOT <= TAIL !!!
-short first_map(const int root, const int tail, struct ProduceTop *topp, struct f_element_type *first_element, short *first_table, short *rhs_sym) {
-  for (int i = first_table[rhs_sym[root]]; i != NIL; i = first_element[i].link) {
+short first_map(const int root, const int tail, struct ProduceTop *topp, struct f_element_type *first_element, ArrayShort first_table, ArrayShort rhs_sym) {
+  for (int i = first_table.raw[rhs_sym.raw[root]]; i != NIL; i = first_element[i].link) {
     int k;
     int jj;
     for (jj = root + 1, k = first_element[i].suffix_root + 1; jj <= tail && k <= first_element[i].suffix_tail; jj++, k++) {
-      if (rhs_sym[jj] != rhs_sym[k])
+      if (rhs_sym.raw[jj] != rhs_sym.raw[k])
         break;
     }
     if (jj > tail && k > first_element[i].suffix_tail) {
@@ -358,8 +359,8 @@ short first_map(const int root, const int tail, struct ProduceTop *topp, struct 
   topp->top++;
   first_element[topp->top].suffix_root = root;
   first_element[topp->top].suffix_tail = tail;
-  first_element[topp->top].link = first_table[rhs_sym[root]];
-  first_table[rhs_sym[root]] = topp->top;
+  first_element[topp->top].link = first_table.raw[rhs_sym.raw[root]];
+  first_table.raw[rhs_sym.raw[root]] = topp->top;
   return topp->top;
 }
 
@@ -368,34 +369,34 @@ short first_map(const int root, const int tail, struct ProduceTop *topp, struct 
 /// may immediately follow a string X generated by NT. I.e., if NT *::= X
 /// then X Ti is a valid substring of a class of strings that may be
 /// recognized by the language.
-void compute_follow(const int nt, struct DetectedSetSizes *dss, short *stack, short *index_of, struct ProduceTop *topp, JBitset follow, short *next_item, short *nt_items, JBitset first, struct ruletab_type *rules, struct itemtab *item_table) {
+void compute_follow(const int nt, struct DetectedSetSizes *dss, ArrayShort stack, ArrayShort index_of, struct ProduceTop *topp, JBitset follow, ArrayShort next_item, ArrayShort nt_items, JBitset first, struct ruletab_type *rules, struct itemtab *item_table) {
   JBitset temp_set;
   calloc0_set(temp_set, 1, dss->term_set_size);
   // FOLLOW[NT] was initialized to 0 for all non-terminals.
-  stack[++topp->top] = nt;
+  stack.raw[++topp->top] = nt;
   const int indx = topp->top;
-  index_of[nt] = indx;
-  for (int item_no = nt_items[nt]; item_no != NIL; item_no = next_item[item_no]) {
+  index_of.raw[nt] = indx;
+  for (int item_no = nt_items.raw[nt]; item_no != NIL; item_no = next_item.raw[item_no]) {
     // iterate over all items of NT
     ASSIGN_SET(temp_set, 0, first, item_table[item_no].suffix_index);
     if (IS_ELEMENT(temp_set, empty)) {
       RESET_BIT(temp_set, empty);
       const int rule_no = item_table[item_no].rule_number;
       int lhs_symbol = rules[rule_no].lhs;
-      if (index_of[lhs_symbol] == OMEGA) {
+      if (index_of.raw[lhs_symbol] == OMEGA) {
         compute_follow(lhs_symbol, dss, stack, index_of, topp, follow, next_item, nt_items, first, rules, item_table);
       }
       SET_UNION(follow, nt, follow, lhs_symbol);
-      index_of[nt] = MIN(index_of[nt], index_of[lhs_symbol]);
+      index_of.raw[nt] = MIN(index_of.raw[nt], index_of.raw[lhs_symbol]);
     }
     SET_UNION(follow, nt, temp_set, 0);
   }
-  if (index_of[nt] == indx) {
-    for (int lhs_symbol = stack[topp->top]; lhs_symbol != nt; lhs_symbol = stack[--topp->top]) {
+  if (index_of.raw[nt] == indx) {
+    for (int lhs_symbol = stack.raw[topp->top]; lhs_symbol != nt; lhs_symbol = stack.raw[--topp->top]) {
       ASSIGN_SET(follow, lhs_symbol, follow, nt);
-      index_of[lhs_symbol] = INFINITY;
+      index_of.raw[lhs_symbol] = INFINITY;
     }
-    index_of[nt] = INFINITY;
+    index_of.raw[nt] = INFINITY;
     topp->top--;
   }
   ffree(temp_set.raw);
@@ -403,48 +404,48 @@ void compute_follow(const int nt, struct DetectedSetSizes *dss, short *stack, sh
 
 /// MKFIRST constructs the FIRST and FOLLOW maps, the CLOSURE map,
 /// ADEQUATE_ITEM and ITEM_TABLE maps and all other basic maps.
-struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first, bool * *rmpself, JBitset* first, struct FirstDeps* fd, struct ruletab_type *rules, short *rhs_sym, struct itemtab **item_tablep) {
+struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first, ArrayBool *rmpself, JBitset* first, struct FirstDeps* fd, struct ruletab_type *rules, ArrayShort rhs_sym, struct itemtab **item_tablep) {
   struct DetectedSetSizes dss = {
     .non_term_set_size = num_non_terminals / SIZEOF_BC + (num_non_terminals % SIZEOF_BC ? 1 : 0),
     .term_set_size = num_terminals / SIZEOF_BC + (num_terminals % SIZEOF_BC ? 1 : 0),
     .null_nt = NULL,
   };
   // allocate various arrays
-  short *lhs_rule = Allocate_short_array(num_non_terminals);
-  lhs_rule -= num_terminals + 1;
-  short *next_rule = Allocate_short_array(NEXT_RULE_SIZE());
-  short *first_item_of = Allocate_short_array(NEXT_RULE_SIZE());
-  short *stack = Allocate_short_array(num_non_terminals + 1);
-  short *index_of = Allocate_short_array(num_non_terminals);
-  index_of -= num_terminals + 1;
+  ArrayShort lhs_rule = Allocate_short_array2(num_non_terminals);
+  lhs_rule.raw -= num_terminals + 1;
+  ArrayShort next_rule = Allocate_short_array2(NEXT_RULE_SIZE());
+  ArrayShort first_item_of = Allocate_short_array2(NEXT_RULE_SIZE());
+  ArrayShort stack = Allocate_short_array2(num_non_terminals + 1);
+  ArrayShort index_of = Allocate_short_array2(num_non_terminals);
+  index_of.raw -= num_terminals + 1;
   // NT_FIRST is used to construct a mapping from non-terminals to the
   // set of terminals that may appear first in a string derived from
   // the non-terminal.
   calloc0_set(nt_first, num_non_terminals, dss.term_set_size);
   nt_first.raw -= (num_terminals + 1) * dss.term_set_size;
-  short *next_item = Allocate_short_array(num_items + 1);
-  short *nt_items = Allocate_short_array(num_non_terminals);
-  nt_items -= num_terminals + 1;
-  short *nt_list = Allocate_short_array(num_non_terminals);
-  nt_list -= num_terminals + 1;
+  ArrayShort next_item = Allocate_short_array2(num_items + 1);
+  ArrayShort nt_items = Allocate_short_array2(num_non_terminals);
+  nt_items.raw -= num_terminals + 1;
+  ArrayShort nt_list = Allocate_short_array2(num_non_terminals);
+  nt_list.raw -= num_terminals + 1;
   struct f_element_type *first_element;
   calloc0p(&first_element, num_items + 1, struct f_element_type);
   calloc0p(item_tablep, num_items + 1, struct itemtab);
   struct itemtab *item_table = *item_tablep;
   for ALL_NON_TERMINALS3(symbol) {
-    lhs_rule[symbol] = NIL;
+    lhs_rule.raw[symbol] = NIL;
   }
   // In this loop, we construct the LHS_RULE map which maps
   // each non-terminal symbol into the set of rules it produces
   for ALL_RULES3(rule_no) {
     int symbol = rules[rule_no].lhs;
-    if (lhs_rule[symbol] == NIL) {
-      next_rule[rule_no] = rule_no;
+    if (lhs_rule.raw[symbol] == NIL) {
+      next_rule.raw[rule_no] = rule_no;
     } else {
-      next_rule[rule_no] = next_rule[lhs_rule[symbol]];
-      next_rule[lhs_rule[symbol]] = rule_no;
+      next_rule.raw[rule_no] = next_rule.raw[lhs_rule.raw[symbol]];
+      next_rule.raw[lhs_rule.raw[symbol]] = rule_no;
     }
-    lhs_rule[symbol] = rule_no;
+    lhs_rule.raw[symbol] = rule_no;
   }
   // Check if there are any non-terminals that do not produce
   // any rules.
@@ -453,11 +454,11 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
   calloc0p(&(fd->closure), num_non_terminals, struct node *);
   fd->closure -= num_terminals + 1;
   for ALL_NON_TERMINALS3(symbol) {
-    index_of[symbol] = OMEGA;
+    index_of.raw[symbol] = OMEGA;
   }
   struct ProduceTop topp = {.top = 0};
   for ALL_NON_TERMINALS3(nt) {
-    if (index_of[nt] == OMEGA) {
+    if (index_of.raw[nt] == OMEGA) {
       compute_closure(nt, stack, index_of, &topp, lhs_rule, next_rule, fd->closure, rules, rhs_sym);
     }
   }
@@ -465,8 +466,8 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
   // A non-terminal B is said to be nullable if either:
   //    B -> %empty  or  B -> B1 B2 B3 ... Bk  where Bi is
   //                         nullable for 1 <= i <= k
-  dss.null_nt = Allocate_boolean_array(num_non_terminals);
-  dss.null_nt -= num_terminals + 1;
+  dss.null_nt = Allocate_bool_array2(num_non_terminals);
+  dss.null_nt.raw -= num_terminals + 1;
   // Calculate nullables
   {
     ///   This procedure computes the set of non-terminal symbols that can
@@ -477,16 +478,16 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
     ///          A ::= B1 B2 ... Bn     n >= 0,  1 <= i <= n
     /// and Bi, for all i, is a nullable non-terminal.
     bool changed = true;
-    short *rhs_start = Allocate_short_array(NEXT_RULE_SIZE());
+    ArrayShort rhs_start = Allocate_short_array2(NEXT_RULE_SIZE());
     // First, mark all non-terminals as non-nullable.  Then initialize
     // RHS_START. RHS_START is a mapping from each rule in the grammar
     // into the next symbol in its right-hand side that has not yet
     // proven to be nullable.
     for ALL_NON_TERMINALS3(nt) {
-      dss.null_nt[nt] = false;
+      dss.null_nt.raw[nt] = false;
     }
     for ALL_RULES3(rule_no) {
-      rhs_start[rule_no] = rules[rule_no].rhs;
+      rhs_start.raw[rule_no] = rules[rule_no].rhs;
     }
     // We now iterate over the rules and try to advance the RHS_START
     // pointer thru each right-hand side as far as we can.  If one or
@@ -505,33 +506,33 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
       changed = false;
       for ALL_NON_TERMINALS3(nt) {
         int rule_no;
-        for (bool end_node = (rule_no = lhs_rule[nt]) == NIL; !dss.null_nt[nt] && !end_node; end_node = rule_no == lhs_rule[nt]) {
-          rule_no = next_rule[rule_no];
+        for (bool end_node = (rule_no = lhs_rule.raw[nt]) == NIL; !dss.null_nt.raw[nt] && !end_node; end_node = rule_no == lhs_rule.raw[nt]) {
+          rule_no = next_rule.raw[rule_no];
           if (is_nullable_rhs(rhs_start, rule_no, dss.null_nt, rules, rhs_sym)) {
             changed = true;
-            dss.null_nt[nt] = true;
+            dss.null_nt.raw[nt] = true;
           }
         }
       }
     }
-    ffree(rhs_start);
+    ffree(rhs_start.raw);
   }
   // Construct the FIRST map for non-terminals and also a list
   // of non-terminals whose first set is empty.
   for ALL_NON_TERMINALS3(symbol) {
-    index_of[symbol] = OMEGA;
+    index_of.raw[symbol] = OMEGA;
   }
   topp.top = 0;
   for ALL_NON_TERMINALS3(nt) {
-    if (index_of[nt] == OMEGA) {
+    if (index_of.raw[nt] == OMEGA) {
       compute_first(nt, &dss, stack, index_of, &topp, nt_first, lhs_rule, next_rule, dss.null_nt, rules, rhs_sym);
     }
   }
   //  Since every input source will be followed by the EOFT
   //  symbol, FIRST[accept_image] cannot contain empty but
   //  instead must contain the EOFT symbol.
-  if (dss.null_nt[accept_image]) {
-    dss.null_nt[accept_image] = false;
+  if (dss.null_nt.raw[accept_image]) {
+    dss.null_nt.raw[accept_image] = false;
     RESET_BIT_IN(nt_first, accept_image, empty);
     SET_BIT_IN(nt_first, accept_image, eoft_image);
   }
@@ -539,17 +540,17 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
   // generate any terminal strings. If so, signal error and stop.
   check_non_terminals(cli_options, lhs_rule, next_rule, nt_list, rules, rhs_sym);
   // Construct the ITEM_TABLE, FIRST_ITEM_OF, and NT_ITEMS maps.
-  short *first_table = Allocate_short_array(num_symbols + 1);
+  ArrayShort first_table = Allocate_short_array2(num_symbols + 1);
   /* Initialize FIRST_TABLE to NIL */
   for ALL_SYMBOLS3(symbol) {
-    first_table[symbol] = NIL;
+    first_table.raw[symbol] = NIL;
   }
   topp.top = 1;
   const int first_of_empty = topp.top;
   first_element[first_of_empty].suffix_root = 1;
   first_element[first_of_empty].suffix_tail = 0;
   for ALL_NON_TERMINALS3(symbol) {
-    nt_items[symbol] = NIL;
+    nt_items.raw[symbol] = NIL;
   }
   int item_no = 0;
   item_table[item_no].rule_number = 0;
@@ -557,12 +558,12 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
   item_table[item_no].dot = 0;
   item_table[item_no].suffix_index = NIL;
   for ALL_RULES3(rule_no) {
-    first_item_of[rule_no] = item_no + 1;
+    first_item_of.raw[rule_no] = item_no + 1;
     int j = 0;
     const int k = LAST_RHS_INDEX(rule_no, rules);
     for ENTIRE_RHS3(i, rule_no, rules) {
       item_no++;
-      int symbol = rhs_sym[i];
+      int symbol = rhs_sym.raw[i];
       item_table[item_no].rule_number = rule_no;
       item_table[item_no].symbol = symbol;
       item_table[item_no].dot = j;
@@ -578,8 +579,8 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
         item_table[item_no].suffix_index = NIL;
       }
       if (IS_A_NON_TERMINAL(symbol)) {
-        next_item[item_no] = nt_items[symbol];
-        nt_items[symbol] = item_no;
+        next_item.raw[item_no] = nt_items.raw[symbol];
+        nt_items.raw[symbol] = item_no;
       }
       j++;
     }
@@ -599,8 +600,8 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
   // for the empty sequence.
   long num_first_sets = topp.top;
   int rule_no;
-  for (bool end_node = (rule_no = lhs_rule[accept_image]) == NIL; !end_node; end_node = rule_no == lhs_rule[accept_image]) {
-    rule_no = next_rule[rule_no];
+  for (bool end_node = (rule_no = lhs_rule.raw[accept_image]) == NIL; !end_node; end_node = rule_no == lhs_rule.raw[accept_image]) {
+    rule_no = next_rule.raw[rule_no];
     num_first_sets++;
   }
   calloc0_set_fn(first, num_first_sets + 1, dss.term_set_size);
@@ -612,7 +613,7 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
     // symbols in the vector RHS, and INDEX which is the index of a first set.
     // It computes the set of all terminals that can appear as the first symbol
     // in the sequence and places the result in the FIRST set indexable by INDEX.
-    int symbol = root > tail ? empty : rhs_sym[root];
+    int symbol = root > tail ? empty : rhs_sym.raw[root];
     if (IS_A_TERMINAL(symbol)) {
       INIT_BITSET(*first, index);
       SET_BIT_IN(*first, index, symbol); /* add it to set */
@@ -620,7 +621,7 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
       ASSIGN_SET(*first, index, nt_first, symbol);
     }
     for (int i = root + 1; i <= tail && IS_IN_SET(*first, index, empty); i++) {
-      symbol = rhs_sym[i];
+      symbol = rhs_sym.raw[i];
       RESET_BIT_IN(*first, index, empty); /* remove EMPTY */
       if (IS_A_TERMINAL(symbol)) {
         SET_BIT_IN(*first, index, symbol); /* add it to set */
@@ -629,10 +630,10 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
       }
     }
   }
-  rule_no = lhs_rule[accept_image];
+  rule_no = lhs_rule.raw[accept_image];
   for (int i = topp.top + 1; i <= num_first_sets; i++) {
-    rule_no = next_rule[rule_no];
-    item_no = first_item_of[rule_no];
+    rule_no = next_rule.raw[rule_no];
+    item_no = first_item_of.raw[rule_no];
     item_table[item_no].suffix_index = i;
     INIT_BITSET(*first, i);
     SET_BIT_IN(*first, i, eoft_image);
@@ -648,7 +649,7 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
     for ALL_RULES3(rule_no) {
       const int j = RHS_SIZE(rule_no, rules);
       if (rules[rule_no].lhs != accept_image && j > 0) {
-        item_no = first_item_of[rule_no] + j;
+        item_no = first_item_of.raw[rule_no] + j;
         struct node *p = Allocate_node();
         p->value = item_no;
         p->next = NULL;
@@ -666,10 +667,10 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
   fd->clitems -= num_terminals + 1;
   for ALL_NON_TERMINALS3(nt) {
     fd->clitems[nt] = NULL;
-    for (bool end_node = (rule_no = lhs_rule[nt]) == NIL; !end_node; end_node = rule_no == lhs_rule[nt]) {
-      rule_no = next_rule[rule_no];
+    for (bool end_node = (rule_no = lhs_rule.raw[nt]) == NIL; !end_node; end_node = rule_no == lhs_rule.raw[nt]) {
+      rule_no = next_rule.raw[rule_no];
       struct node *p = Allocate_node();
-      p->value = first_item_of[rule_no];
+      p->value = first_item_of.raw[rule_no];
       if (fd->clitems[nt] == NULL) {
         p->next = p;
       } else {
@@ -712,11 +713,11 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
     // Complete the construction of the RIGHT_MOST_PRODUCES map
     // for non-terminals using the digraph algorithm.
     for ALL_NON_TERMINALS3(nt) {
-      index_of[nt] = OMEGA;
+      index_of.raw[nt] = OMEGA;
     }
     topp.top = 0;
     for ALL_NON_TERMINALS3(nt) {
-      if (index_of[nt] == OMEGA) {
+      if (index_of.raw[nt] == OMEGA) {
         compute_produces(nt, direct_produces, stack, index_of, produces, &topp);
       }
     }
@@ -729,7 +730,7 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
   // Construct the FOLLOW map if
   //   - Error-maps are requested
   //   - There are more than one starting symbol.
-  if (error_maps_bit || next_rule[lhs_rule[accept_image]] != lhs_rule[accept_image]) {
+  if (cli_options->error_maps_bit || next_rule.raw[lhs_rule.raw[accept_image]] != lhs_rule.raw[accept_image]) {
     /// FOLLOW is a mapping from non-terminals to a set of terminals that
     /// may appear immediately after the non-terminal.
     JBitset follow;
@@ -737,12 +738,12 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
     follow.raw -= (num_terminals + 1) * dss.term_set_size;
     SET_BIT_IN(follow, accept_image, eoft_image);
     for ALL_NON_TERMINALS3(symbol) {
-      index_of[symbol] = OMEGA;
+      index_of.raw[symbol] = OMEGA;
     }
-    index_of[accept_image] = INFINITY; /* mark computed */
+    index_of.raw[accept_image] = INFINITY; /* mark computed */
     topp.top = 0;
     for ALL_NON_TERMINALS3(nt) {
-      if (index_of[nt] == OMEGA) {
+      if (index_of.raw[nt] == OMEGA) {
         // not yet computed ?
         compute_follow(nt, &dss, stack, index_of, &topp, follow, next_item, nt_items, *first, rules, item_table);
       }
@@ -750,13 +751,13 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
     //  Initialize FIRST for suffixes that can follow each starting
     // non-terminal ( except the main symbol) with the FOLLOW set
     // of the non-terminal in question.
-    rule_no = lhs_rule[accept_image];
-    if (next_rule[rule_no] != rule_no) {
-      rule_no = next_rule[rule_no]; /* first rule */
-      topp.top = item_table[first_item_of[rule_no]].suffix_index;
+    rule_no = lhs_rule.raw[accept_image];
+    if (next_rule.raw[rule_no] != rule_no) {
+      rule_no = next_rule.raw[rule_no]; /* first rule */
+      topp.top = item_table[first_item_of.raw[rule_no]].suffix_index;
       for (int i = topp.top + 1; i <= num_first_sets; i++) {
-        rule_no = next_rule[rule_no];
-        item_no = first_item_of[rule_no];
+        rule_no = next_rule.raw[rule_no];
+        item_no = first_item_of.raw[rule_no];
         int symbol = item_table[item_no].symbol;
         if (IS_A_NON_TERMINAL(symbol)) {
           ASSIGN_SET(*first, i, follow, symbol);
@@ -774,14 +775,14 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
     //  1) to mark symbols that are reachable from the Accepting
     //        non-terminal.
     //  2) to construct lists of symbols that are not reachable.
-    long *symbol_list = Allocate_long_array(num_symbols + 1);
+    ArrayLong symbol_list = Allocate_long_array2(num_symbols + 1);
     for ALL_SYMBOLS3(symbol) {
-      symbol_list[symbol] = OMEGA;
+      symbol_list.raw[symbol] = OMEGA;
     }
-    symbol_list[eoft_image] = NIL;
-    symbol_list[empty] = NIL;
-    if (error_maps_bit) {
-      symbol_list[error_image] = NIL;
+    symbol_list.raw[eoft_image] = NIL;
+    symbol_list.raw[empty] = NIL;
+    if (cli_options->error_maps_bit) {
+      symbol_list.raw[error_image] = NIL;
     }
     // Initialize a list consisting only of the Accept non-terminal.
     // This list is a work pile of non-terminals to process as follows:
@@ -791,18 +792,18 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
     // 2) All non-terminals in one of its right-hand sides are placed
     //     in the work pile of it had not been processed previously
     int nt_root = accept_image;
-    symbol_list[nt_root] = NIL;
+    symbol_list.raw[nt_root] = NIL;
     for (int nt = nt_root; nt != NIL; nt = nt_root) {
-      nt_root = symbol_list[nt];
+      nt_root = symbol_list.raw[nt];
       int rule_no;
-      for (bool end_node = (rule_no = lhs_rule[nt]) == NIL; !end_node; end_node = rule_no == lhs_rule[nt]) {
-        rule_no = next_rule[rule_no];
+      for (bool end_node = (rule_no = lhs_rule.raw[nt]) == NIL; !end_node; end_node = rule_no == lhs_rule.raw[nt]) {
+        rule_no = next_rule.raw[rule_no];
         for ENTIRE_RHS3(i, rule_no, rules) {
-          const int symbol = rhs_sym[i];
+          const int symbol = rhs_sym.raw[i];
           if (IS_A_TERMINAL(symbol)) {
-            symbol_list[symbol] = NIL;
-          } else if (symbol_list[symbol] == OMEGA) {
-            symbol_list[symbol] = nt_root;
+            symbol_list.raw[symbol] = NIL;
+          } else if (symbol_list.raw[symbol] == OMEGA) {
+            symbol_list.raw[symbol] = nt_root;
             nt_root = symbol;
           }
         }
@@ -814,20 +815,20 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
     // are unused.
     int t_root = NIL;
     for ALL_TERMINALS_BACKWARDS3(symbol) {
-      if (symbol_list[symbol] == OMEGA) {
-        symbol_list[symbol] = t_root;
+      if (symbol_list.raw[symbol] == OMEGA) {
+        symbol_list.raw[symbol] = t_root;
         t_root = symbol;
       }
     }
     if (t_root != NIL) {
-      if (symbol_list[t_root] != NIL) {
+      if (symbol_list.raw[t_root] != NIL) {
         PRNT("*** The following Terminals are useless: ");
         printf("\n\n");
         strcpy(line, "        "); /* 8 spaces */
       } else {
         strcpy(line, "*** The following Terminal is useless: ");
       }
-      for (int symbol = t_root; symbol != NIL; symbol = symbol_list[symbol]) {
+      for (int symbol = t_root; symbol != NIL; symbol = symbol_list.raw[symbol]) {
         restore_symbol(tok, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
         if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE) {
           PRNT(line);
@@ -846,20 +847,20 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
     // symbols are unused.
     nt_root = NIL;
     for ALL_NON_TERMINALS_BACKWARDS3(symbol) {
-      if (symbol_list[symbol] == OMEGA) {
-        symbol_list[symbol] = nt_root;
+      if (symbol_list.raw[symbol] == OMEGA) {
+        symbol_list.raw[symbol] = nt_root;
         nt_root = symbol;
       }
     }
     if (nt_root != NIL) {
-      if (symbol_list[nt_root] != NIL) {
+      if (symbol_list.raw[nt_root] != NIL) {
         PRNT("*** The following Non-Terminals are useless: ");
         printf("\n\n");
         strcpy(line, "        "); /* 8 spaces */
       } else {
         strcpy(line, "*** The following Non-Terminal is useless: ");
       }
-      for (int symbol = nt_root; symbol != NIL; symbol = symbol_list[symbol]) {
+      for (int symbol = nt_root; symbol != NIL; symbol = symbol_list.raw[symbol]) {
         restore_symbol(tok, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
         if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE) {
           PRNT(line);
@@ -871,25 +872,25 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
       }
       PRNT(line);
     }
-    ffree(symbol_list);
+    ffree(symbol_list.raw);
   }
 
   // Free allocated arrays.
   nt_first.raw += (num_terminals + 1) * dss.term_set_size;
   ffree(nt_first.raw);
-  nt_list += num_terminals + 1;
-  ffree(nt_list);
-  ffree(first_table);
+  nt_list.raw += num_terminals + 1;
+  ffree(nt_list.raw);
+  ffree(first_table.raw);
   ffree(first_element);
-  nt_items += num_terminals + 1;
-  ffree(nt_items);
-  ffree(next_item);
-  ffree(stack);
-  index_of += num_terminals + 1;
-  ffree(index_of);
-  lhs_rule += num_terminals + 1;
-  ffree(lhs_rule);
-  ffree(next_rule);
-  ffree(first_item_of);
+  nt_items.raw += num_terminals + 1;
+  ffree(nt_items.raw);
+  ffree(next_item.raw);
+  ffree(stack.raw);
+  index_of.raw += num_terminals + 1;
+  ffree(index_of.raw);
+  lhs_rule.raw += num_terminals + 1;
+  ffree(lhs_rule.raw);
+  ffree(next_rule.raw);
+  ffree(first_item_of.raw);
   return dss;
 }

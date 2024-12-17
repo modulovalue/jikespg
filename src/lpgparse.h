@@ -47,15 +47,6 @@ struct actelmt_type {
   bool header_block;
 };
 
-struct ParserState {
-  struct hash_type **hash_table;
-  struct node *start_symbol_root;
-  struct terminal_type *terminal;
-  struct rulehdr_type *rulehdr;
-  struct defelmt_type *defelmt;
-  struct actelmt_type *actelmt;
-};
-
 /// structure used to hash grammar symbols
 struct hash_type {
   struct hash_type *link;
@@ -64,9 +55,16 @@ struct hash_type {
   int st_ptr;
 };
 
-struct symno_type {
-  int ptr;
-  int name_index;
+struct ParserState {
+  struct hash_type **hash_table;
+  struct node *start_symbol_root;
+  struct terminal_type *terminal;
+  struct rulehdr_type *rulehdr;
+  struct defelmt_type *defelmt;
+  struct actelmt_type *actelmt;
+  char ormark;
+  char escape;
+  bool error_maps_bit;
 };
 
 /// SYMNO is an array that maps symbol numbers to actual symbols.

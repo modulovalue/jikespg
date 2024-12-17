@@ -166,7 +166,7 @@ static void options(char *file_prefix, struct CLIOptions *cli_options, char *par
       } else if (memcmp("CONFLICTS", token, token_len) == 0) {
         cli_options->conflicts_bit = flag;
       } else if (memcmp("ERRORMAPS", token, token_len) == 0) {
-        error_maps_bit = flag;
+        cli_options->error_maps_bit = flag;
       } else if (memcmp("GOTODEFAULT", token, token_len) == 0) {
         cli_options->goto_default_bit = flag;
       } else if (memcmp("HALFWORD", token, token_len) == 0) {
@@ -425,7 +425,7 @@ static void process_options_lines(char *grm_file, struct OutputFiles *of, char *
   else if (cli_options->default_opt.value == OPT_3.value) printf("DEFAULT=3");
   else if (cli_options->default_opt.value == OPT_4.value) printf("DEFAULT=4");
   else if (cli_options->default_opt.value == OPT_5.value) printf("DEFAULT=5");
-  strcpy(opt_string[++top], error_maps_bit ? "ERRORMAPS" : "NOERRORMAPS");
+  strcpy(opt_string[++top], cli_options->error_maps_bit ? "ERRORMAPS" : "NOERRORMAPS");
   sprintf(opt_string[++top], "ESCAPE=%c", cli_options->escape);
   sprintf(opt_string[++top], "FILEPREFIX=%s", file_prefix);
   if (cli_options->c_bit) {
@@ -1016,7 +1016,7 @@ static void free_line(struct line_elemt *p, struct LinePool* lp) {
 /// is found then the macro definition associated with it is returned.
 /// If the name is not found, then a message is printed, a new definition is
 /// entered to avoid more messages and NULL is returned.
-static struct line_elemt *find_macro(char *name, short *macro_table, struct LinePool* lp, struct ParserState* ps) {
+static struct line_elemt *find_macro(char *name, ArrayShort macro_table, struct LinePool* lp, struct ParserState* ps) {
   struct line_elemt *root = NULL;
   char macro_name[MAX_LINE_SIZE + 1];
   char *s = macro_name;
@@ -1025,7 +1025,7 @@ static struct line_elemt *find_macro(char *name, short *macro_table, struct Line
   }
   *s = '\0';
   const int i = hash(macro_name);
-  for (int j = macro_table[i]; j != NIL; j = ps->defelmt[j].next) {
+  for (int j = macro_table.raw[i]; j != NIL; j = ps->defelmt[j].next) {
     if (strcmp(macro_name, ps->defelmt[j].name) == 0) {
       char *ptr = ps->defelmt[j].macro;
       /* undefined macro? */
@@ -1062,8 +1062,8 @@ static struct line_elemt *find_macro(char *name, short *macro_table, struct Line
   strcpy(ps->defelmt[num_defs].name, macro_name);
   ps->defelmt[num_defs].length = 0;
   ps->defelmt[num_defs].macro = NULL;
-  ps->defelmt[num_defs].next = macro_table[i];
-  macro_table[i] = num_defs;
+  ps->defelmt[num_defs].next = macro_table.raw[i];
+  macro_table.raw[i] = num_defs;
   num_defs++;
   return NULL;
 }
@@ -1074,7 +1074,7 @@ static struct line_elemt *find_macro(char *name, short *macro_table, struct Line
 /// user defined macro names. If one is found, the macro definition is
 /// substituted for the name. The modified action text is then printed out in
 /// the action file.
-static void process_action_line(FILE *sysout, char *text, const int line_no, const int rule_no, char *grm_file, struct CLIOptions* cli_options, short *macro_table, struct LinePool* lp, struct ruletab_type *rules, short *rhs_sym, struct ParserState* ps) {
+static void process_action_line(FILE *sysout, char *text, const int line_no, const int rule_no, char *grm_file, struct CLIOptions* cli_options, ArrayShort macro_table, struct LinePool* lp, struct ruletab_type *rules, ArrayShort rhs_sym, struct ParserState* ps) {
   char temp1[MAX_LINE_SIZE + 1];
   char suffix[MAX_LINE_SIZE + 1];
   char symbol[SYMBOL_SIZE + 1];
@@ -1157,7 +1157,7 @@ next_line: {
           } else /* Copy right-hand-side symbols to temp2 */
           {
             for ENTIRE_RHS3(j, rule_no, rules) {
-              restore_symbol(symbol, RETRIEVE_STRING(rhs_sym[j]), cli_options->ormark, cli_options->escape);
+              restore_symbol(symbol, RETRIEVE_STRING(rhs_sym.raw[j]), cli_options->ormark, cli_options->escape);
               if (strlen(temp2) + strlen(symbol) + 1 < max_len) {
                 strcat(temp2, " ");
                 strcat(temp2, symbol);
@@ -1331,7 +1331,7 @@ next_line: {
 /// This procedure takes as argument a macro definition.  If the name of the
 /// macro is one of the predefined names, it issues an error.  Otherwise, it
 /// inserts the macro definition into the table headed by MACRO_TABLE.
-static void mapmacro(const int def_index, short *macro_table, struct ParserState* ps) {
+static void mapmacro(const int def_index, ArrayShort macro_table, struct ParserState* ps) {
   if (strcmp(ps->defelmt[def_index].name, krule_text) == 0 ||
       strcmp(ps->defelmt[def_index].name, krule_number) == 0 ||
       strcmp(ps->defelmt[def_index].name, knum_rules) == 0 ||
@@ -1345,19 +1345,19 @@ static void mapmacro(const int def_index, short *macro_table, struct ParserState
     PRNTWNG2("predefined macro \"%s\" cannot be redefined. Line %ld", ps->defelmt[def_index].name, ps->defelmt[def_index].start_line);
   } else {
     const int i = hash(ps->defelmt[def_index].name);
-    for (int j = macro_table[i]; j != NIL; j = ps->defelmt[j].next) {
+    for (int j = macro_table.raw[i]; j != NIL; j = ps->defelmt[j].next) {
       if (strcmp(ps->defelmt[j].name, ps->defelmt[def_index].name) == 0) {
         PRNTWNG2("Redefinition of macro \"%s\" in line %ld", ps->defelmt[def_index].name, ps->defelmt[def_index].start_line);
         break;
       }
     }
-    ps->defelmt[def_index].next = macro_table[i];
-    macro_table[i] = def_index;
+    ps->defelmt[def_index].next = macro_table.raw[i];
+    macro_table.raw[i] = def_index;
   }
 }
 
 /// Process all semantic actions and generate action file.
-static void process_actions(char *grm_file, struct CLIOptions *cli_options, struct ScannerState* ss, struct ruletab_type *rules, short *rhs_sym, struct ParserState* ps) {
+static void process_actions(char *grm_file, struct CLIOptions *cli_options, struct ScannerState* ss, struct ruletab_type *rules, ArrayShort rhs_sym, struct ParserState* ps) {
   struct LinePool lp = (struct LinePool) {
     .line_pool_root = NULL,
   };
@@ -1379,9 +1379,9 @@ static void process_actions(char *grm_file, struct CLIOptions *cli_options, stru
     fprintf(stderr, "***ERROR: Input file %s containing grammar is empty, undefined, or invalid\n", grm_file);
     exit(12);
   }
-  short *macro_table = Allocate_short_array(HT_SIZE);
+  ArrayShort macro_table = Allocate_short_array2(HT_SIZE);
   for (int i = 0; i < HT_SIZE; i++) {
-    macro_table[i] = NIL;
+    macro_table.raw[i] = NIL;
   }
   ss->bufend = &ss->input_buffer[0];
   read_input(grm_file, sysgrm, ss);
@@ -1520,14 +1520,14 @@ static void process_actions(char *grm_file, struct CLIOptions *cli_options, stru
 }
 
 /// Actions to be taken if grammar is successfully parsed.
-static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *sysgrm, struct ScannerState* ss, short **rhs_sym, struct ruletab_type **rulesp, struct ParserState* ps) {
+static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *sysgrm, struct ScannerState* ss, ArrayShort *rhs_sym, struct ruletab_type **rulesp, struct ParserState* ps, struct symno_type *symno) {
   if (ps->rulehdr == NULL) {
     printf("Informative: Empty grammar read in. Processing stopped.\n");
     fclose(sysgrm);
     exit(12);
   }
   num_non_terminals = num_symbols - num_terminals;
-  if (error_maps_bit) {
+  if (cli_options->error_maps_bit) {
     // make_names_map
     {
       // Construct the NAME map, and update the elements of SYMNO with their names.
@@ -1570,7 +1570,7 @@ static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *
     struct node *ptr;
     int rhs_ct = 0;
     calloc0p(rulesp, num_rules + 2, struct ruletab_type);
-    *rhs_sym = Allocate_short_array(num_items + 1);
+    *rhs_sym = Allocate_short_array2(num_items + 1);
     num_items += num_rules + 1;
     int ii = 0;
     struct ruletab_type *rules = *rulesp;
@@ -1585,7 +1585,7 @@ static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *
         rules[ii].sp = 0;
         rules[ii++].rhs = rhs_ct;
         if (ptr->value != empty) {
-          (*rhs_sym)[rhs_ct++] = ptr->value;
+          (*rhs_sym).raw[rhs_ct++] = ptr->value;
         }
       }
       free_nodes(ps->start_symbol_root, q);
@@ -1600,7 +1600,7 @@ static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *
         // not am empty right-hand side?
         do {
           ptr = ptr->next;
-          (*rhs_sym)[rhs_ct++] = ptr->value;
+          (*rhs_sym).raw[rhs_ct++] = ptr->value;
         } while (ptr != ps->rulehdr[ii].rhs_root);
         ptr = ptr->next; /* point to 1st element */
         rules[ii].sp = ps->rulehdr[ii].sp && ptr == ps->rulehdr[ii].rhs_root;
@@ -1627,12 +1627,13 @@ static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *
 }
 
 /// This procedure opens all relevant files and processes the input grammar.
-void process_input(char *grm_file, struct OutputFiles *output_files, const int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options, short **rhs_sym, struct ruletab_type **rulesp) {
+void process_input(char *grm_file, struct OutputFiles *output_files, const int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options, ArrayShort *rhs_sym, struct ruletab_type **rulesp) {
   char parm[256] = "";
 
   // TODO return and propagate
   struct ParserState ps = (struct ParserState) {
-    .hash_table = NULL
+    .hash_table = NULL,
+    .error_maps_bit = cli_options->error_maps_bit,
   };
 
   // Parse args.
@@ -1789,7 +1790,7 @@ void process_input(char *grm_file, struct OutputFiles *output_files, const int a
       }
       act -= ERROR_ACTION;
     } else if (act == ACCEPT_ACTION) {
-      accept_action(grm_file, cli_options, sysgrm, &ss, rhs_sym, rulesp, &ps);
+      accept_action(grm_file, cli_options, sysgrm, &ss, rhs_sym, rulesp, &ps, symno);
       goto end;
     } else {
       // error_action
