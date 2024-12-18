@@ -5,18 +5,18 @@
 #include "common.h"
 
 // region ctabs
+const int increment = 30;
 
 struct OutputPtr {
-  char *output_ptr;
+  char **output_ptr;
+  char **output_buffer;
 };
 
-char *output_ptr = NULL;
-
 /// The following macro definitions are used only in processing the output.
-static void BUFFER_CHECK(FILE *file) {
-  if (IOBUFFER_SIZE - (output_ptr - &output_buffer[0]) < 73) {
-    fwrite(output_buffer, sizeof(char), output_ptr - &output_buffer[0], file);
-    output_ptr = &output_buffer[0];
+static void BUFFER_CHECK(FILE *file, struct OutputPtr output_ptr2) {
+  if (IOBUFFER_SIZE - ((*output_ptr2.output_ptr) - &(*output_ptr2.output_buffer)[0]) < 73) {
+    fwrite((*output_ptr2.output_buffer), sizeof(char), (*output_ptr2.output_ptr) - &(*output_ptr2.output_buffer)[0], file);
+    (*output_ptr2.output_ptr) = &(*output_ptr2.output_buffer)[0];
   }
 }
 
@@ -30,7 +30,7 @@ struct ByteTerminalRange {
 /// most 11 digits which is converted into a character string and placed in
 /// the iobuffer. Leading zeros are eliminated and if the number is
 /// negative, a leading "-" is added.
-static void itoc(const int num) {
+static void itoc(const int num, struct OutputPtr output_ptr2) {
   char tmp[12];
   long val = ABS(num);
   tmp[11] = '\0';
@@ -45,47 +45,47 @@ static void itoc(const int num) {
     *p = '-';
   }
   while (*p != '\0') {
-    *output_ptr++ = *p++;
+    *(*output_ptr2.output_ptr)++ = *p++;
   }
 }
 
-static void padline(void) {
+static void padline(struct OutputPtr output_ptr2) {
   for (int i = 0; i < 12; i++) {
-    *output_ptr++ = ' ';
+    *(*output_ptr2.output_ptr)++ = ' ';
   }
 }
 
-static void mystrcpy(const char *str, struct OutputFiles* of) {
+static void mystrcpy(const char *str, struct OutputFiles* of, struct OutputPtr output_ptr2) {
   while (*str != '\0') {
-    *output_ptr++ = *str++;
+    *(*output_ptr2.output_ptr)++ = *str++;
   }
-  BUFFER_CHECK(of->sysdcl);
-  BUFFER_CHECK(of->syssym);
+  BUFFER_CHECK(of->sysdcl, output_ptr2);
+  BUFFER_CHECK(of->syssym, output_ptr2);
 }
 
-static void prnt_longs(const char *title, const int init, const int bound, const int perline, ArrayLong array, struct CLIOptions *cli_options, struct OutputFiles* of) {
-  mystrcpy(title, of);
-  padline();
+static void prnt_longs(const char *title, const int init, const int bound, const int perline, ArrayLong array, struct CLIOptions *cli_options, struct OutputFiles* of, struct OutputPtr output_ptr2) {
+  mystrcpy(title, of, output_ptr2);
+  padline(output_ptr2);
   int k = 0;
   for (int i = init; i <= bound; i++) {
-    itoc(array.raw[i]);
-    *output_ptr++ = ',';
+    itoc(array.raw[i], output_ptr2);
+    *(*output_ptr2.output_ptr)++ = ',';
     k++;
     if (k == perline && i != bound) {
-      *output_ptr++ = '\n';
-      BUFFER_CHECK(of->sysdcl);
-      padline();
+      *(*output_ptr2.output_ptr)++ = '\n';
+      BUFFER_CHECK(of->sysdcl, output_ptr2);
+      padline(output_ptr2);
       k = 0;
     }
   }
   if (k != 0) {
-    *(output_ptr - 1) = '\n';
-    BUFFER_CHECK(of->sysdcl);
+    *((*output_ptr2.output_ptr) - 1) = '\n';
+    BUFFER_CHECK(of->sysdcl, output_ptr2);
   }
   if (cli_options->java_bit) {
-    mystrcpy("    };\n", of);
+    mystrcpy("    };\n", of, output_ptr2);
   } else {
-    mystrcpy("                 };\n", of);
+    mystrcpy("                 };\n", of, output_ptr2);
   }
 }
 
@@ -196,7 +196,7 @@ static void exit_file(FILE **file, char *file_tag, struct CLIOptions *cli_option
   }
 }
 
-static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct ByteTerminalRange* btr, struct scope_type *scope, struct SRTable* srt, ArrayLong scope_right_side, struct statset_type *statset, ArrayShort gd_index, ArrayShort gd_range, ArrayShort scope_state, struct itemtab *item_table, struct symno_type *symno, bool error_maps_bit, struct ScopeCounter* sc) {
+static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct ByteTerminalRange* btr, struct scope_type *scope, struct SRTable* srt, ArrayLong scope_right_side, struct statset_type *statset, ArrayShort gd_index, ArrayShort gd_range, ArrayShort scope_state, struct itemtab *item_table, struct symno_type *symno, bool error_maps_bit, struct ScopeCounter* sc, struct OutputPtr output_ptr2) {
   ArrayLong state_start = Allocate_long_array2(num_states + 2);
   ArrayLong state_stack = Allocate_long_array2(num_states + 1);
   PRNT("\nError maps storage:");
@@ -257,9 +257,9 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
     action_symbols_base.raw[toutput->state_list.raw[state_no]] = ABS(state_start.raw[toutput->state_list.raw[state_no]]);
   }
   if (cli_options->java_bit) {
-    prnt_longs("\n    public final static char asb[] = {0,\n", 1, num_states, 10, action_symbols_base, cli_options, of);
+    prnt_longs("\n    public final static char asb[] = {0,\n", 1, num_states, 10, action_symbols_base, cli_options, of, output_ptr2);
   } else {
-    prnt_longs("\nconst unsigned short CLASS_HEADER asb[] = {0,\n", 1, num_states, 10, action_symbols_base, cli_options, of);
+    prnt_longs("\nconst unsigned short CLASS_HEADER asb[] = {0,\n", 1, num_states, 10, action_symbols_base, cli_options, of, output_ptr2);
   }
   ffree(action_symbols_base.raw);
   // Compute and write out the range of the ACTION_SYMBOLS map.
@@ -274,15 +274,15 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
   }
   if (btr->value) {
     if (cli_options->java_bit) {
-      prnt_longs("\n    public final static byte asr[] = {0,\n", 0, offset - 2, 10, action_symbols_range, cli_options, of);
+      prnt_longs("\n    public final static byte asr[] = {0,\n", 0, offset - 2, 10, action_symbols_range, cli_options, of, output_ptr2);
     } else {
-      prnt_longs("\nconst unsigned char  CLASS_HEADER asr[] = {0,\n", 0, offset - 2, 10, action_symbols_range, cli_options, of);
+      prnt_longs("\nconst unsigned char  CLASS_HEADER asr[] = {0,\n", 0, offset - 2, 10, action_symbols_range, cli_options, of, output_ptr2);
     }
   } else {
     if (cli_options->java_bit) {
-      prnt_longs("\n    public final static char asr[] = {0,\n", 0, offset - 2, 10, action_symbols_range, cli_options, of);
+      prnt_longs("\n    public final static char asr[] = {0,\n", 0, offset - 2, 10, action_symbols_range, cli_options, of, output_ptr2);
     } else {
-      prnt_longs("\nconst unsigned short CLASS_HEADER asr[] = {0,\n", 0, offset - 2, 10, action_symbols_range, cli_options, of);
+      prnt_longs("\nconst unsigned short CLASS_HEADER asr[] = {0,\n", 0, offset - 2, 10, action_symbols_range, cli_options, of, output_ptr2);
     }
   }
   long num_bytes = 2 * num_states;
@@ -325,9 +325,9 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
     naction_symbols_base.raw[toutput->state_list.raw[state_no]] = ABS(state_start.raw[toutput->state_list.raw[state_no]]);
   }
   if (cli_options->java_bit) {
-    prnt_longs("\n    public final static char nasb[] = {0,\n", 1, num_states, 10, naction_symbols_base, cli_options, of);
+    prnt_longs("\n    public final static char nasb[] = {0,\n", 1, num_states, 10, naction_symbols_base, cli_options, of, output_ptr2);
   } else {
-    prnt_longs("\nconst unsigned short CLASS_HEADER nasb[] = {0,\n", 1, num_states, 10, naction_symbols_base, cli_options, of);
+    prnt_longs("\nconst unsigned short CLASS_HEADER nasb[] = {0,\n", 1, num_states, 10, naction_symbols_base, cli_options, of, output_ptr2);
   }
   ffree(naction_symbols_base.raw);
   // Compute and write out the range of the NACTION_SYMBOLS map.
@@ -335,9 +335,9 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
   ArrayLong naction_symbols_range = Allocate_long_array2(offset);
   compute_naction_symbols_range(state_start, state_stack, toutput->state_list, naction_symbols_range, gd_index, gd_range);
   if (cli_options->java_bit) {
-    prnt_longs("\n    public final static char nasr[] = {0,\n", 0, offset - 2, 10, naction_symbols_range, cli_options, of);
+    prnt_longs("\n    public final static char nasr[] = {0,\n", 0, offset - 2, 10, naction_symbols_range, cli_options, of, output_ptr2);
   } else {
-    prnt_longs("\nconst unsigned short CLASS_HEADER nasr[] = {0,\n", 0, offset - 2, 10, naction_symbols_range, cli_options, of );
+    prnt_longs("\nconst unsigned short CLASS_HEADER nasr[] = {0,\n", 0, offset - 2, 10, naction_symbols_range, cli_options, of, output_ptr2);
   }
   PRNT3("    Storage required for NACTION_SYMBOLS_BASE map: %ld Bytes", 2 * num_states);
   PRNT3("    Storage required for NACTION_SYMBOLS_RANGE map: %d Bytes", 2 * (offset - 1));
@@ -353,16 +353,16 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
     }
     if (num_names <= (cli_options->java_bit ? 127 : 255)) {
       if (cli_options->java_bit) {
-        prnt_longs("\n    public final static byte terminal_index[] = {0,\n", 1, num_terminals, 10, temp, cli_options, of);
+        prnt_longs("\n    public final static byte terminal_index[] = {0,\n", 1, num_terminals, 10, temp, cli_options, of, output_ptr2);
       } else {
-        prnt_longs("\nconst unsigned char  CLASS_HEADER terminal_index[] = {0,\n", 1, num_terminals, 10, temp, cli_options, of);
+        prnt_longs("\nconst unsigned char  CLASS_HEADER terminal_index[] = {0,\n", 1, num_terminals, 10, temp, cli_options, of, output_ptr2);
       }
       num_bytes = num_terminals;
     } else {
       if (cli_options->java_bit) {
-        prnt_longs("\n    public final static char terminal_index[] = {0,\n", 1, num_terminals, 10, temp, cli_options, of);
+        prnt_longs("\n    public final static char terminal_index[] = {0,\n", 1, num_terminals, 10, temp, cli_options, of, output_ptr2);
       } else {
-        prnt_longs("\nconst unsigned short CLASS_HEADER terminal_index[] = {0,\n", 1, num_terminals, 10, temp, cli_options, of);
+        prnt_longs("\nconst unsigned short CLASS_HEADER terminal_index[] = {0,\n", 1, num_terminals, 10, temp, cli_options, of, output_ptr2);
       }
       num_bytes = 2 * num_terminals;
     }
@@ -376,16 +376,16 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
     }
     if (num_names <= (cli_options->java_bit ? 127 : 255)) {
       if (cli_options->java_bit) {
-        prnt_longs("\n    public final static byte non_terminal_index[] = {0,\n", num_terminals + 1, num_symbols, 10, temp, cli_options, of);
+        prnt_longs("\n    public final static byte non_terminal_index[] = {0,\n", num_terminals + 1, num_symbols, 10, temp, cli_options, of, output_ptr2);
       } else {
-        prnt_longs("\nconst unsigned char  CLASS_HEADER non_terminal_index[] = {0,\n", num_terminals + 1, num_symbols, 10, temp, cli_options, of);
+        prnt_longs("\nconst unsigned char  CLASS_HEADER non_terminal_index[] = {0,\n", num_terminals + 1, num_symbols, 10, temp, cli_options, of, output_ptr2);
       }
       num_bytes = num_non_terminals;
     } else {
       if (cli_options->java_bit) {
-        prnt_longs("\n    public final static char non_terminal_index[] = {0,\n", num_terminals + 1, num_symbols, 10, temp, cli_options, of);
+        prnt_longs("\n    public final static char non_terminal_index[] = {0,\n", num_terminals + 1, num_symbols, 10, temp, cli_options, of, output_ptr2);
       } else {
-        prnt_longs("\nconst unsigned short CLASS_HEADER non_terminal_index[] = {0,\n", num_terminals + 1, num_symbols, 10, temp, cli_options, of);
+        prnt_longs("\nconst unsigned short CLASS_HEADER non_terminal_index[] = {0,\n", num_terminals + 1, num_symbols, 10, temp, cli_options, of, output_ptr2);
       }
       num_bytes = 2 * num_non_terminals;
     }
@@ -397,24 +397,24 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
     }
     if (num_names <= (cli_options->java_bit ? 127 : 255)) {
       if (cli_options->java_bit) {
-        prnt_longs("\n    public final static byte symbol_index[] = {0,\n", 1, num_symbols, 10, temp, cli_options, of);
-        mystrcpy("    public final static byte terminal_index[] = symbol_index;\n", of);
-        mystrcpy("    public final static byte non_terminal_index[] = symbol_index;\n", of);
+        prnt_longs("\n    public final static byte symbol_index[] = {0,\n", 1, num_symbols, 10, temp, cli_options, of, output_ptr2);
+        mystrcpy("    public final static byte terminal_index[] = symbol_index;\n", of, output_ptr2);
+        mystrcpy("    public final static byte non_terminal_index[] = symbol_index;\n", of, output_ptr2);
       } else {
-        prnt_longs("\nconst unsigned char  CLASS_HEADER symbol_index[] = {0,\n", 1, num_symbols, 10, temp, cli_options, of);
-        mystrcpy("const unsigned char  *CLASS_HEADER terminal_index[] = &(symbol_index[0]);\n", of);
-        mystrcpy("const unsigned char  *CLASS_HEADER non_terminal_index[] = &(symbol_index[0]);\n", of);
+        prnt_longs("\nconst unsigned char  CLASS_HEADER symbol_index[] = {0,\n", 1, num_symbols, 10, temp, cli_options, of, output_ptr2);
+        mystrcpy("const unsigned char  *CLASS_HEADER terminal_index[] = &(symbol_index[0]);\n", of, output_ptr2);
+        mystrcpy("const unsigned char  *CLASS_HEADER non_terminal_index[] = &(symbol_index[0]);\n", of, output_ptr2);
       }
       num_bytes = num_symbols;
     } else {
       if (cli_options->java_bit) {
-        prnt_longs("\n    public final static char symbol_index[] = {0,\n", 1, num_symbols, 10, temp, cli_options, of);
-        mystrcpy("    public final static char terminal_index[] = symbol_index[0];\n", of);
-        mystrcpy("    public final static char non_terminal_index[] = symbol_index;\n", of);
+        prnt_longs("\n    public final static char symbol_index[] = {0,\n", 1, num_symbols, 10, temp, cli_options, of, output_ptr2);
+        mystrcpy("    public final static char terminal_index[] = symbol_index[0];\n", of, output_ptr2);
+        mystrcpy("    public final static char non_terminal_index[] = symbol_index;\n", of, output_ptr2);
       } else {
-        prnt_longs("\nconst unsigned short CLASS_HEADER symbol_index[] = {0,\n", 1, num_symbols, 10, temp, cli_options, of);
-        mystrcpy("const unsigned short *CLASS_HEADER terminal_index[] = &(symbol_index[0]);\n", of);
-        mystrcpy("const unsigned short *CLASS_HEADER non_terminal_index[] = &(symbol_index[0]);\n", of);
+        prnt_longs("\nconst unsigned short CLASS_HEADER symbol_index[] = {0,\n", 1, num_symbols, 10, temp, cli_options, of, output_ptr2);
+        mystrcpy("const unsigned short *CLASS_HEADER terminal_index[] = &(symbol_index[0]);\n", of, output_ptr2);
+        mystrcpy("const unsigned short *CLASS_HEADER non_terminal_index[] = &(symbol_index[0]);\n", of, output_ptr2);
       }
       num_bytes = 2 * num_symbols;
     }
@@ -459,7 +459,7 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
     // Print java names.
     long num_bytes = 0;
     long max_name_length = 0;
-    mystrcpy("\n    public final static String name[] = { null,\n", of);
+    mystrcpy("\n    public final static String name[] = { null,\n", of, output_ptr2);
     for (int i = 1; i <= num_names; i++) {
       char tok[SYMBOL_SIZE + 1];
       strcpy(tok, RETRIEVE_NAME(i));
@@ -468,41 +468,41 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
       if (max_name_length < len) {
         max_name_length = len;
       }
-      padline();
-      *output_ptr++ = '\"';
+      padline(output_ptr2);
+      *(*output_ptr2.output_ptr)++ = '\"';
       int k = 0;
       for (int j = 0; j < len; j++) {
         if (tok[j] == '\"' || tok[j] == '\\') {
-          *output_ptr++ = '\\';
+          *(*output_ptr2.output_ptr)++ = '\\';
         }
         if (tok[j] == '\n') {
-          *output_ptr++ = cli_options->escape;
+          *(*output_ptr2.output_ptr)++ = cli_options->escape;
         } else {
-          *output_ptr++ = tok[j];
+          *(*output_ptr2.output_ptr)++ = tok[j];
         }
         k++;
         if (k == 30 && j != len - 1) {
           k = 0;
-          *output_ptr++ = '\"';
-          *output_ptr++ = ' ';
-          *output_ptr++ = '+';
-          *output_ptr++ = '\n';
-          BUFFER_CHECK(of->sysdcl);
-          padline();
-          *output_ptr++ = '\"';
+          *(*output_ptr2.output_ptr)++ = '\"';
+          *(*output_ptr2.output_ptr)++ = ' ';
+          *(*output_ptr2.output_ptr)++ = '+';
+          *(*output_ptr2.output_ptr)++ = '\n';
+          BUFFER_CHECK(of->sysdcl, output_ptr2);
+          padline(output_ptr2);
+          *(*output_ptr2.output_ptr)++ = '\"';
         }
       }
-      *output_ptr++ = '\"';
+      *(*output_ptr2.output_ptr)++ = '\"';
       if (i < num_names) {
-        *output_ptr++ = ',';
+        *(*output_ptr2.output_ptr)++ = ',';
       }
-      *output_ptr++ = '\n';
-      BUFFER_CHECK(of->sysdcl);
+      *(*output_ptr2.output_ptr)++ = '\n';
+      BUFFER_CHECK(of->sysdcl, output_ptr2);
     }
     if (cli_options->java_bit) {
-      mystrcpy("    };\n", of);
+      mystrcpy("    };\n", of, output_ptr2);
     } else {
-      mystrcpy("                          };\n", of);
+      mystrcpy("                          };\n", of, output_ptr2);
     }
     // Compute and list space required for STRING_BUFFER map.
     PRNT3("    Storage required for STRING_BUFFER map: %ld Bytes", num_bytes);
@@ -511,9 +511,9 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
     ArrayLong name_len = Allocate_long_array2(num_names + 1);
     long num_bytes = 0;
     long max_name_length = 0;
-    mystrcpy("\nconst char  CLASS_HEADER string_buffer[] = {0,\n", of);
+    mystrcpy("\nconst char  CLASS_HEADER string_buffer[] = {0,\n", of, output_ptr2);
     int n = 0;
-    padline();
+    padline(output_ptr2);
     for (int i = 1; i <= num_names; i++) {
       char tok[SYMBOL_SIZE + 1];
       strcpy(tok, RETRIEVE_NAME(i));
@@ -524,66 +524,66 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
       }
       int k = 0;
       for (int j = 0; j < name_len.raw[i]; j++) {
-        *output_ptr++ = '\'';
+        *(*output_ptr2.output_ptr)++ = '\'';
         if (tok[k] == '\'' || tok[k] == '\\') {
-          *output_ptr++ = '\\';
+          *(*output_ptr2.output_ptr)++ = '\\';
         }
         if (tok[k] == '\n') {
-          *output_ptr++ = cli_options->escape;
+          *(*output_ptr2.output_ptr)++ = cli_options->escape;
         } else {
-          *output_ptr++ = tok[k];
+          *(*output_ptr2.output_ptr)++ = tok[k];
         }
         k++;
-        *output_ptr++ = '\'';
-        *output_ptr++ = ',';
+        *(*output_ptr2.output_ptr)++ = '\'';
+        *(*output_ptr2.output_ptr)++ = ',';
         n++;
         if (n == 10 && !(i == num_names && j == name_len.raw[i] - 1)) {
           n = 0;
-          *output_ptr++ = '\n';
-          BUFFER_CHECK(of->sysdcl);
-          padline();
+          *(*output_ptr2.output_ptr)++ = '\n';
+          BUFFER_CHECK(of->sysdcl, output_ptr2);
+          padline(output_ptr2);
         }
       }
     }
-    *(output_ptr - 1) = '\n'; /*overwrite last comma*/
-    BUFFER_CHECK(of->sysdcl);
+    *((*output_ptr2.output_ptr) - 1) = '\n'; /*overwrite last comma*/
+    BUFFER_CHECK(of->sysdcl, output_ptr2);
     if (cli_options->java_bit) {
-      mystrcpy("    };\n", of);
+      mystrcpy("    };\n", of, output_ptr2);
     } else {
-      mystrcpy("                          };\n", of);
+      mystrcpy("                          };\n", of, output_ptr2);
     }
     // Compute and list space required for STRING_BUFFER map.
     PRNT3("    Storage required for STRING_BUFFER map: %ld Bytes", num_bytes);
     // Write out NAME_START array
-    mystrcpy("\nconst unsigned short CLASS_HEADER name_start[] = {0,\n", of);
-    padline();
+    mystrcpy("\nconst unsigned short CLASS_HEADER name_start[] = {0,\n", of, output_ptr2);
+    padline(output_ptr2);
     int j = 1;
     int k = 0;
     for (int i = 1; i <= num_names; i++) {
-      itoc(j);
-      *output_ptr++ = ',';
+      itoc(j, output_ptr2);
+      *(*output_ptr2.output_ptr)++ = ',';
       j += name_len.raw[i];
       k++;
       if (k == 10 && i != num_names) {
-        *output_ptr++ = '\n';
-        BUFFER_CHECK(of->sysdcl);
-        padline();
+        *(*output_ptr2.output_ptr)++ = '\n';
+        BUFFER_CHECK(of->sysdcl, output_ptr2);
+        padline(output_ptr2);
         k = 0;
       }
     }
     if (k != 0) {
-      *(output_ptr - 1) = '\n';
-      BUFFER_CHECK(of->sysdcl);
+      *((*output_ptr2.output_ptr) - 1) = '\n';
+      BUFFER_CHECK(of->sysdcl, output_ptr2);
     }
     if (cli_options->java_bit) {
-      mystrcpy("    };\n", of );
+      mystrcpy("    };\n", of, output_ptr2);
     } else {
-      mystrcpy("                          };\n", of);
+      mystrcpy("                          };\n", of, output_ptr2);
     }
     // Compute and list space required for NAME_START map.
     PRNT3("    Storage required for NAME_START map: %ld Bytes", 2 * num_names);
     // Write out NAME_LENGTH array
-    prnt_longs("\nconst unsigned char  CLASS_HEADER name_length[] = {0,\n", 1, num_names, 10, name_len, cli_options, of);
+    prnt_longs("\nconst unsigned char  CLASS_HEADER name_length[] = {0,\n", 1, num_names, 10, name_len, cli_options, of, output_ptr2);
     // Compute and list space required for NAME_LENGTH map.
     PRNT3("    Storage required for NAME_LENGTH map: %ld Bytes", num_names);
     ffree(name_len.raw);
@@ -591,240 +591,240 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
   if (sc->num_scopes > 0) {
     if (sc->scope_rhs_size <= (cli_options->java_bit ? 127 : 255)) {
       if (cli_options->java_bit) {
-        mystrcpy("\n    public final static byte scope_prefix[] = {\n", of);
+        mystrcpy("\n    public final static byte scope_prefix[] = {\n", of, output_ptr2);
       } else {
-        mystrcpy("\nconst unsigned char  CLASS_HEADER scope_prefix[] = {\n", of);
+        mystrcpy("\nconst unsigned char  CLASS_HEADER scope_prefix[] = {\n", of, output_ptr2);
       }
     } else {
       if (cli_options->java_bit) {
-        mystrcpy("\n    public final static char scope_prefix[] = {\n", of);
+        mystrcpy("\n    public final static char scope_prefix[] = {\n", of, output_ptr2);
       } else {
-        mystrcpy("\nconst unsigned short CLASS_HEADER scope_prefix[] = {\n", of);
+        mystrcpy("\nconst unsigned short CLASS_HEADER scope_prefix[] = {\n", of, output_ptr2);
       }
     }
-    padline();
+    padline(output_ptr2);
     int k = 0;
     for (int i = 1; i <= sc->num_scopes; i++) {
-      itoc(scope[i].prefix);
-      *output_ptr++ = ',';
+      itoc(scope[i].prefix, output_ptr2);
+      *(*output_ptr2.output_ptr)++ = ',';
       k++;
       if (k == 10 && i != sc->num_scopes) {
-        *output_ptr++ = '\n';
-        BUFFER_CHECK(of->sysdcl);
-        padline();
+        *(*output_ptr2.output_ptr)++ = '\n';
+        BUFFER_CHECK(of->sysdcl, output_ptr2);
+        padline(output_ptr2);
         k = 0;
       }
     }
     if (k != 0) {
-      *(output_ptr - 1) = '\n';
-      BUFFER_CHECK(of->sysdcl);
+      *((*output_ptr2.output_ptr) - 1) = '\n';
+      BUFFER_CHECK(of->sysdcl, output_ptr2);
     }
     if (cli_options->java_bit) {
-      mystrcpy("    };\n", of);
+      mystrcpy("    };\n", of, output_ptr2);
     } else {
-      mystrcpy("                          };\n", of);
+      mystrcpy("                          };\n", of, output_ptr2);
     }
     if (sc->scope_rhs_size <= (cli_options->java_bit ? 127 : 255)) {
       if (cli_options->java_bit) {
-        mystrcpy("\n    public final static byte scope_suffix[] = {\n", of);
+        mystrcpy("\n    public final static byte scope_suffix[] = {\n", of, output_ptr2);
       } else {
-        mystrcpy("\nconst unsigned char  CLASS_HEADER scope_suffix[] = {\n", of);
+        mystrcpy("\nconst unsigned char  CLASS_HEADER scope_suffix[] = {\n", of, output_ptr2);
       }
     } else {
       if (cli_options->java_bit) {
-        mystrcpy("\n    public final static char scope_suffix[] = {\n", of);
+        mystrcpy("\n    public final static char scope_suffix[] = {\n", of, output_ptr2);
       } else {
-        mystrcpy("\nconst unsigned short CLASS_HEADER scope_suffix[] = {\n", of);
+        mystrcpy("\nconst unsigned short CLASS_HEADER scope_suffix[] = {\n", of, output_ptr2);
       }
     }
-    padline();
+    padline(output_ptr2);
     k = 0;
     for (int i = 1; i <= sc->num_scopes; i++) {
-      itoc(scope[i].suffix);
-      *output_ptr++ = ',';
+      itoc(scope[i].suffix, output_ptr2);
+      *(*output_ptr2.output_ptr)++ = ',';
       k++;
       if (k == 10 && i != sc->num_scopes) {
-        *output_ptr++ = '\n';
-        BUFFER_CHECK(of->sysdcl);
-        padline();
+        *(*output_ptr2.output_ptr)++ = '\n';
+        BUFFER_CHECK(of->sysdcl, output_ptr2);
+        padline(output_ptr2);
         k = 0;
       }
     }
     if (k != 0) {
-      *(output_ptr - 1) = '\n';
-      BUFFER_CHECK(of->sysdcl);
+      *((*output_ptr2.output_ptr) - 1) = '\n';
+      BUFFER_CHECK(of->sysdcl, output_ptr2);
     }
     if (cli_options->java_bit) {
-      mystrcpy("    };\n", of);
+      mystrcpy("    };\n", of, output_ptr2);
     } else {
-      mystrcpy("                          };\n", of);
+      mystrcpy("                          };\n", of, output_ptr2);
     }
     if (num_symbols <= (cli_options->java_bit ? 127 : 255)) {
       if (cli_options->java_bit) {
-        mystrcpy("\n    public final static byte scope_lhs[] = {\n", of);
+        mystrcpy("\n    public final static byte scope_lhs[] = {\n", of, output_ptr2);
       } else {
-        mystrcpy("\nconst unsigned char  CLASS_HEADER scope_lhs[] = {\n", of);
+        mystrcpy("\nconst unsigned char  CLASS_HEADER scope_lhs[] = {\n", of, output_ptr2);
       }
     } else {
       if (cli_options->java_bit) {
-        mystrcpy("\n    public final static char scope_lhs[] = {\n", of);
+        mystrcpy("\n    public final static char scope_lhs[] = {\n", of, output_ptr2);
       } else {
-        mystrcpy("\nconst unsigned short CLASS_HEADER scope_lhs[] = {\n", of);
+        mystrcpy("\nconst unsigned short CLASS_HEADER scope_lhs[] = {\n", of, output_ptr2);
       }
     }
-    padline();
+    padline(output_ptr2);
     k = 0;
     for (int i = 1; i <= sc->num_scopes; i++) {
-      itoc(scope[i].lhs_symbol);
-      *output_ptr++ = ',';
+      itoc(scope[i].lhs_symbol, output_ptr2);
+      *(*output_ptr2.output_ptr)++ = ',';
       k++;
       if (k == 10 && i != sc->num_scopes) {
-        *output_ptr++ = '\n';
-        BUFFER_CHECK(of->sysdcl);
-        padline();
+        *(*output_ptr2.output_ptr)++ = '\n';
+        BUFFER_CHECK(of->sysdcl, output_ptr2);
+        padline(output_ptr2);
         k = 0;
       }
     }
     if (k != 0) {
-      *(output_ptr - 1) = '\n';
-      BUFFER_CHECK(of->sysdcl);
+      *((*output_ptr2.output_ptr) - 1) = '\n';
+      BUFFER_CHECK(of->sysdcl, output_ptr2);
     }
     if (cli_options->java_bit) {
-      mystrcpy("    };\n", of);
+      mystrcpy("    };\n", of, output_ptr2);
     } else {
-      mystrcpy("                          };\n", of);
+      mystrcpy("                          };\n", of, output_ptr2);
     }
     if (num_terminals <= (cli_options->java_bit ? 127 : 255)) {
       if (cli_options->java_bit) {
-        mystrcpy("\n    public final static byte scope_la[] = {\n", of);
+        mystrcpy("\n    public final static byte scope_la[] = {\n", of, output_ptr2);
       } else {
-        mystrcpy("\nconst unsigned char  CLASS_HEADER scope_la[] = {\n", of);
+        mystrcpy("\nconst unsigned char  CLASS_HEADER scope_la[] = {\n", of, output_ptr2);
       }
     } else {
       if (cli_options->java_bit) {
-        mystrcpy("\n    public final static char scope_la[] = {\n", of);
+        mystrcpy("\n    public final static char scope_la[] = {\n", of, output_ptr2);
       } else {
-        mystrcpy("\nconst unsigned short CLASS_HEADER scope_la[] = {\n", of);
+        mystrcpy("\nconst unsigned short CLASS_HEADER scope_la[] = {\n", of, output_ptr2);
       }
     }
-    padline();
+    padline(output_ptr2);
     k = 0;
     for (int i = 1; i <= sc->num_scopes; i++) {
-      itoc(scope[i].look_ahead);
-      *output_ptr++ = ',';
+      itoc(scope[i].look_ahead, output_ptr2);
+      *(*output_ptr2.output_ptr)++ = ',';
       k++;
       if (k == 10 && i != sc->num_scopes) {
-        *output_ptr++ = '\n';
-        BUFFER_CHECK(of->sysdcl);
-        padline();
+        *(*output_ptr2.output_ptr)++ = '\n';
+        BUFFER_CHECK(of->sysdcl, output_ptr2);
+        padline(output_ptr2);
         k = 0;
       }
     }
     if (k != 0) {
-      *(output_ptr - 1) = '\n';
-      BUFFER_CHECK(of->sysdcl);
+      *((*output_ptr2.output_ptr) - 1) = '\n';
+      BUFFER_CHECK(of->sysdcl, output_ptr2);
     }
     if (cli_options->java_bit) {
-      mystrcpy("    };\n", of);
+      mystrcpy("    };\n", of, output_ptr2);
     } else {
-      mystrcpy("                          };\n", of);
+      mystrcpy("                          };\n", of, output_ptr2);
     }
     if (sc->scope_state_size <= (cli_options->java_bit ? 127 : 255)) {
       if (cli_options->java_bit) {
-        mystrcpy("\n    public final static byte scope_state_set[] = {\n", of);
+        mystrcpy("\n    public final static byte scope_state_set[] = {\n", of, output_ptr2);
       } else {
-        mystrcpy("\nconst unsigned char  CLASS_HEADER scope_state_set[] = {\n", of);
+        mystrcpy("\nconst unsigned char  CLASS_HEADER scope_state_set[] = {\n", of, output_ptr2);
       }
     } else {
       if (cli_options->java_bit) {
-        mystrcpy("\n    public final static char scope_state_set[] = {\n", of);
+        mystrcpy("\n    public final static char scope_state_set[] = {\n", of, output_ptr2);
       } else {
-        mystrcpy("\nconst unsigned short CLASS_HEADER scope_state_set[] = {\n", of);
+        mystrcpy("\nconst unsigned short CLASS_HEADER scope_state_set[] = {\n", of, output_ptr2);
       }
     }
-    padline();
+    padline(output_ptr2);
     k = 0;
     for (int i = 1; i <= sc->num_scopes; i++) {
-      itoc(scope[i].state_set);
-      *output_ptr++ = ',';
+      itoc(scope[i].state_set, output_ptr2);
+      *(*output_ptr2.output_ptr)++ = ',';
       k++;
       if (k == 10 && i != sc->num_scopes) {
-        *output_ptr++ = '\n';
-        BUFFER_CHECK(of->sysdcl);
-        padline();
+        *(*output_ptr2.output_ptr)++ = '\n';
+        BUFFER_CHECK(of->sysdcl, output_ptr2);
+        padline(output_ptr2);
         k = 0;
       }
     }
     if (k != 0) {
-      *(output_ptr - 1) = '\n';
-      BUFFER_CHECK(of->sysdcl);
+      *((*output_ptr2.output_ptr) - 1) = '\n';
+      BUFFER_CHECK(of->sysdcl, output_ptr2);
     }
     if (cli_options->java_bit) {
-      mystrcpy("    };\n", of);
+      mystrcpy("    };\n", of, output_ptr2);
     } else {
-      mystrcpy("                          };\n", of);
+      mystrcpy("                          };\n", of, output_ptr2);
     }
     if (num_symbols <= (cli_options->java_bit ? 127 : 255)) {
       if (cli_options->java_bit) {
-        prnt_longs("\n    public final static byte scope_rhs[] = {0,\n", 1, sc->scope_rhs_size, 10, scope_right_side, cli_options, of);
+        prnt_longs("\n    public final static byte scope_rhs[] = {0,\n", 1, sc->scope_rhs_size, 10, scope_right_side, cli_options, of, output_ptr2);
       } else {
-        prnt_longs("\nconst unsigned char  CLASS_HEADER scope_rhs[] = {0,\n", 1, sc->scope_rhs_size, 10, scope_right_side, cli_options, of);
+        prnt_longs("\nconst unsigned char  CLASS_HEADER scope_rhs[] = {0,\n", 1, sc->scope_rhs_size, 10, scope_right_side, cli_options, of, output_ptr2);
       }
     } else {
       if (cli_options->java_bit) {
-        prnt_longs("\n    public final static char scope_rhs[] = {0,\n", 1, sc->scope_rhs_size, 10, scope_right_side, cli_options, of);
+        prnt_longs("\n    public final static char scope_rhs[] = {0,\n", 1, sc->scope_rhs_size, 10, scope_right_side, cli_options, of, output_ptr2);
       } else {
-        prnt_longs("\nconst unsigned short CLASS_HEADER scope_rhs[] = {0,\n", 1, sc->scope_rhs_size, 10, scope_right_side, cli_options, of);
+        prnt_longs("\nconst unsigned short CLASS_HEADER scope_rhs[] = {0,\n", 1, sc->scope_rhs_size, 10, scope_right_side, cli_options, of, output_ptr2);
       }
     }
     if (cli_options->java_bit) {
-      mystrcpy("\n    public final static char scope_state[] = {0,\n", of);
+      mystrcpy("\n    public final static char scope_state[] = {0,\n", of, output_ptr2);
     } else {
-      mystrcpy("\nconst unsigned short CLASS_HEADER scope_state[] = {0,\n", of);
+      mystrcpy("\nconst unsigned short CLASS_HEADER scope_state[] = {0,\n", of, output_ptr2);
     }
-    padline();
+    padline(output_ptr2);
     k = 0;
     for (int i = 1; i <= sc->scope_state_size; i++) {
       if (scope_state.raw[i] == 0) {
-        itoc(0);
+        itoc(0, output_ptr2);
       } else {
-        itoc(toutput->state_index.raw[scope_state.raw[i]] + num_rules);
+        itoc(toutput->state_index.raw[scope_state.raw[i]] + num_rules, output_ptr2);
       }
-      *output_ptr++ = ',';
+      *(*output_ptr2.output_ptr)++ = ',';
       k++;
       if (k == 10 && i != sc->scope_state_size) {
-        *output_ptr++ = '\n';
-        BUFFER_CHECK(of->sysdcl);
-        padline();
+        *(*output_ptr2.output_ptr)++ = '\n';
+        BUFFER_CHECK(of->sysdcl, output_ptr2);
+        padline(output_ptr2);
         k = 0;
       }
     }
     if (k != 0) {
-      *(output_ptr - 1) = '\n';
-      BUFFER_CHECK(of->sysdcl);
+      *((*output_ptr2.output_ptr) - 1) = '\n';
+      BUFFER_CHECK(of->sysdcl, output_ptr2);
     }
     if (cli_options->java_bit) {
-      mystrcpy("    };\n", of);
+      mystrcpy("    };\n", of, output_ptr2);
     } else {
-      mystrcpy("                          };\n", of);
+      mystrcpy("                          };\n", of, output_ptr2);
     }
     if (num_symbols <= (cli_options->java_bit ? 127 : 255)) {
       if (cli_options->java_bit) {
-        mystrcpy("\n    public final static byte in_symb[] = {0,\n", of);
+        mystrcpy("\n    public final static byte in_symb[] = {0,\n", of, output_ptr2);
       } else {
-        mystrcpy("\nconst unsigned char  CLASS_HEADER in_symb[] = {0,\n", of);
+        mystrcpy("\nconst unsigned char  CLASS_HEADER in_symb[] = {0,\n", of, output_ptr2);
       }
     } else {
       if (cli_options->java_bit) {
-        mystrcpy("\n    public final static char in_symb[] = {0,\n", of);
+        mystrcpy("\n    public final static char in_symb[] = {0,\n", of, output_ptr2);
       } else {
-        mystrcpy("\nconst unsigned short CLASS_HEADER in_symb[] = {0,\n", of);
+        mystrcpy("\nconst unsigned short CLASS_HEADER in_symb[] = {0,\n", of, output_ptr2);
       }
     }
     // Transition symbol
-    padline();
-    *output_ptr++ = '0';
-    *output_ptr++ = ',';
+    padline(output_ptr2);
+    *(*output_ptr2.output_ptr)++ = '0';
+    *(*output_ptr2.output_ptr)++ = ',';
     k = 1;
     for (int state_no = 2; state_no <= num_states; state_no++) {
       struct node *q;
@@ -837,36 +837,36 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
       } else {
         i = 0;
       }
-      itoc(toutput->symbol_map.raw[i]);
-      *output_ptr++ = ',';
+      itoc(toutput->symbol_map.raw[i], output_ptr2);
+      *(*output_ptr2.output_ptr)++ = ',';
       k++;
       if (k == 10 && state_no != num_states) {
-        *output_ptr++ = '\n';
-        BUFFER_CHECK(of->sysdcl);
-        padline();
+        *(*output_ptr2.output_ptr)++ = '\n';
+        BUFFER_CHECK(of->sysdcl, output_ptr2);
+        padline(output_ptr2);
         k = 0;
       }
     }
     if (k != 0) {
-      *(output_ptr - 1) = '\n';
-      BUFFER_CHECK(of->sysdcl);
+      *((*output_ptr2.output_ptr) - 1) = '\n';
+      BUFFER_CHECK(of->sysdcl, output_ptr2);
     }
     if (cli_options->java_bit) {
-      mystrcpy("    };\n", of);
+      mystrcpy("    };\n", of, output_ptr2);
     } else {
-      mystrcpy("                          };\n", of);
+      mystrcpy("                          };\n", of, output_ptr2);
     }
   }
 }
 
-static void common(const bool byte_check_bit, struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ArrayLong scope_right_side, struct statset_type *statset, ArrayShort gd_index, ArrayShort gd_range, ArrayShort scope_state, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer) {
+static void common(const bool byte_check_bit, struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ArrayLong scope_right_side, struct statset_type *statset, ArrayShort gd_index, ArrayShort gd_range, ArrayShort scope_state, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer, struct OutputPtr output_ptr2) {
   struct ByteTerminalRange btr = (struct ByteTerminalRange) {
     .value = true
   };
   // Write table common.
   {
     if (cli_options->error_maps_bit) {
-      print_error_maps(cli_options, toutput, dss, ctp, of, &btr, scope, srt, scope_right_side, statset, gd_index, gd_range, scope_state, item_table, symno, cli_options->error_maps_bit, sc);
+      print_error_maps(cli_options, toutput, dss, ctp, of, &btr, scope, srt, scope_right_side, statset, gd_index, gd_range, scope_state, item_table, symno, cli_options->error_maps_bit, sc, output_ptr2);
     }
     if (byte_check_bit) {
       // Do nothing.
@@ -887,9 +887,9 @@ static void common(const bool byte_check_bit, struct CLIOptions *cli_options, st
       }
     }
     if (cli_options->java_bit) {
-      mystrcpy("}\n", of);
+      mystrcpy("}\n", of, output_ptr2);
     }
-    fwrite(output_buffer, sizeof(char), output_ptr - &output_buffer[0], of->sysdcl);
+    fwrite(output_buffer, sizeof(char), (*output_ptr2.output_ptr) - &output_buffer[0], of->sysdcl);
   }
 
   // Print symbols.
@@ -1746,7 +1746,14 @@ void reallocate(struct CLIOptions *cli_options, struct CTabsProps* ctp, struct N
   np->previous.raw[ia->last_index] = ia->last_index - 1;
 }
 
-void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, ArrayLong term_state_index, ArrayLong shift_check_index, struct CTabsProps* ctp, struct new_state_type *new_state_element, ArrayShort shift_image, ArrayShort real_shift_number, struct OutputFiles* of, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ArrayLong scope_right_side, ArrayShort shiftdf, ArrayLong gotodef, ArrayShort gd_index, ArrayShort gd_range, struct ruletab_type *rules, ArrayShort scope_state, struct statset_type *statset, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer)  {
+void populate_start_file(FILE **file, char *file_tag, struct CLIOptions *cli_options) {
+  if (cli_options->c_bit || cli_options->cpp_bit) {
+    fprintf(*file, "#ifndef %s_INCLUDED\n", file_tag);
+    fprintf(*file, "#define %s_INCLUDED\n\n", file_tag);
+  }
+}
+
+void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, ArrayLong term_state_index, ArrayLong shift_check_index, struct CTabsProps* ctp, struct new_state_type *new_state_element, ArrayShort shift_image, ArrayShort real_shift_number, struct OutputFiles* of, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ArrayLong scope_right_side, ArrayShort shiftdf, ArrayLong gotodef, ArrayShort gd_index, ArrayShort gd_range, struct ruletab_type *rules, ArrayShort scope_state, struct statset_type *statset, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer, struct OutputPtr output_ptr2)  {
   bool byte_check_bit = true;
   populate_start_file(&of->sysdcl, of->dcl_tag, cli_options);
   populate_start_file(&of->syssym, of->sym_tag, cli_options);
@@ -1761,7 +1768,7 @@ void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* tout
   int shift_reduce_count = 0;
   ArrayLong check = Allocate_long_array2(ctp->table_size + 1);
   ArrayLong action = Allocate_long_array2(ctp->table_size + 1);
-  output_ptr = &output_buffer[0];
+  (*output_ptr2.output_ptr) = &output_buffer[0];
   // Prepare header card with proper information, and write it out.
   long offset = ia->error_act;
   long la_state_offset;
@@ -1843,118 +1850,118 @@ void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* tout
     }
   }
   if (cli_options->c_bit) {
-    mystrcpy("\n#define CLASS_HEADER\n\n", of);
+    mystrcpy("\n#define CLASS_HEADER\n\n", of, output_ptr2);
   } else if (cli_options->cpp_bit) {
-    mystrcpy("\n#define CLASS_HEADER ", of);
-    mystrcpy(of->prs_tag, of);
-    mystrcpy("_table::\n\n", of);
+    mystrcpy("\n#define CLASS_HEADER ", of, output_ptr2);
+    mystrcpy(of->prs_tag, of, output_ptr2);
+    mystrcpy("_table::\n\n", of, output_ptr2);
   } else {
-    mystrcpy("abstract class ", of);
-    mystrcpy(of->dcl_tag, of);
-    mystrcpy(" implements ", of);
-    mystrcpy(of->def_tag, of);
-    mystrcpy("\n{\n", of);
+    mystrcpy("abstract class ", of, output_ptr2);
+    mystrcpy(of->dcl_tag, of, output_ptr2);
+    mystrcpy(" implements ", of, output_ptr2);
+    mystrcpy(of->def_tag, of, output_ptr2);
+    mystrcpy("\n{\n", of, output_ptr2);
   }
   // Write size of right hand side of rules followed by CHECK table.
   if (cli_options->java_bit) {
-    mystrcpy("    public final static byte rhs[] = {0,\n", of);
+    mystrcpy("    public final static byte rhs[] = {0,\n", of, output_ptr2);
   } else {
-    mystrcpy("const unsigned char  CLASS_HEADER rhs[] = {0,\n", of);
+    mystrcpy("const unsigned char  CLASS_HEADER rhs[] = {0,\n", of, output_ptr2);
   }
-  padline();
+  padline(output_ptr2);
   int k = 0;
   for (int i = 1; i <= num_rules; i++) {
     k++;
     if (k > 15) {
-      *output_ptr++ = '\n';
-      BUFFER_CHECK(of->sysdcl);
-      padline();
+      *(*output_ptr2.output_ptr)++ = '\n';
+      BUFFER_CHECK(of->sysdcl, output_ptr2);
+      padline(output_ptr2);
       k = 1;
     }
-    itoc(RHS_SIZE(i, rules));
-    *output_ptr++ = ',';
+    itoc(RHS_SIZE(i, rules), output_ptr2);
+    *(*output_ptr2.output_ptr)++ = ',';
   }
-  *(output_ptr - 1) = '\n';
-  BUFFER_CHECK(of->sysdcl);
+  *((*output_ptr2.output_ptr) - 1) = '\n';
+  BUFFER_CHECK(of->sysdcl, output_ptr2);
   if (cli_options->java_bit) {
-    mystrcpy("    };\n", of);
+    mystrcpy("    };\n", of, output_ptr2);
   } else {
-    mystrcpy("                 };\n", of);
+    mystrcpy("                 };\n", of, output_ptr2);
   }
-  *output_ptr++ = '\n';
+  *(*output_ptr2.output_ptr)++ = '\n';
   if (ctp->check_size > 0) {
     if (byte_check_bit && !cli_options->error_maps_bit) {
       if (cli_options->java_bit) {
-        mystrcpy("    public final static byte check_table[] = {\n", of);
+        mystrcpy("    public final static byte check_table[] = {\n", of, output_ptr2);
       } else {
-        mystrcpy("const unsigned char  CLASS_HEADER check_table[] = {\n", of);
+        mystrcpy("const unsigned char  CLASS_HEADER check_table[] = {\n", of, output_ptr2);
       }
     } else {
       if (cli_options->java_bit) {
-        mystrcpy("    public final static short check_table[] = {\n", of);
+        mystrcpy("    public final static short check_table[] = {\n", of, output_ptr2);
       } else {
-        mystrcpy("const   signed short CLASS_HEADER check_table[] = {\n", of);
+        mystrcpy("const   signed short CLASS_HEADER check_table[] = {\n", of, output_ptr2);
       }
     }
-    padline();
+    padline(output_ptr2);
     k = 0;
     for (int i = 1; i <= ctp->check_size; i++) {
       k++;
       if (k > 10) {
-        *output_ptr++ = '\n';
-        BUFFER_CHECK(of->sysdcl);
-        padline();
+        *(*output_ptr2.output_ptr)++ = '\n';
+        BUFFER_CHECK(of->sysdcl, output_ptr2);
+        padline(output_ptr2);
         k = 1;
       }
-      itoc(check.raw[i]);
-      *output_ptr++ = ',';
+      itoc(check.raw[i], output_ptr2);
+      *(*output_ptr2.output_ptr)++ = ',';
     }
-    *(output_ptr - 1) = '\n';
-    BUFFER_CHECK(of->sysdcl);
+    *((*output_ptr2.output_ptr) - 1) = '\n';
+    BUFFER_CHECK(of->sysdcl, output_ptr2);
     if (cli_options->java_bit) {
-      mystrcpy("    };\n", of);
+      mystrcpy("    };\n", of, output_ptr2);
     } else {
-      mystrcpy("                 };\n", of);
+      mystrcpy("                 };\n", of, output_ptr2);
     }
-    *output_ptr++ = '\n';
+    *(*output_ptr2.output_ptr)++ = '\n';
     if (byte_check_bit && !cli_options->error_maps_bit) {
       if (cli_options->java_bit) {
-        mystrcpy("    public final static byte base_check(int i)\n    {\n        return check_table[i - (NUM_RULES + 1)];\n    }\n", of);
+        mystrcpy("    public final static byte base_check(int i)\n    {\n        return check_table[i - (NUM_RULES + 1)];\n    }\n", of, output_ptr2);
       } else {
-        mystrcpy("const unsigned char  *CLASS_HEADER base_check = &(check_table[0]) - (NUM_RULES + 1);\n", of);
+        mystrcpy("const unsigned char  *CLASS_HEADER base_check = &(check_table[0]) - (NUM_RULES + 1);\n", of, output_ptr2);
       }
     } else {
       if (cli_options->java_bit) {
-        mystrcpy("    public final static short base_check(int i) \n    {\n        return check_table[i - (NUM_RULES + 1)];\n    }\n", of);
+        mystrcpy("    public final static short base_check(int i) \n    {\n        return check_table[i - (NUM_RULES + 1)];\n    }\n", of, output_ptr2);
       } else {
-        mystrcpy("const   signed short *CLASS_HEADER base_check = &(check_table[0]) - (NUM_RULES + 1);\n", of);
+        mystrcpy("const   signed short *CLASS_HEADER base_check = &(check_table[0]) - (NUM_RULES + 1);\n", of, output_ptr2);
       }
     }
-    *output_ptr++ = '\n';
+    *(*output_ptr2.output_ptr)++ = '\n';
   }
   // Write left hand side symbol of rules followed by ACTION table.
   if (cli_options->java_bit) {
-    mystrcpy("    public final static char lhs[] = {0,\n", of);
+    mystrcpy("    public final static char lhs[] = {0,\n", of, output_ptr2);
   } else {
-    mystrcpy("const unsigned short CLASS_HEADER lhs[] = {0,\n", of);
+    mystrcpy("const unsigned short CLASS_HEADER lhs[] = {0,\n", of, output_ptr2);
   }
-  padline();
+  padline(output_ptr2);
   k = 0;
   for (int i = 1; i <= num_rules; i++) {
-    itoc(toutput->symbol_map.raw[rules[i].lhs] - num_terminals);
-    *output_ptr++ = ',';
+    itoc(toutput->symbol_map.raw[rules[i].lhs] - num_terminals, output_ptr2);
+    *(*output_ptr2.output_ptr)++ = ',';
     k++;
     if (k == 15) {
-      *output_ptr++ = '\n';
-      BUFFER_CHECK(of->sysdcl);
-      padline();
+      *(*output_ptr2.output_ptr)++ = '\n';
+      BUFFER_CHECK(of->sysdcl, output_ptr2);
+      padline(output_ptr2);
       k = 0;
     }
   }
-  *output_ptr++ = '\n';
-  *output_ptr++ = '\n';
-  BUFFER_CHECK(of->sysdcl);
-  padline();
+  *(*output_ptr2.output_ptr)++ = '\n';
+  *(*output_ptr2.output_ptr)++ = '\n';
+  BUFFER_CHECK(of->sysdcl, output_ptr2);
+  padline(output_ptr2);
   k = 0;
   if (cli_options->error_maps_bit) {
     int max_indx;
@@ -1976,33 +1983,33 @@ void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* tout
     }
   }
   for (int i = 1; i <= (int) ctp->action_size; i++) {
-    itoc(action.raw[i]);
-    *output_ptr++ = ',';
+    itoc(action.raw[i], output_ptr2);
+    *(*output_ptr2.output_ptr)++ = ',';
     k++;
     if (k == 10 && i != (int) ctp->action_size) {
-      *output_ptr++ = '\n';
-      BUFFER_CHECK(of->sysdcl);
-      padline();
+      *(*output_ptr2.output_ptr)++ = '\n';
+      BUFFER_CHECK(of->sysdcl, output_ptr2);
+      padline(output_ptr2);
       k = 0;
     }
   }
   if (k != 0) {
-    *(output_ptr - 1) = '\n';
-    BUFFER_CHECK(of->sysdcl);
+    *((*output_ptr2.output_ptr) - 1) = '\n';
+    BUFFER_CHECK(of->sysdcl, output_ptr2);
   }
   if (cli_options->java_bit) {
-    mystrcpy("    };\n", of);
+    mystrcpy("    };\n", of, output_ptr2);
   } else {
-    mystrcpy("                 };\n", of);
+    mystrcpy("                 };\n", of, output_ptr2);
   }
-  *output_ptr++ = '\n';
-  BUFFER_CHECK(of->sysdcl);
+  *(*output_ptr2.output_ptr)++ = '\n';
+  BUFFER_CHECK(of->sysdcl, output_ptr2);
   if (cli_options->java_bit) {
-    mystrcpy("    public final static char base_action[] = lhs;\n", of);
+    mystrcpy("    public final static char base_action[] = lhs;\n", of, output_ptr2);
   } else {
-    mystrcpy("const unsigned short *CLASS_HEADER base_action = lhs;\n", of);
+    mystrcpy("const unsigned short *CLASS_HEADER base_action = lhs;\n", of, output_ptr2);
   }
-  *output_ptr++ = '\n';
+  *(*output_ptr2.output_ptr)++ = '\n';
   // Initialize the terminal tables,and update with terminal actions.
   for (int i = 1; i <= ctp->term_check_size; i++) {
     check.raw[i] = DEFAULT_SYMBOL;
@@ -2072,31 +2079,31 @@ void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* tout
   // Write Terminal Check Table.
   if (num_terminals <= (cli_options->java_bit ? 127 : 255)) {
     if (cli_options->java_bit) {
-      prnt_longs("\n    public final static byte term_check[] = {0,\n", 1, ctp->term_check_size, 15, check, cli_options, of);
+      prnt_longs("\n    public final static byte term_check[] = {0,\n", 1, ctp->term_check_size, 15, check, cli_options, of, output_ptr2);
     } else {
-      prnt_longs("\nconst unsigned char  CLASS_HEADER term_check[] = {0,\n", 1, ctp->term_check_size, 15, check, cli_options, of);
+      prnt_longs("\nconst unsigned char  CLASS_HEADER term_check[] = {0,\n", 1, ctp->term_check_size, 15, check, cli_options, of, output_ptr2);
     }
   } else {
     if (cli_options->java_bit) {
-      prnt_longs("\n    public final static char term_check[] = {0,\n", 1, ctp->term_check_size, 15, check, cli_options, of);
+      prnt_longs("\n    public final static char term_check[] = {0,\n", 1, ctp->term_check_size, 15, check, cli_options, of, output_ptr2);
     } else {
-      prnt_longs("\nconst unsigned short CLASS_HEADER term_check[] = {0,\n", 1, ctp->term_check_size, 15, check, cli_options, of);
+      prnt_longs("\nconst unsigned short CLASS_HEADER term_check[] = {0,\n", 1, ctp->term_check_size, 15, check, cli_options, of, output_ptr2);
     }
   }
   // Write Terminal Action Table.
   if (cli_options->java_bit) {
-    prnt_longs("\n    public final static char term_action[] = {0,\n", 1, ctp->term_action_size, 10, action, cli_options, of);
+    prnt_longs("\n    public final static char term_action[] = {0,\n", 1, ctp->term_action_size, 10, action, cli_options, of, output_ptr2);
   } else {
-    prnt_longs("\nconst unsigned short CLASS_HEADER term_action[] = {0,\n", 1, ctp->term_action_size, 10, action, cli_options, of);
+    prnt_longs("\nconst unsigned short CLASS_HEADER term_action[] = {0,\n", 1, ctp->term_action_size, 10, action, cli_options, of, output_ptr2);
   }
   // If GOTO_DEFAULT is requested, we print out the GOTODEF vector.
   if (cli_options->goto_default_bit) {
     if (cli_options->java_bit) {
-      mystrcpy("\n    public final static char default_goto[] = {0,\n", of);
+      mystrcpy("\n    public final static char default_goto[] = {0,\n", of, output_ptr2);
     } else {
-      mystrcpy("\nconst unsigned short CLASS_HEADER default_goto[] = {0,\n", of);
+      mystrcpy("\nconst unsigned short CLASS_HEADER default_goto[] = {0,\n", of, output_ptr2);
     }
-    padline();
+    padline(output_ptr2);
     k = 0;
     for ALL_NON_TERMINALS3(symbol) {
       int act = gotodef.raw[symbol];
@@ -2108,82 +2115,82 @@ void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* tout
       } else {
         result_act = toutput->state_index.raw[act] + num_rules;
       }
-      itoc(result_act);
-      *output_ptr++ = ',';
+      itoc(result_act, output_ptr2);
+      *(*output_ptr2.output_ptr)++ = ',';
       k++;
       if (k == 10 && symbol != num_symbols) {
-        *output_ptr++ = '\n';
-        BUFFER_CHECK(of->sysdcl);
-        padline();
+        *(*output_ptr2.output_ptr)++ = '\n';
+        BUFFER_CHECK(of->sysdcl, output_ptr2);
+        padline(output_ptr2);
         k = 0;
       }
     }
     if (k != 0) {
-      *(output_ptr - 1) = '\n';
-      BUFFER_CHECK(of->sysdcl);
+      *((*output_ptr2.output_ptr) - 1) = '\n';
+      BUFFER_CHECK(of->sysdcl, output_ptr2);
     }
     if (cli_options->java_bit) {
-      mystrcpy("    };\n", of);
+      mystrcpy("    };\n", of, output_ptr2);
     } else {
-      mystrcpy("                 };\n", of);
+      mystrcpy("                 };\n", of, output_ptr2);
     }
   }
   if (cli_options->shift_default_bit) {
     if (cli_options->java_bit) {
-      mystrcpy("\n    public final static char default_reduce[] = {0,\n", of);
+      mystrcpy("\n    public final static char default_reduce[] = {0,\n", of, output_ptr2);
     } else {
-      mystrcpy("\nconst unsigned short CLASS_HEADER default_reduce[] = {0,\n", of);
+      mystrcpy("\nconst unsigned short CLASS_HEADER default_reduce[] = {0,\n", of, output_ptr2);
     }
-    padline();
+    padline(output_ptr2);
     k = 0;
     for (int i = 1; i <= ctp->num_terminal_states; i++) {
       struct reduce_header_type red;
       red = new_state_element[i].reduce;
-      itoc(red.map[0].rule_number);
-      *output_ptr++ = ',';
+      itoc(red.map[0].rule_number, output_ptr2);
+      *(*output_ptr2.output_ptr)++ = ',';
       k++;
       if (k == 10 && i != ctp->num_terminal_states) {
-        *output_ptr++ = '\n';
-        BUFFER_CHECK(of->sysdcl);
-        padline();
+        *(*output_ptr2.output_ptr)++ = '\n';
+        BUFFER_CHECK(of->sysdcl, output_ptr2);
+        padline(output_ptr2);
         k = 0;
       }
     }
     if (k != 0) {
-      *(output_ptr - 1) = '\n';
-      BUFFER_CHECK(of->sysdcl);
+      *((*output_ptr2.output_ptr) - 1) = '\n';
+      BUFFER_CHECK(of->sysdcl, output_ptr2);
     }
     if (cli_options->java_bit) {
-      mystrcpy("    };\n", of);
+      mystrcpy("    };\n", of, output_ptr2);
     } else {
-      mystrcpy("                 };\n", of);
+      mystrcpy("                 };\n", of, output_ptr2);
     }
     if (cli_options->java_bit) {
-      mystrcpy("\n    public final static char shift_state[] = {0,\n", of);
+      mystrcpy("\n    public final static char shift_state[] = {0,\n", of, output_ptr2);
     } else {
-      mystrcpy("\nconst unsigned short CLASS_HEADER shift_state[] = {0,\n", of);
+      mystrcpy("\nconst unsigned short CLASS_HEADER shift_state[] = {0,\n", of, output_ptr2);
     }
-    padline();
+    padline(output_ptr2);
     k = 0;
     for (int i = 1; i <= ctp->num_terminal_states; i++) {
-      itoc(shift_check_index.raw[shift_image.raw[i]]);
-      *output_ptr++ = ',';
+      itoc(shift_check_index.raw[shift_image.raw[i]], output_ptr2);
+      *(*output_ptr2.output_ptr)++ = ',';
       k++;
       if (k == 10 && i != ctp->num_terminal_states) {
-        *output_ptr++ = '\n';
-        BUFFER_CHECK(of->sysdcl);
-        padline();
+        *(*output_ptr2.output_ptr)++ = '\n';
+        BUFFER_CHECK(of->sysdcl, output_ptr2);
+        padline(output_ptr2);
         k = 0;
       }
     }
     if (k != 0) {
-      *(output_ptr - 1) = '\n';
-      BUFFER_CHECK(of->sysdcl);
+      *((*output_ptr2.output_ptr) - 1) = '\n';
+      BUFFER_CHECK(of->sysdcl, output_ptr2);
     }
     if (cli_options->java_bit) {
-      mystrcpy("    };\n", of);
+      mystrcpy("    };\n", of, output_ptr2);
     } else {
-      mystrcpy("                 };\n", of);
+      mystrcpy("                 };\n", of, output_ptr2);
     }
     for (int i = 1; i <= ctp->shift_check_size; i++) {
       check.raw[i] = DEFAULT_SYMBOL;
@@ -2199,46 +2206,46 @@ void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* tout
     }
     if (num_terminals <= (cli_options->java_bit ? 127 : 255)) {
       if (cli_options->java_bit) {
-        mystrcpy("\n    public final static byte shift_check[] = {0,\n", of);
+        mystrcpy("\n    public final static byte shift_check[] = {0,\n", of, output_ptr2);
       } else {
-        mystrcpy("\nconst unsigned char  CLASS_HEADER shift_check[] = {0,\n", of);
+        mystrcpy("\nconst unsigned char  CLASS_HEADER shift_check[] = {0,\n", of, output_ptr2);
       }
     } else {
       if (cli_options->java_bit) {
-        mystrcpy("\n    public final static char shift_check[] = {0,\n", of);
+        mystrcpy("\n    public final static char shift_check[] = {0,\n", of, output_ptr2);
       } else {
-        mystrcpy("\nconst unsigned short CLASS_HEADER shift_check[] = {0,\n", of);
+        mystrcpy("\nconst unsigned short CLASS_HEADER shift_check[] = {0,\n", of, output_ptr2);
       }
     }
-    padline();
+    padline(output_ptr2);
     k = 0;
     int ii;
     for (ii = 1; ii <= ctp->shift_check_size; ii++) {
-      itoc(check.raw[ii]);
-      *output_ptr++ = ',';
+      itoc(check.raw[ii], output_ptr2);
+      *(*output_ptr2.output_ptr)++ = ',';
       k++;
       if (k == 10 && ii != ctp->shift_check_size) {
-        *output_ptr++ = '\n';
-        BUFFER_CHECK(of->sysdcl);
-        padline();
+        *(*output_ptr2.output_ptr)++ = '\n';
+        BUFFER_CHECK(of->sysdcl, output_ptr2);
+        padline(output_ptr2);
         k = 0;
       }
     }
     if (k != 0) {
-      *(output_ptr - 1) = '\n';
-      BUFFER_CHECK(of->sysdcl);
+      *((*output_ptr2.output_ptr) - 1) = '\n';
+      BUFFER_CHECK(of->sysdcl, output_ptr2);
     }
     if (cli_options->java_bit) {
-      mystrcpy("    };\n", of);
+      mystrcpy("    };\n", of, output_ptr2);
     } else {
-      mystrcpy("                 };\n", of);
+      mystrcpy("                 };\n", of, output_ptr2);
     }
     if (cli_options->java_bit) {
-      mystrcpy("\n    public final static char default_shift[] = {0,\n", of);
+      mystrcpy("\n    public final static char default_shift[] = {0,\n", of, output_ptr2);
     } else {
-      mystrcpy("\nconst unsigned short CLASS_HEADER default_shift[] = {0,\n", of);
+      mystrcpy("\nconst unsigned short CLASS_HEADER default_shift[] = {0,\n", of, output_ptr2);
     }
-    padline();
+    padline(output_ptr2);
     k = 0;
     for ALL_TERMINALS3(symbol) {
       int act = shiftdf.raw[symbol];
@@ -2256,32 +2263,32 @@ void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* tout
         PRNTERR2("Table contains look-ahead shift entry that is >%ld; Processing stopped.", MAX_TABLE_SIZE + 1);
         return;
       }
-      itoc(result_act);
-      *output_ptr++ = ',';
+      itoc(result_act, output_ptr2);
+      *(*output_ptr2.output_ptr)++ = ',';
       k++;
       if (k == 10 && ii != num_terminals) {
-        *output_ptr++ = '\n';
-        BUFFER_CHECK(of->sysdcl);
-        padline();
+        *(*output_ptr2.output_ptr)++ = '\n';
+        BUFFER_CHECK(of->sysdcl, output_ptr2);
+        padline(output_ptr2);
         k = 0;
       }
     }
     if (k != 0) {
-      *(output_ptr - 1) = '\n';
-      BUFFER_CHECK(of->sysdcl);
+      *((*output_ptr2.output_ptr) - 1) = '\n';
+      BUFFER_CHECK(of->sysdcl, output_ptr2);
     }
     if (cli_options->java_bit) {
-      mystrcpy("    };\n", of);
+      mystrcpy("    };\n", of, output_ptr2);
     } else {
-      mystrcpy("                 };\n", of);
+      mystrcpy("                 };\n", of, output_ptr2);
     }
   }
   ffree(check.raw);
   ffree(action.raw);
-  common(byte_check_bit, cli_options, toutput, dss, ctp, of, scope, ia, srt, scope_right_side, statset, gd_index, gd_range, scope_state, item_table, sc, output_buffer);
+  common(byte_check_bit, cli_options, toutput, dss, ctp, of, scope, ia, srt, scope_right_side, statset, gd_index, gd_range, scope_state, item_table, sc, output_buffer, output_ptr2);
 }
 
-void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ArrayLong scope_right_side, struct lastats_type *lastats, ArrayLong gotodef, ArrayShort gd_index, ArrayShort gd_range, struct ruletab_type *rules, ArrayShort scope_state, struct statset_type *statset, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer) {
+void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ArrayLong scope_right_side, struct lastats_type *lastats, ArrayLong gotodef, ArrayShort gd_index, ArrayShort gd_range, struct ruletab_type *rules, ArrayShort scope_state, struct statset_type *statset, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer, struct OutputPtr output_ptr2) {
   bool byte_check_bit = true;
   populate_start_file(&of->sysdcl, of->dcl_tag, cli_options);
   populate_start_file(&of->syssym, of->sym_tag, cli_options);
@@ -2294,7 +2301,7 @@ void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutp
   int reduce_count = 0;
   int shift_reduce_count = 0;
   int goto_reduce_count = 0;
-  output_ptr = &output_buffer[0];
+  (*output_ptr2.output_ptr) = &output_buffer[0];
   ArrayLong check = np->next;
   ArrayLong action = np->previous;
   long offset = ia->error_act;
@@ -2429,118 +2436,118 @@ void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutp
     }
   }
   if (cli_options->c_bit) {
-    mystrcpy("\n#define CLASS_HEADER\n\n", of);
+    mystrcpy("\n#define CLASS_HEADER\n\n", of, output_ptr2);
   } else if (cli_options->cpp_bit) {
-    mystrcpy("\n#define CLASS_HEADER ", of);
-    mystrcpy(of->prs_tag, of);
-    mystrcpy("_table::\n\n", of);
+    mystrcpy("\n#define CLASS_HEADER ", of, output_ptr2);
+    mystrcpy(of->prs_tag, of, output_ptr2);
+    mystrcpy("_table::\n\n", of, output_ptr2);
   } else if (cli_options->java_bit) {
-    mystrcpy("abstract class ", of);
-    mystrcpy(of->dcl_tag, of);
-    mystrcpy(" implements ", of);
-    mystrcpy(of->def_tag, of);
-    mystrcpy("\n{\n", of);
+    mystrcpy("abstract class ", of, output_ptr2);
+    mystrcpy(of->dcl_tag, of, output_ptr2);
+    mystrcpy(" implements ", of, output_ptr2);
+    mystrcpy(of->def_tag, of, output_ptr2);
+    mystrcpy("\n{\n", of, output_ptr2);
   }
   // Write size of right hand side of rules followed by CHECK table.
   if (cli_options->java_bit) {
-    mystrcpy("    public final static byte rhs[] = {0,\n", of);
+    mystrcpy("    public final static byte rhs[] = {0,\n", of, output_ptr2);
   } else {
-    mystrcpy("const unsigned char  CLASS_HEADER rhs[] = {0,\n", of);
+    mystrcpy("const unsigned char  CLASS_HEADER rhs[] = {0,\n", of, output_ptr2);
   }
-  padline();
+  padline(output_ptr2);
   int k = 0;
   for (int i = 1; i <= num_rules; i++) {
     k++;
     if (k > 15) {
-      *output_ptr++ = '\n';
-      BUFFER_CHECK(of->sysdcl);
-      padline();
+      *(*output_ptr2.output_ptr)++ = '\n';
+      BUFFER_CHECK(of->sysdcl, output_ptr2);
+      padline(output_ptr2);
       k = 1;
     }
-    itoc(RHS_SIZE(i, rules));
-    *output_ptr++ = ',';
+    itoc(RHS_SIZE(i, rules), output_ptr2);
+    *(*output_ptr2.output_ptr)++ = ',';
   }
-  *(output_ptr - 1) = '\n';
-  BUFFER_CHECK(of->sysdcl);
+  *((*output_ptr2.output_ptr) - 1) = '\n';
+  BUFFER_CHECK(of->sysdcl, output_ptr2);
   if (cli_options->java_bit) {
-    mystrcpy("    };\n", of);
+    mystrcpy("    };\n", of, output_ptr2);
   } else {
-    mystrcpy("                 };\n", of);
+    mystrcpy("                 };\n", of, output_ptr2);
   }
-  *output_ptr++ = '\n';
+  *(*output_ptr2.output_ptr)++ = '\n';
   // Write CHECK table.
   if (byte_check_bit && !cli_options->error_maps_bit) {
     if (cli_options->java_bit) {
-      mystrcpy("    public final static byte check_table[] = {\n", of);
+      mystrcpy("    public final static byte check_table[] = {\n", of, output_ptr2);
     } else {
-      mystrcpy("const unsigned char  CLASS_HEADER check_table[] = {\n", of);
+      mystrcpy("const unsigned char  CLASS_HEADER check_table[] = {\n", of, output_ptr2);
     }
   } else {
     if (cli_options->java_bit) {
-      mystrcpy("     public final static short check_table[] = {\n", of);
+      mystrcpy("     public final static short check_table[] = {\n", of, output_ptr2);
     } else {
-      mystrcpy("const   signed short CLASS_HEADER check_table[] = {\n", of);
+      mystrcpy("const   signed short CLASS_HEADER check_table[] = {\n", of, output_ptr2);
     }
   }
-  padline();
+  padline(output_ptr2);
   k = 0;
   for (int i = 1; i <= (int) ctp->table_size; i++) {
     k++;
     if (k > 10) {
-      *output_ptr++ = '\n';
-      BUFFER_CHECK(of->sysdcl);
-      padline();
+      *(*output_ptr2.output_ptr)++ = '\n';
+      BUFFER_CHECK(of->sysdcl, output_ptr2);
+      padline(output_ptr2);
       k = 1;
     }
-    itoc(check.raw[i]);
-    *output_ptr++ = ',';
+    itoc(check.raw[i], output_ptr2);
+    *(*output_ptr2.output_ptr)++ = ',';
   }
-  *(output_ptr - 1) = '\n';
-  BUFFER_CHECK(of->sysdcl);
+  *((*output_ptr2.output_ptr) - 1) = '\n';
+  BUFFER_CHECK(of->sysdcl, output_ptr2);
   if (cli_options->java_bit) {
-    mystrcpy("    };\n", of);
+    mystrcpy("    };\n", of, output_ptr2);
   } else {
-    mystrcpy("                 };\n", of);
+    mystrcpy("                 };\n", of, output_ptr2);
   }
-  *output_ptr++ = '\n';
-  BUFFER_CHECK(of->sysdcl);
+  *(*output_ptr2.output_ptr)++ = '\n';
+  BUFFER_CHECK(of->sysdcl, output_ptr2);
   if (byte_check_bit && !cli_options->error_maps_bit) {
     if (cli_options->java_bit) {
-      mystrcpy("    public final static byte check(int i) \n    {\n        return check_table[i - (NUM_RULES + 1)];\n    }\n", of);
+      mystrcpy("    public final static byte check(int i) \n    {\n        return check_table[i - (NUM_RULES + 1)];\n    }\n", of, output_ptr2);
     } else {
-      mystrcpy("const unsigned char  *CLASS_HEADER check = &(check_table[0]) - (NUM_RULES + 1);\n", of);
+      mystrcpy("const unsigned char  *CLASS_HEADER check = &(check_table[0]) - (NUM_RULES + 1);\n", of, output_ptr2);
     }
   } else {
     if (cli_options->java_bit) {
-      mystrcpy("    public final static short check(int i) \n    {\n        return check_table[i - (NUM_RULES + 1)];\n    }\n", of);
+      mystrcpy("    public final static short check(int i) \n    {\n        return check_table[i - (NUM_RULES + 1)];\n    }\n", of, output_ptr2);
     } else {
-      mystrcpy("const   signed short *CLASS_HEADER check = &(check_table[0]) - (NUM_RULES + 1);\n", of);
+      mystrcpy("const   signed short *CLASS_HEADER check = &(check_table[0]) - (NUM_RULES + 1);\n", of, output_ptr2);
     }
   }
-  *output_ptr++ = '\n';
+  *(*output_ptr2.output_ptr)++ = '\n';
   // Write left hand side symbol of rules followed by ACTION table.
   if (cli_options->java_bit) {
-    mystrcpy("    public final static char lhs[] = {0,\n", of);
+    mystrcpy("    public final static char lhs[] = {0,\n", of, output_ptr2);
   } else {
-    mystrcpy("const unsigned short CLASS_HEADER lhs[] = {0,\n", of);
+    mystrcpy("const unsigned short CLASS_HEADER lhs[] = {0,\n", of, output_ptr2);
   }
-  padline();
+  padline(output_ptr2);
   k = 0;
   for (int i = 1; i <= num_rules; i++) {
-    itoc(toutput->symbol_map.raw[rules[i].lhs]);
-    *output_ptr++ = ',';
+    itoc(toutput->symbol_map.raw[rules[i].lhs], output_ptr2);
+    *(*output_ptr2.output_ptr)++ = ',';
     k++;
     if (k == 15) {
-      *output_ptr++ = '\n';
-      BUFFER_CHECK(of->sysdcl);
-      padline();
+      *(*output_ptr2.output_ptr)++ = '\n';
+      BUFFER_CHECK(of->sysdcl, output_ptr2);
+      padline(output_ptr2);
       k = 0;
     }
   }
-  *output_ptr++ = '\n';
-  *output_ptr++ = '\n';
-  BUFFER_CHECK(of->sysdcl);
-  padline();
+  *(*output_ptr2.output_ptr)++ = '\n';
+  *(*output_ptr2.output_ptr)++ = '\n';
+  BUFFER_CHECK(of->sysdcl, output_ptr2);
+  padline(output_ptr2);
   k = 0;
   if (cli_options->error_maps_bit) {
     long max_indx;
@@ -2563,42 +2570,42 @@ void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutp
     }
   }
   for (int i = 1; i <= (int) ctp->action_size; i++) {
-    itoc(action.raw[i]);
-    *output_ptr++ = ',';
+    itoc(action.raw[i], output_ptr2);
+    *(*output_ptr2.output_ptr)++ = ',';
     k++;
     if (k == 10 && i != (int) ctp->action_size) {
-      *output_ptr++ = '\n';
-      BUFFER_CHECK(of->sysdcl);
-      padline();
+      *(*output_ptr2.output_ptr)++ = '\n';
+      BUFFER_CHECK(of->sysdcl, output_ptr2);
+      padline(output_ptr2);
       k = 0;
     }
   }
   if (k != 0) {
-    *(output_ptr - 1) = '\n';
-    BUFFER_CHECK(of->sysdcl);
+    *((*output_ptr2.output_ptr) - 1) = '\n';
+    BUFFER_CHECK(of->sysdcl, output_ptr2);
   }
   if (cli_options->java_bit) {
-    mystrcpy("    };\n", of);
+    mystrcpy("    };\n", of, output_ptr2);
   } else {
-    mystrcpy("                 };\n", of);
+    mystrcpy("                 };\n", of, output_ptr2);
   }
-  *output_ptr++ = '\n';
-  BUFFER_CHECK(of->sysdcl);
+  *(*output_ptr2.output_ptr)++ = '\n';
+  BUFFER_CHECK(of->sysdcl, output_ptr2);
   if (cli_options->java_bit) {
-    mystrcpy("    public final static char action[] = lhs;\n", of);
+    mystrcpy("    public final static char action[] = lhs;\n", of, output_ptr2);
   } else {
-    mystrcpy("const unsigned short *CLASS_HEADER action = lhs;\n", of);
+    mystrcpy("const unsigned short *CLASS_HEADER action = lhs;\n", of, output_ptr2);
   }
-  *output_ptr++ = '\n';
+  *(*output_ptr2.output_ptr)++ = '\n';
   // If GOTO_DEFAULT is requested, we print out the GOTODEF vector.
   if (cli_options->goto_default_bit) {
     ArrayShort default_map = Allocate_short_array2(num_symbols + 1);
     if (cli_options->java_bit) {
-      mystrcpy("\n    public final static char default_goto[] = {0,\n", of);
+      mystrcpy("\n    public final static char default_goto[] = {0,\n", of, output_ptr2);
     } else {
-      mystrcpy("\nconst unsigned short CLASS_HEADER default_goto[] = {0,\n", of);
+      mystrcpy("\nconst unsigned short CLASS_HEADER default_goto[] = {0,\n", of, output_ptr2);
     }
-    padline();
+    padline(output_ptr2);
     k = 0;
     for (int i = 0; i <= num_symbols; i++) {
       default_map.raw[i] = ia->error_act;
@@ -2616,36 +2623,29 @@ void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutp
       default_map.raw[toutput->symbol_map.raw[symbol]] = result_act;
     }
     for (int symbol = 1; symbol <= num_symbols; symbol++) {
-      itoc(default_map.raw[symbol]);
-      *output_ptr++ = ',';
+      itoc(default_map.raw[symbol], output_ptr2);
+      *(*output_ptr2.output_ptr)++ = ',';
       k++;
       if (k == 10 && symbol != num_symbols) {
-        *output_ptr++ = '\n';
-        BUFFER_CHECK(of->sysdcl);
-        padline();
+        *(*output_ptr2.output_ptr)++ = '\n';
+        BUFFER_CHECK(of->sysdcl, output_ptr2);
+        padline(output_ptr2);
         k = 0;
       }
     }
     if (k != 0) {
-      *(output_ptr - 1) = '\n';
-      BUFFER_CHECK(of->sysdcl);
+      *((*output_ptr2.output_ptr) - 1) = '\n';
+      BUFFER_CHECK(of->sysdcl, output_ptr2);
     }
     if (cli_options->java_bit) {
-      mystrcpy("    };\n", of);
+      mystrcpy("    };\n", of, output_ptr2);
     } else {
-      mystrcpy("                 };\n", of);
+      mystrcpy("                 };\n", of, output_ptr2);
     }
   }
   ffree(np->next.raw);
   ffree(np->previous.raw);
-  common(byte_check_bit, cli_options, toutput, dss, ctp, of, scope, ia, srt, scope_right_side, statset, gd_index, gd_range, scope_state, item_table, sc, output_buffer);
-}
-
-void populate_start_file(FILE **file, char *file_tag, struct CLIOptions *cli_options) {
-  if (cli_options->c_bit || cli_options->cpp_bit) {
-    fprintf(*file, "#ifndef %s_INCLUDED\n", file_tag);
-    fprintf(*file, "#define %s_INCLUDED\n\n", file_tag);
-  }
+  common(byte_check_bit, cli_options, toutput, dss, ctp, of, scope, ia, srt, scope_right_side, statset, gd_index, gd_range, scope_state, item_table, sc, output_buffer, output_ptr2);
 }
 
 // endregion
@@ -3663,7 +3663,7 @@ static void overlap_t_rows(struct CLIOptions *cli_options, struct TableOutput *t
   ffree(np->previous.raw);
 }
 
-void cmprspa(struct CLIOptions *cli_options, struct TableOutput *toutput, struct DetectedSetSizes *dss, struct CTabsProps *ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ArrayLong scope_right_side, struct lastats_type *lastats, ArrayShort shiftdf, ArrayLong gotodef, ArrayShort gd_index, ArrayShort gd_range, ArrayShort scope_state, struct statset_type *statset, struct ruletab_type *rules, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer) {
+void cmprspa(struct CLIOptions *cli_options, struct TableOutput *toutput, struct DetectedSetSizes *dss, struct CTabsProps *ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ArrayLong scope_right_side, struct lastats_type *lastats, ArrayShort shiftdf, ArrayLong gotodef, ArrayShort gd_index, ArrayShort gd_range, ArrayShort scope_state, struct statset_type *statset, struct ruletab_type *rules, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer, struct OutputPtr output_ptr2) {
   ArrayBool shift_on_error_symbol = Allocate_bool_array2(max_la_state + 1);
   struct new_state_type *new_state_element;
   calloc0p(&new_state_element, max_la_state + 1, struct new_state_type);
@@ -3686,7 +3686,7 @@ void cmprspa(struct CLIOptions *cli_options, struct TableOutput *toutput, struct
   overlay_sim_t_rows(cli_options, toutput, shift_on_error_symbol, new_state_element_reduce_nodes, &tresult, &nte, shift_check_index, ctp, new_state_element, shift_image, real_shift_number, np, ia, srt, rules, lastats, shiftdf, statset);
   ArrayLong term_state_index = Allocate_long_array2(max_la_state + 1);
   overlap_t_rows(cli_options, toutput, &nte, term_state_index, ctp, new_state_element, np, ia, srt, shiftdf);
-  print_space_parser(cli_options, toutput, dss, term_state_index, shift_check_index, ctp, new_state_element, shift_image, real_shift_number, of, scope, ia, srt, scope_right_side, shiftdf, gotodef, gd_index, gd_range, rules, scope_state, statset, item_table, sc, output_buffer);
+  print_space_parser(cli_options, toutput, dss, term_state_index, shift_check_index, ctp, new_state_element, shift_image, real_shift_number, of, scope, ia, srt, scope_right_side, shiftdf, gotodef, gd_index, gd_range, rules, scope_state, statset, item_table, sc, output_buffer, output_ptr2);
 }
 
 // endregion
@@ -4010,11 +4010,11 @@ static void overlap_tables(struct CLIOptions *cli_options, struct TableOutput* t
 /// together, to achieve maximum speed efficiency.
 /// Otherwise, the compression technique used in this table is
 /// analogous to the technique used in the routine CMPRSPA.
-void cmprtim(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ArrayLong scope_right_side, struct lastats_type *lastats, ArrayLong gotodef, ArrayShort gd_index, ArrayShort gd_range, ArrayShort scope_state, struct statset_type *statset, struct ruletab_type *rules, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer) {
+void cmprtim(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ArrayLong scope_right_side, struct lastats_type *lastats, ArrayLong gotodef, ArrayShort gd_index, ArrayShort gd_range, ArrayShort scope_state, struct statset_type *statset, struct ruletab_type *rules, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer, struct OutputPtr output_ptr2) {
   ArrayBool is_terminal = Allocate_bool_array2(num_symbols + 1);
   struct DefaultSaves default_saves = remap_symbols(toutput, is_terminal, srt, lastats, statset, cli_options);
   overlap_tables(cli_options, toutput, is_terminal, default_saves, ctp, default_saves.last_symbol, np, ia, srt, lastats, statset);
-  print_time_parser(cli_options, toutput, dss, ctp, of, np, scope, ia, srt, scope_right_side, lastats, gotodef, gd_index, gd_range, rules, scope_state, statset, item_table, sc, output_buffer);
+  print_time_parser(cli_options, toutput, dss, ctp, of, np, scope, ia, srt, scope_right_side, lastats, gotodef, gd_index, gd_range, rules, scope_state, statset, item_table, sc, output_buffer, output_ptr2);
 }
 
 // endregion
@@ -4277,7 +4277,13 @@ void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLI
   }
   // Release the pool of temporary space.
   free_temporary_space();
-  calloc0p(&output_buffer, IOBUFFER_SIZE, char);
+  char *_output_ptr = NULL;
+  char *_output_buffer = NULL;
+  struct OutputPtr op = (struct OutputPtr) {
+    .output_ptr = &_output_ptr,
+    .output_buffer = &_output_buffer,
+  };
+  calloc0p(op.output_buffer, IOBUFFER_SIZE, char);
   FILE *systab;
   if (!cli_options->c_bit && !cli_options->cpp_bit && !cli_options->java_bit) {
     if ((systab = fopen(tab_file, "w")) == NULL) {
@@ -4292,9 +4298,9 @@ void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLI
   init_file(&of->sysprs, output_files->prs_file, of->prs_tag);
   struct ImportantAspects ia = (struct ImportantAspects) {};
   if (cli_options->table_opt.value == OPTIMIZE_SPACE.value) {
-    cmprspa(cli_options, &toutput, dss, ctp, of, np, scope, &ia, srt, scope_right_side, lastats, *shiftdf, *gotodef, gd_index, gd_range, scope_state, statset, rules, item_table, sc, output_buffer);
+    cmprspa(cli_options, &toutput, dss, ctp, of, np, scope, &ia, srt, scope_right_side, lastats, *shiftdf, *gotodef, gd_index, gd_range, scope_state, statset, rules, item_table, sc, (*op.output_buffer), op);
   } else if (cli_options->table_opt.value == OPTIMIZE_TIME.value) {
-    cmprtim(cli_options, &toutput, dss, ctp, of, np, scope, &ia, srt, scope_right_side, lastats, *gotodef, gd_index, gd_range, scope_state, statset, rules, item_table, sc, output_buffer);
+    cmprtim(cli_options, &toutput, dss, ctp, of, np, scope, &ia, srt, scope_right_side, lastats, *gotodef, gd_index, gd_range, scope_state, statset, rules, item_table, sc, (*op.output_buffer), op);
   } else {
     exit(999);
   }

@@ -23,7 +23,7 @@ int stack_top = -1;
 
 long string_offset = 0;
 
-static char *string_table = NULL;
+char *string_table = NULL;
 
 /// SYMNO is an array that maps symbol numbers to actual symbols.
 struct symno_type *symno = NULL;
