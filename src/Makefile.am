@@ -9,10 +9,7 @@ jikespg_SOURCES = ctabs.c \
                   mkred.c \
                   mkstates.c \
                   partset.c \
-                  ptables.c \
-                  remsp.c \
-                  spacetab.c \
-                  timetab.c
+                  remsp.c
 
 noinst_HEADERS = common.h \
                  lpgact.h \

@@ -3,8 +3,8 @@ CC = gcc$(CPPFLAGS) $(CFLAGS)
 # CFLAGS += -fsanitize=address -g -O1
 # LDFLAGS += -fsanitize=address
 
-jikespg:                        ctabs.o globals.o lpgparse.o lpgutil.o main.o mkfirst.o mkred.o mkstates.o partset.o ptables.o remsp.o spacetab.o timetab.o
-	$(CC) $(LDFLAGS) -o jikespg ctabs.o globals.o lpgparse.o lpgutil.o main.o mkfirst.o mkred.o mkstates.o partset.o ptables.o remsp.o spacetab.o timetab.o
+jikespg:                        ctabs.o globals.o lpgparse.o lpgutil.o main.o mkfirst.o mkred.o mkstates.o partset.o remsp.o
+	$(CC) $(LDFLAGS) -o jikespg ctabs.o globals.o lpgparse.o lpgutil.o main.o mkfirst.o mkred.o mkstates.o partset.o remsp.o
 
 main.o:	main.c common.h
 	$(CC) -c main.c
@@ -33,15 +33,6 @@ mkred.o: mkred.c common.h
 remsp.o: remsp.c common.h
 	$(CC) -c remsp.c
 
-ptables.o: ptables.c common.h
-	$(CC) -c ptables.c
-
-spacetab.o: spacetab.c common.h
-	$(CC) -c spacetab.c
-
-timetab.o: timetab.c common.h
-	$(CC) -c timetab.c
-
 partset.o: partset.c common.h
 	$(CC) -c partset.c
 
@@ -59,10 +50,7 @@ clean:
 	rm -f mkred.o
 	rm -f mkstates.o 
 	rm -f partset.o 
-	rm -f ptables.o
 	rm -f remsp.o
-	rm -f spacetab.o 
-	rm -f timetab.o
 
 veryclean: clean
 	rm -f lpgprs.h
