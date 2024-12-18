@@ -23,17 +23,17 @@ int stack_top = -1;
 
 long string_offset = 0;
 
-char *string_table = NULL;
+char *string_table;
 
 /// SYMNO is an array that maps symbol numbers to actual symbols.
-struct symno_type *symno = NULL;
-
-/// NAME is an array containing names to be associated with symbols.
-int *name;
+struct symno_type *symno;
 
 char *RETRIEVE_STRING(const int indx) {
   return &string_table[symno[indx].ptr];
 }
+
+/// NAME is an array containing names to be associated with symbols.
+int *name;
 
 const char *RETRIEVE_NAME(const int indx) {
   return &string_table[name[indx]];
@@ -336,8 +336,8 @@ static void options(char *file_prefix, struct CLIOptions *cli_options, char *par
 }
 
 /// In this function, we read the first line(s) of the input text to see
-/// if they are (it is an) "options" line(s).  If so, the options are
-/// processed.  Then, we process user-supplied options if there are any.  In
+/// if they are (it is an) "options" line(s). If so, the options are
+/// processed. Then, we process user-supplied options if there are any.  In
 /// any case, the options in effect are printed.
 static void process_options_lines(char *grm_file, struct OutputFiles *of, char *file_prefix, struct CLIOptions *cli_options, FILE *sysgrm, struct ScannerState* ss, char *parm) {
   char old_parm[MAX_LINE_SIZE + 1];
@@ -603,7 +603,7 @@ static bool EQUAL_STRING(const char *symb, const struct hash_type *p) {
 /// symbol, the value of the NUMBER field is changed to the appropriate symbol
 /// number. However, if the token is a macro name, its value will remain zero.
 /// The NAME_INDEX field is set to OMEGA and will be assigned a value later.
-///   ASSIGN_SYMBOL_NO takes as arguments a pointer to a node and an image
+/// ASSIGN_SYMBOL_NO takes as arguments a pointer to a node and an image
 /// number and assigns a symbol number to the symbol pointed to by the node.
 void assign_symbol_no(const char *string_ptr, const int image, struct hash_type **hash_table) {
   struct hash_type *p;
@@ -639,7 +639,7 @@ void alias_map(const char *stringptr, const int image, struct ParserState* ps) {
   assign_symbol_no(stringptr, image, ps->hash_table);
 }
 
-/// SYMBOL_IMAGE takes as argument a symbol.  It searches for that symbol
+/// SYMBOL_IMAGE takes as argument a symbol. It searches for that symbol
 /// in the HASH_TABLE, and if found, it returns its image; otherwise, it
 /// returns OMEGA.
 int symbol_image(const char *item, struct ParserState* ps) {
@@ -1328,7 +1328,7 @@ next_line: {
   }
 }
 
-/// This procedure takes as argument a macro definition.  If the name of the
+/// This procedure takes as argument a macro definition. If the name of the
 /// macro is one of the predefined names, it issues an error.  Otherwise, it
 /// inserts the macro definition into the table headed by MACRO_TABLE.
 static void mapmacro(const int def_index, ArrayShort macro_table, struct ParserState* ps) {
@@ -1627,7 +1627,7 @@ static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *
 }
 
 /// This procedure opens all relevant files and processes the input grammar.
-void process_input(char *grm_file, struct OutputFiles *output_files, const int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options, ArrayShort *rhs_sym, struct ruletab_type **rulesp) {
+void process_input(char *grm_file, struct OutputFiles *output_files, const int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options, ArrayShort *rhs_sym, struct ruletab_type **rulesp, struct symno_type **symno) {
   char parm[256] = "";
 
   // TODO return and propagate
@@ -1790,7 +1790,7 @@ void process_input(char *grm_file, struct OutputFiles *output_files, const int a
       }
       act -= ERROR_ACTION;
     } else if (act == ACCEPT_ACTION) {
-      accept_action(grm_file, cli_options, sysgrm, &ss, rhs_sym, rulesp, &ps, symno);
+      accept_action(grm_file, cli_options, sysgrm, &ss, rhs_sym, rulesp, &ps, *symno);
       goto end;
     } else {
       // error_action

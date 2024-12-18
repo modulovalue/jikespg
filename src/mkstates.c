@@ -1386,7 +1386,7 @@ void compute_produces(const int symbol, struct node **direct_produces, ArrayShor
 
 
 /// In this procedure, we first construct the LR(0) automaton.
-void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, JBitset first, struct scope_type *scope, struct node **clitems, struct node **closure, struct SRTable* srt, ArrayLong* scope_right_side, ArrayBool null_nt, ArrayShort *scope_state, struct itemtab *item_table, struct ruletab_type *rules, ArrayShort rhs_sym, ArrayShort* gd_range, ArrayShort*gd_index, struct StatSet* ss, struct ScopeCounter* sc) {
+void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, JBitset first, struct scope_type *scope, struct node **clitems, struct node **closure, struct SRTable* srt, ArrayLong* scope_right_side, ArrayBool null_nt, ArrayShort *scope_state, struct itemtab *item_table, struct ruletab_type *rules, ArrayShort rhs_sym, ArrayShort* gd_range, ArrayShort*gd_index, struct StatSet* ss, struct ScopeCounter* sc, struct symno_type *symno) {
   struct ScopeTop st = (struct ScopeTop) {
     .top = 0
   };

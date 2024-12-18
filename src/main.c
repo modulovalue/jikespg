@@ -76,7 +76,6 @@ int main(const int argc, char *argv[]) {
     ArrayShort rhs_sym;
 
     struct ruletab_type *rules;
-
     // Process input.
     {
       char grm_file[80];
@@ -110,7 +109,7 @@ int main(const int argc, char *argv[]) {
         tab_file[dot - tmpbuf] = '\0';
       }
       strcat(tab_file, ".t"); /* add .t extension for table file */
-      process_input(grm_file, &of, argc, argv, file_prefix, &cli_options, &rhs_sym, &rules);
+      process_input(grm_file, &of, argc, argv, file_prefix, &cli_options, &rhs_sym, &rules, &symno);
     }
 
     /// FOLLOW is a mapping from non-terminals to a set of terminals that
@@ -152,7 +151,7 @@ int main(const int argc, char *argv[]) {
       .scope_state_size = 0,
     };
 
-    mkstats(&cli_options, &dss, first, scope, fd.clitems, fd.closure, &srt, &scope_right_side, dss.null_nt, &scope_state, item_table, rules, rhs_sym, &gd_range, &gd_index, &ss, &sc);
+    mkstats(&cli_options, &dss, first, scope, fd.clitems, fd.closure, &srt, &scope_right_side, dss.null_nt, &scope_state, item_table, rules, rhs_sym, &gd_range, &gd_index, &ss, &sc, symno);
 
     struct SourcesElementSources ses = (struct SourcesElementSources) {
       .sources = NULL,
@@ -160,7 +159,8 @@ int main(const int argc, char *argv[]) {
     struct LaStats las = (struct LaStats) {
       .lastats = NULL,
     };
-    struct ConflictCounter conflicts = mkrdcts(&cli_options, &dss, &ses, rmpself, first, fd.adequate_item, &srt, dss.null_nt, gd_index, rules, ss.statset, item_table, rhs_sym, &las);
+    long la_top = 0;
+    struct ConflictCounter conflicts = mkrdcts(&cli_options, &dss, &ses, rmpself, first, fd.adequate_item, &srt, dss.null_nt, gd_index, rules, ss.statset, item_table, rhs_sym, &las, &la_top);
     // Output more basic statistics.
     {
       PRNT3("Number of Terminals: %ld", num_terminals - 1); /*-1 for %empty */

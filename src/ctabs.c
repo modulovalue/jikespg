@@ -859,7 +859,7 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
   }
 }
 
-static void common(const bool byte_check_bit, struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ArrayLong scope_right_side, struct statset_type *statset, ArrayShort gd_index, ArrayShort gd_range, ArrayShort scope_state, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer, struct OutputPtr output_ptr2) {
+static void common(const bool byte_check_bit, struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ArrayLong scope_right_side, struct statset_type *statset, ArrayShort gd_index, ArrayShort gd_range, ArrayShort scope_state, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer, struct OutputPtr output_ptr2, struct symno_type *symno) {
   struct ByteTerminalRange btr = (struct ByteTerminalRange) {
     .value = true
   };
@@ -1753,7 +1753,7 @@ void populate_start_file(FILE **file, char *file_tag, struct CLIOptions *cli_opt
   }
 }
 
-void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, ArrayLong term_state_index, ArrayLong shift_check_index, struct CTabsProps* ctp, struct new_state_type *new_state_element, ArrayShort shift_image, ArrayShort real_shift_number, struct OutputFiles* of, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ArrayLong scope_right_side, ArrayShort shiftdf, ArrayLong gotodef, ArrayShort gd_index, ArrayShort gd_range, struct ruletab_type *rules, ArrayShort scope_state, struct statset_type *statset, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer, struct OutputPtr output_ptr2)  {
+void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, ArrayLong term_state_index, ArrayLong shift_check_index, struct CTabsProps* ctp, struct new_state_type *new_state_element, ArrayShort shift_image, ArrayShort real_shift_number, struct OutputFiles* of, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ArrayLong scope_right_side, ArrayShort shiftdf, ArrayLong gotodef, ArrayShort gd_index, ArrayShort gd_range, struct ruletab_type *rules, ArrayShort scope_state, struct statset_type *statset, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer, struct OutputPtr output_ptr2, struct symno_type *symno)  {
   bool byte_check_bit = true;
   populate_start_file(&of->sysdcl, of->dcl_tag, cli_options);
   populate_start_file(&of->syssym, of->sym_tag, cli_options);
@@ -2285,10 +2285,10 @@ void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* tout
   }
   ffree(check.raw);
   ffree(action.raw);
-  common(byte_check_bit, cli_options, toutput, dss, ctp, of, scope, ia, srt, scope_right_side, statset, gd_index, gd_range, scope_state, item_table, sc, output_buffer, output_ptr2);
+  common(byte_check_bit, cli_options, toutput, dss, ctp, of, scope, ia, srt, scope_right_side, statset, gd_index, gd_range, scope_state, item_table, sc, output_buffer, output_ptr2, symno);
 }
 
-void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ArrayLong scope_right_side, struct lastats_type *lastats, ArrayLong gotodef, ArrayShort gd_index, ArrayShort gd_range, struct ruletab_type *rules, ArrayShort scope_state, struct statset_type *statset, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer, struct OutputPtr output_ptr2) {
+void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ArrayLong scope_right_side, struct lastats_type *lastats, ArrayLong gotodef, ArrayShort gd_index, ArrayShort gd_range, struct ruletab_type *rules, ArrayShort scope_state, struct statset_type *statset, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer, struct OutputPtr output_ptr2, struct symno_type *symno) {
   bool byte_check_bit = true;
   populate_start_file(&of->sysdcl, of->dcl_tag, cli_options);
   populate_start_file(&of->syssym, of->sym_tag, cli_options);
@@ -2645,7 +2645,7 @@ void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutp
   }
   ffree(np->next.raw);
   ffree(np->previous.raw);
-  common(byte_check_bit, cli_options, toutput, dss, ctp, of, scope, ia, srt, scope_right_side, statset, gd_index, gd_range, scope_state, item_table, sc, output_buffer, output_ptr2);
+  common(byte_check_bit, cli_options, toutput, dss, ctp, of, scope, ia, srt, scope_right_side, statset, gd_index, gd_range, scope_state, item_table, sc, output_buffer, output_ptr2, symno);
 }
 
 // endregion
@@ -3663,7 +3663,7 @@ static void overlap_t_rows(struct CLIOptions *cli_options, struct TableOutput *t
   ffree(np->previous.raw);
 }
 
-void cmprspa(struct CLIOptions *cli_options, struct TableOutput *toutput, struct DetectedSetSizes *dss, struct CTabsProps *ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ArrayLong scope_right_side, struct lastats_type *lastats, ArrayShort shiftdf, ArrayLong gotodef, ArrayShort gd_index, ArrayShort gd_range, ArrayShort scope_state, struct statset_type *statset, struct ruletab_type *rules, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer, struct OutputPtr output_ptr2) {
+void cmprspa(struct CLIOptions *cli_options, struct TableOutput *toutput, struct DetectedSetSizes *dss, struct CTabsProps *ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ArrayLong scope_right_side, struct lastats_type *lastats, ArrayShort shiftdf, ArrayLong gotodef, ArrayShort gd_index, ArrayShort gd_range, ArrayShort scope_state, struct statset_type *statset, struct ruletab_type *rules, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer, struct OutputPtr output_ptr2, struct symno_type *symno) {
   ArrayBool shift_on_error_symbol = Allocate_bool_array2(max_la_state + 1);
   struct new_state_type *new_state_element;
   calloc0p(&new_state_element, max_la_state + 1, struct new_state_type);
@@ -3686,7 +3686,7 @@ void cmprspa(struct CLIOptions *cli_options, struct TableOutput *toutput, struct
   overlay_sim_t_rows(cli_options, toutput, shift_on_error_symbol, new_state_element_reduce_nodes, &tresult, &nte, shift_check_index, ctp, new_state_element, shift_image, real_shift_number, np, ia, srt, rules, lastats, shiftdf, statset);
   ArrayLong term_state_index = Allocate_long_array2(max_la_state + 1);
   overlap_t_rows(cli_options, toutput, &nte, term_state_index, ctp, new_state_element, np, ia, srt, shiftdf);
-  print_space_parser(cli_options, toutput, dss, term_state_index, shift_check_index, ctp, new_state_element, shift_image, real_shift_number, of, scope, ia, srt, scope_right_side, shiftdf, gotodef, gd_index, gd_range, rules, scope_state, statset, item_table, sc, output_buffer, output_ptr2);
+  print_space_parser(cli_options, toutput, dss, term_state_index, shift_check_index, ctp, new_state_element, shift_image, real_shift_number, of, scope, ia, srt, scope_right_side, shiftdf, gotodef, gd_index, gd_range, rules, scope_state, statset, item_table, sc, output_buffer, output_ptr2, symno);
 }
 
 // endregion
@@ -4010,11 +4010,11 @@ static void overlap_tables(struct CLIOptions *cli_options, struct TableOutput* t
 /// together, to achieve maximum speed efficiency.
 /// Otherwise, the compression technique used in this table is
 /// analogous to the technique used in the routine CMPRSPA.
-void cmprtim(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ArrayLong scope_right_side, struct lastats_type *lastats, ArrayLong gotodef, ArrayShort gd_index, ArrayShort gd_range, ArrayShort scope_state, struct statset_type *statset, struct ruletab_type *rules, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer, struct OutputPtr output_ptr2) {
+void cmprtim(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ArrayLong scope_right_side, struct lastats_type *lastats, ArrayLong gotodef, ArrayShort gd_index, ArrayShort gd_range, ArrayShort scope_state, struct statset_type *statset, struct ruletab_type *rules, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer, struct OutputPtr output_ptr2, struct symno_type *symno) {
   ArrayBool is_terminal = Allocate_bool_array2(num_symbols + 1);
   struct DefaultSaves default_saves = remap_symbols(toutput, is_terminal, srt, lastats, statset, cli_options);
   overlap_tables(cli_options, toutput, is_terminal, default_saves, ctp, default_saves.last_symbol, np, ia, srt, lastats, statset);
-  print_time_parser(cli_options, toutput, dss, ctp, of, np, scope, ia, srt, scope_right_side, lastats, gotodef, gd_index, gd_range, rules, scope_state, statset, item_table, sc, output_buffer, output_ptr2);
+  print_time_parser(cli_options, toutput, dss, ctp, of, np, scope, ia, srt, scope_right_side, lastats, gotodef, gd_index, gd_range, rules, scope_state, statset, item_table, sc, output_buffer, output_ptr2, symno);
 }
 
 // endregion
@@ -4298,9 +4298,9 @@ void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLI
   init_file(&of->sysprs, output_files->prs_file, of->prs_tag);
   struct ImportantAspects ia = (struct ImportantAspects) {};
   if (cli_options->table_opt.value == OPTIMIZE_SPACE.value) {
-    cmprspa(cli_options, &toutput, dss, ctp, of, np, scope, &ia, srt, scope_right_side, lastats, *shiftdf, *gotodef, gd_index, gd_range, scope_state, statset, rules, item_table, sc, (*op.output_buffer), op);
+    cmprspa(cli_options, &toutput, dss, ctp, of, np, scope, &ia, srt, scope_right_side, lastats, *shiftdf, *gotodef, gd_index, gd_range, scope_state, statset, rules, item_table, sc, (*op.output_buffer), op, symno);
   } else if (cli_options->table_opt.value == OPTIMIZE_TIME.value) {
-    cmprtim(cli_options, &toutput, dss, ctp, of, np, scope, &ia, srt, scope_right_side, lastats, *gotodef, gd_index, gd_range, scope_state, statset, rules, item_table, sc, (*op.output_buffer), op);
+    cmprtim(cli_options, &toutput, dss, ctp, of, np, scope, &ia, srt, scope_right_side, lastats, *gotodef, gd_index, gd_range, scope_state, statset, rules, item_table, sc, (*op.output_buffer), op, symno);
   } else {
     exit(999);
   }
