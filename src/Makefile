@@ -12,13 +12,13 @@ main.o:	main.c common.h
 globals.o: globals.c common.h
 	$(CC) -c globals.c
 
-lpgparse.o: lpgprs.h lpgdcl.h lpgdef.h lpgact.h lpgact.c lpgsym.h common.h lpgparse.h lpgparse.c
+lpgparse.o: lpgprs.h lpgdcl.h lpgdef.h lpgact.h lpgact.c lpgsym.h common.h lpgparse.c
 	$(CC) -c lpgparse.c
 
 lpgutil.o: lpgutil.c common.h
 	$(CC) -c lpgutil.c
 
-lpgact.o: lpgact.c lpgparse.h
+lpgact.o: lpgact.c
 	$(CC) -c lpgact.c
 
 mkfirst.o: mkfirst.c common.h

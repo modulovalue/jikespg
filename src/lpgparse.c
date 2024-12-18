@@ -5,7 +5,6 @@
 #include "lpgsym.h"
 #include "lpgdef.h"
 #include "lpgdcl.h"
-#include "lpgparse.h"
 #include "lpgact.c"
 #include "lpgact.h"
 #include "lpgprs.h"

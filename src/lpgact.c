@@ -1,5 +1,4 @@
 #include "common.h"
-#include "lpgparse.h"
 
 #line 87 "jikespg.g"
 

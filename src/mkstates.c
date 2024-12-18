@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "common.h"
-#include "lpgparse.h"
 
 /// STATE_ELEMENT is used to represent states. Each state is mapped into a
 /// unique number. The components QUEUE and LINK are auxiliary:

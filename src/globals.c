@@ -1,14 +1,29 @@
 #include "common.h"
 
 // TODO • propagate some global state struct through all the routines of the parser?
-struct LAState {};
+struct LAState {
+  long num_items;
+  long num_states;
+  long max_la_state;
+};
 
 long num_items = 0;
 long num_states = 0;
 long max_la_state;
 
+
+
+
 // TODO • move these into some struct?
-struct CounterState {};
+struct CounterState {
+  long num_symbols;
+  long num_names;
+  long num_terminals;
+  long num_non_terminals;
+  long num_rules;
+  long num_single_productions;
+  long gotodom_size;
+};
 
 long num_symbols = 0;
 long num_names = 0;
@@ -19,8 +34,16 @@ long num_single_productions = 0;
 long gotodom_size = 0;
 
 
+
+
 // TODO • move these into the PredefTerms struct or into the parser struct?
-struct PredefTerms {};
+struct PredefTerms {
+  int accept_image;
+  int eoft_image;
+  int eolt_image;
+  int empty;
+  int error_image;
+};
 
 int accept_image;
 int eoft_image;
@@ -28,8 +51,20 @@ int eolt_image;
 int empty;
 int error_image;
 
+
+
+
 // TODO • move these into the counters struct.
-struct Counters {};
+struct Counters {
+  long num_shift_maps;
+  long num_shifts;
+  long num_shift_reduces;
+  long num_gotos;
+  long num_goto_reduces;
+  long num_reductions;
+  long num_entries;
+  long num_error_rules;
+};
 
 long num_shift_maps = 0;
 long num_shifts = 0;
@@ -40,3 +75,12 @@ long num_reductions = 0;
 long num_entries = 0;
 long num_error_rules = 0;
 
+
+
+
+// TODO • move into parser state
+int num_acts = 0;
+int num_defs = 0;
+long defelmt_size = 0;
+long actelmt_size = 0;
+long rulehdr_size = 0;

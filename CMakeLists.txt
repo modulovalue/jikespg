@@ -15,7 +15,6 @@ add_executable(
         src/lpgdcl.h
         src/lpgdef.h
         src/lpgparse.c
-        src/lpgparse.h
         src/lpgprs.h
         src/lpgsym.h
         src/lpgutil.c

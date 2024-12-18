@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include "lpgparse.h"
 #include "common.h"
 
 /// The structure STATE_ELEMENT is used to construct lookahead states.

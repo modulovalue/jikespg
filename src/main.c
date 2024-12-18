@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "common.h"
-#include "lpgparse.h"
 
 /// This fork of jikespg was meant to clean up jikespg while maintaining its functionality.
 /// Unfortunately, the lack of an expressive type system in C makes it very difficult

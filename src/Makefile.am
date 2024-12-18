@@ -16,7 +16,6 @@ noinst_HEADERS = common.h \
                  lpgact.c \
                  lpgdcl.h \
                  lpgdef.h \
-                 lpgparse.h \
                  lpgprs.h \
                  lpgsym.h
 
