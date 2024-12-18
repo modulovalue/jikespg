@@ -697,7 +697,7 @@ int get_shift_symbol(const int lhs_symbol, ArrayBool symbol_seen, struct node **
 /// that are required as candidates for secondary error recovery.  If the
 /// option NAMES=OPTIMIZED is requested, the NAME map is optimized and SYMNO
 /// is updated accordingly.
-void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct Produced* produced, struct ScopeTop* st, JBitset first, struct scope_type *scope, struct node **clitems, ArrayBool null_nt, ArrayLong* scope_right_side, struct ruletab_type *rules, ArrayShort *scope_state, struct statset_type *statset, struct itemtab *item_table, ArrayShort rhs_sym, ArrayShort *gd_range, ArrayShort *gd_index, struct symno_type *symno, struct ScopeCounter* sc) {
+void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct Produced* produced, struct ScopeTop* st, JBitset first, struct scope_type *scope, struct node **clitems, ArrayBool null_nt, ArrayLong* scope_right_side, struct ruletab_type *rules, ArrayShort *scope_state, struct statset_type *statset, struct itemtab *item_table, ArrayShort rhs_sym, ArrayShort *gd_range, ArrayShort *gd_index, struct symno_type *symno, struct ScopeCounter* sc, char *string_table) {
   // TOP, STACK, and INDEX are used for the digraph algorithm
   // in the routines COMPUTE_PRODUCES.
   //
@@ -790,7 +790,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
       printf("*** These error rules are not in manual format:\n\n");
     }
     for (int item_no = item_root; item_no != NIL; item_no = item_list.raw[item_no]) {
-      print_item(item_no, cli_options, rules, item_table, rhs_sym);
+      print_item(item_no, cli_options, rules, item_table, rhs_sym, string_table);
     }
   }
   // Complete the construction of the RIGHT_MOST_PRODUCES map for
@@ -1385,7 +1385,7 @@ void compute_produces(const int symbol, struct node **direct_produces, ArrayShor
 
 
 /// In this procedure, we first construct the LR(0) automaton.
-void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, JBitset first, struct scope_type *scope, struct node **clitems, struct node **closure, struct SRTable* srt, ArrayLong* scope_right_side, ArrayBool null_nt, ArrayShort *scope_state, struct itemtab *item_table, struct ruletab_type *rules, ArrayShort rhs_sym, ArrayShort* gd_range, ArrayShort*gd_index, struct StatSet* ss, struct ScopeCounter* sc, struct symno_type *symno) {
+void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, JBitset first, struct scope_type *scope, struct node **clitems, struct node **closure, struct SRTable* srt, ArrayLong* scope_right_side, ArrayBool null_nt, ArrayShort *scope_state, struct itemtab *item_table, struct ruletab_type *rules, ArrayShort rhs_sym, ArrayShort* gd_range, ArrayShort*gd_index, struct StatSet* ss, struct ScopeCounter* sc, struct symno_type *symno, char *string_table) {
   struct ScopeTop st = (struct ScopeTop) {
     .top = 0
   };
@@ -1402,7 +1402,7 @@ void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, JBits
   mklr0(cli_options, &no_shifts_ptr, &no_gotos_ptr, clitems, closure, srt, rules, item_table, ss);
   struct Produced produced = {};
   if (cli_options->error_maps_bit && (cli_options->table_opt.value == OPTIMIZE_TIME.value || cli_options->table_opt.value == OPTIMIZE_SPACE.value)) {
-    produce(cli_options, dss, &produced, &st, first, scope, clitems, null_nt, scope_right_side, rules, scope_state, ss->statset, item_table, rhs_sym, gd_range, gd_index, symno, sc);
+    produce(cli_options, dss, &produced, &st, first, scope, clitems, null_nt, scope_right_side, rules, scope_state, ss->statset, item_table, rhs_sym, gd_range, gd_index, symno, sc, string_table);
   }
   // Free space trapped by the CLOSURE and CLITEMS maps.
   for ALL_NON_TERMINALS3(j) {

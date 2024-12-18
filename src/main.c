@@ -75,6 +75,20 @@ int main(const int argc, char *argv[]) {
     ArrayShort rhs_sym;
 
     struct ruletab_type *rules;
+
+    struct ParserState ps = (struct ParserState) {
+      .hash_table = NULL,
+      .error_maps_bit = cli_options.error_maps_bit,
+      .num_acts = 0,
+      .num_defs = 0,
+      .defelmt_size = 0,
+      .actelmt_size = 0,
+      .rulehdr_size = 0,
+      .string_offset = 0,
+      .stack_top = -1,
+      .string_table = NULL,
+    };
+
     // Process input.
     {
       char grm_file[80];
@@ -108,7 +122,7 @@ int main(const int argc, char *argv[]) {
         tab_file[dot - tmpbuf] = '\0';
       }
       strcat(tab_file, ".t"); /* add .t extension for table file */
-      process_input(grm_file, &of, argc, argv, file_prefix, &cli_options, &rhs_sym, &rules, &symno);
+      process_input(grm_file, &of, argc, argv, file_prefix, &cli_options, &rhs_sym, &rules, &symno, &ps);
     }
 
     /// FOLLOW is a mapping from non-terminals to a set of terminals that
@@ -126,7 +140,7 @@ int main(const int argc, char *argv[]) {
 
     struct itemtab *item_table = NULL;
 
-    struct DetectedSetSizes dss = mkbasic(&cli_options, follow, &rmpself, &first, &fd, rules, rhs_sym, &item_table);
+    struct DetectedSetSizes dss = mkbasic(&cli_options, follow, &rmpself, &first, &fd, rules, rhs_sym, &item_table, ps.string_table);
 
     struct SRTable srt = (struct SRTable) {
       .reduce = NULL,
@@ -150,7 +164,7 @@ int main(const int argc, char *argv[]) {
       .scope_state_size = 0,
     };
 
-    mkstats(&cli_options, &dss, first, scope, fd.clitems, fd.closure, &srt, &scope_right_side, dss.null_nt, &scope_state, item_table, rules, rhs_sym, &gd_range, &gd_index, &ss, &sc, symno);
+    mkstats(&cli_options, &dss, first, scope, fd.clitems, fd.closure, &srt, &scope_right_side, dss.null_nt, &scope_state, item_table, rules, rhs_sym, &gd_range, &gd_index, &ss, &sc, symno, ps.string_table);
 
     struct SourcesElementSources ses = (struct SourcesElementSources) {
       .sources = NULL,
@@ -159,7 +173,7 @@ int main(const int argc, char *argv[]) {
       .lastats = NULL,
     };
     long la_top = 0;
-    struct ConflictCounter conflicts = mkrdcts(&cli_options, &dss, &ses, rmpself, first, fd.adequate_item, &srt, dss.null_nt, gd_index, rules, ss.statset, item_table, rhs_sym, &las, &la_top);
+    struct ConflictCounter conflicts = mkrdcts(&cli_options, &dss, &ses, rmpself, first, fd.adequate_item, &srt, dss.null_nt, gd_index, rules, ss.statset, item_table, rhs_sym, &las, &la_top, ps.string_table);
     // Output more basic statistics.
     {
       PRNT3("Number of Terminals: %ld", num_terminals - 1); /*-1 for %empty */
@@ -241,7 +255,7 @@ int main(const int argc, char *argv[]) {
 
         ArrayShort shiftdf;
         ArrayLong gotodef;
-        process_tables(tab_file, &of, &cli_options, &dss, &ctp, &of, &np, scope, gd_range, &srt, scope_right_side, las.lastats, &shiftdf, &gotodef, gd_index, ss.statset, scope_state, rules, item_table, symno, &sc);
+        process_tables(tab_file, &of, &cli_options, &dss, &ctp, &of, &np, scope, gd_range, &srt, scope_right_side, las.lastats, &shiftdf, &gotodef, gd_index, ss.statset, scope_state, rules, item_table, symno, &sc, ps.string_table);
       }
     }
 

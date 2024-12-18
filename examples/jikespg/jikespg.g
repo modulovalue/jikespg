@@ -277,7 +277,7 @@ static void definition_expected(struct ParserState* ps)
 /.$location
 static void process_terminal(struct ParserState* ps)
 {
-    assign_symbol_no(SYM1.name, OMEGA, ps->hash_table, &ps->string_offset);
+    assign_symbol_no(SYM1.name, OMEGA, ps);
 }
 ./
                       | '|'
@@ -323,7 +323,7 @@ static void act$rule_number(struct ParserState* ps)
             break;
 
         case SYMBOL_TK:
-            assign_symbol_no(SYM3.name, OMEGA, ps->hash_table, &ps->string_offset);
+            assign_symbol_no(SYM3.name, OMEGA, ps);
             image = symbol_image(SYM3.name, ps);
             break;
 
@@ -370,7 +370,7 @@ static void act$rule_number(struct ParserState* ps)
                 PRNTERR2("Symbol %s was previously defined. Line %ld, column %d", tok_string, SYM1.start_line, SYM1.start_column);
                 exit(12);
             }
-            assign_symbol_no(SYM1.name, image, ps->hash_table, &ps->string_offset);
+            assign_symbol_no(SYM1.name, image, ps);
             break;
 
         case ERROR_SYMBOL_TK:
@@ -524,7 +524,7 @@ static void missing_quote(struct ParserState* ps)
 /.$location
 static void act$rule_number(struct ParserState* ps)
 {
-    assign_symbol_no(SYM1.name, OMEGA, ps->hash_table, &ps->string_offset);
+    assign_symbol_no(SYM1.name, OMEGA, ps);
     struct node *q = Allocate_node();
     q -> value = symbol_image(SYM1.name, ps);
     if (ps->start_symbol_root == NULL)
@@ -616,7 +616,7 @@ static void act$rule_number(struct ParserState* ps)
 /.$location
 static void act$rule_number(struct ParserState* ps)
 {
-    assign_symbol_no(SYM2.name, OMEGA, ps->hash_table, &ps->string_offset);
+    assign_symbol_no(SYM2.name, OMEGA, ps);
     if (ps->start_symbol_root == NULL)
     {
         struct node *q = Allocate_node();
@@ -688,7 +688,7 @@ static void act$rule_number(struct ParserState* ps)
             nospace();
     }
     ps->rulehdr[num_rules].sp = ((SYM3.kind == ARROW_TK) ? true : false);
-    assign_symbol_no(SYM2.name, OMEGA, ps->hash_table, &ps->string_offset);
+    assign_symbol_no(SYM2.name, OMEGA, ps);
     ps->rulehdr[num_rules].lhs = symbol_image(SYM2.name, ps);
     ps->rulehdr[num_rules].rhs_root = NULL;
 }
@@ -728,7 +728,7 @@ static void act$rule_number(struct ParserState* ps)
 /.$location
 static void act$rule_number(struct ParserState* ps)
 {
-    assign_symbol_no(SYM2.name, OMEGA, ps->hash_table, &ps->string_offset);
+    assign_symbol_no(SYM2.name, OMEGA, ps);
     int sym = symbol_image(SYM2.name, ps);
     if (sym != empty)
     {
@@ -945,15 +945,15 @@ static void act$rule_number(struct ParserState* ps)
 static void process_TERMINALS_section(struct ParserState* ps)
 {
     num_terminals = num_symbols;
-    assign_symbol_no(keoft, OMEGA, ps->hash_table, &ps->string_offset);
+    assign_symbol_no(keoft, OMEGA, ps);
     eoft_image = symbol_image(keoft, ps);
     if (ps->error_maps_bit) {
-        assign_symbol_no(kerror, OMEGA, ps->hash_table, &ps->string_offset);
+        assign_symbol_no(kerror, OMEGA, ps);
         error_image = symbol_image(kerror, ps);
     } else {
       error_image = DEFAULT_SYMBOL;   // should be 0
     }
-    assign_symbol_no(kaccept, OMEGA, ps->hash_table, &ps->string_offset);
+    assign_symbol_no(kaccept, OMEGA, ps);
     accept_image = symbol_image(kaccept, ps);
 }
 ./
@@ -1038,7 +1038,7 @@ static void process_ALIAS_section(struct ParserState* ps)
 /.$location
 static void act$rule_number(struct ParserState* ps)
 {
-    assign_symbol_no(kempty, OMEGA, ps->hash_table, &ps->string_offset);
+    assign_symbol_no(kempty, OMEGA, ps);
     empty = symbol_image(kempty, ps);
 }
 ./

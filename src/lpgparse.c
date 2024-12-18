@@ -9,8 +9,6 @@
 #include "lpgact.h"
 #include "lpgprs.h"
 
-char *string_table;
-
 /// SYMNO is an array that maps symbol numbers to actual symbols.
 struct symno_type *symno;
 
@@ -24,11 +22,13 @@ struct line_elemt {
 
 struct LinePool {
   struct line_elemt *line_pool_root;
-};char *RETRIEVE_STRING(const int indx) {
+};
+
+char *RETRIEVE_STRING(const int indx, char *string_table) {
   return &string_table[symno[indx].ptr];
 }
 
-const char *RETRIEVE_NAME(const int indx) {
+char *RETRIEVE_NAME(const int indx, char *string_table) {
   return &string_table[name[indx]];
 }
 
@@ -564,24 +564,24 @@ static int hash(const char *symbl) {
 /// INSERT_STRING takes as an argument a pointer to a ht_elemt structure and
 /// a character string. It inserts the string into the string table and sets
 /// the value of node to the index into the string table.
-static void insert_string(struct hash_type *q, const char *string, long* string_offset) {
+static void insert_string(struct hash_type *q, const char *string, long* string_offset, char **string_table) {
   long string_size = 0;
-  if ((*string_offset) + strlen(string) >= string_size) {
+  if (*string_offset + strlen(string) >= string_size) {
     string_size += STRING_BUFFER_SIZE;
-    string_table = (char *) (string_table == (char *) NULL
+    *string_table = (char *) (*string_table == (char *) NULL
        ? malloc(string_size * sizeof(char))
-       : realloc(string_table, string_size * sizeof(char)));
-    if (string_table == (char *) NULL) {
+       : realloc(*string_table, string_size * sizeof(char)));
+    if (*string_table == (char *) NULL) {
       nospace();
     }
   }
-  q->st_ptr = (*string_offset);
+  q->st_ptr = *string_offset;
   // Copy until NULL is copied.
-  while ((string_table[(*string_offset)++] = *string++)) {
+  while (((*string_table)[(*string_offset)++] = *string++)) {
   }
 }
 
-static bool EQUAL_STRING(const char *symb, const struct hash_type *p) {
+static bool EQUAL_STRING(const char *symb, const struct hash_type *p, char *string_table) {
   return strcmp(symb, string_table + p->st_ptr) == 0;
 }
 
@@ -598,11 +598,11 @@ static bool EQUAL_STRING(const char *symb, const struct hash_type *p) {
 /// The NAME_INDEX field is set to OMEGA and will be assigned a value later.
 /// ASSIGN_SYMBOL_NO takes as arguments a pointer to a node and an image
 /// number and assigns a symbol number to the symbol pointed to by the node.
-void assign_symbol_no(const char *string_ptr, const int image, struct hash_type **hash_table, long* string_offset) {
+void assign_symbol_no(const char *string_ptr, const int image, struct ParserState* ps) {
   struct hash_type *p;
   const int i = hash(string_ptr);
-  for (p = hash_table[i]; p != NULL; p = p->link) {
-    if (EQUAL_STRING(string_ptr, p)) /* Are they the same */
+  for (p = ps->hash_table[i]; p != NULL; p = p->link) {
+    if (EQUAL_STRING(string_ptr, p, ps->string_table)) /* Are they the same */
       return;
   }
   talloc0p(&p, struct hash_type);
@@ -613,9 +613,9 @@ void assign_symbol_no(const char *string_ptr, const int image, struct hash_type 
     p->number = -image;
   }
   p->name_index = OMEGA;
-  insert_string(p, string_ptr, string_offset);
-  p->link = hash_table[i];
-  hash_table[i] = p;
+  insert_string(p, string_ptr, &ps->string_offset, &ps->string_table);
+  p->link = ps->hash_table[i];
+  ps->hash_table[i] = p;
 }
 
 /// ALIAS_MAP takes as input a symbol and an image. It searches the hash
@@ -624,12 +624,12 @@ void assign_symbol_no(const char *string_ptr, const int image, struct hash_type 
 /// ASSIGN SYMBOL_NO to enter stringptr into the table and then we alias it.
 void alias_map(const char *stringptr, const int image, struct ParserState* ps) {
   for (struct hash_type *q = ps->hash_table[hash(stringptr)]; q != NULL; q = q->link) {
-    if (EQUAL_STRING(stringptr, q)) {
+    if (EQUAL_STRING(stringptr, q, ps->string_table)) {
       q->number = -image; /* Mark alias of image */
       return;
     }
   }
-  assign_symbol_no(stringptr, image, ps->hash_table, &ps->string_offset);
+  assign_symbol_no(stringptr, image, ps);
 }
 
 /// SYMBOL_IMAGE takes as argument a symbol. It searches for that symbol
@@ -637,7 +637,7 @@ void alias_map(const char *stringptr, const int image, struct ParserState* ps) {
 /// returns OMEGA.
 int symbol_image(const char *item, struct ParserState* ps) {
   for (const struct hash_type *q = ps->hash_table[hash(item)]; q != NULL; q = q->link) {
-    if (EQUAL_STRING(item, q))
+    if (EQUAL_STRING(item, q, ps->string_table))
       return ABS(q->number);
   }
   return OMEGA;
@@ -651,7 +651,7 @@ int name_map(const char *symb, struct ParserState* ps) {
   struct hash_type *p;
   const int i = hash(symb);
   for (p = ps->hash_table[i]; p != NULL; p = p->link) {
-    if (EQUAL_STRING(symb, p)) {
+    if (EQUAL_STRING(symb, p, ps->string_table)) {
       if (p->name_index != OMEGA) {
         return p->name_index;
       } else {
@@ -663,7 +663,7 @@ int name_map(const char *symb, struct ParserState* ps) {
   }
   talloc0p(&p, struct hash_type);
   p->number = 0;
-  insert_string(p, symb, &ps->string_offset);
+  insert_string(p, symb, &ps->string_offset, &ps->string_table);
   p->link = ps->hash_table[i];
   ps->hash_table[i] = p;
   num_names++;
@@ -1138,7 +1138,7 @@ next_line: {
             jj = 0;
           }
           const int max_len = output_size - k - jj;
-          restore_symbol(temp2, RETRIEVE_STRING(rules[rule_no].lhs), cli_options->ormark, cli_options->escape);
+          restore_symbol(temp2, RETRIEVE_STRING(rules[rule_no].lhs, ps->string_table), cli_options->ormark, cli_options->escape);
           // if a single production
           if (rules[rule_no].sp) {
             strcat(temp2, " ->");
@@ -1150,7 +1150,7 @@ next_line: {
           } else /* Copy right-hand-side symbols to temp2 */
           {
             for ENTIRE_RHS3(j, rule_no, rules) {
-              restore_symbol(symbol, RETRIEVE_STRING(rhs_sym.raw[j]), cli_options->ormark, cli_options->escape);
+              restore_symbol(symbol, RETRIEVE_STRING(rhs_sym.raw[j], ps->string_table), cli_options->ormark, cli_options->escape);
               if (strlen(temp2) + strlen(symbol) + 1 < max_len) {
                 strcat(temp2, " ");
                 strcat(temp2, symbol);
@@ -1530,15 +1530,15 @@ static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *
       }
       for ALL_TERMINALS3(symbol) {
         if (symno[symbol].name_index == OMEGA) {
-          symno[symbol].name_index = name_map(RETRIEVE_STRING(symbol), ps);
+          symno[symbol].name_index = name_map(RETRIEVE_STRING(symbol, ps->string_table), ps);
         }
       }
       for ALL_NON_TERMINALS3(symbol) {
         if (symno[symbol].name_index == OMEGA) {
           if (cli_options->names_opt.value == MAXIMUM_NAMES.value) {
-            symno[symbol].name_index = name_map(RETRIEVE_STRING(symbol), ps);
+            symno[symbol].name_index = name_map(RETRIEVE_STRING(symbol, ps->string_table), ps);
           } else if (cli_options->names_opt.value == OPTIMIZE_PHRASES.value) {
-            symno[symbol].name_index = -name_map(RETRIEVE_STRING(symbol), ps);
+            symno[symbol].name_index = -name_map(RETRIEVE_STRING(symbol, ps->string_table), ps);
           } else if (cli_options->names_opt.value == MINIMUM_NAMES.value) {
             symno[symbol].name_index = symno[error_image].name_index;
           }
@@ -1607,7 +1607,7 @@ static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *
         rules[ii].lhs = rules[ii - 1].lhs;
       } else if (IS_A_TERMINAL(ps->rulehdr[ii].lhs)) {
         char temp[SYMBOL_SIZE + 1];
-        restore_symbol(temp, RETRIEVE_STRING(ps->rulehdr[ii].lhs), cli_options->ormark, cli_options->escape);
+        restore_symbol(temp, RETRIEVE_STRING(ps->rulehdr[ii].lhs, ps->string_table), cli_options->ormark, cli_options->escape);
         PRNTERR2("In rule %d: terminal \"%s\" used as left hand side", ii, temp);
         PRNTERR("Processing terminated due to input errors.");
         exit(12);
@@ -1620,20 +1620,8 @@ static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *
 }
 
 /// This procedure opens all relevant files and processes the input grammar.
-void process_input(char *grm_file, struct OutputFiles *output_files, const int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options, ArrayShort *rhs_sym, struct ruletab_type **rulesp, struct symno_type **symno) {
+void process_input(char *grm_file, struct OutputFiles *output_files, const int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options, ArrayShort *rhs_sym, struct ruletab_type **rulesp, struct symno_type **symno, struct ParserState* ps) {
   char parm[256] = "";
-
-  struct ParserState ps = (struct ParserState) {
-    .hash_table = NULL,
-    .error_maps_bit = cli_options->error_maps_bit,
-    .num_acts = 0,
-    .num_defs = 0,
-    .defelmt_size = 0,
-    .actelmt_size = 0,
-    .rulehdr_size = 0,
-    .string_offset = 0,
-    .stack_top = -1,
-  };
 
   // Parse args.
   {
@@ -1699,8 +1687,8 @@ void process_input(char *grm_file, struct OutputFiles *output_files, const int a
     //
     // Set up a pool of temporary space.
     reset_temporary_space();
-    calloc0p(&ps.terminal, STACK_SIZE, struct terminal_type);
-    calloc0p(&(ps.hash_table), HT_SIZE, struct hash_type *);
+    calloc0p(&ps->terminal, STACK_SIZE, struct terminal_type);
+    calloc0p(&(ps->hash_table), HT_SIZE, struct hash_type *);
     // Allocate space for input buffer and read in initial data in input
     // file. Next, invoke PROCESS_OPTION_LINES to process all lines in
     // input file that are options line.
@@ -1749,16 +1737,16 @@ void process_input(char *grm_file, struct OutputFiles *output_files, const int a
     // LALR(1) parser table generated by LPG to recognize the grammar which it
     // places in the rulehdr structure.
     short state_stack[STACK_SIZE];
-    scanner(grm_file, sysgrm, cli_options, &ss, &ps); /* Get first token */
+    scanner(grm_file, sysgrm, cli_options, &ss, ps); /* Get first token */
     int act = START_STATE;
   process_terminal:
     // Note that this driver assumes that the tables are LPG SPACE
     // tables with no GOTO-DEFAULTS.
-    state_stack[++(ps.stack_top)] = act;
+    state_stack[++(ps->stack_top)] = act;
     act = t_action(act, ss.ct, ?);
     // Reduce
     if (act <= NUM_RULES) {
-      ps.stack_top--;
+      ps->stack_top--;
     } else if (act > ERROR_ACTION || /* Shift_reduce */ act < ACCEPT_ACTION) /* Shift */
     {
       // token_action
@@ -1768,28 +1756,28 @@ void process_input(char *grm_file, struct OutputFiles *output_files, const int a
           // parse stack called TERMINAL. Note that in case of a BLOCK_, the name of
           // the token is not copied since blocks are processed separately on a
           // second pass.
-          const int top = ps.stack_top + 1;
-          ps.terminal[top].kind = ss.ct;
-          ps.terminal[top].start_line = ss.ct_start_line;
-          ps.terminal[top].start_column = ss.ct_start_col;
-          ps.terminal[top].end_line = ss.ct_end_line;
-          ps.terminal[top].end_column = ss.ct_end_col;
-          ps.terminal[top].length = ss.ct_length;
+          const int top = ps->stack_top + 1;
+          ps->terminal[top].kind = ss.ct;
+          ps->terminal[top].start_line = ss.ct_start_line;
+          ps->terminal[top].start_column = ss.ct_start_col;
+          ps->terminal[top].end_line = ss.ct_end_line;
+          ps->terminal[top].end_column = ss.ct_end_col;
+          ps->terminal[top].length = ss.ct_length;
           if (ss.ct != BLOCK_TK) {
-            memcpy(ps.terminal[top].name, ss.ct_ptr, ss.ct_length);
-            ps.terminal[top].name[ss.ct_length] = '\0';
+            memcpy(ps->terminal[top].name, ss.ct_ptr, ss.ct_length);
+            ps->terminal[top].name[ss.ct_length] = '\0';
           } else {
-            ps.terminal[top].name[0] = '\0';
+            ps->terminal[top].name[0] = '\0';
           }
         }
       }
-      scanner(grm_file, sysgrm, cli_options, &ss, &ps);
+      scanner(grm_file, sysgrm, cli_options, &ss, ps);
       if (act < ACCEPT_ACTION) {
         goto process_terminal;
       }
       act -= ERROR_ACTION;
     } else if (act == ACCEPT_ACTION) {
-      accept_action(grm_file, cli_options, sysgrm, &ss, rhs_sym, rulesp, &ps, *symno);
+      accept_action(grm_file, cli_options, sysgrm, &ss, rhs_sym, rulesp, ps, *symno);
       goto end;
     } else {
       // error_action
@@ -1813,9 +1801,9 @@ void process_input(char *grm_file, struct OutputFiles *output_files, const int a
   process_non_terminal:
     do {
       const int lhs_sym = lhs[act]; /* to bypass IBMC12 bug */
-      ps.stack_top -= rhs[act] - 1;
-      rule_action[act](&ps);
-      act = nt_action(state_stack[ps.stack_top], lhs_sym);
+      ps->stack_top -= rhs[act] - 1;
+      rule_action[act](ps);
+      act = nt_action(state_stack[ps->stack_top], lhs_sym);
     } while (act <= NUM_RULES);
     goto process_terminal;
   }
@@ -1828,17 +1816,17 @@ end: {
     // This routine is invoked to free all space used to process the input that
     // is no longer needed. Note that for the string_table, only the unused
     // space is released.
-    if (ps.string_offset > 0) {
-      string_table = (char *)
-      (string_table == (char *) NULL
-         ? malloc(ps.string_offset * sizeof(char))
-         : realloc(string_table, ps.string_offset * sizeof(char)));
-      if (string_table == (char *) NULL)
+    if (ps->string_offset > 0) {
+      ps->string_table = (char *)
+      (ps->string_table == (char *) NULL
+         ? malloc(ps->string_offset * sizeof(char))
+         : realloc(ps->string_table, ps->string_offset * sizeof(char)));
+      if (ps->string_table == (char *) NULL)
         nospace();
     }
-    ffree(ps.terminal);
-    ffree(ps.hash_table);
+    ffree(ps->terminal);
+    ffree(ps->hash_table);
     ffree(ss.input_buffer);
-    ffree(ps.rulehdr); /* allocated in action LPGACT when grammar is not empty */
+    ffree(ps->rulehdr); /* allocated in action LPGACT when grammar is not empty */
   }
 }

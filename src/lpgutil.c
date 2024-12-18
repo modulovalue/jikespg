@@ -277,7 +277,7 @@ void print_large_token(char *line, char *token, const char *indent, int len) {
 }
 
 /// PRINT_ITEM takes as parameter an ITEM_NO which it prints.
-void print_item(const int item_no, struct CLIOptions* cli_options, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym) {
+void print_item(const int item_no, struct CLIOptions* cli_options, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym, char *string_table) {
   char tempstr[PRINT_LINE_SIZE + 1];
   char line[PRINT_LINE_SIZE + 1];
   char tok[SYMBOL_SIZE + 1];
@@ -288,7 +288,7 @@ void print_item(const int item_no, struct CLIOptions* cli_options, struct ruleta
   // the dot symbol.
   const int rule_no = item_table[item_no].rule_number;
   int symbol = rules[rule_no].lhs;
-  restore_symbol(tok, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
+  restore_symbol(tok, RETRIEVE_STRING(symbol, string_table), cli_options->ormark, cli_options->escape);
   int len = PRINT_LINE_SIZE - 5;
   print_large_token(line, tok, "", len);
   strcat(line, " ::= ");
@@ -297,7 +297,7 @@ void print_item(const int item_no, struct CLIOptions* cli_options, struct ruleta
   int sbd = rules[rule_no].rhs; /* symbols before dot */
   for (const int k = rules[rule_no].rhs + item_table[item_no].dot - 1; sbd <= k; sbd++) {
     symbol = rhs_sym.raw[sbd];
-    restore_symbol(tok, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
+    restore_symbol(tok, RETRIEVE_STRING(symbol, string_table), cli_options->ormark, cli_options->escape);
     if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE - 4) {
       printf("\n%s", line);
       fill_in(tempstr, offset, ' ');
@@ -321,7 +321,7 @@ void print_item(const int item_no, struct CLIOptions* cli_options, struct ruleta
                item_table[item_no].dot; /* symbols after dot*/
        i <= rules[rule_no + 1].rhs - 1; i++) {
     symbol = rhs_sym.raw[i];
-    restore_symbol(tok, RETRIEVE_STRING(symbol), cli_options->ormark, cli_options->escape);
+    restore_symbol(tok, RETRIEVE_STRING(symbol, string_table), cli_options->ormark, cli_options->escape);
     if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE - 1) {
       printf("\n%s", line);
       fill_in(tempstr, offset, ' ');
@@ -350,7 +350,7 @@ void print_item(const int item_no, struct CLIOptions* cli_options, struct ruleta
 /// replaced by say the GOTO or GOTO_REDUCE of A, the item above can no longer
 /// be retrieved, since transitions in a given state are reconstructed from
 /// the KERNEL and ADEQUATE items of the actions in the GOTO and SHIFT maps.
-void print_state(const int state_no, struct CLIOptions* cli_options, struct node **adequate_item, struct SRTable* srt, struct lastats_type *lastats, struct statset_type *statset, struct node **in_stat, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym) {
+void print_state(const int state_no, struct CLIOptions* cli_options, struct node **adequate_item, struct SRTable* srt, struct lastats_type *lastats, struct statset_type *statset, struct node **in_stat, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym, char *string_table) {
   char buffer[PRINT_LINE_SIZE + 1];
   char line[PRINT_LINE_SIZE + 1];
   // ITEM_SEEN is used to construct sets of items, to help avoid
@@ -472,13 +472,13 @@ void print_state(const int state_no, struct CLIOptions* cli_options, struct node
   // line, sort then, then print them.  The kernel items are in sorted
   // order.
   for (int item_no = 1; item_no <= kernel_size; item_no++) {
-    print_item(item_list.raw[item_no], cli_options, rules, item_table, rhs_sym);
+    print_item(item_list.raw[item_no], cli_options, rules, item_table, rhs_sym, string_table);
   }
   if (kernel_size < n) {
     printf("\n");
     qcksrt(item_list, kernel_size + 1, n);
     for (int item_no = kernel_size + 1; item_no <= n; item_no++) {
-      print_item(item_list.raw[item_no], cli_options, rules, item_table, rhs_sym);
+      print_item(item_list.raw[item_no], cli_options, rules, item_table, rhs_sym, string_table);
     }
   }
   ffree(item_list.raw);
