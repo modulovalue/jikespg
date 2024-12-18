@@ -81,13 +81,12 @@ void build_symno(struct ParserState* ps) {
 
 /.
 #include "common.h"
-#include "lpgparse.h"
 
 #line $next_line "$input_file"
 
-#define SYM1 (ps->terminal[stack_top + 1])
-#define SYM2 (ps->terminal[stack_top + 2])
-#define SYM3 (ps->terminal[stack_top + 3])
+#define SYM1 (ps->terminal[ps->stack_top + 1])
+#define SYM2 (ps->terminal[ps->stack_top + 2])
+#define SYM3 (ps->terminal[ps->stack_top + 3])
 
 static void null_action(struct ParserState* ps)
 {
@@ -95,46 +94,46 @@ static void null_action(struct ParserState* ps)
 
 static void add_macro_definition(const char *name, const struct terminal_type *term, struct ParserState* ps)
 {
-    if (num_defs >= (int)defelmt_size)
+    if (ps->num_defs >= (int)ps->defelmt_size)
     {
-        defelmt_size += DEFELMT_INCREMENT;
+        ps->defelmt_size += DEFELMT_INCREMENT;
         ps->defelmt = (struct defelmt_type *)
             (ps->defelmt == (struct defelmt_type *) NULL
-             ? malloc(defelmt_size * sizeof(struct defelmt_type))
-             : realloc(ps->defelmt, defelmt_size * sizeof(struct defelmt_type)));
+             ? malloc(ps->defelmt_size * sizeof(struct defelmt_type))
+             : realloc(ps->defelmt, ps->defelmt_size * sizeof(struct defelmt_type)));
         if (ps->defelmt == (struct defelmt_type *) NULL)
             nospace();
     }
 
-    ps->defelmt[num_defs].length       = term->length;
-    ps->defelmt[num_defs].start_line   = term->start_line;
-    ps->defelmt[num_defs].start_column = term->start_column;
-    ps->defelmt[num_defs].end_line     = term->end_line;
-    ps->defelmt[num_defs].end_column   = term->end_column;
-    strcpy(ps->defelmt[num_defs].name, name);
-    num_defs++;
+    ps->defelmt[ps->num_defs].length       = term->length;
+    ps->defelmt[ps->num_defs].start_line   = term->start_line;
+    ps->defelmt[ps->num_defs].start_column = term->start_column;
+    ps->defelmt[ps->num_defs].end_line     = term->end_line;
+    ps->defelmt[ps->num_defs].end_column   = term->end_column;
+    strcpy(ps->defelmt[ps->num_defs].name, name);
+    ps->num_defs++;
 }
 
 static void add_block_definition(const struct terminal_type *term, struct ParserState* ps)
 {
-    if (num_acts >= (int) actelmt_size)
+    if (ps->num_acts >= (int) ps->actelmt_size)
     {
-        actelmt_size += ACTELMT_INCREMENT;
+        ps->actelmt_size += ACTELMT_INCREMENT;
         ps->actelmt = (struct actelmt_type *)
             (ps->actelmt == (struct actelmt_type *) NULL
-             ? malloc(actelmt_size * sizeof(struct actelmt_type))
-             : realloc(ps->actelmt, actelmt_size * sizeof(struct actelmt_type)));
+             ? malloc(ps->actelmt_size * sizeof(struct actelmt_type))
+             : realloc(ps->actelmt, ps->actelmt_size * sizeof(struct actelmt_type)));
         if (ps->actelmt == (struct actelmt_type *) NULL)
             nospace();
     }
 
-    ps->actelmt[num_acts].rule_number  = num_rules;
-    ps->actelmt[num_acts].start_line   = term->start_line;
-    ps->actelmt[num_acts].start_column = term->start_column;
-    ps->actelmt[num_acts].end_line     = term->end_line;
-    ps->actelmt[num_acts].end_column   = term->end_column;
-    ps->actelmt[num_acts].header_block = term->kind == HBLOCK_TK;
-    num_acts++;
+    ps->actelmt[ps->num_acts].rule_number  = num_rules;
+    ps->actelmt[ps->num_acts].start_line   = term->start_line;
+    ps->actelmt[ps->num_acts].start_column = term->start_column;
+    ps->actelmt[ps->num_acts].end_line     = term->end_line;
+    ps->actelmt[ps->num_acts].end_column   = term->end_column;
+    ps->actelmt[ps->num_acts].header_block = term->kind == HBLOCK_TK;
+    ps->num_acts++;
 }
 ./
     LPG_INPUT ::= [define_block]
@@ -278,7 +277,7 @@ static void definition_expected(struct ParserState* ps)
 /.$location
 static void process_terminal(struct ParserState* ps)
 {
-    assign_symbol_no(SYM1.name, OMEGA, ps->hash_table);
+    assign_symbol_no(SYM1.name, OMEGA, ps->hash_table, &ps->string_offset);
 }
 ./
                       | '|'
@@ -324,7 +323,7 @@ static void act$rule_number(struct ParserState* ps)
             break;
 
         case SYMBOL_TK:
-            assign_symbol_no(SYM3.name, OMEGA, ps->hash_table);
+            assign_symbol_no(SYM3.name, OMEGA, ps->hash_table, &ps->string_offset);
             image = symbol_image(SYM3.name, ps);
             break;
 
@@ -371,7 +370,7 @@ static void act$rule_number(struct ParserState* ps)
                 PRNTERR2("Symbol %s was previously defined. Line %ld, column %d", tok_string, SYM1.start_line, SYM1.start_column);
                 exit(12);
             }
-            assign_symbol_no(SYM1.name, image, ps->hash_table);
+            assign_symbol_no(SYM1.name, image, ps->hash_table, &ps->string_offset);
             break;
 
         case ERROR_SYMBOL_TK:
@@ -525,7 +524,7 @@ static void missing_quote(struct ParserState* ps)
 /.$location
 static void act$rule_number(struct ParserState* ps)
 {
-    assign_symbol_no(SYM1.name, OMEGA, ps->hash_table);
+    assign_symbol_no(SYM1.name, OMEGA, ps->hash_table, &ps->string_offset);
     struct node *q = Allocate_node();
     q -> value = symbol_image(SYM1.name, ps);
     if (ps->start_symbol_root == NULL)
@@ -617,7 +616,7 @@ static void act$rule_number(struct ParserState* ps)
 /.$location
 static void act$rule_number(struct ParserState* ps)
 {
-    assign_symbol_no(SYM2.name, OMEGA, ps->hash_table);
+    assign_symbol_no(SYM2.name, OMEGA, ps->hash_table, &ps->string_offset);
     if (ps->start_symbol_root == NULL)
     {
         struct node *q = Allocate_node();
@@ -634,13 +633,13 @@ static void act$rule_number(struct ParserState* ps)
 /// "while" loop is used to increment the size of rulehdr. However,
 /// it is highly unlikely that this loop would ever execute more than
 /// once if the size of RULE_INCREMENT is reasonable.
-    while (num_rules >= (int)rulehdr_size)
+    while (num_rules >= (int)ps->rulehdr_size)
     {
-        rulehdr_size += RULEHDR_INCREMENT;
+        ps->rulehdr_size += RULEHDR_INCREMENT;
         ps->rulehdr = (struct rulehdr_type *)
             (ps->rulehdr == (struct rulehdr_type *) NULL
-             ? malloc(rulehdr_size * sizeof(struct rulehdr_type))
-             : realloc(ps->rulehdr, rulehdr_size * sizeof(struct rulehdr_type)));
+             ? malloc(ps->rulehdr_size * sizeof(struct rulehdr_type))
+             : realloc(ps->rulehdr, ps->rulehdr_size * sizeof(struct rulehdr_type)));
         if (ps->rulehdr == (struct rulehdr_type *) NULL)
             nospace();
     }
@@ -657,13 +656,13 @@ static void act$rule_number(struct ParserState* ps)
 static void act$rule_number(struct ParserState* ps)
 {
     num_rules++;
-    if (num_rules >= (int)rulehdr_size)
+    if (num_rules >= (int)ps->rulehdr_size)
     {
-        rulehdr_size += RULEHDR_INCREMENT;
+        ps->rulehdr_size += RULEHDR_INCREMENT;
         ps->rulehdr = (struct rulehdr_type *)
             (ps->rulehdr == (struct rulehdr_type *) NULL
-             ? malloc(rulehdr_size * sizeof(struct rulehdr_type))
-             : realloc(ps->rulehdr, rulehdr_size * sizeof(struct rulehdr_type)));
+             ? malloc(ps->rulehdr_size * sizeof(struct rulehdr_type))
+             : realloc(ps->rulehdr, ps->rulehdr_size * sizeof(struct rulehdr_type)));
         if (ps->rulehdr == (struct rulehdr_type *) NULL)
             nospace();
     }
@@ -678,18 +677,18 @@ static void act$rule_number(struct ParserState* ps)
 static void act$rule_number(struct ParserState* ps)
 {
     num_rules++;
-    if (num_rules >= (int)rulehdr_size)
+    if (num_rules >= (int)ps->rulehdr_size)
     {
-        rulehdr_size += RULEHDR_INCREMENT;
+        ps->rulehdr_size += RULEHDR_INCREMENT;
         ps->rulehdr = (struct rulehdr_type *)
             (ps->rulehdr == (struct rulehdr_type *) NULL
-             ? malloc(rulehdr_size * sizeof(struct rulehdr_type))
-             : realloc(ps->rulehdr, rulehdr_size * sizeof(struct rulehdr_type)));
+             ? malloc(ps->rulehdr_size * sizeof(struct rulehdr_type))
+             : realloc(ps->rulehdr, ps->rulehdr_size * sizeof(struct rulehdr_type)));
         if (ps->rulehdr == (struct rulehdr_type *) NULL)
             nospace();
     }
     ps->rulehdr[num_rules].sp = ((SYM3.kind == ARROW_TK) ? true : false);
-    assign_symbol_no(SYM2.name, OMEGA, ps->hash_table);
+    assign_symbol_no(SYM2.name, OMEGA, ps->hash_table, &ps->string_offset);
     ps->rulehdr[num_rules].lhs = symbol_image(SYM2.name, ps);
     ps->rulehdr[num_rules].rhs_root = NULL;
 }
@@ -729,7 +728,7 @@ static void act$rule_number(struct ParserState* ps)
 /.$location
 static void act$rule_number(struct ParserState* ps)
 {
-    assign_symbol_no(SYM2.name, OMEGA, ps->hash_table);
+    assign_symbol_no(SYM2.name, OMEGA, ps->hash_table, &ps->string_offset);
     int sym = symbol_image(SYM2.name, ps);
     if (sym != empty)
     {
@@ -946,17 +945,15 @@ static void act$rule_number(struct ParserState* ps)
 static void process_TERMINALS_section(struct ParserState* ps)
 {
     num_terminals = num_symbols;
-    assign_symbol_no(keoft, OMEGA, ps->hash_table);
+    assign_symbol_no(keoft, OMEGA, ps->hash_table, &ps->string_offset);
     eoft_image = symbol_image(keoft, ps);
-
-    if (ps->error_maps_bit)
-    {
-        assign_symbol_no(kerror, OMEGA, ps->hash_table);
+    if (ps->error_maps_bit) {
+        assign_symbol_no(kerror, OMEGA, ps->hash_table, &ps->string_offset);
         error_image = symbol_image(kerror, ps);
+    } else {
+      error_image = DEFAULT_SYMBOL;   // should be 0
     }
-    else error_image = DEFAULT_SYMBOL;   // should be 0
-
-    assign_symbol_no(kaccept, OMEGA, ps->hash_table);
+    assign_symbol_no(kaccept, OMEGA, ps->hash_table, &ps->string_offset);
     accept_image = symbol_image(kaccept, ps);
 }
 ./
@@ -1041,7 +1038,7 @@ static void process_ALIAS_section(struct ParserState* ps)
 /.$location
 static void act$rule_number(struct ParserState* ps)
 {
-    assign_symbol_no(kempty, OMEGA, ps->hash_table);
+    assign_symbol_no(kempty, OMEGA, ps->hash_table, &ps->string_offset);
     empty = symbol_image(kempty, ps);
 }
 ./

@@ -9,7 +9,7 @@ struct LAState {
 
 long num_items = 0;
 long num_states = 0;
-long max_la_state;
+long max_la_state = 0;
 
 
 
@@ -27,8 +27,8 @@ struct CounterState {
 
 long num_symbols = 0;
 long num_names = 0;
-long num_terminals;
-long num_non_terminals;
+long num_terminals = 0;
+long num_non_terminals = 0;
 long num_rules = 0;
 long num_single_productions = 0;
 long gotodom_size = 0;
@@ -74,13 +74,3 @@ long num_goto_reduces = 0;
 long num_reductions = 0;
 long num_entries = 0;
 long num_error_rules = 0;
-
-
-
-
-// TODO • move into parser state
-int num_acts = 0;
-int num_defs = 0;
-long defelmt_size = 0;
-long actelmt_size = 0;
-long rulehdr_size = 0;

@@ -803,7 +803,7 @@ struct actelmt_type {
 /// structure used to hash grammar symbols
 struct hash_type {
   struct hash_type *link;
-  short number;
+  long number;
   short name_index;
   int st_ptr;
 };
@@ -818,6 +818,13 @@ struct ParserState {
   char ormark;
   char escape;
   bool error_maps_bit;
+  int num_acts;
+  int num_defs;
+  long defelmt_size;
+  long actelmt_size;
+  long rulehdr_size;
+  long string_offset;
+  int stack_top;
 };
 
 /// SYMNO is an array that maps symbol numbers to actual symbols.
@@ -825,17 +832,6 @@ extern struct symno_type *symno;
 
 /// NAME is an array containing names to be associated with symbols.
 extern int *name;
-
-/// macro definition & action variables
-extern int num_acts;
-extern int num_defs;
-
-/// macro definition & action vars
-extern long defelmt_size;
-extern long actelmt_size;
-extern long rulehdr_size;
-
-extern int stack_top;
 
 /// The following variables hold the names
 /// of keywords and predefined macros.
@@ -886,7 +882,7 @@ struct terminal_type {
   char name[SYMBOL_SIZE + 1];
 };
 
-void assign_symbol_no(const char *string_ptr, int image, struct hash_type **hash_table);
+void assign_symbol_no(const char *string_ptr, int image, struct hash_type **hash_table, long* string_offset);
 
 void alias_map(const char *stringptr, int image, struct ParserState* ps);
 

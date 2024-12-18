@@ -9,6 +9,14 @@
 #include "lpgact.h"
 #include "lpgprs.h"
 
+char *string_table;
+
+/// SYMNO is an array that maps symbol numbers to actual symbols.
+struct symno_type *symno;
+
+/// NAME is an array containing names to be associated with symbols.
+int *name;
+
 struct line_elemt {
   struct line_elemt *link;
   char line[MAX_LINE_SIZE + 1];
@@ -16,23 +24,9 @@ struct line_elemt {
 
 struct LinePool {
   struct line_elemt *line_pool_root;
-};
-
-int stack_top = -1;
-
-long string_offset = 0;
-
-char *string_table;
-
-/// SYMNO is an array that maps symbol numbers to actual symbols.
-struct symno_type *symno;
-
-char *RETRIEVE_STRING(const int indx) {
+};char *RETRIEVE_STRING(const int indx) {
   return &string_table[symno[indx].ptr];
 }
-
-/// NAME is an array containing names to be associated with symbols.
-int *name;
 
 const char *RETRIEVE_NAME(const int indx) {
   return &string_table[name[indx]];
@@ -570,9 +564,9 @@ static int hash(const char *symbl) {
 /// INSERT_STRING takes as an argument a pointer to a ht_elemt structure and
 /// a character string. It inserts the string into the string table and sets
 /// the value of node to the index into the string table.
-static void insert_string(struct hash_type *q, const char *string) {
+static void insert_string(struct hash_type *q, const char *string, long* string_offset) {
   long string_size = 0;
-  if (string_offset + strlen(string) >= string_size) {
+  if ((*string_offset) + strlen(string) >= string_size) {
     string_size += STRING_BUFFER_SIZE;
     string_table = (char *) (string_table == (char *) NULL
        ? malloc(string_size * sizeof(char))
@@ -581,9 +575,9 @@ static void insert_string(struct hash_type *q, const char *string) {
       nospace();
     }
   }
-  q->st_ptr = string_offset;
+  q->st_ptr = (*string_offset);
   // Copy until NULL is copied.
-  while ((string_table[string_offset++] = *string++)) {
+  while ((string_table[(*string_offset)++] = *string++)) {
   }
 }
 
@@ -604,7 +598,7 @@ static bool EQUAL_STRING(const char *symb, const struct hash_type *p) {
 /// The NAME_INDEX field is set to OMEGA and will be assigned a value later.
 /// ASSIGN_SYMBOL_NO takes as arguments a pointer to a node and an image
 /// number and assigns a symbol number to the symbol pointed to by the node.
-void assign_symbol_no(const char *string_ptr, const int image, struct hash_type **hash_table) {
+void assign_symbol_no(const char *string_ptr, const int image, struct hash_type **hash_table, long* string_offset) {
   struct hash_type *p;
   const int i = hash(string_ptr);
   for (p = hash_table[i]; p != NULL; p = p->link) {
@@ -619,7 +613,7 @@ void assign_symbol_no(const char *string_ptr, const int image, struct hash_type 
     p->number = -image;
   }
   p->name_index = OMEGA;
-  insert_string(p, string_ptr);
+  insert_string(p, string_ptr, string_offset);
   p->link = hash_table[i];
   hash_table[i] = p;
 }
@@ -635,7 +629,7 @@ void alias_map(const char *stringptr, const int image, struct ParserState* ps) {
       return;
     }
   }
-  assign_symbol_no(stringptr, image, ps->hash_table);
+  assign_symbol_no(stringptr, image, ps->hash_table, &ps->string_offset);
 }
 
 /// SYMBOL_IMAGE takes as argument a symbol. It searches for that symbol
@@ -669,7 +663,7 @@ int name_map(const char *symb, struct ParserState* ps) {
   }
   talloc0p(&p, struct hash_type);
   p->number = 0;
-  insert_string(p, symb);
+  insert_string(p, symb, &ps->string_offset);
   p->link = ps->hash_table[i];
   ps->hash_table[i] = p;
   num_names++;
@@ -1049,21 +1043,21 @@ static struct line_elemt *find_macro(char *name, ArrayShort macro_table, struct 
     }
   }
   // Make phony definition for macro to avoid future errors.
-  if (num_defs >= (int) defelmt_size) {
-    defelmt_size += DEFELMT_INCREMENT;
+  if (ps->num_defs >= (int) ps->defelmt_size) {
+    ps->defelmt_size += DEFELMT_INCREMENT;
     ps->defelmt = (struct defelmt_type *)
     (ps->defelmt == (struct defelmt_type *) NULL
-       ? malloc(defelmt_size * sizeof(struct defelmt_type))
-       : realloc(ps->defelmt, defelmt_size * sizeof(struct defelmt_type)));
+       ? malloc(ps->defelmt_size * sizeof(struct defelmt_type))
+       : realloc(ps->defelmt, ps->defelmt_size * sizeof(struct defelmt_type)));
     if (ps->defelmt == (struct defelmt_type *) NULL)
       nospace();
   }
-  strcpy(ps->defelmt[num_defs].name, macro_name);
-  ps->defelmt[num_defs].length = 0;
-  ps->defelmt[num_defs].macro = NULL;
-  ps->defelmt[num_defs].next = macro_table.raw[i];
-  macro_table.raw[i] = num_defs;
-  num_defs++;
+  strcpy(ps->defelmt[ps->num_defs].name, macro_name);
+  ps->defelmt[ps->num_defs].length = 0;
+  ps->defelmt[ps->num_defs].macro = NULL;
+  ps->defelmt[ps->num_defs].next = macro_table.raw[i];
+  macro_table.raw[i] = ps->num_defs;
+  ps->num_defs++;
   return NULL;
 }
 
@@ -1389,7 +1383,7 @@ static void process_actions(char *grm_file, struct CLIOptions *cli_options, stru
   ss->p1 = ss->p2;
   ss->line_no = 1;
   // Read in all the macro definitions and insert them into macro_table.
-  for (int i = 0; i < num_defs; i++) {
+  for (int i = 0; i < ps->num_defs; i++) {
     calloc0p(&ps->defelmt[i].macro, ps->defelmt[i].length + 2, char);
     for (; ss->line_no < ps->defelmt[i].start_line; ss->line_no++) {
       while (*ss->p1 != '\n') {
@@ -1432,7 +1426,7 @@ static void process_actions(char *grm_file, struct CLIOptions *cli_options, stru
     mapmacro(i, macro_table, ps);
   }
   // Read in all the action blocks and process them.
-  for (int i = 0; i < num_acts; i++) {
+  for (int i = 0; i < ps->num_acts; i++) {
     for (; ss->line_no < ps->actelmt[i].start_line; ss->line_no++) {
       while (*ss->p1 != '\n') {
         ss->p1++;
@@ -1508,7 +1502,7 @@ static void process_actions(char *grm_file, struct CLIOptions *cli_options, stru
       }
     }
   }
-  for (int i = 0; i < num_defs; i++) {
+  for (int i = 0; i < ps->num_defs; i++) {
     ffree(ps->defelmt[i].macro);
   }
   ffree(ps->defelmt);
@@ -1629,10 +1623,16 @@ static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *
 void process_input(char *grm_file, struct OutputFiles *output_files, const int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options, ArrayShort *rhs_sym, struct ruletab_type **rulesp, struct symno_type **symno) {
   char parm[256] = "";
 
-  // TODO return and propagate
   struct ParserState ps = (struct ParserState) {
     .hash_table = NULL,
     .error_maps_bit = cli_options->error_maps_bit,
+    .num_acts = 0,
+    .num_defs = 0,
+    .defelmt_size = 0,
+    .actelmt_size = 0,
+    .rulehdr_size = 0,
+    .string_offset = 0,
+    .stack_top = -1,
   };
 
   // Parse args.
@@ -1754,11 +1754,11 @@ void process_input(char *grm_file, struct OutputFiles *output_files, const int a
   process_terminal:
     // Note that this driver assumes that the tables are LPG SPACE
     // tables with no GOTO-DEFAULTS.
-    state_stack[++stack_top] = act;
+    state_stack[++(ps.stack_top)] = act;
     act = t_action(act, ss.ct, ?);
     // Reduce
     if (act <= NUM_RULES) {
-      stack_top--;
+      ps.stack_top--;
     } else if (act > ERROR_ACTION || /* Shift_reduce */ act < ACCEPT_ACTION) /* Shift */
     {
       // token_action
@@ -1768,7 +1768,7 @@ void process_input(char *grm_file, struct OutputFiles *output_files, const int a
           // parse stack called TERMINAL. Note that in case of a BLOCK_, the name of
           // the token is not copied since blocks are processed separately on a
           // second pass.
-          const int top = stack_top + 1;
+          const int top = ps.stack_top + 1;
           ps.terminal[top].kind = ss.ct;
           ps.terminal[top].start_line = ss.ct_start_line;
           ps.terminal[top].start_column = ss.ct_start_col;
@@ -1813,9 +1813,9 @@ void process_input(char *grm_file, struct OutputFiles *output_files, const int a
   process_non_terminal:
     do {
       const int lhs_sym = lhs[act]; /* to bypass IBMC12 bug */
-      stack_top -= rhs[act] - 1;
+      ps.stack_top -= rhs[act] - 1;
       rule_action[act](&ps);
-      act = nt_action(state_stack[stack_top], lhs_sym);
+      act = nt_action(state_stack[ps.stack_top], lhs_sym);
     } while (act <= NUM_RULES);
     goto process_terminal;
   }
@@ -1828,11 +1828,11 @@ end: {
     // This routine is invoked to free all space used to process the input that
     // is no longer needed. Note that for the string_table, only the unused
     // space is released.
-    if (string_offset > 0) {
+    if (ps.string_offset > 0) {
       string_table = (char *)
       (string_table == (char *) NULL
-         ? malloc(string_offset * sizeof(char))
-         : realloc(string_table, string_offset * sizeof(char)));
+         ? malloc(ps.string_offset * sizeof(char))
+         : realloc(string_table, ps.string_offset * sizeof(char)));
       if (string_table == (char *) NULL)
         nospace();
     }
