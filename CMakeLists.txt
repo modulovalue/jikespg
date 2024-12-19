@@ -5,7 +5,4 @@ set(CMAKE_C_STANDARD 11)
 
 include_directories(src)
 
-add_executable(
-        src/common.h
-        src/lpgparse.c
-        src/main.c)
+add_executable(src/main.c)
