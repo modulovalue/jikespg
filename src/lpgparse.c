@@ -1,13 +1,1020 @@
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 #include "common.h"
-#include "lpgsym.h"
-#include "lpgdef.h"
-#include "lpgdcl.h"
-#include "lpgact.c"
-#include "lpgact.h"
-#include "lpgprs.h"
+
+// region generated parser
+
+#line 87 "jikespg.g"
+
+#define SYM1 (ps->terminal[ps->stack_top + 1])
+#define SYM2 (ps->terminal[ps->stack_top + 2])
+#define SYM3 (ps->terminal[ps->stack_top + 3])
+
+enum {
+    NT_OFFSET = 19,
+    BUFF_UBOUND = 30,
+    BUFF_SIZE = 31,
+    STACK_UBOUND = 20,
+    STACK_SIZE = 21,
+    LA_STATE_OFFSET = 392,
+    MAX_LA = 1,
+    NUM_RULES = 141,
+    NUM_TERMINALS = 19,
+    NUM_NON_TERMINALS = 38,
+    NUM_SYMBOLS = 57,
+    START_STATE = 144,
+    EOFT_SYMBOL = 19,
+    EOLT_SYMBOL = 20,
+    ACCEPT_ACTION = 250,
+    ERROR_ACTION = 251
+  };
+
+enum {
+    DEFINE_KEY_TK = 5,
+    TERMINALS_KEY_TK = 9,
+    ALIAS_KEY_TK = 10,
+    START_KEY_TK = 11,
+    RULES_KEY_TK = 12,
+    NAMES_KEY_TK = 16,
+    END_KEY_TK = 18,
+    EQUIVALENCE_TK = 1,
+    ARROW_TK = 2,
+    OR_TK = 6,
+    EMPTY_SYMBOL_TK = 7,
+    ERROR_SYMBOL_TK = 8,
+    EOL_SYMBOL_TK = 13,
+    EOF_SYMBOL_TK = 14,
+    MACRO_NAME_TK = 15,
+    SYMBOL_TK = 3,
+    BLOCK_TK = 4,
+    HBLOCK_TK = 17,
+    EOF_TK = 19
+  };
+
+#define SPACE_TABLES
+#define original_state(state) (-base_check[state])
+#define asi(state)            asb[original_state(state)]
+#define nasi(state)           nasb[original_state(state)]
+#define in_symbol(state)      in_symb[original_state(state)]
+
+extern const unsigned char rhs[];
+extern const unsigned short lhs[];
+extern const unsigned short *base_action;
+extern const unsigned char term_check[];
+extern const unsigned short term_action[];
+
+#define nt_action(state, sym) base_action[state + sym]
+
+#define t_action(state, sym, next_tok) \
+term_action[term_check[base_action[state]+sym] == sym ? \
+base_action[state] + sym : base_action[state]]
+
+
+
+const unsigned char rhs[] = {
+  0,
+  7, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 3, 1,
+  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+  2, 1, 1, 1, 1, 1, 1, 2, 3, 1, 2, 3, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+  1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+  1, 3, 2, 3, 2, 2, 2, 2, 1, 1, 1, 1, 3, 3, 3,
+  3, 1, 1, 1, 1, 1, 1, 1, 2, 3, 3, 3, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0,
+  1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 2, 0, 2,
+  0, 2, 0, 2, 0, 2
+};
+
+const unsigned short lhs[] = {
+  0,
+  9, 9, 17, 17, 17, 17, 17, 17, 17, 17, 18, 18, 19, 19, 5,
+  5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6,
+  20, 22, 22, 22, 22, 22, 22, 23, 25, 25, 25, 25, 26, 26, 26,
+  26, 27, 27, 27, 27, 27, 27, 27, 3, 3, 3, 3, 28, 28, 28,
+  28, 29, 31, 31, 31, 31, 31, 31, 31, 31, 31, 31, 32, 32, 1,
+  1, 33, 33, 33, 33, 33, 33, 33, 33, 33, 33, 33, 33, 33, 33,
+  33, 7, 7, 2, 2, 2, 2, 2, 35, 37, 37, 37, 4, 4, 4,
+  4, 4, 4, 4, 8, 8, 8, 8, 8, 8, 8, 8, 10, 10, 11,
+  11, 12, 12, 13, 13, 14, 14, 15, 15, 16, 16, 21, 21, 30, 30,
+  24, 24, 36, 36, 34, 34,
+
+  54, 60, 129, 58, 175, 1, 109, 69, 53, 249,
+  42, 146, 188, 247, 171, 109, 145, 20, 101, 2,
+  119, 172, 81, 251, 87, 137, 210, 251, 40, 251,
+  35, 27, 29, 251, 39, 191, 13, 35, 27, 29,
+  18, 109, 139, 14, 100, 199, 193, 170, 102, 161,
+  20, 186, 34, 203, 179, 218, 221, 189, 195, 187,
+  50, 99, 67, 49, 80, 204, 121, 202, 196, 149,
+  123, 41, 97, 133, 125, 207, 111, 112, 231, 48,
+  251, 1, 251, 235, 193, 127, 141, 251, 142, 94,
+  91, 251, 135, 124, 89, 129, 138, 90, 141, 79,
+  154, 88, 203, 94, 77, 94, 156, 94, 182, 251,
+  251, 251, 251, 147
+};
+
+const unsigned short *base_action = lhs;
+
+
+const unsigned char term_check[] = {
+  0,
+  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,
+  15, 16, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+  13, 14, 15, 16, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+  11, 12, 0, 0, 0, 3, 4, 18, 0, 1, 2, 3, 4, 5, 6,
+  7, 8, 9, 10, 17, 16, 13, 14, 0, 1, 2, 3, 4, 5, 6,
+  7, 8, 9, 10, 0, 0, 13, 14, 3, 4, 5, 6, 7, 8, 9,
+  10, 11, 12, 0, 1, 2, 0, 17, 0, 1, 2, 3, 4, 5, 6,
+  7, 8, 9, 10, 11, 0, 0, 0, 3, 4, 5, 6, 7, 8, 9,
+  10, 11, 12, 0, 1, 2, 0, 17, 0, 1, 2, 3, 4, 5, 6,
+  7, 8, 0, 1, 2, 0, 1, 2, 15, 0, 1, 2, 3, 4, 5,
+  6, 7, 8, 0, 1, 2, 0, 0, 0, 15, 0, 1, 2, 3, 4,
+  5, 6, 7, 8, 0, 0, 1, 2, 3, 0, 15, 6, 7, 8, 10,
+  0, 0, 0, 13, 14, 0, 1, 2, 3, 4, 5, 6, 0, 19, 9,
+  0, 1, 2, 0, 4, 5, 9, 0, 0, 9, 10, 0, 0, 0, 11,
+  0, 0, 0, 0, 12, 0, 0, 0, 0, 0, 0, 18, 0
+};
+
+const unsigned short term_action[] = {
+  0,
+  99, 326, 327, 354, 367, 361, 359, 355, 356, 362,
+  363, 364, 365, 357, 358, 368, 366, 251, 326, 327,
+  354, 367, 361, 359, 355, 356, 362, 363, 364, 365,
+  357, 358, 368, 366, 251, 326, 327, 279, 274, 345,
+  275, 276, 277, 346, 347, 348, 349, 251, 132, 128,
+  245, 343, 281, 38, 326, 327, 294, 308, 305, 312,
+  310, 295, 306, 307, 344, 219, 296, 297, 251, 326,
+  327, 298, 308, 305, 303, 302, 299, 306, 307, 136,
+  73, 300, 301, 140, 140, 345, 335, 336, 337, 346,
+  347, 348, 349, 251, 326, 327, 134, 140, 62, 326,
+  327, 314, 319, 320, 315, 316, 317, 321, 322, 323,
+  74, 138, 251, 240, 343, 345, 242, 238, 333, 346,
+  347, 348, 349, 81, 326, 327, 251, 344, 118, 254,
+  255, 260, 261, 158, 256, 257, 258, 80, 326, 327,
+  83, 326, 327, 259, 11, 326, 327, 267, 272, 273,
+  268, 269, 270, 78, 326, 327, 251, 251, 251, 266,
+  12, 326, 327, 267, 272, 273, 268, 269, 270, 122,
+  251, 326, 327, 354, 251, 266, 359, 355, 356, 206,
+  251, 251, 251, 357, 358, 31, 326, 327, 283, 288,
+  286, 284, 120, 250, 287, 251, 326, 327, 124, 308,
+  305, 205, 126, 130, 306, 307, 251, 251, 251, 214,
+  251, 251, 251, 251, 164, 251, 251, 251, 251, 251,
+  251, 382
+};
+
+static void null_action(struct ParserState* ps)
+{
+}
+
+static void add_macro_definition(const char *name, const struct terminal_type *term, struct ParserState* ps)
+{
+    if (ps->num_defs >= (int)ps->defelmt_size)
+    {
+        ps->defelmt_size += DEFELMT_INCREMENT;
+        ps->defelmt = (struct defelmt_type *)
+            (ps->defelmt == (struct defelmt_type *) NULL
+             ? malloc(ps->defelmt_size * sizeof(struct defelmt_type))
+             : realloc(ps->defelmt, ps->defelmt_size * sizeof(struct defelmt_type)));
+        if (ps->defelmt == (struct defelmt_type *) NULL)
+            nospace();
+    }
+
+    ps->defelmt[ps->num_defs].length       = term->length;
+    ps->defelmt[ps->num_defs].start_line   = term->start_line;
+    ps->defelmt[ps->num_defs].start_column = term->start_column;
+    ps->defelmt[ps->num_defs].end_line     = term->end_line;
+    ps->defelmt[ps->num_defs].end_column   = term->end_column;
+    strcpy(ps->defelmt[ps->num_defs].name, name);
+    ps->num_defs++;
+}
+
+static void add_block_definition(const struct terminal_type *term, struct ParserState* ps)
+{
+    if (ps->num_acts >= (int) ps->actelmt_size)
+    {
+        ps->actelmt_size += ACTELMT_INCREMENT;
+        ps->actelmt = (struct actelmt_type *)
+            (ps->actelmt == (struct actelmt_type *) NULL
+             ? malloc(ps->actelmt_size * sizeof(struct actelmt_type))
+             : realloc(ps->actelmt, ps->actelmt_size * sizeof(struct actelmt_type)));
+        if (ps->actelmt == (struct actelmt_type *) NULL)
+            nospace();
+    }
+
+    ps->actelmt[ps->num_acts].rule_number  = num_rules;
+    ps->actelmt[ps->num_acts].start_line   = term->start_line;
+    ps->actelmt[ps->num_acts].start_column = term->start_column;
+    ps->actelmt[ps->num_acts].end_line     = term->end_line;
+    ps->actelmt[ps->num_acts].end_column   = term->end_column;
+    ps->actelmt[ps->num_acts].header_block = term->kind == HBLOCK_TK;
+    ps->num_acts++;
+}
+
+/// bad_symbol ::= EQUIVALENCE
+#line 154 "jikespg.g"
+static void bad_first_symbol(struct ParserState* ps)
+{
+    PRNTERR2("First symbol: \"%s\" found in file is illegal. Line %ld, column %d", SYM1.name, SYM1.start_line, SYM1.start_column);
+    exit(12);
+}
+
+/// bad_symbol ::= BLOCK
+#line 175 "jikespg.g"
+static void act10(struct ParserState* ps)
+{
+    PRNTERR2("Action block cannot be first object in file. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    exit(12);
+}
+
+/// macro_list ::= macro_name_symbol macro_block
+#line 190 "jikespg.g"
+static void act13(struct ParserState* ps)
+{
+    add_macro_definition(SYM1.name, &(SYM2), ps);
+}
+
+/// macro_list ::= macro_list macro_name_symbol macro_block
+#line 198 "jikespg.g"
+static void act14(struct ParserState* ps)
+{
+    add_macro_definition(SYM2.name, &(SYM3), ps);
+}
+
+/// macro_name_symbol ::= SYMBOL
+#line 209 "jikespg.g"
+static void act16(struct ParserState* ps)
+{
+    PRNTWNG2("Macro name \"%s\" does not start with the escape character. Line %ld, column %d", SYM1.name, SYM1.start_line, SYM1.start_column);
+}
+
+/// macro_name_symbol ::= OR
+#line 217 "jikespg.g"
+static void bad_macro_name(struct ParserState* ps)
+{
+    PRNTERR2("Reserved symbol cannot be used as macro name. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    exit(12);
+}
+
+/// macro_name_symbol ::= BLOCK
+#line 232 "jikespg.g"
+static void act21(struct ParserState* ps)
+{
+    PRNTERR2("Macro name not supplied for macro definition. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    exit(12);
+}
+
+/// macro_name_symbol ::= DEFINE_KEY
+#line 241 "jikespg.g"
+static void act22(struct ParserState* ps)
+{
+    PRNTERR2("Macro keyword misplaced. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    exit(12);
+}
+
+/// macro_block ::= OR
+#line 253 "jikespg.g"
+static void definition_expected(struct ParserState* ps)
+{
+    PRNTERR2("Definition block expected where symbol found. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    exit(12);
+}
+
+/// terminal_symbol ::= SYMBOL
+#line 279 "jikespg.g"
+static void process_terminal(struct ParserState* ps)
+{
+    assign_symbol_no(SYM1.name, OMEGA, ps);
+}
+
+/// terminal_symbol ::= DEFINE_KEY
+#line 291 "jikespg.g"
+static void bad_terminal(struct ParserState* ps)
+{
+    PRNTERR2("Keyword  has been misplaced in Terminal section.  Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    exit(12);
+}
+
+/// terminal_symbol ::= BLOCK
+#line 302 "jikespg.g"
+static void act37(struct ParserState* ps)
+{
+    PRNTERR2("Misplaced block found in TERMINALS section.  Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    exit(12);
+}
+
+/// alias_definition ::= alias_lhs produces alias_rhs
+#line 315 "jikespg.g"
+static void act39(struct ParserState* ps)
+{
+    int image;
+    char tok_string[SYMBOL_SIZE + 1];
+
+    switch(SYM3.kind)
+    {
+        case EMPTY_SYMBOL_TK:
+            image = empty;
+            break;
+
+        case SYMBOL_TK:
+            assign_symbol_no(SYM3.name, OMEGA, ps);
+            image = symbol_image(SYM3.name, ps);
+            break;
+
+        case ERROR_SYMBOL_TK:
+            if (error_image > num_terminals)
+            {
+                restore_symbol(tok_string, kerror, ps->ormark, ps->escape);
+                PRNTERR2("Illegal aliasing to %s prior to its definition.  Line %ld, column %d", tok_string, SYM3.start_line, SYM3.start_column);
+                exit(12);
+            }
+            image = error_image;
+            break;
+
+        case EOF_SYMBOL_TK:
+            if (eoft_image > num_terminals)
+            {
+                restore_symbol(tok_string, keoft, ps->ormark, ps->escape);
+                PRNTERR2("Illegal aliasing to %s prior to its definition. Line %ld, column %d", tok_string, SYM3.start_line, SYM3.start_column);
+                exit(12);
+            }
+            image = eoft_image;
+            break;
+
+        case EOL_SYMBOL_TK:
+            if (eolt_image == OMEGA)
+            {
+                PRNTERR2("Illegal aliasing to EOL prior to its definition. Line %ld, column %d", SYM3.start_line, SYM3.start_column);
+                exit(12);
+            }
+            image = eolt_image;
+            break;
+
+        default: /* if SYM3.kind == symbol */
+            image = symbol_image(SYM3.name, ps);
+            break;
+    }
+
+    switch(SYM1.kind)
+    {
+        case SYMBOL_TK:
+            if (symbol_image(SYM1.name, ps) != OMEGA)
+            {
+                restore_symbol(tok_string, SYM1.name, ps->ormark, ps->escape);
+                PRNTERR2("Symbol %s was previously defined. Line %ld, column %d", tok_string, SYM1.start_line, SYM1.start_column);
+                exit(12);
+            }
+            assign_symbol_no(SYM1.name, image, ps);
+            break;
+
+        case ERROR_SYMBOL_TK:
+            if (error_image > num_terminals || ! ps->error_maps_bit)
+            {
+                if (image == empty      || image == eolt_image ||
+                    image == eoft_image || image > num_terminals)
+                {
+                    restore_symbol(tok_string, kerror, ps->ormark, ps->escape);
+                    PRNTERR2("Illegal alias for symbol %s. Line %ld, column %d.", tok_string, SYM1.start_line, SYM1.start_column);
+                    exit(12);
+                }
+                alias_map(kerror, image, ps);
+                error_image = image;
+            }
+            else
+            {
+                restore_symbol(tok_string, kerror, ps->ormark, ps->escape);
+                PRNTERR2("Symbol %s was previously defined. Line %ld, column %d", tok_string, SYM1.start_line, SYM1.start_column);
+                exit(12);
+            }
+            break;
+
+        case EOF_SYMBOL_TK:
+            if (eoft_image > num_terminals)
+            {
+                if (image == empty       || image == eolt_image  ||
+                    image == error_image || image > num_terminals)
+                {
+                    restore_symbol(tok_string, keoft, ps->ormark, ps->escape);
+                    PRNTERR2("Illegal alias for symbol %s. Line %ld, column %d.", tok_string, SYM1.start_line, SYM1.start_column);
+                    exit(12);
+                }
+                alias_map(keoft, image, ps);
+                eoft_image = image;
+            }
+            else
+            {
+                restore_symbol(tok_string, keoft, ps->ormark, ps->escape);
+                PRNTERR2("Symbol %s was previously defined.  %ld, column %d", tok_string, SYM1.start_line, SYM1.start_column);
+                exit(12);
+            }
+            break;
+
+        default: /* if SYM1.kind == EOL_SYMBOL */
+            if (eolt_image == OMEGA)
+            {
+                if (image == empty ||
+                    image == eoft_image ||
+                    image == error_image ||
+                    image > num_terminals)
+                {
+                    PRNTERR2("Illegal alias for symbol EOL. Line %ld, column %d.", SYM1.start_line, SYM1.start_column);
+                    exit(12);
+                }
+                eolt_image = image;
+            }
+            else
+            {
+                PRNTERR2("Symbol EOL was previously defined. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+                exit(12);
+            }
+            break;
+    }
+}
+
+/// bad_alias_rhs ::= DEFINE_KEY
+#line 475 "jikespg.g"
+static void bad_alias_rhs(struct ParserState* ps)
+{
+    PRNTERR2("Misplaced keyword found in Alias section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    exit(12);
+}
+
+/// bad_alias_rhs ::= BLOCK
+#line 488 "jikespg.g"
+static void act57(struct ParserState* ps)
+{
+    PRNTERR2("Misplaced block found in Alias section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    exit(12);
+}
+
+/// bad_alias_lhs ::= EMPTY_SYMBOL
+#line 501 "jikespg.g"
+static void act59(struct ParserState* ps)
+{
+    PRNTERR2("Empty symbol cannot be aliased. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    exit(12);
+}
+
+/// bad_alias_lhs ::= produces
+#line 510 "jikespg.g"
+static void missing_quote(struct ParserState* ps)
+{
+    PRNTERR2("Symbol must be quoted when used as a grammar symbol. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    exit(12);
+}
+
+/// start_symbol ::= SYMBOL
+#line 526 "jikespg.g"
+static void act63(struct ParserState* ps)
+{
+    assign_symbol_no(SYM1.name, OMEGA, ps);
+    struct node *q = Allocate_node();
+    q -> value = symbol_image(SYM1.name, ps);
+    if (ps->start_symbol_root == NULL)
+        q -> next = q;
+    else
+    {
+        q -> next = ps->start_symbol_root -> next;
+        ps->start_symbol_root -> next = q;
+    }
+    ps->start_symbol_root = q;
+    num_rules++;
+    ps->num_items++;
+}
+
+/// start_symbol ::= OR
+#line 546 "jikespg.g"
+static void bad_start_symbol(struct ParserState* ps)
+{
+    PRNTERR2("Symbol cannot be used as Start symbol. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    exit(12);
+}
+
+/// start_symbol ::= BLOCK
+#line 561 "jikespg.g"
+static void act68(struct ParserState* ps)
+{
+    PRNTERR2("Misplaced block found in Start section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    exit(12);
+}
+
+/// start_symbol ::= DEFINE_KEY
+#line 570 "jikespg.g"
+static void misplaced_keyword_found_in_START_section(struct ParserState* ps)
+{
+    PRNTERR2("Misplaced keyword found in START section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    exit(12);
+}
+
+/// rules_block ::= RULES_KEY
+#line 586 "jikespg.g"
+static void act73(struct ParserState* ps)
+{
+
+    if (ps->start_symbol_root == NULL)
+    {
+        struct node *q = Allocate_node();
+        q -> value = empty;
+        q -> next = q;
+        ps->start_symbol_root = q;
+        num_rules = 0;                 // One rule
+        ps->num_items = 0;                 // 0 items
+    }
+    build_symno(ps);
+}
+
+/// rules_block ::= RULES_KEY rule_list
+#line 604 "jikespg.g"
+static void act74(struct ParserState* ps)
+{
+    build_symno(ps);
+}
+
+/// rule_list ::= {action_block} SYMBOL produces
+#line 618 "jikespg.g"
+static void act77(struct ParserState* ps)
+{
+    assign_symbol_no(SYM2.name, OMEGA, ps);
+    if (ps->start_symbol_root == NULL)
+    {
+        struct node *q = Allocate_node();
+        q -> value = symbol_image(SYM2.name, ps);
+        q -> next = q;
+
+        ps->start_symbol_root = q;
+
+        num_rules = 1;
+        ps->num_items = 1;
+    }
+
+/// Since we don't know for sure how many start symbols we have, a
+/// "while" loop is used to increment the size of rulehdr. However,
+/// it is highly unlikely that this loop would ever execute more than
+/// once if the size of RULE_INCREMENT is reasonable.
+    while (num_rules >= (int)ps->rulehdr_size)
+    {
+        ps->rulehdr_size += RULEHDR_INCREMENT;
+        ps->rulehdr = (struct rulehdr_type *)
+            (ps->rulehdr == (struct rulehdr_type *) NULL
+             ? malloc(ps->rulehdr_size * sizeof(struct rulehdr_type))
+             : realloc(ps->rulehdr, ps->rulehdr_size * sizeof(struct rulehdr_type)));
+        if (ps->rulehdr == (struct rulehdr_type *) NULL)
+            nospace();
+    }
+
+    ps->rulehdr[num_rules].sp = ((SYM3.kind == ARROW_TK) ? true : false);
+    ps->rulehdr[num_rules].lhs = symbol_image(SYM2.name, ps);
+    ps->rulehdr[num_rules].rhs_root = NULL;
+}
+
+/// rule_list ::= rule_list OR
+#line 657 "jikespg.g"
+static void act78(struct ParserState* ps)
+{
+    num_rules++;
+    if (num_rules >= (int)ps->rulehdr_size)
+    {
+        ps->rulehdr_size += RULEHDR_INCREMENT;
+        ps->rulehdr = (struct rulehdr_type *)
+            (ps->rulehdr == (struct rulehdr_type *) NULL
+             ? malloc(ps->rulehdr_size * sizeof(struct rulehdr_type))
+             : realloc(ps->rulehdr, ps->rulehdr_size * sizeof(struct rulehdr_type)));
+        if (ps->rulehdr == (struct rulehdr_type *) NULL)
+            nospace();
+    }
+    ps->rulehdr[num_rules].sp = ps->rulehdr[num_rules - 1].sp;
+    ps->rulehdr[num_rules].lhs = OMEGA;
+    ps->rulehdr[num_rules].rhs_root = NULL;
+}
+
+/// rule_list ::= rule_list SYMBOL produces
+#line 678 "jikespg.g"
+static void act79(struct ParserState* ps)
+{
+    num_rules++;
+    if (num_rules >= (int)ps->rulehdr_size)
+    {
+        ps->rulehdr_size += RULEHDR_INCREMENT;
+        ps->rulehdr = (struct rulehdr_type *)
+            (ps->rulehdr == (struct rulehdr_type *) NULL
+             ? malloc(ps->rulehdr_size * sizeof(struct rulehdr_type))
+             : realloc(ps->rulehdr, ps->rulehdr_size * sizeof(struct rulehdr_type)));
+        if (ps->rulehdr == (struct rulehdr_type *) NULL)
+            nospace();
+    }
+    ps->rulehdr[num_rules].sp = ((SYM3.kind == ARROW_TK) ? true : false);
+    assign_symbol_no(SYM2.name, OMEGA, ps);
+    ps->rulehdr[num_rules].lhs = symbol_image(SYM2.name, ps);
+    ps->rulehdr[num_rules].rhs_root = NULL;
+}
+
+/// rule_list ::= rule_list ERROR_SYMBOL
+#line 705 "jikespg.g"
+static void act82(struct ParserState* ps)
+{
+    if (error_image == DEFAULT_SYMBOL)
+    {
+        char tok_string[SYMBOL_SIZE + 1];
+        restore_symbol(tok_string, kerror, ps->ormark, ps->escape);
+        PRNTERR2("%s not declared or aliased to terminal symbol. Line %ld, column %d", tok_string, SYM2.start_line, SYM2.start_column);
+        exit(12);
+    }
+    struct node *q = Allocate_node();
+    q -> value = error_image;
+    ps->num_items++;
+    if (ps->rulehdr[num_rules].rhs_root == NULL)
+        q -> next = q;
+    else
+    {
+        q -> next = ps->rulehdr[num_rules].rhs_root -> next;
+         ps->rulehdr[num_rules].rhs_root -> next = q;
+    }
+    ps->rulehdr[num_rules].rhs_root = q;
+}
+
+/// rule_list ::= rule_list SYMBOL
+#line 730 "jikespg.g"
+static void act83(struct ParserState* ps)
+{
+    assign_symbol_no(SYM2.name, OMEGA, ps);
+    int sym = symbol_image(SYM2.name, ps);
+    if (sym != empty)
+    {
+        if (sym == eoft_image)
+        {
+            PRNTERR2("End-of-file symbol cannot be used in rule. Line %ld, column %d", SYM2.start_line, SYM2.start_column);
+            exit(12);
+        }
+        struct node *q = Allocate_node();
+        q -> value = sym;
+        ps->num_items++;
+        if (ps->rulehdr[num_rules].rhs_root == NULL)
+            q -> next = q;
+        else
+        {
+            q -> next = ps->rulehdr[num_rules].rhs_root -> next;
+            ps->rulehdr[num_rules].rhs_root -> next = q;
+        }
+        ps->rulehdr[num_rules].rhs_root = q;
+    }
+}
+
+/// rule_list ::= OR
+#line 758 "jikespg.g"
+static void bad_first_symbol_in_RULES_section(struct ParserState* ps)
+{
+    PRNTERR2("First symbol in Rules section is not a valid left-hand side.\n Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    exit(12);
+}
+
+/// rule_list ::= rule_list OR produces
+#line 773 "jikespg.g"
+static void rule_without_left_hand_side(struct ParserState* ps)
+{
+    PRNTERR2("Rule without left-hand-side.  Line %ld, column %d", SYM3.start_line, SYM3.start_column);
+    exit(12);
+}
+
+/// rule_list ::= rule_list keyword produces
+#line 786 "jikespg.g"
+static void act91(struct ParserState* ps)
+{
+    PRNTWNG2("Misplaced keyword found in Rules section Line %ld, column %d",  SYM2.start_line, SYM2.start_column);
+    exit(12);
+}
+
+/// action_block ::= BLOCK
+#line 796 "jikespg.g"
+static void act92(struct ParserState* ps)
+{
+    add_block_definition(&(SYM1), ps);
+}
+
+/// action_block ::= HBLOCK
+#line 804 "jikespg.g"
+static void act93(struct ParserState* ps)
+{
+    add_block_definition(&(SYM1), ps);
+}
+
+/// keyword ::= DEFINE_KEY
+#line 813 "jikespg.g"
+static void misplaced_keyword_found_in_RULES_section(struct ParserState* ps)
+{
+    PRNTWNG2("Misplaced keyword found in RULES section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    exit(12);
+}
+
+/// names_definition ::= name produces name
+#line 834 "jikespg.g"
+static void act100(struct ParserState* ps)
+{
+    if (ps->error_maps_bit)
+    {
+        int symbol;
+
+        switch(SYM1.kind)
+        {
+            case EMPTY_SYMBOL_TK:
+                symbol = empty;
+                break;
+
+            case ERROR_SYMBOL_TK:
+                symbol = error_image;
+                break;
+
+            case EOL_SYMBOL_TK:
+                symbol = eolt_image;
+                break;
+
+            case EOF_SYMBOL_TK:
+                symbol = eoft_image;
+                break;
+
+            default:
+                symbol = symbol_image(SYM1.name, ps);
+                break;
+        }
+
+        if (symbol == OMEGA)
+        {
+            PRNTERR2("Symbol %s is undefined. Line %ld, column %d", SYM1.name, SYM1.start_line, SYM1.start_column);
+            exit(12);
+        }
+
+        if (ps->symno[symbol].name_index != OMEGA)
+        {
+            PRNTERR2("Symbol %s has been named more than once. Line %ld, column %d.", SYM1.name, SYM1.start_line, SYM1.start_column);
+            exit(12);
+        }
+         ps->symno[symbol].name_index = name_map(SYM3.name, ps);
+     }
+}
+
+/// bad_name ::= DEFINE_KEY
+#line 901 "jikespg.g"
+static void misplaced_keyword_found_in_NAMES_section(struct ParserState* ps)
+{
+    PRNTERR2("Keyword  has been misplaced in NAMES section.  Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    exit(12);
+}
+
+/// bad_name ::= BLOCK
+#line 920 "jikespg.g"
+static void act116(struct ParserState* ps)
+{
+    PRNTERR2("Misplaced action block found in NAMES section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    exit(12);
+}
+
+/// bad_name ::= MACRO_NAME
+#line 929 "jikespg.g"
+static void act117(struct ParserState* ps)
+{
+    PRNTERR2("Misplaced macro name found in NAMES section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
+    exit(12);
+}
+
+/// [terminals_block] ::=
+#line 946 "jikespg.g"
+static void process_TERMINALS_section(struct ParserState* ps)
+{
+    num_terminals = num_symbols;
+    assign_symbol_no(keoft, OMEGA, ps);
+    eoft_image = symbol_image(keoft, ps);
+    if (ps->error_maps_bit) {
+        assign_symbol_no(kerror, OMEGA, ps);
+        error_image = symbol_image(kerror, ps);
+    } else {
+      error_image = DEFAULT_SYMBOL;   // should be 0
+    }
+    assign_symbol_no(kaccept, OMEGA, ps);
+    accept_image = symbol_image(kaccept, ps);
+}
+
+/// [alias_block] ::=
+#line 967 "jikespg.g"
+static void process_ALIAS_section(struct ParserState* ps)
+{
+
+    int k = 0;
+    if (eoft_image <= num_terminals) {
+        k++;
+    } else {
+        num_terminals++;
+    }
+
+    if (ps->error_maps_bit)
+    {
+        if (error_image <= num_terminals)
+            k++;
+        else
+        {
+            num_terminals++;
+            if (k == 1)
+                error_image--;
+        }
+    }
+
+    if (k > 0)
+    {
+        for (int i = 0; i < HT_SIZE; i++)
+        {
+            struct hash_type* p = ps->hash_table[i];
+            while(p != NULL)
+            {
+                if (p -> number > num_terminals)
+                    p -> number -= k;
+                else if (p -> number < -num_terminals)
+                    p -> number += k;
+                p = p -> link;
+            }
+        }
+        num_symbols -= k;
+        accept_image -= k;
+    }
+    if (eolt_image == OMEGA)
+        eolt_image = eoft_image;
+    if (error_image == DEFAULT_SYMBOL)
+        alias_map(kerror, DEFAULT_SYMBOL, ps);
+}
+
+/// {terminal_symbol} ::=
+#line 1040 "jikespg.g"
+static void act132(struct ParserState* ps)
+{
+    assign_symbol_no(kempty, OMEGA, ps);
+    empty = symbol_image(kempty, ps);
+}
+
+
+/// BUILD_SYMNO constructs the SYMNO table which is a mapping from each
+/// symbol number into that symbol.
+void build_symno(struct ParserState* ps) {
+  const long symno_size = num_symbols + 1;
+  calloc0p(&ps->symno, symno_size, struct symno_type);
+  // Go through entire hash table. For each non_empty bucket, go through
+  // linked list in that bucket.
+  for (int i = 0; i < HT_SIZE; ++i) {
+    for (const struct hash_type *p = ps->hash_table[i]; p != NULL; p = p->link) {
+      const int symbol = p->number;
+      // Not an alias
+      if (symbol >= 0) {
+        ps->symno[symbol].name_index = OMEGA;
+        ps->symno[symbol].ptr = p->st_ptr;
+      }
+    }
+  }
+}
+
+static void (*rule_action[]) (struct ParserState* ps) = {NULL,
+     null_action, /* 1 */
+     null_action, /* 2 */
+     bad_first_symbol, /* 3 */
+     bad_first_symbol, /* 4 */
+     bad_first_symbol, /* 5 */
+     bad_first_symbol, /* 6 */
+     bad_first_symbol, /* 7 */
+     bad_first_symbol, /* 8 */
+     bad_first_symbol, /* 9 */
+     act10, /* 10 */
+     null_action, /* 11 */
+     null_action, /* 12 */
+     act13, /* 13 */
+     act14, /* 14 */
+     null_action, /* 15 */
+     act16, /* 16 */
+     bad_macro_name, /* 17 */
+     bad_macro_name, /* 18 */
+     bad_macro_name, /* 19 */
+     bad_macro_name, /* 20 */
+     act21, /* 21 */
+     act22, /* 22 */
+     null_action, /* 23 */
+     definition_expected, /* 24 */
+     definition_expected, /* 25 */
+     definition_expected, /* 26 */
+     definition_expected, /* 27 */
+     definition_expected, /* 28 */
+     definition_expected, /* 29 */
+     definition_expected, /* 30 */
+     null_action, /* 31 */
+     process_terminal, /* 32 */
+     process_terminal, /* 33 */
+     process_terminal, /* 34 */
+     bad_terminal, /* 35 */
+     bad_terminal, /* 36 */
+     act37, /* 37 */
+     null_action, /* 38 */
+     act39, /* 39 */
+     null_action, /* 40 */
+     null_action, /* 41 */
+     null_action, /* 42 */
+     null_action, /* 43 */
+     null_action, /* 44 */
+     null_action, /* 45 */
+     null_action, /* 46 */
+     null_action, /* 47 */
+     null_action, /* 48 */
+     null_action, /* 49 */
+     null_action, /* 50 */
+     null_action, /* 51 */
+     null_action, /* 52 */
+     null_action, /* 53 */
+     bad_alias_rhs, /* 54 */
+     bad_alias_rhs, /* 55 */
+     bad_alias_rhs, /* 56 */
+     act57, /* 57 */
+     null_action, /* 58 */
+     act59, /* 59 */
+     missing_quote, /* 60 */
+     missing_quote, /* 61 */
+     null_action, /* 62 */
+     act63, /* 63 */
+     bad_start_symbol, /* 64 */
+     bad_start_symbol, /* 65 */
+     bad_start_symbol, /* 66 */
+     bad_start_symbol, /* 67 */
+     act68, /* 68 */
+     misplaced_keyword_found_in_START_section, /* 69 */
+     misplaced_keyword_found_in_START_section, /* 70 */
+     misplaced_keyword_found_in_START_section, /* 71 */
+     misplaced_keyword_found_in_START_section, /* 72 */
+     act73, /* 73 */
+     act74, /* 74 */
+     null_action, /* 75 */
+     null_action, /* 76 */
+     act77, /* 77 */
+     act78, /* 78 */
+     act79, /* 79 */
+     null_action, /* 80 */
+     null_action, /* 81 */
+     act82, /* 82 */
+     act83, /* 83 */
+     bad_first_symbol_in_RULES_section, /* 84 */
+     bad_first_symbol_in_RULES_section, /* 85 */
+     bad_first_symbol_in_RULES_section, /* 86 */
+     bad_first_symbol_in_RULES_section, /* 87 */
+     rule_without_left_hand_side, /* 88 */
+     rule_without_left_hand_side, /* 89 */
+     rule_without_left_hand_side, /* 90 */
+     act91, /* 91 */
+     act92, /* 92 */
+     act93, /* 93 */
+     misplaced_keyword_found_in_RULES_section, /* 94 */
+     misplaced_keyword_found_in_RULES_section, /* 95 */
+     misplaced_keyword_found_in_RULES_section, /* 96 */
+     misplaced_keyword_found_in_RULES_section, /* 97 */
+     misplaced_keyword_found_in_RULES_section, /* 98 */
+     null_action, /* 99 */
+     act100, /* 100 */
+     null_action, /* 101 */
+     null_action, /* 102 */
+     null_action, /* 103 */
+     null_action, /* 104 */
+     null_action, /* 105 */
+     null_action, /* 106 */
+     null_action, /* 107 */
+     null_action, /* 108 */
+     null_action, /* 109 */
+     misplaced_keyword_found_in_NAMES_section, /* 110 */
+     misplaced_keyword_found_in_NAMES_section, /* 111 */
+     misplaced_keyword_found_in_NAMES_section, /* 112 */
+     misplaced_keyword_found_in_NAMES_section, /* 113 */
+     misplaced_keyword_found_in_NAMES_section, /* 114 */
+     misplaced_keyword_found_in_NAMES_section, /* 115 */
+     act116, /* 116 */
+     act117, /* 117 */
+     null_action, /* 118 */
+     null_action, /* 119 */
+     process_TERMINALS_section, /* 120 */
+     process_TERMINALS_section, /* 121 */
+     process_ALIAS_section, /* 122 */
+     process_ALIAS_section, /* 123 */
+     null_action, /* 124 */
+     null_action, /* 125 */
+     null_action, /* 126 */
+     null_action, /* 127 */
+     null_action, /* 128 */
+     null_action, /* 129 */
+     null_action, /* 130 */
+     null_action, /* 131 */
+     act132, /* 132 */
+     null_action, /* 133 */
+     null_action, /* 134 */
+     null_action, /* 135 */
+     null_action, /* 136 */
+     null_action, /* 137 */
+     null_action, /* 138 */
+     null_action, /* 139 */
+     null_action, /* 140 */
+     null_action, /* 141 */
+     NULL};
+// endregion
+
+
+
+
+
+// region manual parser
 
 struct line_elemt {
   struct line_elemt *link;
@@ -1737,3 +2744,5 @@ end: {
     ffree(ps->rulehdr); /* allocated in action LPGACT when grammar is not empty */
   }
 }
+
+// endregion

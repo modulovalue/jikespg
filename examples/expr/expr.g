@@ -7,10 +7,6 @@
 %Options NOGOTODEFAULT
 %Options NAME=max
 
--- This grammar has been augmented with productions that captures
--- most errors that a user is likely to make. This saves the need
--- to have an error recovery system.
-
 %Define
 -- This macro is used to initialize the rule_action array
 -- to the null_action function.
