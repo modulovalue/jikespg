@@ -945,12 +945,8 @@ static void common(const bool byte_check_bit, struct CLIOptions *cli_options, st
       } else {
         fprintf(of->sysdef,
                 "      ERROR_SYMBOL      = %d,\n"
-                "      MAX_DISTANCE      = %d,\n"
-                "      MIN_DISTANCE      = %d,\n"
                 "      NUM_STATES        = %ld,\n\n",
                 error_image,
-                cli_options->maximum_distance,
-                cli_options->minimum_distance,
                 ls->num_states);
       }
     }
@@ -990,8 +986,6 @@ static void common(const bool byte_check_bit, struct CLIOptions *cli_options, st
     } else {
       fprintf(of->sysdef,
               "      NT_OFFSET         = %ld,\n"
-              "      BUFF_UBOUND       = %d,\n"
-              "      BUFF_SIZE         = %d,\n"
               "      STACK_UBOUND      = %d,\n"
               "      STACK_SIZE        = %d,\n"
               "      SCOPE_UBOUND      = %ld,\n"
@@ -1009,8 +1003,6 @@ static void common(const bool byte_check_bit, struct CLIOptions *cli_options, st
               "      ERROR_ACTION      = %ld\n"
               "     };\n\n",
               cli_options->table_opt.value == OPTIMIZE_SPACE.value ? num_terminals : num_symbols,
-              cli_options->maximum_distance + cli_options->lalr_level - 1,
-              cli_options->maximum_distance + cli_options->lalr_level,
               cli_options->stack_size - 1,
               cli_options->stack_size,
               sc->num_scopes - 1,

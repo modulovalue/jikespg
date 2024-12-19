@@ -331,8 +331,6 @@ struct CLIOptions {
   DefaultOpt default_opt;
   TraceMode trace_opt;
   OptimizeMode table_opt;
-  int maximum_distance;
-  int minimum_distance;
   int stack_size;
   char act_file[80];
   char hact_file[80];
@@ -360,8 +358,6 @@ static struct CLIOptions init_cli_options() {
     .default_opt = 5,
     .trace_opt = TRACE_CONFLICTS,
     .table_opt = OPTIMIZE_NO_TABLE,
-    .maximum_distance = 30,
-    .minimum_distance = 3,
     .stack_size = 128,
     .escape = '%',
     .ormark = '|',

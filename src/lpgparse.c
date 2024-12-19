@@ -241,18 +241,6 @@ static void options(char *file_prefix, struct CLIOptions *cli_options, char *par
         } else if (memcmp("MAXIMUM", translate(temp, token_len), token_len) == 0) {
           cli_options->lalr_level = MAXIMUM_LA_LEVEL;
         }
-      } else if (memcmp(token, "MAXDISTANCE", token_len) == 0) {
-        if (verify_is_digit(temp)) {
-          cli_options->maximum_distance = atoi(temp);
-        } else {
-          PRNTERR2("\"%s\" is an invalid value for %s", temp, token);
-        }
-      } else if (memcmp(token, "MINDISTANCE", token_len) == 0) {
-        if (verify_is_digit(temp)) {
-          cli_options->minimum_distance = atoi(temp);
-        } else {
-          PRNTERR2("\"%s\" is an invalid value for %s", temp, token);
-        }
       } else if (memcmp(token, "ORMARK", token_len) == 0) {
         cli_options->ormark = temp[0];
       } else if (memcmp(token, "PREFIX", token_len) == 0) {
@@ -403,20 +391,6 @@ static void process_options_lines(char *grm_file, struct OutputFiles *of, char *
   strcpy(opt_string[++top], cli_options->goto_default_bit ? "GOTODEFAULT" : "NOGOTODEFAULT");
   sprintf(opt_string[++top], "HACTFILENAME=%s", cli_options->hact_file);
   sprintf(opt_string[++top], "LALR=%d", cli_options->lalr_level);
-  {
-    sprintf(opt_string[++top], "MIN-DISTANCE=%d", cli_options->minimum_distance);
-    if (cli_options->minimum_distance <= 1) {
-      PRNT("MIN_DISTANCE must be > 1");
-      exit(12);
-    }
-  }
-  {
-    sprintf(opt_string[++top], "MAX-DISTANCE=%d", cli_options->maximum_distance);
-    if (cli_options->maximum_distance <= cli_options->minimum_distance + 1) {
-      PRNT("MAX_DISTANCE must be > MIN_DISTANCE + 1");
-      exit(12);
-    }
-  }
   strcpy(opt_string[++top], cli_options->nt_check_bit ? "NTCHECK" : "NONTCHECK");
   sprintf(opt_string[++top], "ORMARK=%c", cli_options->ormark);
   sprintf(opt_string[++top], "PREFIX=%s", cli_options->prefix);
