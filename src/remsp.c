@@ -471,7 +471,7 @@ static short sp_state_map(const int rule_head, const int item_no, const int sp_r
 
 /// This program is invoked to remove as many single production
 /// actions as possible for a conflict-free automaton.
-void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* sr, JBitset first, struct LAIndex* lai, struct node **conflict_symbols, JBitset la_set, struct node **adequate_item, struct SRTable* srt, struct statset_type *statset, struct lastats_type *lastats, ArrayShort gd_index, struct node **in_stat, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym) {
+void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* sr, JBitset first, struct LAIndex* lai, struct node **conflict_symbols, JBitset la_set, struct node **adequate_item, struct SRTable* srt, struct statset_type *statset, struct lastats_type *lastats, ArrayShort gd_index, struct node **in_stat, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym, struct LAState* ls) {
   struct AEPool pool = {
     .action_element_pool = NULL,
   };
@@ -490,7 +490,7 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
     short link;
     short shift_number;
   } *new_shift;
-  calloc0p(&new_shift, max_la_state + 1, struct new_shift_element);
+  calloc0p(&new_shift, ls->max_la_state + 1, struct new_shift_element);
   JBitset look_ahead;
   calloc0_set(look_ahead, 1, dss->term_set_size);
   ArrayShort* sp_action;
@@ -500,9 +500,9 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
   struct sp_state_element **sp_table;
   calloc0p(&sp_table, STATE_TABLE_SIZE, struct sp_state_element *);
   struct remsp_action_element **new_action;
-  calloc0p(&new_action, num_states + 1, struct remsp_action_element *);
+  calloc0p(&new_action, ls->num_states + 1, struct remsp_action_element *);
   struct update_action_element **update_action;
-  calloc0p(&update_action, num_states + 1, struct update_action_element *);
+  calloc0p(&update_action, ls->num_states + 1, struct update_action_element *);
   // Initialize all relevant sets and maps to the empty set.
   short symbol_root = NIL;
   for ALL_RULES3(rule_no) {
@@ -584,9 +584,9 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
   }
   struct StateMap state_map = {
     .sp_state_root = NULL,
-    .max_sp_state = num_states,
+    .max_sp_state = ls->num_states,
   };
-  for ALL_STATES3(state_no) {
+  for ALL_STATES3(state_no, ls->num_states) {
     update_action[state_no] = NULL;
   }
   for ALL_NON_TERMINALS3(symbol) {
@@ -597,7 +597,7 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
     symbol_list.raw[symbol] = OMEGA;
   }
   // Traverse all regular states and process the relevant ones.
-  for ALL_STATES3(state_no) {
+  for ALL_STATES3(state_no, ls->num_states) {
     new_action[state_no] = NULL;
     struct goto_header_type go_to = statset[state_no].go_to;
     struct shift_header_type sh = srt->shift[statset[state_no].shift_number];
@@ -715,7 +715,7 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
           // the relevant actions.
           int rule_no;
           int item_no;
-          if (action > num_states) {
+          if (action > ls->num_states) {
             // lookahead shift
             rule_no = OMEGA;
           } else if (action < 0) {
@@ -794,12 +794,12 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
     // gd_index, we set each new element to point to the same
     // index as its previous element, making it point to a null
     // slice.
-    for (int state_no = num_states + 2; state_no <= state_map.max_sp_state + 1; state_no++) {
+    for (int state_no = ls->num_states + 2; state_no <= state_map.max_sp_state + 1; state_no++) {
       gd_index.raw[state_no] = gd_index.raw[state_no - 1];
     }
   }
   realloc0p(&in_stat, state_map.max_sp_state + 1, struct node*);
-  for (int state_no = num_states + 1; state_no <= state_map.max_sp_state; state_no++) {
+  for (int state_no = ls->num_states + 1; state_no <= state_map.max_sp_state; state_no++) {
     in_stat[state_no] = NULL;
   }
   // We now adjust all references to a lookahead state. The idea is
@@ -808,18 +808,18 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
   for (int j = 1; j <= num_shift_maps; j++) {
     struct shift_header_type sh = srt->shift[j];
     for (int i = 1; i <= sh.size; i++) {
-      if (sh.map[i].action > num_states) {
-        sh.map[i].action += state_map.max_sp_state - num_states;
+      if (sh.map[i].action > ls->num_states) {
+        sh.map[i].action += state_map.max_sp_state - ls->num_states;
       }
     }
   }
-  for (int state_no = num_states + 1; state_no <= max_la_state; state_no++) {
-    if (lastats[state_no].in_state > num_states) {
-      lastats[state_no].in_state += state_map.max_sp_state - num_states;
+  for (int state_no = ls->num_states + 1; state_no <= ls->max_la_state; state_no++) {
+    if (lastats[state_no].in_state > ls->num_states) {
+      lastats[state_no].in_state += state_map.max_sp_state - ls->num_states;
     }
   }
-  lastats -= state_map.max_sp_state - num_states;
-  max_la_state += state_map.max_sp_state - num_states;
+  lastats -= state_map.max_sp_state - ls->num_states;
+  ls->max_la_state += state_map.max_sp_state - ls->num_states;
   // We now permanently construct all the new SP states.
   for (struct sp_state_element *state = state_map.sp_state_root; state != NULL; state = state->next) {
     struct remsp_action_element *actionp;
@@ -881,10 +881,10 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
   // At most, the shift array contains 1..num_states elements. As,
   // each of these elements might be (theoretically) replaced by a
   // new one, we need to double its size.
-  realloc0p(&srt->shift, 2 * (num_states + 1), struct shift_header_type);
+  realloc0p(&srt->shift, 2 * (ls->num_states + 1), struct shift_header_type);
   // For each state with updates or new actions, take appropriate
   // actions.
-  for ALL_STATES3(state_no) {
+  for ALL_STATES3(state_no, ls->num_states) {
     // Update reduce actions for final items of single productions
     // that are in non-final states.
     if (update_action[state_no] != NULL) {
@@ -993,7 +993,7 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
   // Free all nodes used in the construction of the conflict_symbols
   // map as this map is no longer useful and its size is based on
   // the base value of num_states.
-  for ALL_STATES3(state_no) {
+  for ALL_STATES3(state_no, ls->num_states) {
     if (conflict_symbols[state_no] != NULL) {
       struct node *p = conflict_symbols[state_no]->next;
       free_nodes(p, conflict_symbols[state_no]);
@@ -1001,7 +1001,7 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
   }
   // All updates have now been made, adjust the number of regular
   // states to include the new SP states.
-  num_states = state_map.max_sp_state;
+  ls->num_states = state_map.max_sp_state;
   // Free all temporary space allocated earlier.
   ffree(sp_rules.raw);
   ffree(stack.raw);

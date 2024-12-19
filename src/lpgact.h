@@ -4,7 +4,7 @@
 /// symbol number into that symbol.
 void build_symno(struct ParserState* ps) {
   const long symno_size = num_symbols + 1;
-  calloc0p(&symno, symno_size, struct symno_type);
+  calloc0p(&ps->symno, symno_size, struct symno_type);
   // Go through entire hash table. For each non_empty bucket, go through
   // linked list in that bucket.
   for (int i = 0; i < HT_SIZE; ++i) {
@@ -12,8 +12,8 @@ void build_symno(struct ParserState* ps) {
       const int symbol = p->number;
       // Not an alias
       if (symbol >= 0) {
-        symno[symbol].name_index = OMEGA;
-        symno[symbol].ptr = p->st_ptr;
+        ps->symno[symbol].name_index = OMEGA;
+        ps->symno[symbol].ptr = p->st_ptr;
       }
     }
   }

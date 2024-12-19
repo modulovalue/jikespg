@@ -322,7 +322,7 @@ static void act63(struct ParserState* ps)
     }
     ps->start_symbol_root = q;
     num_rules++;
-    num_items++;
+    ps->num_items++;
 }
 
 /// start_symbol ::= OR
@@ -361,7 +361,7 @@ static void act73(struct ParserState* ps)
         q -> next = q;
         ps->start_symbol_root = q;
         num_rules = 0;                 // One rule
-        num_items = 0;                 // 0 items
+        ps->num_items = 0;                 // 0 items
     }
     build_symno(ps);
 }
@@ -387,7 +387,7 @@ static void act77(struct ParserState* ps)
         ps->start_symbol_root = q;
 
         num_rules = 1;
-        num_items = 1;
+        ps->num_items = 1;
     }
 
 /// Since we don't know for sure how many start symbols we have, a
@@ -464,7 +464,7 @@ static void act82(struct ParserState* ps)
     }
     struct node *q = Allocate_node();
     q -> value = error_image;
-    num_items++;
+    ps->num_items++;
     if (ps->rulehdr[num_rules].rhs_root == NULL)
         q -> next = q;
     else
@@ -490,7 +490,7 @@ static void act83(struct ParserState* ps)
         }
         struct node *q = Allocate_node();
         q -> value = sym;
-        num_items++;
+        ps->num_items++;
         if (ps->rulehdr[num_rules].rhs_root == NULL)
             q -> next = q;
         else
@@ -585,12 +585,12 @@ static void act100(struct ParserState* ps)
             exit(12);
         }
 
-        if (symno[symbol].name_index != OMEGA)
+        if (ps->symno[symbol].name_index != OMEGA)
         {
             PRNTERR2("Symbol %s has been named more than once. Line %ld, column %d.", SYM1.name, SYM1.start_line, SYM1.start_column);
             exit(12);
         }
-         symno[symbol].name_index = name_map(SYM3.name, ps);
+         ps->symno[symbol].name_index = name_map(SYM3.name, ps);
      }
 }
 

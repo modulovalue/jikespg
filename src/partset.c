@@ -44,14 +44,14 @@
 ///    which is a subset of the subset on top of the stack, currently
 ///    being constructed, remove it from the partition, and push it
 ///    into the stack. Repeat step 2 until the partition is empty.
-void partset(JBitset collection, ArrayLong element_size, ArrayLong list, ArrayLong start, ArrayLong stack, long set_size, bool from_process_scopes) {
+void partset(JBitset collection, ArrayLong element_size, ArrayLong list, ArrayLong start, ArrayLong stack, long set_size, bool from_process_scopes, struct LAState* ls) {
   int collection_size;
   // TODO • Remove this unnecessary indirection.
   if (from_process_scopes) {
     collection_size = set_size;
-    set_size = num_states;
+    set_size = ls->num_states;
   } else {
-    collection_size = num_states;
+    collection_size = ls->num_states;
   }
   const int bctype = collection.size;
   ArrayShort size_list = Allocate_short_array2(set_size + 1);

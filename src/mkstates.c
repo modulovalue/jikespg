@@ -29,7 +29,7 @@ struct StateContainer {
 /// no state based on that kernel set already exists, then a new one is
 /// created and added to STATE_TABLE. In any case, a pointer to the STATE of
 /// the KERNEL is returned.
-struct state_element *lr0_state_map(struct node *kernel, struct state_element **state_table, struct StateContainer* sc) {
+struct state_element *lr0_state_map(struct node *kernel, struct state_element **state_table, struct StateContainer* sc, struct LAState* ls) {
   unsigned long hash_address = 0;
   // Compute the hash address.
   for (const struct node *p = kernel; p != NULL; p = p->next) {
@@ -52,13 +52,13 @@ struct state_element *lr0_state_map(struct node *kernel, struct state_element **
     }
   }
   // Add a new state based on the KERNEL set.
-  num_states++;
+  ls->num_states++;
   struct state_element *ptr;
   talloc0p(&ptr, struct state_element);
   ptr->queue = NULL;
   ptr->kernel_items = kernel;
   ptr->complete_items = NULL;
-  ptr->state_number = num_states;
+  ptr->state_number = ls->num_states;
   ptr->link = state_table[hash_address];
   state_table[hash_address] = ptr;
   if (sc->state_root == NULL) {
@@ -71,7 +71,7 @@ struct state_element *lr0_state_map(struct node *kernel, struct state_element **
 }
 
 /// This procedure constructs an LR(0) automaton.
-void mklr0(struct CLIOptions *cli_options, struct shift_header_type* no_shifts_ptr, struct goto_header_type* no_gotos_ptr, struct node **clitems, struct node **closure, struct SRTable* srt, struct ruletab_type *rules, struct itemtab *item_table, struct StatSet* ss) {
+void mklr0(struct CLIOptions *cli_options, struct shift_header_type* no_shifts_ptr, struct goto_header_type* no_gotos_ptr, struct node **clitems, struct node **closure, struct SRTable* srt, struct ruletab_type *rules, struct itemtab *item_table, struct StatSet* ss, struct LAState* ls) {
   // STATE_TABLE is the array used to hash the states. States are
   // identified by their Kernel set of items. Hash locations are
   // computed for the states. As states are inserted in the table,
@@ -131,7 +131,7 @@ void mklr0(struct CLIOptions *cli_options, struct shift_header_type* no_shifts_p
   }
   // Insert first state in STATE_TABLE and keep constructing states
   // until we no longer can.
-  for (struct state_element *state = lr0_state_map(q, state_table, &sc); /* insert initial state */ state != NULL; /* and process next state until no more */ state = state->queue) {
+  for (struct state_element *state = lr0_state_map(q, state_table, &sc, ls); /* insert initial state */ state != NULL; /* and process next state until no more */ state = state->queue) {
     // Now we construct a list of all non-terminals that can be
     // introduced in this state through closure.  The CLOSURE of each
     // non-terminal has been previously computed in MKFIRST.
@@ -276,7 +276,7 @@ void mklr0(struct CLIOptions *cli_options, struct shift_header_type* no_shifts_p
       }
       /* Not a Read-Reduce action */
       if (action == OMEGA) {
-        struct state_element *new_state = lr0_state_map(q, state_table, &sc);
+        struct state_element *new_state = lr0_state_map(q, state_table, &sc, ls);
         action = new_state->state_number;
       }
       // At this stage, the partition list has been freed (for an old
@@ -404,9 +404,9 @@ void mklr0(struct CLIOptions *cli_options, struct shift_header_type* no_shifts_p
     struct state_element *p_inner;
     // If the grammar is LALR(k), k > 1, more states may be added and
     // the size of the shift map increased.
-    calloc0p(&srt->shift, num_states + 1, struct shift_header_type);
+    calloc0p(&srt->shift, ls->num_states + 1, struct shift_header_type);
     srt->shift[0] = *no_shifts_ptr; /* MUST be initialized for LALR(k) */
-    calloc0p(&ss->statset, num_states + 1, struct statset_type);
+    calloc0p(&ss->statset, ls->num_states + 1, struct statset_type);
     for (p_inner = sc.state_root; p_inner != NULL; p_inner = p_inner->queue) {
       state_no = p_inner->state_number;
       ss->statset[state_no].kernel_items = p_inner->kernel_items;
@@ -697,7 +697,7 @@ int get_shift_symbol(const int lhs_symbol, ArrayBool symbol_seen, struct node **
 /// that are required as candidates for secondary error recovery.  If the
 /// option NAMES=OPTIMIZED is requested, the NAME map is optimized and SYMNO
 /// is updated accordingly.
-void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct Produced* produced, struct ScopeTop* st, JBitset first, struct scope_type *scope, struct node **clitems, ArrayBool null_nt, ArrayLong* scope_right_side, struct ruletab_type *rules, ArrayShort *scope_state, struct statset_type *statset, struct itemtab *item_table, ArrayShort rhs_sym, ArrayShort *gd_range, ArrayShort *gd_index, struct symno_type *symno, struct ScopeCounter* sc, char *string_table) {
+void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct Produced* produced, struct ScopeTop* st, JBitset first, struct scope_type *scope, struct node **clitems, ArrayBool null_nt, ArrayLong* scope_right_side, struct ruletab_type *rules, ArrayShort *scope_state, struct statset_type *statset, struct itemtab *item_table, ArrayShort rhs_sym, ArrayShort *gd_range, ArrayShort *gd_index, struct symno_type *symno, struct ScopeCounter* sc, char *string_table, int *name, struct LAState* ls) {
   // TOP, STACK, and INDEX are used for the digraph algorithm
   // in the routines COMPUTE_PRODUCES.
   //
@@ -720,7 +720,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
   ArrayShort index_of = Allocate_short_array2(num_symbols + 1);
   ArrayShort names_map = Allocate_short_array2(num_names + 1);
   ArrayBool name_used = Allocate_bool_array2(num_names + 1);
-  ArrayShort item_list = Allocate_short_array2(num_items + 1);
+  ArrayShort item_list = Allocate_short_array2(ls->num_items + 1);
   ArrayShort nt_list = Allocate_short_array2(num_non_terminals + 1);
   nt_list.raw -= num_terminals + 1;
   JBitset set;
@@ -729,7 +729,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
   calloc0_set(produces, num_non_terminals, dss->non_term_set_size);
   produces.raw -= (num_terminals + 1) * dss->non_term_set_size;
   struct node **goto_domain;
-  calloc0p(&goto_domain, num_states + 1, struct node *);
+  calloc0p(&goto_domain, ls->num_states + 1, struct node *);
   struct node **direct_produces;
   calloc0p(&direct_produces, num_non_terminals, struct node *);
   direct_produces -= num_terminals + 1;
@@ -790,7 +790,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
       printf("*** These error rules are not in manual format:\n\n");
     }
     for (int item_no = item_root; item_no != NIL; item_no = item_list.raw[item_no]) {
-      print_item(item_no, cli_options, rules, item_table, rhs_sym, string_table);
+      print_item(item_no, cli_options, rules, item_table, rhs_sym, string_table, symno);
     }
   }
   // Complete the construction of the RIGHT_MOST_PRODUCES map for
@@ -827,7 +827,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
     nt_list.raw[i] = OMEGA;
   }
   nt_list.raw[accept_image] = NIL;
-  for ALL_STATES3(state_no) {
+  for ALL_STATES3(state_no, ls->num_states) {
     const struct goto_header_type go_to = statset[state_no].go_to;
     int nt_root = NIL;
     INIT_SET(set);
@@ -866,9 +866,9 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
   // Allocate and construct the permanent goto domain structure:
   //   GD_INDEX and GD_RANGE.
   int n = 0;
-  *gd_index = Allocate_short_array2(num_states + 2);
+  *gd_index = Allocate_short_array2(ls->num_states + 2);
   *gd_range = Allocate_short_array2(gotodom_size + 1);
-  for ALL_STATES3(state_no) {
+  for ALL_STATES3(state_no, ls->num_states) {
     (*gd_index).raw[state_no] = n + 1;
     struct node *p;
     struct node *q;
@@ -879,7 +879,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
       free_nodes(goto_domain[state_no], q);
     }
   }
-  (*gd_index).raw[num_states + 1] = n + 1;
+  (*gd_index).raw[ls->num_states + 1] = n + 1;
   // Remove names assigned to nonterminals that are never used as
   // error candidates.
   if (cli_options->names_opt.value == OPTIMIZE_PHRASES.value) {
@@ -925,11 +925,11 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
       int n;
       int max_prefix_length = 0;
       int item_root;
-      ArrayShort prefix_index = Allocate_short_array2(num_items + 1);
-      ArrayShort suffix_index = Allocate_short_array2(num_items + 1);
+      ArrayShort prefix_index = Allocate_short_array2(ls->num_items + 1);
+      ArrayShort suffix_index = Allocate_short_array2(ls->num_items + 1);
       ArrayShort item_of = Allocate_short_array2(num_non_terminals);
       item_of.raw -= num_terminals + 1;
-      ArrayShort next_item = Allocate_short_array2(num_items + 1);
+      ArrayShort next_item = Allocate_short_array2(ls->num_items + 1);
       ArrayBool symbol_seen = Allocate_bool_array2(num_non_terminals);
       symbol_seen.raw -= num_terminals + 1;
       struct node **states_of;
@@ -938,7 +938,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
       ArrayShort state_index = Allocate_short_array2(num_non_terminals);
       state_index.raw -= num_terminals + 1;
       struct scope_elmt *scope_element;
-      calloc0p(&scope_element, num_items + 1, struct scope_elmt);
+      calloc0p(&scope_element, ls->num_items + 1, struct scope_elmt);
       // Initially, PRODUCES was used to compute the right-most-produces
       // map.  We save that map map and make it reflexive.  Recall that
       // RIGHT_PRODUCES is a mapping from each nonterminal B into the set
@@ -1037,7 +1037,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
       for ALL_NON_TERMINALS3(nt) {
         item_of.raw[nt] = NIL;
       }
-      for ALL_ITEMS3(item_no) {
+      for ALL_ITEMS3(item_no, ls->num_items) {
         int dot_symbol = item_table[item_no].symbol;
         if (IS_A_NON_TERMINAL(dot_symbol)) {
           next_item.raw[item_no] = item_of.raw[dot_symbol];
@@ -1054,11 +1054,11 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
       // longest prefix encountered.  This is subsequently used to
       // bucket sort the scoped items in descending order of the length
       // of their prefixes.
-      for ALL_ITEMS3(item_no) {
+      for ALL_ITEMS3(item_no, ls->num_items) {
         item_list.raw[item_no] = OMEGA;
       }
       item_root = NIL;
-      for ALL_ITEMS3(item_no) {
+      for ALL_ITEMS3(item_no, ls->num_items) {
         int dot_symbol = item_table[item_no].symbol;
         if (dot_symbol == error_image) {
           if (item_table[item_no].dot != 0 && !IS_IN_SET(first, item_table[item_no].suffix_index, empty)) {
@@ -1124,7 +1124,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
       for ALL_NON_TERMINALS3(nt) {
         states_of[nt] = NULL;
       }
-      for ALL_STATES3(state_no) {
+      for ALL_STATES3(state_no, ls->num_states) {
         struct goto_header_type go_to;
         go_to = statset[state_no].go_to;
         for (int i = 1; i <= go_to.size; i++) {
@@ -1157,14 +1157,14 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
         JBitset collection;
         int state_root;
         int state_no_inner;
-        long state_set_size = num_states / SIZEOF_BC + (num_states % SIZEOF_BC ? 1 : 0);
+        long state_set_size = ls->num_states / SIZEOF_BC + (ls->num_states % SIZEOF_BC ? 1 : 0);
         calloc0_set(collection, num_state_sets + 1, state_set_size);
         ArrayLong element_size = Allocate_long_array2(num_state_sets + 1);
         ArrayLong start = Allocate_long_array2(num_state_sets + 2);
         ArrayLong stack = Allocate_long_array2(num_state_sets + 1);
         ArrayShort ordered_symbol = Allocate_short_array2(num_state_sets + 1);
         ArrayLong list = Allocate_long_array2(num_state_sets + 1);
-        ArrayShort state_list = Allocate_short_array2(num_states + 1);
+        ArrayShort state_list = Allocate_short_array2(ls->num_states + 1);
         ArrayShort bucket = Allocate_short_array2(max_prefix_length + 1);
         for (int symbol = nt_root, i = 1; symbol != NIL; symbol = nt_list.raw[symbol], i++) {
           list.raw[i] = i;
@@ -1177,7 +1177,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
             SET_BIT_IN(collection, i, p->value);
           }
         }
-        partset(collection, element_size, list, start, stack, num_state_sets, true);
+        partset(collection, element_size, list, start, stack, num_state_sets, true, ls);
         for (int i = 1; i <= num_state_sets; i++) {
           int symbol = ordered_symbol.raw[i];
           state_index.raw[symbol] = ABS(start.raw[i]);
@@ -1187,7 +1187,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
         *scope_right_side = Allocate_long_array2(sc->scope_rhs_size + 1);
         *scope_state = Allocate_short_array2(sc->scope_state_size + 1);
         int k = 0;
-        for (int i = 0; i <= num_states; i++) {
+        for (int i = 0; i <= ls->num_states; i++) {
           state_list.raw[i] = OMEGA;
         }
         for (int i = 1; i <= num_state_sets; i++) {
@@ -1385,7 +1385,7 @@ void compute_produces(const int symbol, struct node **direct_produces, ArrayShor
 
 
 /// In this procedure, we first construct the LR(0) automaton.
-void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, JBitset first, struct scope_type *scope, struct node **clitems, struct node **closure, struct SRTable* srt, ArrayLong* scope_right_side, ArrayBool null_nt, ArrayShort *scope_state, struct itemtab *item_table, struct ruletab_type *rules, ArrayShort rhs_sym, ArrayShort* gd_range, ArrayShort*gd_index, struct StatSet* ss, struct ScopeCounter* sc, struct symno_type *symno, char *string_table) {
+void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, JBitset first, struct scope_type *scope, struct node **clitems, struct node **closure, struct SRTable* srt, ArrayLong* scope_right_side, ArrayBool null_nt, ArrayShort *scope_state, struct itemtab *item_table, struct ruletab_type *rules, ArrayShort rhs_sym, ArrayShort* gd_range, ArrayShort*gd_index, struct StatSet* ss, struct ScopeCounter* sc, struct symno_type *symno, char *string_table, int *name, struct LAState* ls) {
   struct ScopeTop st = (struct ScopeTop) {
     .top = 0
   };
@@ -1399,10 +1399,10 @@ void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, JBits
     .size = 0,
     .map = NULL,
   };
-  mklr0(cli_options, &no_shifts_ptr, &no_gotos_ptr, clitems, closure, srt, rules, item_table, ss);
+  mklr0(cli_options, &no_shifts_ptr, &no_gotos_ptr, clitems, closure, srt, rules, item_table, ss, ls);
   struct Produced produced = {};
   if (cli_options->error_maps_bit && (cli_options->table_opt.value == OPTIMIZE_TIME.value || cli_options->table_opt.value == OPTIMIZE_SPACE.value)) {
-    produce(cli_options, dss, &produced, &st, first, scope, clitems, null_nt, scope_right_side, rules, scope_state, ss->statset, item_table, rhs_sym, gd_range, gd_index, symno, sc, string_table);
+    produce(cli_options, dss, &produced, &st, first, scope, clitems, null_nt, scope_right_side, rules, scope_state, ss->statset, item_table, rhs_sym, gd_range, gd_index, symno, sc, string_table, name, ls);
   }
   // Free space trapped by the CLOSURE and CLITEMS maps.
   for ALL_NON_TERMINALS3(j) {

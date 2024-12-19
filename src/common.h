@@ -122,11 +122,11 @@ static const int IOBUFFER_SIZE = 655360;
 
 #define ALL_SYMBOLS3(x) (int (x) = 1; (x) <= num_symbols; (x)++)
 
-#define ALL_LA_STATES3(x) (int (x) = num_states + 1; (x) <= max_la_state; (x)++)
+#define ALL_LA_STATES3(x, abc) (int (x) = abc->num_states + 1; (x) <= abc->max_la_state; (x)++)
 
-#define ALL_STATES3(x) (int (x) = 1; (x) <= num_states; (x)++)
+#define ALL_STATES3(x, num_states) (int (x) = 1; (x) <= num_states; (x)++)
 
-#define ALL_ITEMS3(x) (int (x) = 1; (x) <= num_items; (x)++)
+#define ALL_ITEMS3(x, num_items) (int (x) = 1; (x) <= num_items; (x)++)
 
 #define ALL_RULES3(x) (int (x) = 0; (x) <= num_rules; (x)++)
 
@@ -399,17 +399,17 @@ static struct CLIOptions init_cli_options() {
 
 static char msg_line[MAX_MSG_SIZE];
 
-/// The variables below are global counters.
-extern long num_items;
-
-/// NUM_STATES, the actual number of elements used in it is indicated
-/// by the integer NUM_SHIFT_MAPS. NUM_STATES elements were allocated,
-/// because if the user requests that certain single productions be
-/// removed, a Shift map containing actions involving such productions
-/// cannot be shared.
-extern long num_states;
-
-extern long max_la_state;
+struct LAState {
+  /// The variables below are global counters.
+  long num_items;
+  /// NUM_STATES, the actual number of elements used in it is indicated
+  /// by the integer NUM_SHIFT_MAPS. NUM_STATES elements were allocated,
+  /// because if the user requests that certain single productions be
+  /// removed, a Shift map containing actions involving such productions
+  /// cannot be shared.
+  long num_states;
+  long max_la_state;
+};
 
 extern long num_symbols;
 extern long num_names;
@@ -544,10 +544,9 @@ void *talloc(long size);
 struct DetectedSetSizes {
   long term_set_size;
   long non_term_set_size;
-  /// NULL_NT is a boolean vector that indicates whether a given
-  /// non-terminal is nullable.
+  /// NULL_NT is a boolean vector that indicates whether a given non-terminal is nullable.
   ArrayBool null_nt;
-} mkbasic(struct CLIOptions *cli_options, JBitset nt_first, ArrayBool * rmpself, JBitset* first, struct FirstDeps* fd, struct ruletab_type *rules, ArrayShort rhs_sym, struct itemtab **item_tablep, char *string_table);
+} mkbasic(struct CLIOptions *cli_options, JBitset nt_first, ArrayBool * rmpself, JBitset* first, struct FirstDeps* fd, struct ruletab_type *rules, ArrayShort rhs_sym, struct itemtab **item_tablep, char *string_table, struct symno_type *symno, struct LAState* ls);
 
 void restore_symbol(char *out, const char *in, char ormark, char escape);
 
@@ -654,7 +653,7 @@ void fill_in(char string[], int amount, char character);
 
 void free_nodes(struct node *head, struct node *tail);
 
-struct ConflictCounter mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct SourcesElementSources* ses, ArrayBool rmpself, JBitset first, struct node **adequate_item, struct SRTable* srt, ArrayBool null_nt, ArrayShort gd_index, struct ruletab_type *rules, struct statset_type *statset, struct itemtab *item_table, ArrayShort rhs_sym, struct LaStats* las, long* la_top, char *string_table);
+struct ConflictCounter mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct SourcesElementSources* ses, ArrayBool rmpself, JBitset first, struct node **adequate_item, struct SRTable* srt, ArrayBool null_nt, ArrayShort gd_index, struct ruletab_type *rules, struct statset_type *statset, struct itemtab *item_table, ArrayShort rhs_sym, struct LaStats* las, long* la_top, char *string_table, struct symno_type *symno, struct LAState* ls);
 
 /// LA_INDEX and LA_SET are temporary look-ahead sets, each of which will
 /// be pointed to by a GOTO action, and the associated set will be
@@ -717,12 +716,12 @@ static struct reduce_header_type Allocate_reduce_map(const long n) {
   return red;
 }
 
-static struct TableOutput init_table_output() {
+static struct TableOutput init_table_output(struct LAState* ls) {
   return (struct TableOutput) {
-    .ordered_state = Allocate_long_array2(max_la_state + 1),
-    .state_index = Allocate_long_array2(max_la_state + 1),
+    .ordered_state = Allocate_long_array2(ls->max_la_state + 1),
+    .state_index = Allocate_long_array2(ls->max_la_state + 1),
     .symbol_map = Allocate_long_array2(num_symbols + 1),
-    .state_list = Allocate_long_array2(max_la_state + 1),
+    .state_list = Allocate_long_array2(ls->max_la_state + 1),
   };
 }
 
@@ -804,35 +803,31 @@ struct ParserState {
   long string_offset;
   int stack_top;
   char *string_table;
+  struct symno_type *symno;
+  long num_items;
 };
 
 void la_traverse(int state_no, int goto_indx, int *stack_top, struct StackRoot* sr, JBitset first, struct LAIndex* lai, struct node **adequate_item, struct node **in_stat, struct statset_type *statset, struct ruletab_type *rules, struct itemtab *item_table);
 
-void remove_single_productions(struct DetectedSetSizes* dss, struct StackRoot* sr, JBitset first, struct LAIndex* lai, struct node **conflict_symbols, JBitset la_set, struct node **adequate_item, struct SRTable* srt, struct statset_type *statset, struct lastats_type *lastats, ArrayShort gd_index, struct node **in_stat, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym);
+void remove_single_productions(struct DetectedSetSizes* dss, struct StackRoot* sr, JBitset first, struct LAIndex* lai, struct node **conflict_symbols, JBitset la_set, struct node **adequate_item, struct SRTable* srt, struct statset_type *statset, struct lastats_type *lastats, ArrayShort gd_index, struct node **in_stat, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym, struct LAState* ls);
 
-void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, JBitset first, struct scope_type *scope, struct node **clitems, struct node **closure, struct SRTable* srt, ArrayLong* scope_right_side, ArrayBool null_nt, ArrayShort *scope_state, struct itemtab *item_table, struct ruletab_type *rules, ArrayShort rhs_sym, ArrayShort* gd_range, ArrayShort*gd_index, struct StatSet* ss, struct ScopeCounter* sc, struct symno_type *symno, char *string_table);
+void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, JBitset first, struct scope_type *scope, struct node **clitems, struct node **closure, struct SRTable* srt, ArrayLong* scope_right_side, ArrayBool null_nt, ArrayShort *scope_state, struct itemtab *item_table, struct ruletab_type *rules, ArrayShort rhs_sym, ArrayShort* gd_range, ArrayShort*gd_index, struct StatSet* ss, struct ScopeCounter* sc, struct symno_type *symno, char *string_table, int *name, struct LAState* ls);
 
 int number_len(int state_no);
 
-void partset(JBitset collection, ArrayLong element_size, ArrayLong list, ArrayLong start, ArrayLong stack, long set_size, bool from_process_scopes);
+void partset(JBitset collection, ArrayLong element_size, ArrayLong list, ArrayLong start, ArrayLong stack, long set_size, bool from_process_scopes, struct LAState* ls);
 
-void print_item(int item_no, struct CLIOptions* cli_options, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym, char *string_table);
+void print_item(int item_no, struct CLIOptions* cli_options, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym, char *string_table, struct symno_type *symno);
 
 void print_large_token(char *line, char *token, const char *indent, int len);
 
-void print_state(int state_no, struct CLIOptions* cli_options, struct node **adequate_item, struct SRTable* srt, struct lastats_type *lastats, struct statset_type *statset, struct node **in_stat, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym, char *string_table);
+void print_state(int state_no, struct CLIOptions* cli_options, struct node **adequate_item, struct SRTable* srt, struct lastats_type *lastats, struct statset_type *statset, struct node **in_stat, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym, char *string_table, struct symno_type *symno, struct LAState* ls);
 
 void process_error_maps(struct CLIOptions *cli_options, FILE *systab, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp);
 
-void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, ArrayShort gd_range, struct SRTable* srt, ArrayLong scope_right_side, struct lastats_type *lastats, ArrayShort* shiftdf, ArrayLong* gotodef, ArrayShort gd_index, struct statset_type *statset, ArrayShort scope_state, struct ruletab_type *rules, struct itemtab *item_table, struct symno_type *symno, struct ScopeCounter* sc, char *string_table);
+void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, ArrayShort gd_range, struct SRTable* srt, ArrayLong scope_right_side, struct lastats_type *lastats, ArrayShort* shiftdf, ArrayLong* gotodef, ArrayShort gd_index, struct statset_type *statset, ArrayShort scope_state, struct ruletab_type *rules, struct itemtab *item_table, struct symno_type *symno, struct ScopeCounter* sc, char *string_table, int *name, struct LAState* ls);
 
-void process_input(char *grm_file, struct OutputFiles *output_files, int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options, ArrayShort *rhs_sym, struct ruletab_type **rulesp, struct symno_type **symno, struct ParserState* ps);
-
-/// SYMNO is an array that maps symbol numbers to actual symbols.
-extern struct symno_type *symno;
-
-/// NAME is an array containing names to be associated with symbols.
-extern int *name;
+void process_input(char *grm_file, struct OutputFiles *output_files, int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options, ArrayShort *rhs_sym, struct ruletab_type **rulesp, struct symno_type **symno, struct ParserState* ps, int **name);
 
 /// The following variables hold the names
 /// of keywords and predefined macros.
@@ -868,9 +863,9 @@ static char kaccept[5] = "\nacc";
 static char kstart_nt[7] = " start";
 static char keolt[5] = " eol";
 
-char *RETRIEVE_STRING(int indx, char *string_table);
+char *RETRIEVE_STRING(int indx, char *string_table, struct symno_type *symno);
 
-char *RETRIEVE_NAME(int indx, char *string_table);
+char *RETRIEVE_NAME(int indx, char *string_table, int *name);
 
 /// structure used to hold token information
 struct terminal_type {

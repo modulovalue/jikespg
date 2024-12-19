@@ -9,12 +9,6 @@
 #include "lpgact.h"
 #include "lpgprs.h"
 
-/// SYMNO is an array that maps symbol numbers to actual symbols.
-struct symno_type *symno;
-
-/// NAME is an array containing names to be associated with symbols.
-int *name;
-
 struct line_elemt {
   struct line_elemt *link;
   char line[MAX_LINE_SIZE + 1];
@@ -24,11 +18,11 @@ struct LinePool {
   struct line_elemt *line_pool_root;
 };
 
-char *RETRIEVE_STRING(const int indx, char *string_table) {
+char *RETRIEVE_STRING(const int indx, char *string_table, struct symno_type *symno) {
   return &string_table[symno[indx].ptr];
 }
 
-char *RETRIEVE_NAME(const int indx, char *string_table) {
+char *RETRIEVE_NAME(const int indx, char *string_table, int *name) {
   return &string_table[name[indx]];
 }
 
@@ -1138,7 +1132,7 @@ next_line: {
             jj = 0;
           }
           const int max_len = output_size - k - jj;
-          restore_symbol(temp2, RETRIEVE_STRING(rules[rule_no].lhs, ps->string_table), cli_options->ormark, cli_options->escape);
+          restore_symbol(temp2, RETRIEVE_STRING(rules[rule_no].lhs, ps->string_table, ps->symno), cli_options->ormark, cli_options->escape);
           // if a single production
           if (rules[rule_no].sp) {
             strcat(temp2, " ->");
@@ -1150,7 +1144,7 @@ next_line: {
           } else /* Copy right-hand-side symbols to temp2 */
           {
             for ENTIRE_RHS3(j, rule_no, rules) {
-              restore_symbol(symbol, RETRIEVE_STRING(rhs_sym.raw[j], ps->string_table), cli_options->ormark, cli_options->escape);
+              restore_symbol(symbol, RETRIEVE_STRING(rhs_sym.raw[j], ps->string_table, ps->symno), cli_options->ormark, cli_options->escape);
               if (strlen(temp2) + strlen(symbol) + 1 < max_len) {
                 strcat(temp2, " ");
                 strcat(temp2, symbol);
@@ -1513,7 +1507,7 @@ static void process_actions(char *grm_file, struct CLIOptions *cli_options, stru
 }
 
 /// Actions to be taken if grammar is successfully parsed.
-static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *sysgrm, struct ScannerState* ss, ArrayShort *rhs_sym, struct ruletab_type **rulesp, struct ParserState* ps, struct symno_type *symno) {
+static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *sysgrm, struct ScannerState* ss, ArrayShort *rhs_sym, struct ruletab_type **rulesp, struct ParserState* ps, struct symno_type *symno, int **name) {
   if (ps->rulehdr == NULL) {
     printf("Informative: Empty grammar read in. Processing stopped.\n");
     fclose(sysgrm);
@@ -1530,25 +1524,25 @@ static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *
       }
       for ALL_TERMINALS3(symbol) {
         if (symno[symbol].name_index == OMEGA) {
-          symno[symbol].name_index = name_map(RETRIEVE_STRING(symbol, ps->string_table), ps);
+          symno[symbol].name_index = name_map(RETRIEVE_STRING(symbol, ps->string_table, symno), ps);
         }
       }
       for ALL_NON_TERMINALS3(symbol) {
         if (symno[symbol].name_index == OMEGA) {
           if (cli_options->names_opt.value == MAXIMUM_NAMES.value) {
-            symno[symbol].name_index = name_map(RETRIEVE_STRING(symbol, ps->string_table), ps);
+            symno[symbol].name_index = name_map(RETRIEVE_STRING(symbol, ps->string_table, symno), ps);
           } else if (cli_options->names_opt.value == OPTIMIZE_PHRASES.value) {
-            symno[symbol].name_index = -name_map(RETRIEVE_STRING(symbol, ps->string_table), ps);
+            symno[symbol].name_index = -name_map(RETRIEVE_STRING(symbol, ps->string_table, symno), ps);
           } else if (cli_options->names_opt.value == MINIMUM_NAMES.value) {
             symno[symbol].name_index = symno[error_image].name_index;
           }
         }
       }
-      calloc0p(&name, num_names + 1, int);
+      calloc0p(name, num_names + 1, int);
       for (int i = 0; i < HT_SIZE; i++) {
         for (const struct hash_type *p = ps->hash_table[i]; p != NULL; p = p->link) {
           if (p->name_index != OMEGA) {
-            name[p->name_index] = p->st_ptr;
+            (*name)[p->name_index] = p->st_ptr;
           }
         }
       }
@@ -1563,8 +1557,8 @@ static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *
     struct node *ptr;
     int rhs_ct = 0;
     calloc0p(rulesp, num_rules + 2, struct ruletab_type);
-    *rhs_sym = Allocate_short_array2(num_items + 1);
-    num_items += num_rules + 1;
+    *rhs_sym = Allocate_short_array2(ps->num_items + 1);
+    ps->num_items += num_rules + 1;
     int ii = 0;
     struct ruletab_type *rules = *rulesp;
     // Put starting rules from start symbol linked list in rule and rhs table
@@ -1607,7 +1601,7 @@ static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *
         rules[ii].lhs = rules[ii - 1].lhs;
       } else if (IS_A_TERMINAL(ps->rulehdr[ii].lhs)) {
         char temp[SYMBOL_SIZE + 1];
-        restore_symbol(temp, RETRIEVE_STRING(ps->rulehdr[ii].lhs, ps->string_table), cli_options->ormark, cli_options->escape);
+        restore_symbol(temp, RETRIEVE_STRING(ps->rulehdr[ii].lhs, ps->string_table, symno), cli_options->ormark, cli_options->escape);
         PRNTERR2("In rule %d: terminal \"%s\" used as left hand side", ii, temp);
         PRNTERR("Processing terminated due to input errors.");
         exit(12);
@@ -1620,7 +1614,7 @@ static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *
 }
 
 /// This procedure opens all relevant files and processes the input grammar.
-void process_input(char *grm_file, struct OutputFiles *output_files, const int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options, ArrayShort *rhs_sym, struct ruletab_type **rulesp, struct symno_type **symno, struct ParserState* ps) {
+void process_input(char *grm_file, struct OutputFiles *output_files, const int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options, ArrayShort *rhs_sym, struct ruletab_type **rulesp, struct symno_type **symno, struct ParserState* ps, int **name) {
   char parm[256] = "";
 
   // Parse args.
@@ -1777,7 +1771,7 @@ void process_input(char *grm_file, struct OutputFiles *output_files, const int a
       }
       act -= ERROR_ACTION;
     } else if (act == ACCEPT_ACTION) {
-      accept_action(grm_file, cli_options, sysgrm, &ss, rhs_sym, rulesp, ps, *symno);
+      accept_action(grm_file, cli_options, sysgrm, &ss, rhs_sym, rulesp, ps, *symno, name);
       goto end;
     } else {
       // error_action

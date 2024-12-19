@@ -585,12 +585,12 @@ static void act100(struct ParserState* ps)
             exit(12);
         }
 
-        if (symno[symbol].name_index != OMEGA)
+        if (ps->symno[symbol].name_index != OMEGA)
         {
             PRNTERR2("Symbol %s has been named more than once. Line %ld, column %d.", SYM1.name, SYM1.start_line, SYM1.start_column);
             exit(12);
         }
-         symno[symbol].name_index = name_map(SYM3.name, ps);
+        ps->symno[symbol].name_index = name_map(SYM3.name, ps);
      }
 }
 

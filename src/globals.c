@@ -1,19 +1,5 @@
 #include "common.h"
 
-// TODO • propagate some global state struct through all the routines of the parser?
-struct LAState {
-  long num_items;
-  long num_states;
-  long max_la_state;
-};
-
-long num_items = 0;
-long num_states = 0;
-long max_la_state = 0;
-
-
-
-
 // TODO • move these into some struct?
 struct CounterState {
   long num_symbols;

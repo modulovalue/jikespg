@@ -277,7 +277,7 @@ void print_large_token(char *line, char *token, const char *indent, int len) {
 }
 
 /// PRINT_ITEM takes as parameter an ITEM_NO which it prints.
-void print_item(const int item_no, struct CLIOptions* cli_options, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym, char *string_table) {
+void print_item(const int item_no, struct CLIOptions* cli_options, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym, char *string_table, struct symno_type *symno) {
   char tempstr[PRINT_LINE_SIZE + 1];
   char line[PRINT_LINE_SIZE + 1];
   char tok[SYMBOL_SIZE + 1];
@@ -288,7 +288,7 @@ void print_item(const int item_no, struct CLIOptions* cli_options, struct ruleta
   // the dot symbol.
   const int rule_no = item_table[item_no].rule_number;
   int symbol = rules[rule_no].lhs;
-  restore_symbol(tok, RETRIEVE_STRING(symbol, string_table), cli_options->ormark, cli_options->escape);
+  restore_symbol(tok, RETRIEVE_STRING(symbol, string_table, symno), cli_options->ormark, cli_options->escape);
   int len = PRINT_LINE_SIZE - 5;
   print_large_token(line, tok, "", len);
   strcat(line, " ::= ");
@@ -297,7 +297,7 @@ void print_item(const int item_no, struct CLIOptions* cli_options, struct ruleta
   int sbd = rules[rule_no].rhs; /* symbols before dot */
   for (const int k = rules[rule_no].rhs + item_table[item_no].dot - 1; sbd <= k; sbd++) {
     symbol = rhs_sym.raw[sbd];
-    restore_symbol(tok, RETRIEVE_STRING(symbol, string_table), cli_options->ormark, cli_options->escape);
+    restore_symbol(tok, RETRIEVE_STRING(symbol, string_table, symno), cli_options->ormark, cli_options->escape);
     if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE - 4) {
       printf("\n%s", line);
       fill_in(tempstr, offset, ' ');
@@ -317,11 +317,9 @@ void print_item(const int item_no, struct CLIOptions* cli_options, struct ruleta
   }
   strcat(line, tok);
   len = PRINT_LINE_SIZE - (offset + 1);
-  for (int i = rules[rule_no].rhs +
-               item_table[item_no].dot; /* symbols after dot*/
-       i <= rules[rule_no + 1].rhs - 1; i++) {
+  for (int i = rules[rule_no].rhs + item_table[item_no].dot; /* symbols after dot*/ i <= rules[rule_no + 1].rhs - 1; i++) {
     symbol = rhs_sym.raw[i];
-    restore_symbol(tok, RETRIEVE_STRING(symbol, string_table), cli_options->ormark, cli_options->escape);
+    restore_symbol(tok, RETRIEVE_STRING(symbol, string_table, symno), cli_options->ormark, cli_options->escape);
     if (strlen(tok) + strlen(line) > PRINT_LINE_SIZE - 1) {
       printf("\n%s", line);
       fill_in(tempstr, offset, ' ');
@@ -350,7 +348,7 @@ void print_item(const int item_no, struct CLIOptions* cli_options, struct ruleta
 /// replaced by say the GOTO or GOTO_REDUCE of A, the item above can no longer
 /// be retrieved, since transitions in a given state are reconstructed from
 /// the KERNEL and ADEQUATE items of the actions in the GOTO and SHIFT maps.
-void print_state(const int state_no, struct CLIOptions* cli_options, struct node **adequate_item, struct SRTable* srt, struct lastats_type *lastats, struct statset_type *statset, struct node **in_stat, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym, char *string_table) {
+void print_state(const int state_no, struct CLIOptions* cli_options, struct node **adequate_item, struct SRTable* srt, struct lastats_type *lastats, struct statset_type *statset, struct node **in_stat, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym, char *string_table, struct symno_type *symno, struct LAState* ls) {
   char buffer[PRINT_LINE_SIZE + 1];
   char line[PRINT_LINE_SIZE + 1];
   // ITEM_SEEN is used to construct sets of items, to help avoid
@@ -359,14 +357,14 @@ void print_state(const int state_no, struct CLIOptions* cli_options, struct node
   // complete item, or it will be a member of the Complete_items set.
   // Duplicates can also occur because of the elimination of single
   // productions.
-  ArrayBool state_seen = Allocate_bool_array2(max_la_state + 1);
-  ArrayBool item_seen = Allocate_bool_array2(num_items + 1);
-  ArrayShort item_list = Allocate_short_array2(num_items + 1);
+  ArrayBool state_seen = Allocate_bool_array2(ls->max_la_state + 1);
+  ArrayBool item_seen = Allocate_bool_array2(ls->num_items + 1);
+  ArrayShort item_list = Allocate_short_array2(ls->num_items + 1);
   // INITIALIZATION -----------------------------------------------------------
-  for ALL_STATES3(state_no) {
+  for ALL_STATES3(state_no, ls->num_states) {
     state_seen.raw[state_no] = false;
   }
-  for ALL_ITEMS3(item_no) {
+  for ALL_ITEMS3(item_no, ls->num_items) {
     item_seen.raw[item_no] = false;
   }
   int kernel_size = 0;
@@ -425,7 +423,7 @@ void print_state(const int state_no, struct CLIOptions* cli_options, struct node
   const struct shift_header_type sh = srt->shift[statset[state_no].shift_number];
   for (int i = 1; i <= sh.size; i++) {
     int next_state = sh.map[i].action;
-    while (next_state > num_states) {
+    while (next_state > ls->num_states) {
       const struct shift_header_type next_sh = srt->shift[lastats[next_state].shift_number];
       if (next_sh.size > 0) {
         next_state = next_sh.map[1].action;
@@ -472,13 +470,13 @@ void print_state(const int state_no, struct CLIOptions* cli_options, struct node
   // line, sort then, then print them.  The kernel items are in sorted
   // order.
   for (int item_no = 1; item_no <= kernel_size; item_no++) {
-    print_item(item_list.raw[item_no], cli_options, rules, item_table, rhs_sym, string_table);
+    print_item(item_list.raw[item_no], cli_options, rules, item_table, rhs_sym, string_table, symno);
   }
   if (kernel_size < n) {
     printf("\n");
     qcksrt(item_list, kernel_size + 1, n);
     for (int item_no = kernel_size + 1; item_no <= n; item_no++) {
-      print_item(item_list.raw[item_no], cli_options, rules, item_table, rhs_sym, string_table);
+      print_item(item_list.raw[item_no], cli_options, rules, item_table, rhs_sym, string_table, symno);
     }
   }
   ffree(item_list.raw);

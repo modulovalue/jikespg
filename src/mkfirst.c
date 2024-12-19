@@ -44,7 +44,7 @@ bool is_terminal_rhs(ArrayShort rhs_start, const bool *produces_terminals, const
 /// and Xi, for all i, is a terminal or a non-terminal that can generate a
 /// string of terminals.
 /// This routine is structurally identical to COMPUTE_NULLABLES.
-void check_non_terminals(struct CLIOptions *cli_options, ArrayShort lhs_rule, ArrayShort next_rule, ArrayShort nt_list, struct ruletab_type *rules, ArrayShort rhs_sym, char *string_table) {
+void check_non_terminals(struct CLIOptions *cli_options, ArrayShort lhs_rule, ArrayShort next_rule, ArrayShort nt_list, struct ruletab_type *rules, ArrayShort rhs_sym, char *string_table, struct symno_type *symno) {
   bool changed = true;
   ArrayShort rhs_start = Allocate_short_array2(NEXT_RULE_SIZE());
   ArrayBool produces_terminals = Allocate_bool_array2(num_non_terminals);
@@ -115,7 +115,7 @@ void check_non_terminals(struct CLIOptions *cli_options, ArrayShort lhs_rule, Ar
     }
     for (int symbol = nt_root; symbol != NIL; symbol = nt_list.raw[symbol]) {
       char tok[SYMBOL_SIZE + 1];
-      restore_symbol(tok, RETRIEVE_STRING(symbol, string_table), cli_options->ormark, cli_options->escape);
+      restore_symbol(tok, RETRIEVE_STRING(symbol, string_table, symno), cli_options->ormark, cli_options->escape);
       if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE - 1) {
         PRNT(line);
         print_large_token(line, tok, "    ", LEN);
@@ -132,7 +132,7 @@ void check_non_terminals(struct CLIOptions *cli_options, ArrayShort lhs_rule, Ar
   ffree(rhs_start.raw);
 }
 
-void no_rules_produced(struct CLIOptions *cli_options, ArrayShort lhs_rule, ArrayShort nt_list, char *string_table) {
+void no_rules_produced(struct CLIOptions *cli_options, ArrayShort lhs_rule, ArrayShort nt_list, char *string_table, struct symno_type *symno) {
   // Build a list of all non-terminals that do not produce any rules.
   int nt_root = NIL;
   int nt_last;
@@ -159,7 +159,7 @@ void no_rules_produced(struct CLIOptions *cli_options, ArrayShort lhs_rule, Arra
     strcpy(line, "        ");
     for (int symbol = nt_root; symbol != NIL; symbol = nt_list.raw[symbol]) {
       char tok[SYMBOL_SIZE + 1];
-      restore_symbol(tok, RETRIEVE_STRING(symbol, string_table), cli_options->ormark, cli_options->escape);
+      restore_symbol(tok, RETRIEVE_STRING(symbol, string_table, symno), cli_options->ormark, cli_options->escape);
       if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE) {
         PRNT(line);
         print_large_token(line, tok, "    ", LEN);
@@ -403,7 +403,7 @@ void compute_follow(const int nt, struct DetectedSetSizes *dss, ArrayShort stack
 
 /// MKFIRST constructs the FIRST and FOLLOW maps, the CLOSURE map,
 /// ADEQUATE_ITEM and ITEM_TABLE maps and all other basic maps.
-struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first, ArrayBool *rmpself, JBitset* first, struct FirstDeps* fd, struct ruletab_type *rules, ArrayShort rhs_sym, struct itemtab **item_tablep, char *string_table) {
+struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first, ArrayBool *rmpself, JBitset* first, struct FirstDeps* fd, struct ruletab_type *rules, ArrayShort rhs_sym, struct itemtab **item_tablep, char *string_table, struct symno_type *symno, struct LAState* ls) {
   struct DetectedSetSizes dss = {
     .non_term_set_size = num_non_terminals / SIZEOF_BC + (num_non_terminals % SIZEOF_BC ? 1 : 0),
     .term_set_size = num_terminals / SIZEOF_BC + (num_terminals % SIZEOF_BC ? 1 : 0),
@@ -422,14 +422,14 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
   // the non-terminal.
   calloc0_set(nt_first, num_non_terminals, dss.term_set_size);
   nt_first.raw -= (num_terminals + 1) * dss.term_set_size;
-  ArrayShort next_item = Allocate_short_array2(num_items + 1);
+  ArrayShort next_item = Allocate_short_array2(ls->num_items + 1);
   ArrayShort nt_items = Allocate_short_array2(num_non_terminals);
   nt_items.raw -= num_terminals + 1;
   ArrayShort nt_list = Allocate_short_array2(num_non_terminals);
   nt_list.raw -= num_terminals + 1;
   struct f_element_type *first_element;
-  calloc0p(&first_element, num_items + 1, struct f_element_type);
-  calloc0p(item_tablep, num_items + 1, struct itemtab);
+  calloc0p(&first_element, ls->num_items + 1, struct f_element_type);
+  calloc0p(item_tablep, ls->num_items + 1, struct itemtab);
   struct itemtab *item_table = *item_tablep;
   for ALL_NON_TERMINALS3(symbol) {
     lhs_rule.raw[symbol] = NIL;
@@ -448,7 +448,7 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
   }
   // Check if there are any non-terminals that do not produce
   // any rules.
-  no_rules_produced(cli_options, lhs_rule, nt_list, string_table);
+  no_rules_produced(cli_options, lhs_rule, nt_list, string_table, symno);
   // Construct the CLOSURE map of non-terminals.
   calloc0p(&(fd->closure), num_non_terminals, struct node *);
   fd->closure -= num_terminals + 1;
@@ -537,7 +537,7 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
   }
   // Check whether there are any non-terminals that do not
   // generate any terminal strings. If so, signal error and stop.
-  check_non_terminals(cli_options, lhs_rule, next_rule, nt_list, rules, rhs_sym, string_table);
+  check_non_terminals(cli_options, lhs_rule, next_rule, nt_list, rules, rhs_sym, string_table, symno);
   // Construct the ITEM_TABLE, FIRST_ITEM_OF, and NT_ITEMS maps.
   ArrayShort first_table = Allocate_short_array2(num_symbols + 1);
   /* Initialize FIRST_TABLE to NIL */
@@ -828,7 +828,7 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
         strcpy(line, "*** The following Terminal is useless: ");
       }
       for (int symbol = t_root; symbol != NIL; symbol = symbol_list.raw[symbol]) {
-        restore_symbol(tok, RETRIEVE_STRING(symbol, string_table), cli_options->ormark, cli_options->escape);
+        restore_symbol(tok, RETRIEVE_STRING(symbol, string_table, symno), cli_options->ormark, cli_options->escape);
         if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE) {
           PRNT(line);
           print_large_token(line, tok, "    ", LEN);
@@ -860,7 +860,7 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
         strcpy(line, "*** The following Non-Terminal is useless: ");
       }
       for (int symbol = nt_root; symbol != NIL; symbol = symbol_list.raw[symbol]) {
-        restore_symbol(tok, RETRIEVE_STRING(symbol, string_table), cli_options->ormark, cli_options->escape);
+        restore_symbol(tok, RETRIEVE_STRING(symbol, string_table, symno), cli_options->ormark, cli_options->escape);
         if (strlen(line) + strlen(tok) > PRINT_LINE_SIZE) {
           PRNT(line);
           print_large_token(line, tok, "    ", LEN);

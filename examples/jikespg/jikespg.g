@@ -60,7 +60,7 @@ $Rules
 /// symbol number into that symbol.
 void build_symno(struct ParserState* ps) {
   const long symno_size = num_symbols + 1;
-  calloc0p(&symno, symno_size, struct symno_type);
+  calloc0p(&ps->symno, symno_size, struct symno_type);
   // Go through entire hash table. For each non_empty bucket, go through
   // linked list in that bucket.
   for (int i = 0; i < HT_SIZE; ++i) {
@@ -68,8 +68,8 @@ void build_symno(struct ParserState* ps) {
       const int symbol = p->number;
       // Not an alias
       if (symbol >= 0) {
-        symno[symbol].name_index = OMEGA;
-        symno[symbol].ptr = p->st_ptr;
+        ps->symno[symbol].name_index = OMEGA;
+        ps->symno[symbol].ptr = p->st_ptr;
       }
     }
   }
@@ -865,12 +865,12 @@ static void act$rule_number(struct ParserState* ps)
             exit(12);
         }
 
-        if (symno[symbol].name_index != OMEGA)
+        if (ps->symno[symbol].name_index != OMEGA)
         {
             PRNTERR2("Symbol %s has been named more than once. Line %ld, column %d.", SYM1.name, SYM1.start_line, SYM1.start_column);
             exit(12);
         }
-         symno[symbol].name_index = name_map(SYM3.name, ps);
+        ps->symno[symbol].name_index = name_map(SYM3.name, ps);
      }
 }
 ./

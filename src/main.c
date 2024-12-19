@@ -87,7 +87,15 @@ int main(const int argc, char *argv[]) {
       .string_offset = 0,
       .stack_top = -1,
       .string_table = NULL,
+      .num_items = 0,
     };
+    struct LAState ls = (struct LAState) {
+      .max_la_state = 0,
+      .num_items = 0,
+      .num_states = 0,
+    };
+    /// NAME is an array containing names to be associated with symbols.
+    int *name;
 
     // Process input.
     {
@@ -122,7 +130,8 @@ int main(const int argc, char *argv[]) {
         tab_file[dot - tmpbuf] = '\0';
       }
       strcat(tab_file, ".t"); /* add .t extension for table file */
-      process_input(grm_file, &of, argc, argv, file_prefix, &cli_options, &rhs_sym, &rules, &symno, &ps);
+      process_input(grm_file, &of, argc, argv, file_prefix, &cli_options, &rhs_sym, &rules, &ps.symno, &ps, &name);
+      ls.num_items = ps.num_items;
     }
 
     /// FOLLOW is a mapping from non-terminals to a set of terminals that
@@ -140,7 +149,7 @@ int main(const int argc, char *argv[]) {
 
     struct itemtab *item_table = NULL;
 
-    struct DetectedSetSizes dss = mkbasic(&cli_options, follow, &rmpself, &first, &fd, rules, rhs_sym, &item_table, ps.string_table);
+    struct DetectedSetSizes dss = mkbasic(&cli_options, follow, &rmpself, &first, &fd, rules, rhs_sym, &item_table, ps.string_table, ps.symno, &ls);
 
     struct SRTable srt = (struct SRTable) {
       .reduce = NULL,
@@ -164,7 +173,7 @@ int main(const int argc, char *argv[]) {
       .scope_state_size = 0,
     };
 
-    mkstats(&cli_options, &dss, first, scope, fd.clitems, fd.closure, &srt, &scope_right_side, dss.null_nt, &scope_state, item_table, rules, rhs_sym, &gd_range, &gd_index, &ss, &sc, symno, ps.string_table);
+    mkstats(&cli_options, &dss, first, scope, fd.clitems, fd.closure, &srt, &scope_right_side, dss.null_nt, &scope_state, item_table, rules, rhs_sym, &gd_range, &gd_index, &ss, &sc, ps.symno, ps.string_table, name, &ls);
 
     struct SourcesElementSources ses = (struct SourcesElementSources) {
       .sources = NULL,
@@ -173,23 +182,23 @@ int main(const int argc, char *argv[]) {
       .lastats = NULL,
     };
     long la_top = 0;
-    struct ConflictCounter conflicts = mkrdcts(&cli_options, &dss, &ses, rmpself, first, fd.adequate_item, &srt, dss.null_nt, gd_index, rules, ss.statset, item_table, rhs_sym, &las, &la_top, ps.string_table);
+    struct ConflictCounter conflicts = mkrdcts(&cli_options, &dss, &ses, rmpself, first, fd.adequate_item, &srt, dss.null_nt, gd_index, rules, ss.statset, item_table, rhs_sym, &las, &la_top, ps.string_table, ps.symno, &ls);
     // Output more basic statistics.
     {
       PRNT3("Number of Terminals: %ld", num_terminals - 1); /*-1 for %empty */
       PRNT3("Number of Nonterminals: %ld", num_non_terminals - 1); /* -1 for %ACC */
       PRNT3("Number of Productions: %ld", num_rules + 1);
-      PRNT3("Number of Terminals: %ld", num_error_rules);
+      PRNT3("Number of Error Rules: %ld", num_error_rules);
       if (cli_options.single_productions_bit) {
         PRNT3("Number of Single Productions: %ld", num_single_productions);
       }
-      PRNT3("Number of Items: %ld", num_items);
+      PRNT3("Number of Items: %ld", ls.num_items);
       if (cli_options.scopes_bit) {
         PRNT3("Number of Scopes: %ld", sc.num_scopes);
       }
-      PRNT3("Number of States: %ld", num_states);
-      if (max_la_state > num_states) {
-        PRNT3("Number of look-ahead states: %ld", max_la_state - num_states);
+      PRNT3("Number of States: %ld", ls.num_states);
+      if (ls.max_la_state > ls.num_states) {
+        PRNT3("Number of look-ahead states: %ld", ls.max_la_state - ls.num_states);
       }
       PRNT3("Number of Shift actions: %ld", num_shifts);
       PRNT3("Number of Goto actions: %ld", num_gotos);
@@ -208,7 +217,7 @@ int main(const int argc, char *argv[]) {
       } else {
         // Prepare table processing.
         {
-          num_entries = max_la_state + num_shifts + num_shift_reduces + num_gotos + num_goto_reduces + num_reductions;
+          num_entries = ls.max_la_state + num_shifts + num_shift_reduces + num_gotos + num_goto_reduces + num_reductions;
           // We release space used by RHS_SYM, the ADEQUATE_ITEM
           // map, ITEM_TABLE (if we don't have to dump error maps),
           // IN_STAT, FIRST, NULL_NT and FOLLOW (if it's no longer
@@ -226,7 +235,7 @@ int main(const int argc, char *argv[]) {
           if (!cli_options.error_maps_bit) {
             ffree(item_table);
           }
-          for ALL_STATES3(state_no) {
+          for ALL_STATES3(state_no, ls.num_states) {
             struct node *head = conflicts.in_stat[state_no];
             if (head != NULL) {
               head = head->next;
@@ -255,7 +264,7 @@ int main(const int argc, char *argv[]) {
 
         ArrayShort shiftdf;
         ArrayLong gotodef;
-        process_tables(tab_file, &of, &cli_options, &dss, &ctp, &of, &np, scope, gd_range, &srt, scope_right_side, las.lastats, &shiftdf, &gotodef, gd_index, ss.statset, scope_state, rules, item_table, symno, &sc, ps.string_table);
+        process_tables(tab_file, &of, &cli_options, &dss, &ctp, &of, &np, scope, gd_range, &srt, scope_right_side, las.lastats, &shiftdf, &gotodef, gd_index, ss.statset, scope_state, rules, item_table, ps.symno, &sc, ps.string_table, name, &ls);
       }
     }
 
