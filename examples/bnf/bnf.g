@@ -6,8 +6,6 @@
 %Options FILEPREFIX=bnf
 %Options PREFIX=TK_
 %Options NOGOTODEFAULT
-%Options NAMES=max
-%Options ERRORMAPS
 
 -- This grammar has been augmented with productions that captures
 -- most errors that a user is likely to make. This saves the need

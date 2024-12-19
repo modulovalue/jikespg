@@ -12,9 +12,6 @@
 %options LALR=1
 %options TABLE=space
 
---error recovering options.....
-%options ERRORMAPS
-
 --grammar understanding options
 %options FIRST
 %options FOLLOW
@@ -23,7 +20,6 @@
 %options STATES
 
 %options DEFERRED
-%options NAMES=MAX
 %options SCOPES
 
 --Usefull macros helping reading/writing semantic actions

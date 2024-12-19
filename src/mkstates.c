@@ -880,43 +880,6 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
     }
   }
   (*gd_index).raw[ls->num_states + 1] = n + 1;
-  // Remove names assigned to nonterminals that are never used as
-  // error candidates.
-  if (cli_options->names_opt.value == OPTIMIZE_PHRASES.value) {
-    // In addition to nonterminals that are never used as candidates,
-    // if a nullable nonterminal was assigned a name by default
-    // (nonterminals that were "named" by default are identified
-    // with negative indices), that name is also removed.
-    for ALL_NON_TERMINALS3(symbol) {
-      if (nt_list.raw[symbol] == OMEGA) {
-        symno[symbol].name_index = symno[accept_image].name_index;
-      } else if (symno[symbol].name_index < 0) {
-        if (null_nt.raw[symbol]) {
-          symno[symbol].name_index = symno[accept_image].name_index;
-        } else {
-          symno[symbol].name_index = -symno[symbol].name_index;
-        }
-      }
-    }
-    // Adjust name map to remove unused elements and update SYMNO map.
-    for (int i = 1; i <= num_names; i++) {
-      name_used.raw[i] = false;
-    }
-    for ALL_SYMBOLS3(symbol) {
-      name_used.raw[symno[symbol].name_index] = true;
-    }
-    n = 0;
-    for (int i = 1; i <= num_names; i++) {
-      if (name_used.raw[i]) {
-        name[++n] = name[i];
-        names_map.raw[i] = n;
-      }
-    }
-    num_names = n;
-    for ALL_SYMBOLS3(symbol) {
-      symno[symbol].name_index = names_map.raw[symno[symbol].name_index];
-    }
-  }
   if (cli_options->scopes_bit) {
     // Process scopes.
     {

@@ -221,12 +221,7 @@ int number_len(int state_no) {
 void restore_symbol(char *out, const char *in, char ormark, char escape) {
   const int len = strlen(in);
   if (len > 0) {
-    if ((len == 1 && in[0] == ormark) ||
-        in[0] == escape ||
-        in[0] == '\'' ||
-        in[len - 1] == '\'' ||
-        (strchr(in, ' ') != NULL &&
-         (in[0] != '<' || in[len - 1] != '>'))) {
+    if ((len == 1 && in[0] == ormark) || in[0] == escape || in[0] == '\'' || in[len - 1] == '\'' || (strchr(in, ' ') != NULL &&(in[0] != '<' || in[len - 1] != '>'))) {
       *out++ = '\'';
       while (*in != '\0') {
         if (*in == '\'') {

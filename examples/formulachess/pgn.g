@@ -4,9 +4,6 @@
 %options FILEPREFIX=java, ESCAPE=$, PREFIX=TokenName,
 %options NOGOTODEFAULT, SINGLEPRODUCTIONS, LALR=10 , TABLE=TIME ,
 
---error recovering options.....
-%options ERRORMAPS
-
 --grammar understanding options
 %options first follow
 %options TRACE=FULL ,

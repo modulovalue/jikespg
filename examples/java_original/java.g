@@ -13,7 +13,6 @@
 %options VERBOSE
 
 %options DEFERRED
-%options NAMES=MAX
 %options SCOPES
 
 --Usefull macros helping reading/writing semantic actions

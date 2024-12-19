@@ -152,8 +152,6 @@ static void options(char *file_prefix, struct CLIOptions *cli_options, char *par
         cli_options->byte_bit = flag;
       } else if (memcmp("CONFLICTS", token, token_len) == 0) {
         cli_options->conflicts_bit = flag;
-      } else if (memcmp("ERRORMAPS", token, token_len) == 0) {
-        cli_options->error_maps_bit = flag;
       } else if (memcmp("GOTODEFAULT", token, token_len) == 0) {
         cli_options->goto_default_bit = flag;
       } else if (memcmp("HALFWORD", token, token_len) == 0) {
@@ -187,10 +185,6 @@ static void options(char *file_prefix, struct CLIOptions *cli_options, char *par
       temp[i - j] = '\0';
       if (memcmp(token, "ACTFILENAME", token_len) == 0) {
         strcpy(cli_options->act_file, temp);
-      } else if (strcmp(token, "BLOCKB") == 0) {
-        strcpy(cli_options->blockb, temp);
-      } else if (strcmp(token, "BLOCKE") == 0) {
-        strcpy(cli_options->blocke, temp);
       } else if (memcmp("DEFAULT", token, token_len) == 0) {
         if (verify_is_digit(temp)) {
           switch (atoi(temp)) {
@@ -231,10 +225,6 @@ static void options(char *file_prefix, struct CLIOptions *cli_options, char *par
         }
       } else if (memcmp(token, "HACTFILENAME", token_len) == 0) {
         strcpy(cli_options->hact_file, temp);
-      } else if (strcmp(token, "HBLOCKB") == 0) {
-        strcpy(cli_options->hblockb, temp);
-      } else if (strcmp(token, "HBLOCKE") == 0) {
-        strcpy(cli_options->hblocke, temp);
       } else if (memcmp("LALR", token, token_len) == 0) {
         int token_len = strlen(temp);
         if (token_len > MAX_PARM_SIZE) {
@@ -260,17 +250,6 @@ static void options(char *file_prefix, struct CLIOptions *cli_options, char *par
       } else if (memcmp(token, "MINDISTANCE", token_len) == 0) {
         if (verify_is_digit(temp)) {
           cli_options->minimum_distance = atoi(temp);
-        } else {
-          PRNTERR2("\"%s\" is an invalid value for %s", temp, token);
-        }
-      } else if (memcmp("NAMES", token, token_len) == 0) {
-        int token_len = strlen(temp);
-        if (memcmp("MAXIMUM", translate(temp, token_len), token_len) == 0) {
-          cli_options->names_opt = MAXIMUM_NAMES;
-        } else if (memcmp("MINIMUM", translate(temp, token_len), token_len) == 0) {
-          cli_options->names_opt = MINIMUM_NAMES;
-        } else if (memcmp(translate(temp, token_len), "OPTIMIZED", token_len) == 0) {
-          cli_options->names_opt = OPTIMIZE_PHRASES;
         } else {
           PRNTERR2("\"%s\" is an invalid value for %s", temp, token);
         }
@@ -402,8 +381,6 @@ static void process_options_lines(char *grm_file, struct OutputFiles *of, char *
   // BLOCKB, BLOCKE, HBLOCKB and HBLOCKE can generate the longest strings
   // since their value can be up to MAX_PARM_SIZE characters long.
   sprintf(opt_string[++top], "ACTFILENAME=%s", cli_options->act_file);
-  sprintf(opt_string[++top], "BLOCKB=%s", cli_options->blockb);
-  sprintf(opt_string[++top], "BLOCKE=%s", cli_options->blocke);
   strcpy(opt_string[++top], cli_options->byte_bit ? "BYTE" : "NOBYTE");
   strcpy(opt_string[++top], cli_options->conflicts_bit ? "CONFLICTS" : "NOCONFLICTS");
   if (cli_options->default_opt.value == OPT_0.value) strcpy(opt_string[++top], "NODEFAULT");
@@ -412,7 +389,6 @@ static void process_options_lines(char *grm_file, struct OutputFiles *of, char *
   else if (cli_options->default_opt.value == OPT_3.value) printf("DEFAULT=3");
   else if (cli_options->default_opt.value == OPT_4.value) printf("DEFAULT=4");
   else if (cli_options->default_opt.value == OPT_5.value) printf("DEFAULT=5");
-  strcpy(opt_string[++top], cli_options->error_maps_bit ? "ERRORMAPS" : "NOERRORMAPS");
   sprintf(opt_string[++top], "ESCAPE=%c", cli_options->escape);
   sprintf(opt_string[++top], "FILEPREFIX=%s", file_prefix);
   if (cli_options->c_bit) {
@@ -426,8 +402,6 @@ static void process_options_lines(char *grm_file, struct OutputFiles *of, char *
   }
   strcpy(opt_string[++top], cli_options->goto_default_bit ? "GOTODEFAULT" : "NOGOTODEFAULT");
   sprintf(opt_string[++top], "HACTFILENAME=%s", cli_options->hact_file);
-  sprintf(opt_string[++top], "HBLOCKB=%s", cli_options->hblockb);
-  sprintf(opt_string[++top], "HBLOCKE=%s", cli_options->hblocke);
   sprintf(opt_string[++top], "LALR=%d", cli_options->lalr_level);
   {
     sprintf(opt_string[++top], "MIN-DISTANCE=%d", cli_options->minimum_distance);
@@ -442,13 +416,6 @@ static void process_options_lines(char *grm_file, struct OutputFiles *of, char *
       PRNT("MAX_DISTANCE must be > MIN_DISTANCE + 1");
       exit(12);
     }
-  }
-  if (cli_options->names_opt.value == MAXIMUM_NAMES.value) {
-    strcpy(opt_string[++top], "NAMES=MAXIMUM");
-  } else if (cli_options->names_opt.value == MINIMUM_NAMES.value) {
-    strcpy(opt_string[++top], "NAMES=MINIMUM");
-  } else if (cli_options->names_opt.value == OPTIMIZE_PHRASES.value) {
-    strcpy(opt_string[++top], "NAMES=OPTIMIZED");
   }
   strcpy(opt_string[++top], cli_options->nt_check_bit ? "NTCHECK" : "NONTCHECK");
   sprintf(opt_string[++top], "ORMARK=%c", cli_options->ormark);
@@ -505,36 +472,11 @@ static void process_options_lines(char *grm_file, struct OutputFiles *of, char *
   }
   // Check if there are any conflicts in the options.
   temp[0] = '\0';
-  if (strcmp(cli_options->blockb, cli_options->blocke) == 0) {
-    strcpy(temp, "BLOCKB and BLOCKE");
-  } else if (strlen(cli_options->blockb) == 1 && cli_options->blockb[0] == cli_options->escape) {
-    strcpy(temp, "BLOCKB and ESCAPE");
-  } else if (strlen(cli_options->blockb) == 1 && cli_options->blockb[0] == cli_options->ormark) {
-    strcpy(temp, "BLOCKB and ORMARK");
-  } else if (strlen(cli_options->blocke) == 1 && cli_options->blocke[0] == cli_options->escape) {
-    strcpy(temp, "ESCAPE and BLOCKE");
-  } else if (strlen(cli_options->blocke) == 1 && cli_options->blocke[0] == cli_options->ormark) {
-    strcpy(temp, "ORMARK and BLOCKE");
-  } else if (strcmp(cli_options->hblockb, cli_options->hblocke) == 0) {
-    strcpy(temp, "HBLOCKB and HBLOCKE");
-  } else if (strlen(cli_options->hblockb) == 1 && cli_options->hblockb[0] == cli_options->escape) {
-    strcpy(temp, "HBLOCKB and ESCAPE");
-  } else if (strlen(cli_options->hblockb) == 1 && cli_options->hblockb[0] == cli_options->ormark) {
-    strcpy(temp, "HBLOCKB and ORMARK");
-  } else if (strlen(cli_options->hblocke) == 1 && cli_options->hblocke[0] == cli_options->escape) {
-    strcpy(temp, "ESCAPE and HBLOCKE");
-  } else if (strlen(cli_options->hblocke) == 1 && cli_options->hblocke[0] == cli_options->ormark) {
-    strcpy(temp, "ORMARK and HBLOCKE");
-  } else if (cli_options->ormark == cli_options->escape) {
+  if (cli_options->ormark == cli_options->escape) {
     strcpy(temp, "ORMARK and ESCAPE");
   }
   if (temp[0] != '\0') {
     PRNTERR2("The options %s cannot have the same value", temp);
-    PRNT3("Input process aborted at line %d ...", ss->line_no);
-    exit(12);
-  }
-  if (strlen(cli_options->hblockb) <= strlen(cli_options->blockb) && memcmp(cli_options->hblockb, cli_options->blockb, strlen(cli_options->hblockb)) == 0) {
-    PRNTERR2("Hblockb value, %s, cannot be a suffix of blockb: %s", cli_options->hblockb, cli_options->blockb);
     PRNT3("Input process aborted at line %d ...", ss->line_no);
     exit(12);
   }
@@ -668,6 +610,14 @@ int name_map(const char *symb, struct ParserState* ps) {
 /// SCANNER scans the input stream and returns the next input token.
 static void scanner(char *grm_file, FILE *sysgrm, struct CLIOptions* cli_options, struct ScannerState* ss, struct ParserState* ps) {
   char tok_string[SYMBOL_SIZE + 1];
+  char blockb[3] = {'/', '.'};
+  char blocke[3] = {'.', '/'};
+  char hblockb[3] = {'/', ':'};
+  char hblocke[3] = {':', '/'};
+  long blockb_len = strlen(blockb);
+  long blocke_len = strlen(blocke);
+  long hblockb_len = strlen(hblockb);
+  long hblocke_len = strlen(hblocke);
 scan_token:
   // Skip "blank" spaces.
   ss->p1 = ss->p2;
@@ -686,9 +636,8 @@ scan_token:
       ss->linestart = ss->p1 - 1;
     }
   }
-  if (strncmp(ss->p1, cli_options->hblockb, cli_options->hblockb_len) == 0) /* check block opener */
-  {
-    ss->p1 = ss->p1 + cli_options->hblockb_len;
+  if (strncmp(ss->p1, hblockb, hblockb_len) == 0) /* check block opener */ {
+    ss->p1 = ss->p1 + hblockb_len;
     ss->ct_length = 0;
     ss->ct_ptr = ss->p1;
     if (*ss->p1 == '\n') {
@@ -701,7 +650,7 @@ scan_token:
       ss->ct_start_col = ss->p1 - ss->linestart;
     }
 
-    while (strncmp(ss->p1, cli_options->hblocke, cli_options->hblocke_len) != 0) {
+    while (strncmp(ss->p1, hblocke, hblocke_len) != 0) {
       if (*ss->p1 == '\0') {
         PRNTERR2("End of file encountered while scanning header action block in rule %ld", num_rules);
         exit(12);
@@ -724,12 +673,12 @@ scan_token:
     ss->ct = HBLOCK_TK;
     ss->ct_end_line = ss->line_no;
     ss->ct_end_col = ss->p1 - ss->linestart - 1;
-    ss->p2 = ss->p1 + cli_options->hblocke_len;
+    ss->p2 = ss->p1 + hblocke_len;
 
     return;
-  } else if (strncmp(ss->p1, cli_options->blockb, cli_options->blockb_len) == 0) /* check block  */
+  } else if (strncmp(ss->p1, blockb, blockb_len) == 0) /* check block  */
   {
-    ss->p1 = ss->p1 + cli_options->blockb_len;
+    ss->p1 = ss->p1 + blockb_len;
     ss->ct_length = 0;
     ss->ct_ptr = ss->p1;
     if (*ss->p1 == '\n') {
@@ -742,7 +691,7 @@ scan_token:
       ss->ct_start_col = ss->p1 - ss->linestart;
     }
 
-    while (strncmp(ss->p1, cli_options->blocke, cli_options->blocke_len) != 0) {
+    while (strncmp(ss->p1, blocke, blocke_len) != 0) {
       if (*ss->p1 == '\0') {
         PRNTERR2("End of file encountered while scanning action block in rule %ld", num_rules);
         exit(12);
@@ -765,7 +714,7 @@ scan_token:
     ss->ct = BLOCK_TK;
     ss->ct_end_line = ss->line_no;
     ss->ct_end_col = ss->p1 - ss->linestart - 1;
-    ss->p2 = ss->p1 + cli_options->blocke_len;
+    ss->p2 = ss->p1 + blocke_len;
 
     return;
   }
@@ -1529,13 +1478,7 @@ static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *
       }
       for ALL_NON_TERMINALS3(symbol) {
         if (symno[symbol].name_index == OMEGA) {
-          if (cli_options->names_opt.value == MAXIMUM_NAMES.value) {
-            symno[symbol].name_index = name_map(RETRIEVE_STRING(symbol, ps->string_table, symno), ps);
-          } else if (cli_options->names_opt.value == OPTIMIZE_PHRASES.value) {
-            symno[symbol].name_index = -name_map(RETRIEVE_STRING(symbol, ps->string_table, symno), ps);
-          } else if (cli_options->names_opt.value == MINIMUM_NAMES.value) {
-            symno[symbol].name_index = symno[error_image].name_index;
-          }
+          symno[symbol].name_index = name_map(RETRIEVE_STRING(symbol, ps->string_table, symno), ps);
         }
       }
       calloc0p(name, num_names + 1, int);
@@ -1699,10 +1642,6 @@ void process_input(char *grm_file, struct OutputFiles *output_files, const int a
     }
     process_options_lines(grm_file, output_files, file_prefix, cli_options, sysgrm, &ss, parm);
     eolt_image = OMEGA;
-    cli_options->blockb_len = strlen(cli_options->blockb);
-    cli_options->blocke_len = strlen(cli_options->blocke);
-    cli_options->hblockb_len = strlen(cli_options->hblockb);
-    cli_options->hblocke_len = strlen(cli_options->hblocke);
     // Keywords, Reserved symbols, and predefined macros
     kdefine[0] = cli_options->escape; /*Set empty first space to the default */
     kterminals[0] = cli_options->escape; /* escape symbol.                      */

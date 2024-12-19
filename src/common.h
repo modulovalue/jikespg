@@ -64,15 +64,6 @@ static const OptimizeMode OPTIMIZE_NO_TABLE = { .value = 0 },
 
 typedef struct {
   int value;
-} OptimizeNames;
-static const OptimizeNames MINIMUM_NAMES = { .value = 1 },
-  MAXIMUM_NAMES = { .value = 2 },
-  OPTIMIZE_PHRASES = { .value = 3 };
-
-
-
-typedef struct {
-  int value;
 } TraceMode;
 static const TraceMode NOTRACE = { .value = 0 },
   TRACE_CONFLICTS = { .value = 1 },
@@ -339,7 +330,6 @@ struct CLIOptions {
   int lalr_level;
   DefaultOpt default_opt;
   TraceMode trace_opt;
-  OptimizeNames names_opt;
   OptimizeMode table_opt;
   int maximum_distance;
   int minimum_distance;
@@ -350,14 +340,6 @@ struct CLIOptions {
   char ormark;
   char prefix[MAX_PARM_SIZE];
   char suffix[MAX_PARM_SIZE];
-  int blockb_len;
-  int blocke_len;
-  int hblockb_len;
-  int hblocke_len;
-  char blockb[MAX_PARM_SIZE];
-  char blocke[MAX_PARM_SIZE];
-  char hblockb[MAX_PARM_SIZE];
-  char hblocke[MAX_PARM_SIZE];
 };
 
 static struct CLIOptions init_cli_options() {
@@ -373,11 +355,10 @@ static struct CLIOptions init_cli_options() {
     .shift_default_bit = false,
     .byte_bit = true,
     .single_productions_bit = false,
-    .error_maps_bit = false,
+    .error_maps_bit = true,
     .lalr_level = 1,
     .default_opt = 5,
     .trace_opt = TRACE_CONFLICTS,
-    .names_opt = OPTIMIZE_PHRASES,
     .table_opt = OPTIMIZE_NO_TABLE,
     .maximum_distance = 30,
     .minimum_distance = 3,
@@ -386,14 +367,6 @@ static struct CLIOptions init_cli_options() {
     .ormark = '|',
     .prefix = "",
     .suffix = "",
-    .blockb_len = -1,
-    .blocke_len = -1,
-    .hblockb_len = -1,
-    .hblocke_len = -1,
-    .blockb = {'/', '.'},
-    .blocke = {'.', '/'},
-    .hblockb = {'/', ':'},
-    .hblocke = {':', '/'},
   };
 }
 
