@@ -2,6 +2,12 @@
 #include <string.h>
 #include "common.h"
 
+void print_item(int item_no, struct CLIOptions* cli_options, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym, char *string_table, struct symno_type *symno);
+
+void print_large_token(char *line, char *token, const char *indent, int len);
+
+void print_state(int state_no, struct CLIOptions* cli_options, struct node **adequate_item, struct SRTable* srt, struct lastats_type *lastats, struct statset_type *statset, struct node **in_stat, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym, char *string_table, struct symno_type *symno, struct LAState* ls);
+
 // region globals
 struct TemporarySpace {
   cell **temp_base;
@@ -738,9 +744,10 @@ void partset(JBitset collection, ArrayLong element_size, ArrayLong list, ArrayLo
 
 
 
-void compute_produces(int symbol, struct node **direct_produces, ArrayShort stack, ArrayShort index_of, JBitset produces, struct ProduceTop* top_value);
 
 // region mkfirst
+
+void compute_produces(int symbol, struct node **direct_produces, ArrayShort stack, ArrayShort index_of, JBitset produces, struct ProduceTop* top_value);
 
 const int LEN = PRINT_LINE_SIZE - 4;
 
@@ -10884,6 +10891,11 @@ int main(const int argc, char *argv[]) {
         tab_file[dot - tmpbuf] = '\0';
       }
       strcat(tab_file, ".t"); /* add .t extension for table file */
+      // This routine is invoked to allocate space for the global structures
+      // needed to process the input grammar.
+      //
+      // Set up a pool of temporary space.
+      reset_temporary_space();
       process_input(grm_file, &of, argc, argv, file_prefix, &cli_options, &rhs_sym, &rules, &ps.symno, &ps, &name);
       ls.num_items = ps.num_items;
       ls.num_names = ps.num_names;

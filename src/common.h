@@ -117,12 +117,6 @@ static void INIT_BITSET(const JBitset collection, const int i) {
   }
 }
 
-/// The following macros can be used to check, set, or reset a bit
-/// in a bit-string of any length.
-static void SET_BIT(const JBitset set, const int b) {
-  set.raw[(b - 1) / SIZEOF_BC] |= (b + BC_OFFSET) % SIZEOF_BC ? (BOOLEAN_CELL) 1 << (b + BC_OFFSET) % SIZEOF_BC : (BOOLEAN_CELL) 1;
-}
-
 static void RESET_BIT(const JBitset set, const int b) {
   set.raw[(b - 1) / SIZEOF_BC] &=
       ~((b + BC_OFFSET) % SIZEOF_BC ? (BOOLEAN_CELL) 1 << (b + BC_OFFSET) % SIZEOF_BC : (BOOLEAN_CELL) 1);
@@ -647,10 +641,6 @@ struct NextPrevious {
   ArrayLong previous;
 };
 
-void reset_temporary_space(void);
-
-void free_temporary_space(void);
-
 struct DetectedSetSizes {
   long term_set_size;
   long non_term_set_size;
@@ -913,6 +903,17 @@ struct ParserState {
   long num_single_productions;
 };
 
+/// structure used to hold token information
+struct terminal_type {
+  long start_line;
+  long end_line;
+  short start_column;
+  short end_column;
+  short length;
+  short kind;
+  char name[SYMBOL_SIZE + 1];
+};
+
 static bool IS_A_TERMINAL_P(const int i, struct ParserState* ps) {
   return i <= ps->num_terminals;
 }
@@ -928,12 +929,6 @@ static bool IS_A_NON_TERMINAL(const int i, struct LAState* ls) {
 void la_traverse(int state_no, int goto_indx, int *stack_top, struct StackRoot* sr, JBitset first, struct LAIndex* lai, struct node **adequate_item, struct node **in_stat, struct statset_type *statset, struct ruletab_type *rules, struct itemtab *item_table);
 
 int number_len(int state_no);
-
-void print_item(int item_no, struct CLIOptions* cli_options, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym, char *string_table, struct symno_type *symno);
-
-void print_large_token(char *line, char *token, const char *indent, int len);
-
-void print_state(int state_no, struct CLIOptions* cli_options, struct node **adequate_item, struct SRTable* srt, struct lastats_type *lastats, struct statset_type *statset, struct node **in_stat, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym, char *string_table, struct symno_type *symno, struct LAState* ls);
 
 void process_input(char *grm_file, struct OutputFiles *output_files, int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options, ArrayShort *rhs_sym, struct ruletab_type **rulesp, struct symno_type **symno, struct ParserState* ps, int **name);
 
@@ -973,24 +968,3 @@ static char keolt[5] = " eol";
 char *RETRIEVE_STRING(int indx, char *string_table, const struct symno_type *symno);
 
 char *RETRIEVE_NAME(int indx, char *string_table, const int *name);
-
-/// structure used to hold token information
-struct terminal_type {
-  long start_line;
-  long end_line;
-  short start_column;
-  short end_column;
-  short length;
-  short kind;
-  char name[SYMBOL_SIZE + 1];
-};
-
-void assign_symbol_no(const char *string_ptr, int image, struct ParserState* ps);
-
-void alias_map(const char *stringptr, int image, struct ParserState* ps);
-
-int symbol_image(const char *item, const struct ParserState* ps);
-
-int name_map(const char *symb, struct ParserState* ps);
-
-void build_symno(struct ParserState* ps);

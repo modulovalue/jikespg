@@ -4,6 +4,16 @@
 
 // region generated parser
 
+int name_map(const char *symb, struct ParserState* ps);
+
+int symbol_image(const char *item, const struct ParserState* ps);
+
+void alias_map(const char *stringptr, int image, struct ParserState* ps);
+
+void build_symno(struct ParserState* ps);
+
+void assign_symbol_no(const char *string_ptr, int image, struct ParserState* ps);
+
 int accept_image;
 int eoft_image;
 int eolt_image;
@@ -87,7 +97,6 @@ const unsigned short lhs[] = {
   4, 4, 4, 4, 8, 8, 8, 8, 8, 8, 8, 8, 10, 10, 11,
   11, 12, 12, 13, 13, 14, 14, 15, 15, 16, 16, 21, 21, 30, 30,
   24, 24, 36, 36, 34, 34,
-
   54, 60, 129, 58, 175, 1, 109, 69, 53, 249,
   42, 146, 188, 247, 171, 109, 145, 20, 101, 2,
   119, 172, 81, 251, 87, 137, 210, 251, 40, 251,
@@ -2524,11 +2533,6 @@ void process_input(char *grm_file, struct OutputFiles *output_files, const int a
 
   // Init grammar.
   {
-    // This routine is invoked to allocate space for the global structures
-    // needed to process the input grammar.
-    //
-    // Set up a pool of temporary space.
-    reset_temporary_space();
     calloc0p(&ps->terminal, STACK_SIZE, struct terminal_type);
     calloc0p(&(ps->hash_table), HT_SIZE, struct hash_type *);
     // Allocate space for input buffer and read in initial data in input
