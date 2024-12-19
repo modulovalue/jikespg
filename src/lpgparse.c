@@ -4,7 +4,11 @@
 
 // region generated parser
 
-#line 87 "jikespg.g"
+int accept_image;
+int eoft_image;
+int eolt_image;
+int empty;
+int error_image;
 
 #define SYM1 (ps->terminal[ps->stack_top + 1])
 #define SYM2 (ps->terminal[ps->stack_top + 2])
@@ -51,25 +55,11 @@ enum {
     EOF_TK = 19
   };
 
-#define SPACE_TABLES
-#define original_state(state) (-base_check[state])
-#define asi(state)            asb[original_state(state)]
-#define nasi(state)           nasb[original_state(state)]
-#define in_symbol(state)      in_symb[original_state(state)]
-
-extern const unsigned char rhs[];
-extern const unsigned short lhs[];
-extern const unsigned short *base_action;
-extern const unsigned char term_check[];
-extern const unsigned short term_action[];
-
 #define nt_action(state, sym) base_action[state + sym]
 
 #define t_action(state, sym, next_tok) \
-term_action[term_check[base_action[state]+sym] == sym ? \
-base_action[state] + sym : base_action[state]]
-
-
+  term_action[term_check[base_action[state]+sym] == sym ? \
+  base_action[state] + sym : base_action[state]]
 
 const unsigned char rhs[] = {
   0,
@@ -200,7 +190,7 @@ static void add_block_definition(const struct terminal_type *term, struct Parser
             nospace();
     }
 
-    ps->actelmt[ps->num_acts].rule_number  = num_rules;
+    ps->actelmt[ps->num_acts].rule_number  = ps->num_rules;
     ps->actelmt[ps->num_acts].start_line   = term->start_line;
     ps->actelmt[ps->num_acts].start_column = term->start_column;
     ps->actelmt[ps->num_acts].end_line     = term->end_line;
@@ -210,7 +200,6 @@ static void add_block_definition(const struct terminal_type *term, struct Parser
 }
 
 /// bad_symbol ::= EQUIVALENCE
-#line 154 "jikespg.g"
 static void bad_first_symbol(struct ParserState* ps)
 {
     PRNTERR2("First symbol: \"%s\" found in file is illegal. Line %ld, column %d", SYM1.name, SYM1.start_line, SYM1.start_column);
@@ -218,7 +207,6 @@ static void bad_first_symbol(struct ParserState* ps)
 }
 
 /// bad_symbol ::= BLOCK
-#line 175 "jikespg.g"
 static void act10(struct ParserState* ps)
 {
     PRNTERR2("Action block cannot be first object in file. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -226,28 +214,24 @@ static void act10(struct ParserState* ps)
 }
 
 /// macro_list ::= macro_name_symbol macro_block
-#line 190 "jikespg.g"
 static void act13(struct ParserState* ps)
 {
     add_macro_definition(SYM1.name, &(SYM2), ps);
 }
 
 /// macro_list ::= macro_list macro_name_symbol macro_block
-#line 198 "jikespg.g"
 static void act14(struct ParserState* ps)
 {
     add_macro_definition(SYM2.name, &(SYM3), ps);
 }
 
 /// macro_name_symbol ::= SYMBOL
-#line 209 "jikespg.g"
 static void act16(struct ParserState* ps)
 {
     PRNTWNG2("Macro name \"%s\" does not start with the escape character. Line %ld, column %d", SYM1.name, SYM1.start_line, SYM1.start_column);
 }
 
 /// macro_name_symbol ::= OR
-#line 217 "jikespg.g"
 static void bad_macro_name(struct ParserState* ps)
 {
     PRNTERR2("Reserved symbol cannot be used as macro name. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -255,7 +239,6 @@ static void bad_macro_name(struct ParserState* ps)
 }
 
 /// macro_name_symbol ::= BLOCK
-#line 232 "jikespg.g"
 static void act21(struct ParserState* ps)
 {
     PRNTERR2("Macro name not supplied for macro definition. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -263,7 +246,6 @@ static void act21(struct ParserState* ps)
 }
 
 /// macro_name_symbol ::= DEFINE_KEY
-#line 241 "jikespg.g"
 static void act22(struct ParserState* ps)
 {
     PRNTERR2("Macro keyword misplaced. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -271,7 +253,6 @@ static void act22(struct ParserState* ps)
 }
 
 /// macro_block ::= OR
-#line 253 "jikespg.g"
 static void definition_expected(struct ParserState* ps)
 {
     PRNTERR2("Definition block expected where symbol found. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -279,14 +260,12 @@ static void definition_expected(struct ParserState* ps)
 }
 
 /// terminal_symbol ::= SYMBOL
-#line 279 "jikespg.g"
 static void process_terminal(struct ParserState* ps)
 {
     assign_symbol_no(SYM1.name, OMEGA, ps);
 }
 
 /// terminal_symbol ::= DEFINE_KEY
-#line 291 "jikespg.g"
 static void bad_terminal(struct ParserState* ps)
 {
     PRNTERR2("Keyword  has been misplaced in Terminal section.  Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -294,7 +273,6 @@ static void bad_terminal(struct ParserState* ps)
 }
 
 /// terminal_symbol ::= BLOCK
-#line 302 "jikespg.g"
 static void act37(struct ParserState* ps)
 {
     PRNTERR2("Misplaced block found in TERMINALS section.  Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -302,7 +280,6 @@ static void act37(struct ParserState* ps)
 }
 
 /// alias_definition ::= alias_lhs produces alias_rhs
-#line 315 "jikespg.g"
 static void act39(struct ParserState* ps)
 {
     int image;
@@ -320,7 +297,7 @@ static void act39(struct ParserState* ps)
             break;
 
         case ERROR_SYMBOL_TK:
-            if (error_image > num_terminals)
+            if (error_image > ps->num_terminals)
             {
                 restore_symbol(tok_string, kerror, ps->ormark, ps->escape);
                 PRNTERR2("Illegal aliasing to %s prior to its definition.  Line %ld, column %d", tok_string, SYM3.start_line, SYM3.start_column);
@@ -330,7 +307,7 @@ static void act39(struct ParserState* ps)
             break;
 
         case EOF_SYMBOL_TK:
-            if (eoft_image > num_terminals)
+            if (eoft_image > ps->num_terminals)
             {
                 restore_symbol(tok_string, keoft, ps->ormark, ps->escape);
                 PRNTERR2("Illegal aliasing to %s prior to its definition. Line %ld, column %d", tok_string, SYM3.start_line, SYM3.start_column);
@@ -366,10 +343,10 @@ static void act39(struct ParserState* ps)
             break;
 
         case ERROR_SYMBOL_TK:
-            if (error_image > num_terminals || ! ps->error_maps_bit)
+            if (error_image > ps->num_terminals || ! ps->error_maps_bit)
             {
                 if (image == empty      || image == eolt_image ||
-                    image == eoft_image || image > num_terminals)
+                    image == eoft_image || image > ps->num_terminals)
                 {
                     restore_symbol(tok_string, kerror, ps->ormark, ps->escape);
                     PRNTERR2("Illegal alias for symbol %s. Line %ld, column %d.", tok_string, SYM1.start_line, SYM1.start_column);
@@ -387,10 +364,10 @@ static void act39(struct ParserState* ps)
             break;
 
         case EOF_SYMBOL_TK:
-            if (eoft_image > num_terminals)
+            if (eoft_image > ps->num_terminals)
             {
                 if (image == empty       || image == eolt_image  ||
-                    image == error_image || image > num_terminals)
+                    image == error_image || image > ps->num_terminals)
                 {
                     restore_symbol(tok_string, keoft, ps->ormark, ps->escape);
                     PRNTERR2("Illegal alias for symbol %s. Line %ld, column %d.", tok_string, SYM1.start_line, SYM1.start_column);
@@ -413,7 +390,7 @@ static void act39(struct ParserState* ps)
                 if (image == empty ||
                     image == eoft_image ||
                     image == error_image ||
-                    image > num_terminals)
+                    image > ps->num_terminals)
                 {
                     PRNTERR2("Illegal alias for symbol EOL. Line %ld, column %d.", SYM1.start_line, SYM1.start_column);
                     exit(12);
@@ -430,7 +407,6 @@ static void act39(struct ParserState* ps)
 }
 
 /// bad_alias_rhs ::= DEFINE_KEY
-#line 475 "jikespg.g"
 static void bad_alias_rhs(struct ParserState* ps)
 {
     PRNTERR2("Misplaced keyword found in Alias section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -438,7 +414,6 @@ static void bad_alias_rhs(struct ParserState* ps)
 }
 
 /// bad_alias_rhs ::= BLOCK
-#line 488 "jikespg.g"
 static void act57(struct ParserState* ps)
 {
     PRNTERR2("Misplaced block found in Alias section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -446,7 +421,6 @@ static void act57(struct ParserState* ps)
 }
 
 /// bad_alias_lhs ::= EMPTY_SYMBOL
-#line 501 "jikespg.g"
 static void act59(struct ParserState* ps)
 {
     PRNTERR2("Empty symbol cannot be aliased. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -454,7 +428,6 @@ static void act59(struct ParserState* ps)
 }
 
 /// bad_alias_lhs ::= produces
-#line 510 "jikespg.g"
 static void missing_quote(struct ParserState* ps)
 {
     PRNTERR2("Symbol must be quoted when used as a grammar symbol. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -462,26 +435,23 @@ static void missing_quote(struct ParserState* ps)
 }
 
 /// start_symbol ::= SYMBOL
-#line 526 "jikespg.g"
 static void act63(struct ParserState* ps)
 {
     assign_symbol_no(SYM1.name, OMEGA, ps);
     struct node *q = Allocate_node();
     q -> value = symbol_image(SYM1.name, ps);
-    if (ps->start_symbol_root == NULL)
-        q -> next = q;
-    else
-    {
+    if (ps->start_symbol_root == NULL) {
+      q -> next = q;
+    } else {
         q -> next = ps->start_symbol_root -> next;
         ps->start_symbol_root -> next = q;
     }
     ps->start_symbol_root = q;
-    num_rules++;
+    ps->num_rules++;
     ps->num_items++;
 }
 
 /// start_symbol ::= OR
-#line 546 "jikespg.g"
 static void bad_start_symbol(struct ParserState* ps)
 {
     PRNTERR2("Symbol cannot be used as Start symbol. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -489,7 +459,6 @@ static void bad_start_symbol(struct ParserState* ps)
 }
 
 /// start_symbol ::= BLOCK
-#line 561 "jikespg.g"
 static void act68(struct ParserState* ps)
 {
     PRNTERR2("Misplaced block found in Start section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -497,7 +466,6 @@ static void act68(struct ParserState* ps)
 }
 
 /// start_symbol ::= DEFINE_KEY
-#line 570 "jikespg.g"
 static void misplaced_keyword_found_in_START_section(struct ParserState* ps)
 {
     PRNTERR2("Misplaced keyword found in START section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -505,7 +473,6 @@ static void misplaced_keyword_found_in_START_section(struct ParserState* ps)
 }
 
 /// rules_block ::= RULES_KEY
-#line 586 "jikespg.g"
 static void act73(struct ParserState* ps)
 {
 
@@ -515,21 +482,19 @@ static void act73(struct ParserState* ps)
         q -> value = empty;
         q -> next = q;
         ps->start_symbol_root = q;
-        num_rules = 0;                 // One rule
+        ps->num_rules = 0;                 // One rule
         ps->num_items = 0;                 // 0 items
     }
     build_symno(ps);
 }
 
 /// rules_block ::= RULES_KEY rule_list
-#line 604 "jikespg.g"
 static void act74(struct ParserState* ps)
 {
     build_symno(ps);
 }
 
 /// rule_list ::= {action_block} SYMBOL produces
-#line 618 "jikespg.g"
 static void act77(struct ParserState* ps)
 {
     assign_symbol_no(SYM2.name, OMEGA, ps);
@@ -538,10 +503,8 @@ static void act77(struct ParserState* ps)
         struct node *q = Allocate_node();
         q -> value = symbol_image(SYM2.name, ps);
         q -> next = q;
-
         ps->start_symbol_root = q;
-
-        num_rules = 1;
+        ps->num_rules = 1;
         ps->num_items = 1;
     }
 
@@ -549,7 +512,7 @@ static void act77(struct ParserState* ps)
 /// "while" loop is used to increment the size of rulehdr. However,
 /// it is highly unlikely that this loop would ever execute more than
 /// once if the size of RULE_INCREMENT is reasonable.
-    while (num_rules >= (int)ps->rulehdr_size)
+    while (ps->num_rules >= (int)ps->rulehdr_size)
     {
         ps->rulehdr_size += RULEHDR_INCREMENT;
         ps->rulehdr = (struct rulehdr_type *)
@@ -559,18 +522,16 @@ static void act77(struct ParserState* ps)
         if (ps->rulehdr == (struct rulehdr_type *) NULL)
             nospace();
     }
-
-    ps->rulehdr[num_rules].sp = ((SYM3.kind == ARROW_TK) ? true : false);
-    ps->rulehdr[num_rules].lhs = symbol_image(SYM2.name, ps);
-    ps->rulehdr[num_rules].rhs_root = NULL;
+    ps->rulehdr[ps->num_rules].sp = ((SYM3.kind == ARROW_TK) ? true : false);
+    ps->rulehdr[ps->num_rules].lhs = symbol_image(SYM2.name, ps);
+    ps->rulehdr[ps->num_rules].rhs_root = NULL;
 }
 
 /// rule_list ::= rule_list OR
-#line 657 "jikespg.g"
 static void act78(struct ParserState* ps)
 {
-    num_rules++;
-    if (num_rules >= (int)ps->rulehdr_size)
+    ps->num_rules++;
+    if (ps->num_rules >= (int)ps->rulehdr_size)
     {
         ps->rulehdr_size += RULEHDR_INCREMENT;
         ps->rulehdr = (struct rulehdr_type *)
@@ -580,17 +541,16 @@ static void act78(struct ParserState* ps)
         if (ps->rulehdr == (struct rulehdr_type *) NULL)
             nospace();
     }
-    ps->rulehdr[num_rules].sp = ps->rulehdr[num_rules - 1].sp;
-    ps->rulehdr[num_rules].lhs = OMEGA;
-    ps->rulehdr[num_rules].rhs_root = NULL;
+    ps->rulehdr[ps->num_rules].sp = ps->rulehdr[ps->num_rules - 1].sp;
+    ps->rulehdr[ps->num_rules].lhs = OMEGA;
+    ps->rulehdr[ps->num_rules].rhs_root = NULL;
 }
 
 /// rule_list ::= rule_list SYMBOL produces
-#line 678 "jikespg.g"
 static void act79(struct ParserState* ps)
 {
-    num_rules++;
-    if (num_rules >= (int)ps->rulehdr_size)
+    ps->num_rules++;
+    if (ps->num_rules >= (int)ps->rulehdr_size)
     {
         ps->rulehdr_size += RULEHDR_INCREMENT;
         ps->rulehdr = (struct rulehdr_type *)
@@ -600,14 +560,13 @@ static void act79(struct ParserState* ps)
         if (ps->rulehdr == (struct rulehdr_type *) NULL)
             nospace();
     }
-    ps->rulehdr[num_rules].sp = ((SYM3.kind == ARROW_TK) ? true : false);
+    ps->rulehdr[ps->num_rules].sp = ((SYM3.kind == ARROW_TK) ? true : false);
     assign_symbol_no(SYM2.name, OMEGA, ps);
-    ps->rulehdr[num_rules].lhs = symbol_image(SYM2.name, ps);
-    ps->rulehdr[num_rules].rhs_root = NULL;
+    ps->rulehdr[ps->num_rules].lhs = symbol_image(SYM2.name, ps);
+    ps->rulehdr[ps->num_rules].rhs_root = NULL;
 }
 
 /// rule_list ::= rule_list ERROR_SYMBOL
-#line 705 "jikespg.g"
 static void act82(struct ParserState* ps)
 {
     if (error_image == DEFAULT_SYMBOL)
@@ -620,18 +579,17 @@ static void act82(struct ParserState* ps)
     struct node *q = Allocate_node();
     q -> value = error_image;
     ps->num_items++;
-    if (ps->rulehdr[num_rules].rhs_root == NULL)
+    if (ps->rulehdr[ps->num_rules].rhs_root == NULL)
         q -> next = q;
     else
     {
-        q -> next = ps->rulehdr[num_rules].rhs_root -> next;
-         ps->rulehdr[num_rules].rhs_root -> next = q;
+        q -> next = ps->rulehdr[ps->num_rules].rhs_root -> next;
+         ps->rulehdr[ps->num_rules].rhs_root -> next = q;
     }
-    ps->rulehdr[num_rules].rhs_root = q;
+    ps->rulehdr[ps->num_rules].rhs_root = q;
 }
 
 /// rule_list ::= rule_list SYMBOL
-#line 730 "jikespg.g"
 static void act83(struct ParserState* ps)
 {
     assign_symbol_no(SYM2.name, OMEGA, ps);
@@ -646,19 +604,18 @@ static void act83(struct ParserState* ps)
         struct node *q = Allocate_node();
         q -> value = sym;
         ps->num_items++;
-        if (ps->rulehdr[num_rules].rhs_root == NULL)
+        if (ps->rulehdr[ps->num_rules].rhs_root == NULL)
             q -> next = q;
         else
         {
-            q -> next = ps->rulehdr[num_rules].rhs_root -> next;
-            ps->rulehdr[num_rules].rhs_root -> next = q;
+            q -> next = ps->rulehdr[ps->num_rules].rhs_root -> next;
+            ps->rulehdr[ps->num_rules].rhs_root -> next = q;
         }
-        ps->rulehdr[num_rules].rhs_root = q;
+        ps->rulehdr[ps->num_rules].rhs_root = q;
     }
 }
 
 /// rule_list ::= OR
-#line 758 "jikespg.g"
 static void bad_first_symbol_in_RULES_section(struct ParserState* ps)
 {
     PRNTERR2("First symbol in Rules section is not a valid left-hand side.\n Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -666,7 +623,6 @@ static void bad_first_symbol_in_RULES_section(struct ParserState* ps)
 }
 
 /// rule_list ::= rule_list OR produces
-#line 773 "jikespg.g"
 static void rule_without_left_hand_side(struct ParserState* ps)
 {
     PRNTERR2("Rule without left-hand-side.  Line %ld, column %d", SYM3.start_line, SYM3.start_column);
@@ -674,7 +630,6 @@ static void rule_without_left_hand_side(struct ParserState* ps)
 }
 
 /// rule_list ::= rule_list keyword produces
-#line 786 "jikespg.g"
 static void act91(struct ParserState* ps)
 {
     PRNTWNG2("Misplaced keyword found in Rules section Line %ld, column %d",  SYM2.start_line, SYM2.start_column);
@@ -682,21 +637,18 @@ static void act91(struct ParserState* ps)
 }
 
 /// action_block ::= BLOCK
-#line 796 "jikespg.g"
 static void act92(struct ParserState* ps)
 {
     add_block_definition(&(SYM1), ps);
 }
 
 /// action_block ::= HBLOCK
-#line 804 "jikespg.g"
 static void act93(struct ParserState* ps)
 {
     add_block_definition(&(SYM1), ps);
 }
 
 /// keyword ::= DEFINE_KEY
-#line 813 "jikespg.g"
 static void misplaced_keyword_found_in_RULES_section(struct ParserState* ps)
 {
     PRNTWNG2("Misplaced keyword found in RULES section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -704,7 +656,6 @@ static void misplaced_keyword_found_in_RULES_section(struct ParserState* ps)
 }
 
 /// names_definition ::= name produces name
-#line 834 "jikespg.g"
 static void act100(struct ParserState* ps)
 {
     if (ps->error_maps_bit)
@@ -750,7 +701,6 @@ static void act100(struct ParserState* ps)
 }
 
 /// bad_name ::= DEFINE_KEY
-#line 901 "jikespg.g"
 static void misplaced_keyword_found_in_NAMES_section(struct ParserState* ps)
 {
     PRNTERR2("Keyword  has been misplaced in NAMES section.  Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -758,7 +708,6 @@ static void misplaced_keyword_found_in_NAMES_section(struct ParserState* ps)
 }
 
 /// bad_name ::= BLOCK
-#line 920 "jikespg.g"
 static void act116(struct ParserState* ps)
 {
     PRNTERR2("Misplaced action block found in NAMES section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -766,7 +715,6 @@ static void act116(struct ParserState* ps)
 }
 
 /// bad_name ::= MACRO_NAME
-#line 929 "jikespg.g"
 static void act117(struct ParserState* ps)
 {
     PRNTERR2("Misplaced macro name found in NAMES section. Line %ld, column %d", SYM1.start_line, SYM1.start_column);
@@ -774,10 +722,9 @@ static void act117(struct ParserState* ps)
 }
 
 /// [terminals_block] ::=
-#line 946 "jikespg.g"
 static void process_TERMINALS_section(struct ParserState* ps)
 {
-    num_terminals = num_symbols;
+    ps->num_terminals = ps->num_symbols;
     assign_symbol_no(keoft, OMEGA, ps);
     eoft_image = symbol_image(keoft, ps);
     if (ps->error_maps_bit) {
@@ -791,44 +738,38 @@ static void process_TERMINALS_section(struct ParserState* ps)
 }
 
 /// [alias_block] ::=
-#line 967 "jikespg.g"
 static void process_ALIAS_section(struct ParserState* ps)
 {
-
     int k = 0;
-    if (eoft_image <= num_terminals) {
+    if (eoft_image <= ps->num_terminals) {
         k++;
     } else {
-        num_terminals++;
+        ps->num_terminals++;
     }
-
-    if (ps->error_maps_bit)
-    {
-        if (error_image <= num_terminals)
+    if (ps->error_maps_bit) {
+        if (error_image <= ps->num_terminals) {
             k++;
-        else
-        {
-            num_terminals++;
-            if (k == 1)
+        } else {
+            ps->num_terminals++;
+            if (k == 1) {
                 error_image--;
+            }
         }
     }
 
-    if (k > 0)
-    {
-        for (int i = 0; i < HT_SIZE; i++)
-        {
+    if (k > 0) {
+        for (int i = 0; i < HT_SIZE; i++) {
             struct hash_type* p = ps->hash_table[i];
             while(p != NULL)
             {
-                if (p -> number > num_terminals)
+                if (p -> number > ps->num_terminals)
                     p -> number -= k;
-                else if (p -> number < -num_terminals)
+                else if (p -> number < -ps->num_terminals)
                     p -> number += k;
                 p = p -> link;
             }
         }
-        num_symbols -= k;
+        ps->num_symbols -= k;
         accept_image -= k;
     }
     if (eolt_image == OMEGA)
@@ -838,24 +779,22 @@ static void process_ALIAS_section(struct ParserState* ps)
 }
 
 /// {terminal_symbol} ::=
-#line 1040 "jikespg.g"
 static void act132(struct ParserState* ps)
 {
     assign_symbol_no(kempty, OMEGA, ps);
     empty = symbol_image(kempty, ps);
 }
 
-
 /// BUILD_SYMNO constructs the SYMNO table which is a mapping from each
 /// symbol number into that symbol.
 void build_symno(struct ParserState* ps) {
-  const long symno_size = num_symbols + 1;
+  const long symno_size = ps->num_symbols + 1;
   calloc0p(&ps->symno, symno_size, struct symno_type);
   // Go through entire hash table. For each non_empty bucket, go through
   // linked list in that bucket.
   for (int i = 0; i < HT_SIZE; ++i) {
     for (const struct hash_type *p = ps->hash_table[i]; p != NULL; p = p->link) {
-      const int symbol = p->number;
+      const long symbol = p->number;
       // Not an alias
       if (symbol >= 0) {
         ps->symno[symbol].name_index = OMEGA;
@@ -1015,7 +954,6 @@ static void (*rule_action[]) (struct ParserState* ps) = {NULL,
 
 
 // region manual parser
-
 struct line_elemt {
   struct line_elemt *link;
   char line[MAX_LINE_SIZE + 1];
@@ -1025,11 +963,11 @@ struct LinePool {
   struct line_elemt *line_pool_root;
 };
 
-char *RETRIEVE_STRING(const int indx, char *string_table, struct symno_type *symno) {
+char *RETRIEVE_STRING(const int indx, char *string_table, const struct symno_type *symno) {
   return &string_table[symno[indx].ptr];
 }
 
-char *RETRIEVE_NAME(const int indx, char *string_table, int *name) {
+char *RETRIEVE_NAME(const int indx, char *string_table, const int *name) {
   return &string_table[name[indx]];
 }
 
@@ -1039,7 +977,7 @@ static const int STRING_BUFFER_SIZE = 8192;
 
 /// READ_INPUT fills the buffer from p1 to the end.
 static void read_input(char *grm_file, FILE *sysgrm, struct ScannerState* ss) {
-  long num_read = ss->input_buffer + IOBUFFER_SIZE - ss->bufend;
+  unsigned long num_read = ss->input_buffer + IOBUFFER_SIZE - ss->bufend;
   if ((num_read = fread(ss->bufend, 1, num_read, sysgrm)) == 0) {
     if (ferror(sysgrm) != 0) {
       fprintf(stderr, "*** Error reading input file \"%s\".\n", grm_file);
@@ -1080,8 +1018,9 @@ static char *translate(char *str, const int len) {
 /// does not work when "ch" is already a lower case character.
 static bool strxeq(char *s1, char *s2) {
   for (; *s2 != '\0'; s1++, s2++) {
-    if (*s1 != *s2 && *s1 != toupper(*s2))
+    if (*s1 != *s2 && *s1 != toupper(*s2)) {
       return false;
+    }
   }
   return true;
 }
@@ -1134,7 +1073,7 @@ static void options(char *file_prefix, struct CLIOptions *cli_options, char *par
     } else {
       delim = ' ';
     }
-    int token_len = strlen(token);
+    unsigned long token_len = strlen(token);
     if (token_len > MAX_PARM_SIZE) {
       token[MAX_PARM_SIZE] = '\0';
     }
@@ -1233,7 +1172,7 @@ static void options(char *file_prefix, struct CLIOptions *cli_options, char *par
       } else if (memcmp(token, "HACTFILENAME", token_len) == 0) {
         strcpy(cli_options->hact_file, temp);
       } else if (memcmp("LALR", token, token_len) == 0) {
-        int token_len = strlen(temp);
+        unsigned long token_len = strlen(temp);
         if (token_len > MAX_PARM_SIZE) {
           temp[MAX_PARM_SIZE - 1] = '\0';
         }
@@ -1304,8 +1243,6 @@ static void process_options_lines(char *grm_file, struct OutputFiles *of, char *
   char old_parm[MAX_LINE_SIZE + 1];
   char output_line[PRINT_LINE_SIZE + 1];
   char opt_string[60][OUTPUT_PARM_SIZE + 1];
-  char *line_end;
-  char temp[SYMBOL_SIZE + 1];
   int top = 0;
   strcpy(old_parm, parm); /* Save new options passed to program */
   static char ooptions[9] = " OPTIONS";
@@ -1322,7 +1259,7 @@ static void process_options_lines(char *grm_file, struct OutputFiles *of, char *
       }
       ss->p2++;
     }
-    line_end = strchr(ss->p2, '\n'); /* find end-of-line */
+    char *line_end = strchr(ss->p2, '\n'); /* find end-of-line */
     // First, check if line is a comment line. If so, skip it.  Next,
     // check if line is an options line. If so, process it. Otherwise,
     // break out of the loop.
@@ -1452,13 +1389,9 @@ static void process_options_lines(char *grm_file, struct OutputFiles *of, char *
     }
   }
   // Check if there are any conflicts in the options.
-  temp[0] = '\0';
   if (cli_options->ormark == cli_options->escape) {
-    strcpy(temp, "ORMARK and ESCAPE");
-  }
-  if (temp[0] != '\0') {
-    PRNTERR2("The options %s cannot have the same value", temp);
-    PRNT3("Input process aborted at line %d ...", ss->line_no);
+    PRNTERR("The options ormark and escape cannot have the same value");
+    PRNT2("Input process aborted at line %d ...", ss->line_no);
     exit(12);
   }
 }
@@ -1498,7 +1431,7 @@ static void insert_string(struct hash_type *q, const char *string, long* string_
   }
 }
 
-static bool EQUAL_STRING(const char *symb, const struct hash_type *p, char *string_table) {
+static bool EQUAL_STRING(const char *symb, const struct hash_type *p, const char *string_table) {
   return strcmp(symb, string_table + p->st_ptr) == 0;
 }
 
@@ -1524,8 +1457,8 @@ void assign_symbol_no(const char *string_ptr, const int image, struct ParserStat
   }
   talloc0p(&p, struct hash_type);
   if (image == OMEGA) {
-    num_symbols++;
-    p->number = num_symbols;
+    ps->num_symbols++;
+    p->number = ps->num_symbols;
   } else {
     p->number = -image;
   }
@@ -1552,10 +1485,11 @@ void alias_map(const char *stringptr, const int image, struct ParserState* ps) {
 /// SYMBOL_IMAGE takes as argument a symbol. It searches for that symbol
 /// in the HASH_TABLE, and if found, it returns its image; otherwise, it
 /// returns OMEGA.
-int symbol_image(const char *item, struct ParserState* ps) {
+int symbol_image(const char *item, const struct ParserState* ps) {
   for (const struct hash_type *q = ps->hash_table[hash(item)]; q != NULL; q = q->link) {
-    if (EQUAL_STRING(item, q, ps->string_table))
+    if (EQUAL_STRING(item, q, ps->string_table)) {
       return ABS(q->number);
+    }
   }
   return OMEGA;
 }
@@ -1572,9 +1506,9 @@ int name_map(const char *symb, struct ParserState* ps) {
       if (p->name_index != OMEGA) {
         return p->name_index;
       } else {
-        num_names++;
-        p->name_index = num_names;
-        return num_names;
+        ps->num_names++;
+        p->name_index = ps->num_names;
+        return ps->num_names;
       }
     }
   }
@@ -1583,13 +1517,13 @@ int name_map(const char *symb, struct ParserState* ps) {
   insert_string(p, symb, &ps->string_offset, &ps->string_table);
   p->link = ps->hash_table[i];
   ps->hash_table[i] = p;
-  num_names++;
-  p->name_index = num_names;
-  return num_names;
+  ps->num_names++;
+  p->name_index = ps->num_names;
+  return ps->num_names;
 }
 
 /// SCANNER scans the input stream and returns the next input token.
-static void scanner(char *grm_file, FILE *sysgrm, struct CLIOptions* cli_options, struct ScannerState* ss, struct ParserState* ps) {
+static void scanner(char *grm_file, FILE *sysgrm, const struct CLIOptions* cli_options, struct ScannerState* ss, const struct ParserState* ps) {
   char tok_string[SYMBOL_SIZE + 1];
   char blockb[3] = {'/', '.'};
   char blocke[3] = {'.', '/'};
@@ -1630,10 +1564,9 @@ scan_token:
       ss->ct_start_line = ss->line_no;
       ss->ct_start_col = ss->p1 - ss->linestart;
     }
-
     while (strncmp(ss->p1, hblocke, hblocke_len) != 0) {
       if (*ss->p1 == '\0') {
-        PRNTERR2("End of file encountered while scanning header action block in rule %ld", num_rules);
+        PRNTERR2("End of file encountered while scanning header action block in rule %ld", ps->num_rules);
         exit(12);
       }
       if (*ss->p1++ == '\n') {
@@ -1655,10 +1588,8 @@ scan_token:
     ss->ct_end_line = ss->line_no;
     ss->ct_end_col = ss->p1 - ss->linestart - 1;
     ss->p2 = ss->p1 + hblocke_len;
-
     return;
-  } else if (strncmp(ss->p1, blockb, blockb_len) == 0) /* check block  */
-  {
+  } else if (strncmp(ss->p1, blockb, blockb_len) == 0) /* check block  */ {
     ss->p1 = ss->p1 + blockb_len;
     ss->ct_length = 0;
     ss->ct_ptr = ss->p1;
@@ -1671,10 +1602,9 @@ scan_token:
       ss->ct_start_line = ss->line_no;
       ss->ct_start_col = ss->p1 - ss->linestart;
     }
-
     while (strncmp(ss->p1, blocke, blocke_len) != 0) {
       if (*ss->p1 == '\0') {
-        PRNTERR2("End of file encountered while scanning action block in rule %ld", num_rules);
+        PRNTERR2("End of file encountered while scanning action block in rule %ld", ps->num_rules);
         exit(12);
       }
       if (*ss->p1++ == '\n') {
@@ -1696,7 +1626,6 @@ scan_token:
     ss->ct_end_line = ss->line_no;
     ss->ct_end_col = ss->p1 - ss->linestart - 1;
     ss->p2 = ss->p1 + blocke_len;
-
     return;
   }
   // Scan the next token.
@@ -1722,7 +1651,6 @@ scan_token:
         exit(12);
       }
       break;
-
     case '\'':
       ss->ct_ptr = ss->p2;
       ss->ct = SYMBOL_TK;
@@ -1740,7 +1668,6 @@ scan_token:
       memcpy(tok_string, ss->p1, ss->ct_length);
       tok_string[ss->ct_length] = '\0';
       PRNTWNG2("Symbol \"%s\" referenced in line %ld requires a closing quote", tok_string, ss->ct_start_line);
-
     remove_quotes:
       if (ss->ct_length == 0) /* Empty symbol? disregard it */
         goto scan_token;
@@ -1748,16 +1675,18 @@ scan_token:
       ss->p1 = ss->ct_ptr;
       do {
         *ss->p1++ = ss->ct_ptr[i++];
-        if (ss->ct_ptr[i] == '\'')
+        if (ss->ct_ptr[i] == '\'') {
           i++; /* skip next quote */
+        }
       } while (i < ss->ct_length);
       ss->ct_length = ss->p1 - ss->ct_ptr;
       goto check_symbol_length;
     case '-': /* scan possible comment  */
       if (*ss->p2 == '-') {
         ss->p2++;
-        while (*ss->p2 != '\n')
+        while (*ss->p2 != '\n') {
           ss->p2++;
+        }
         goto scan_token;
       } else if (*ss->p2 == '>' && isspace(*(ss->p2 + 1))) {
         ss->ct = ARROW_TK;
@@ -1798,7 +1727,6 @@ scan_token:
               return;
             }
             break;
-
           case 'd':
           case 'D':
             if (strxeq(p3, "efine") && isspace(*(ss->p1 + 7))) {
@@ -1808,7 +1736,6 @@ scan_token:
               return;
             }
             break;
-
           case 'e':
           case 'E':
             if (strxeq(p3, "mpty") && isspace(*(ss->p1 + 6))) {
@@ -1842,7 +1769,6 @@ scan_token:
               return;
             }
             break;
-
           case 'r':
           case 'R':
             if (strxeq(p3, "ules") && isspace(*(ss->p1 + 6))) {
@@ -1852,7 +1778,6 @@ scan_token:
               return;
             }
             break;
-
           case 'a':
           case 'A':
             if (strxeq(p3, "lias") && isspace(*(ss->p1 + 6))) {
@@ -1862,7 +1787,6 @@ scan_token:
               return;
             }
             break;
-
           case 's':
           case 'S':
             if (strxeq(p3, "tart") && isspace(*(ss->p1 + 6))) {
@@ -1872,7 +1796,6 @@ scan_token:
               return;
             }
             break;
-
           case 'n':
           case 'N':
             if (strxeq(p3, "ames") && isspace(*(ss->p1 + 6))) {
@@ -1882,11 +1805,9 @@ scan_token:
               return;
             }
             break;
-
           default:
             break;
         }
-
         ss->ct = MACRO_NAME_TK;
         while (!isspace(*ss->p2)) {
           ss->p2++;
@@ -1991,7 +1912,7 @@ static struct line_elemt *find_macro(char *name, ArrayShort macro_table, struct 
 /// user defined macro names. If one is found, the macro definition is
 /// substituted for the name. The modified action text is then printed out in
 /// the action file.
-static void process_action_line(FILE *sysout, char *text, const int line_no, const int rule_no, char *grm_file, struct CLIOptions* cli_options, ArrayShort macro_table, struct LinePool* lp, struct ruletab_type *rules, ArrayShort rhs_sym, struct ParserState* ps) {
+static void process_action_line(FILE *sysout, char *text, const int line_no, const int rule_no, char *grm_file, const struct CLIOptions* cli_options, ArrayShort macro_table, struct LinePool* lp, const struct ruletab_type *rules, ArrayShort rhs_sym, struct ParserState* ps) {
   char temp1[MAX_LINE_SIZE + 1];
   char suffix[MAX_LINE_SIZE + 1];
   char symbol[SYMBOL_SIZE + 1];
@@ -2021,9 +1942,9 @@ next_line: {
         if (strxeq(text + k, knum_symbols)) {
           strcpy(temp1, text + k + 12);
           if (k + 12 != text_len) {
-            sprintf(text + k, "%ld%s", num_symbols, temp1);
+            sprintf(text + k, "%ld%s", ps->num_symbols, temp1);
           } else {
-            sprintf(text + k, "%ld", num_symbols);
+            sprintf(text + k, "%ld", ps->num_symbols);
           }
           goto proceed;
         }
@@ -2073,7 +1994,7 @@ next_line: {
             strcpy(temp2, " ... ");
           } else /* Copy right-hand-side symbols to temp2 */
           {
-            for ENTIRE_RHS3(j, rule_no, rules) {
+            for for_each_rhs(j, rule_no, rules) {
               restore_symbol(symbol, RETRIEVE_STRING(rhs_sym.raw[j], ps->string_table, ps->symno), cli_options->ormark, cli_options->escape);
               if (strlen(temp2) + strlen(symbol) + 1 < max_len) {
                 strcat(temp2, " ");
@@ -2113,9 +2034,9 @@ next_line: {
         if (strxeq(text + k, knum_rules)) {
           strcpy(temp1, text + k + 10);
           if (k + 10 != text_len) {
-            sprintf(text + k, "%ld%s", num_rules, temp1);
+            sprintf(text + k, "%ld%s", ps->num_rules, temp1);
           } else {
-            sprintf(text + k, "%ld", num_rules);
+            sprintf(text + k, "%ld", ps->num_rules);
           }
           goto proceed;
         }
@@ -2136,9 +2057,9 @@ next_line: {
         if (strxeq(text + k, knum_terminals)) {
           strcpy(temp1, text + k + 14);
           if (k + 14 != text_len)
-            sprintf(text + k, "%ld%s", num_terminals, temp1);
+            sprintf(text + k, "%ld%s", ps->num_terminals, temp1);
           else
-            sprintf(text + k, "%ld", num_terminals);
+            sprintf(text + k, "%ld", ps->num_terminals);
           goto proceed;
         }
       }
@@ -2147,9 +2068,9 @@ next_line: {
         if (strxeq(text + k, knum_non_terminals)) {
           strcpy(temp1, text + k + 18);
           if (k + 18 != text_len) {
-            sprintf(text + k, "%ld%s", num_non_terminals, temp1);
+            sprintf(text + k, "%ld%s", ps->num_non_terminals, temp1);
           } else {
-            sprintf(text + k, "%ld", num_non_terminals);
+            sprintf(text + k, "%ld", ps->num_non_terminals);
           }
           goto proceed;
         }
@@ -2248,7 +2169,7 @@ next_line: {
 /// This procedure takes as argument a macro definition. If the name of the
 /// macro is one of the predefined names, it issues an error.  Otherwise, it
 /// inserts the macro definition into the table headed by MACRO_TABLE.
-static void mapmacro(const int def_index, ArrayShort macro_table, struct ParserState* ps) {
+static void mapmacro(const int def_index, ArrayShort macro_table, const struct ParserState* ps) {
   if (strcmp(ps->defelmt[def_index].name, krule_text) == 0 ||
       strcmp(ps->defelmt[def_index].name, krule_number) == 0 ||
       strcmp(ps->defelmt[def_index].name, knum_rules) == 0 ||
@@ -2274,7 +2195,7 @@ static void mapmacro(const int def_index, ArrayShort macro_table, struct ParserS
 }
 
 /// Process all semantic actions and generate action file.
-static void process_actions(char *grm_file, struct CLIOptions *cli_options, struct ScannerState* ss, struct ruletab_type *rules, ArrayShort rhs_sym, struct ParserState* ps) {
+static void process_actions(char *grm_file, struct CLIOptions *cli_options, struct ScannerState* ss, const struct ruletab_type *rules, ArrayShort rhs_sym, struct ParserState* ps) {
   struct LinePool lp = (struct LinePool) {
     .line_pool_root = NULL,
   };
@@ -2443,7 +2364,7 @@ static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *
     fclose(sysgrm);
     exit(12);
   }
-  num_non_terminals = num_symbols - num_terminals;
+  ps->num_non_terminals = ps->num_symbols - ps->num_terminals;
   if (cli_options->error_maps_bit) {
     // make_names_map
     {
@@ -2452,17 +2373,17 @@ static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *
       if (error_image == DEFAULT_SYMBOL) {
         symno[DEFAULT_SYMBOL].name_index = symno[accept_image].name_index;
       }
-      for ALL_TERMINALS3(symbol) {
+      for for_each_t_fw(symbol, ps) {
         if (symno[symbol].name_index == OMEGA) {
           symno[symbol].name_index = name_map(RETRIEVE_STRING(symbol, ps->string_table, symno), ps);
         }
       }
-      for ALL_NON_TERMINALS3(symbol) {
+      for for_each_nt_fw(symbol, ps) {
         if (symno[symbol].name_index == OMEGA) {
           symno[symbol].name_index = name_map(RETRIEVE_STRING(symbol, ps->string_table, symno), ps);
         }
       }
-      calloc0p(name, num_names + 1, int);
+      calloc0p(name, ps->num_names + 1, int);
       for (int i = 0; i < HT_SIZE; i++) {
         for (const struct hash_type *p = ps->hash_table[i]; p != NULL; p = p->link) {
           if (p->name_index != OMEGA) {
@@ -2480,9 +2401,9 @@ static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *
   {
     struct node *ptr;
     int rhs_ct = 0;
-    calloc0p(rulesp, num_rules + 2, struct ruletab_type);
+    calloc0p(rulesp, ps->num_rules + 2, struct ruletab_type);
     *rhs_sym = Allocate_short_array2(ps->num_items + 1);
-    ps->num_items += num_rules + 1;
+    ps->num_items += ps->num_rules + 1;
     int ii = 0;
     struct ruletab_type *rules = *rulesp;
     // Put starting rules from start symbol linked list in rule and rhs table
@@ -2496,7 +2417,7 @@ static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *
         rules[ii].sp = 0;
         rules[ii++].rhs = rhs_ct;
         if (ptr->value != empty) {
-          (*rhs_sym).raw[rhs_ct++] = ptr->value;
+          rhs_sym->raw[rhs_ct++] = ptr->value;
         }
       }
       free_nodes(ps->start_symbol_root, q);
@@ -2504,34 +2425,37 @@ static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *
     //   In this loop, the grammar is placed in the rule table structure and the
     // right-hand sides are placed in the RHS table.  A check is made to prevent
     // terminals from being used as left hand sides.
-    for (ii = ii; ii <= num_rules; ii++) {
+    for (; ii <= ps->num_rules; ii++) {
       rules[ii].rhs = rhs_ct;
       ptr = ps->rulehdr[ii].rhs_root;
       if (ptr != NULL) {
         // not am empty right-hand side?
         do {
           ptr = ptr->next;
-          (*rhs_sym).raw[rhs_ct++] = ptr->value;
+          rhs_sym->raw[rhs_ct++] = ptr->value;
         } while (ptr != ps->rulehdr[ii].rhs_root);
         ptr = ptr->next; /* point to 1st element */
         rules[ii].sp = ps->rulehdr[ii].sp && ptr == ps->rulehdr[ii].rhs_root;
-        if (rules[ii].sp)
-          num_single_productions++;
+        if (rules[ii].sp) {
+          ps->num_single_productions++;
+        }
         free_nodes(ptr, ps->rulehdr[ii].rhs_root);
       } else {
         rules[ii].sp = false;
       }
       if (ps->rulehdr[ii].lhs == OMEGA) {
         rules[ii].lhs = rules[ii - 1].lhs;
-      } else if (IS_A_TERMINAL(ps->rulehdr[ii].lhs)) {
+      } else if (IS_A_TERMINAL_P(ps->rulehdr[ii].lhs, ps)) {
         char temp[SYMBOL_SIZE + 1];
         restore_symbol(temp, RETRIEVE_STRING(ps->rulehdr[ii].lhs, ps->string_table, symno), cli_options->ormark, cli_options->escape);
         PRNTERR2("In rule %d: terminal \"%s\" used as left hand side", ii, temp);
         PRNTERR("Processing terminated due to input errors.");
         exit(12);
-      } else rules[ii].lhs = ps->rulehdr[ii].lhs;
+      } else {
+        rules[ii].lhs = ps->rulehdr[ii].lhs;
+      }
     }
-    rules[num_rules + 1].rhs = rhs_ct; /* Fence !! */
+    rules[ps->num_rules + 1].rhs = rhs_ct; /* Fence !! */
   }
   fclose(sysgrm); /* Close grammar input file. */
   process_actions(grm_file, cli_options, ss, *rulesp, *rhs_sym, ps);
@@ -2624,7 +2548,7 @@ void process_input(char *grm_file, struct OutputFiles *output_files, const int a
     process_options_lines(grm_file, output_files, file_prefix, cli_options, sysgrm, &ss, parm);
     eolt_image = OMEGA;
     // Keywords, Reserved symbols, and predefined macros
-    kdefine[0] = cli_options->escape; /*Set empty first space to the default */
+    kdefine[0] = cli_options->escape; /* Set empty first space to the default */
     kterminals[0] = cli_options->escape; /* escape symbol.                      */
     kalias[0] = cli_options->escape;
     kstart[0] = cli_options->escape;
@@ -2647,15 +2571,14 @@ void process_input(char *grm_file, struct OutputFiles *output_files, const int a
 
   // Process grammar.
   {
-    //    PROCESS_GRAMMAR is invoked to process the source input. It uses an
+    // PROCESS_GRAMMAR is invoked to process the source input. It uses an
     // LALR(1) parser table generated by LPG to recognize the grammar which it
     // places in the rulehdr structure.
     short state_stack[STACK_SIZE];
     scanner(grm_file, sysgrm, cli_options, &ss, ps); /* Get first token */
     int act = START_STATE;
   process_terminal:
-    // Note that this driver assumes that the tables are LPG SPACE
-    // tables with no GOTO-DEFAULTS.
+    // Note that this driver assumes that the tables are LPG SPACE tables with no GOTO-DEFAULTS.
     state_stack[++(ps->stack_top)] = act;
     act = t_action(act, ss.ct, ?);
     // Reduce
@@ -2744,5 +2667,4 @@ end: {
     ffree(ps->rulehdr); /* allocated in action LPGACT when grammar is not empty */
   }
 }
-
 // endregion

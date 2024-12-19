@@ -160,12 +160,19 @@ static bool equal_sets(const JBitset set1, const int indx1, const JBitset set2, 
 
 
 
+
+
+
 struct symno_type {
-  int ptr;
+  long ptr;
   int name_index;
 };
 
 void nospace();
+
+void *galloc(long size);
+
+void *talloc(long size);
 
 #define galloc0p(into, x, times) \
   (*into) = (x *) galloc((times) * sizeof(x)); \
@@ -192,7 +199,6 @@ void nospace();
   if ((*into) == (x *) NULL) \
     nospace();
 
-
 static const int MAX_PARM_SIZE = 22;
 static const int SYMBOL_SIZE = 256;
 static const int MAX_MSG_SIZE = 256 + SYMBOL_SIZE;
@@ -203,7 +209,6 @@ static const int MAX_LINE_SIZE = 512;
 struct LaStats {
   struct lastats_type *lastats;
 };
-
 
 
 typedef struct {
@@ -256,27 +261,25 @@ static const int DEFELMT_INCREMENT = 16;
 
 static const int IOBUFFER_SIZE = 655360;
 
-#define ALL_TERMINALS3(x) (int (x) = 1; (x) <= num_terminals; (x)++)
+#define for_each_t_fw(x, ls) (int (x) = 1; (x) <= (ls)->num_terminals; (x)++)
 
-#define ALL_TERMINALS_BACKWARDS3(x) (int (x) = num_terminals; (x) >= 1; (x)--)
+#define for_each_t_bw(x, ls) (int (x) = (ls)->num_terminals; (x) >= 1; (x)--)
 
-#define ALL_NON_TERMINALS3(x) (int (x) = num_terminals + 1; (x) <= num_symbols; (x)++)
+#define for_each_nt_fw(x, ls) (int (x) = (ls)->num_terminals + 1; (x) <= (ls)->num_symbols; (x)++)
 
-#define ALL_NON_TERMINALS_BACKWARDS3(x) (int (x) = num_symbols; (x) >= num_terminals + 1; (x)--)
+#define for_each_nt_bw(x, ls) (int (x) = (ls)->num_symbols; (x) >= (ls)->num_terminals + 1; (x)--)
 
-#define ALL_SYMBOLS3(x) (int (x) = 1; (x) <= num_symbols; (x)++)
+#define for_each_symbol(x, ls) (int (x) = 1; (x) <= (ls)->num_symbols; (x)++)
 
-#define ALL_LA_STATES3(x, abc) (int (x) = abc->num_states + 1; (x) <= abc->max_la_state; (x)++)
+#define for_each_la_state(x, ls) (int (x) = (ls)->num_states + 1; (x) <= (ls)->max_la_state; (x)++)
 
-#define ALL_STATES3(x, num_states) (int (x) = 1; (x) <= num_states; (x)++)
+#define for_each_state(x, ls) (int (x) = 1; (x) <= (ls)->num_states; (x)++)
 
-#define ALL_ITEMS3(x, num_items) (int (x) = 1; (x) <= num_items; (x)++)
+#define for_each_item(x, ls) (int (x) = 1; (x) <= (ls)->num_items; (x)++)
 
-#define ALL_RULES3(x) (int (x) = 0; (x) <= num_rules; (x)++)
+#define for_each_rule_fw(x, ls) (int (x) = 0; (x) <= (ls)->num_rules; (x)++)
 
-#define ALL_RULES_BACKWARDS3(x) (int (x) = num_rules; (x) >= 0; (x)--)
-
-#define ENTIRE_RHS3(x, rule_no, rules) (int (x) = (rules)[rule_no].rhs; (x) < rules[(rule_no) + 1].rhs; (x)++)
+#define for_each_rhs(x, rule_no, rules) (int (x) = (rules)[rule_no].rhs; (x) < rules[(rule_no) + 1].rhs; (x)++)
 
 // region long array
 struct long_array {
@@ -400,7 +403,7 @@ struct SourcesElementSources {
 /// ends at index location RULES[I + 1].RHS - 1.  An extra
 /// NUM_RULES + 1 element is used as a "fence" for the last rule.
 /// The RHS vector as mentioned above is used to hold a complete
-/// list of allthe right-hand-side symbols specified in the grammar.
+/// list of all the right-hand-side symbols specified in the grammar.
 struct ruletab_type {
   long lhs;
   long rhs;
@@ -531,23 +534,21 @@ struct LAState {
   /// cannot be shared.
   long num_states;
   long max_la_state;
+  long num_shifts;
+  long num_single_productions;
+  long gotodom_size;
+  long num_names;
+  long num_non_terminals;
+  long num_shift_maps;
+  long num_shift_reduces;
+  long num_gotos;
+  long num_goto_reduces;
+  long num_reductions;
+  long num_entries;
+  long num_rules;
+  long num_symbols;
+  long num_terminals;
 };
-
-extern long num_symbols;
-extern long num_names;
-extern long num_terminals;
-extern long num_non_terminals;
-extern long num_rules;
-extern long num_single_productions;
-extern long gotodom_size;
-
-static bool IS_A_TERMINAL(const int i) {
-  return i <= num_terminals;
-}
-
-static bool IS_A_NON_TERMINAL(const int i) {
-  return i > num_terminals;
-}
 
 // The variables below are used to hold information about special grammar symbols.
 extern int accept_image;
@@ -555,15 +556,6 @@ extern int eoft_image;
 extern int eolt_image;
 extern int empty;
 extern int error_image;
-
-extern long num_shift_maps;
-extern long num_shifts;
-extern long num_shift_reduces;
-extern long num_gotos;
-extern long num_goto_reduces;
-extern long num_reductions;
-extern long num_entries;
-extern long num_error_rules;
 
 struct ConflictCounter {
   long num_sr_conflicts;
@@ -577,7 +569,7 @@ struct ScopeCounter {
   long scope_state_size;
 };
 
-static int RHS_SIZE(const int rule_no, struct ruletab_type *rules) {
+static int RHS_SIZE(const int rule_no, const struct ruletab_type *rules) {
   return rules[rule_no + 1].rhs - rules[rule_no].rhs;
 }
 
@@ -606,7 +598,7 @@ struct itemtab {
 
 struct SRTable {
   /// SHIFT is an array used to hold the complete set of all shift maps
-  /// needed to construct the state automaton. Though its size is
+  /// needed to construct the state automaton. Though its size is ...
   struct shift_header_type *shift;
   /// REDUCE is a mapping from each state to reduce actions in that state.
   struct reduce_header_type *reduce;
@@ -655,13 +647,9 @@ struct NextPrevious {
   ArrayLong previous;
 };
 
-void compute_produces(int symbol, struct node **direct_produces, ArrayShort stack, ArrayShort index_of, JBitset produces, struct ProduceTop* top_value);
-
 void reset_temporary_space(void);
 
 void free_temporary_space(void);
-
-void *talloc(long size);
 
 struct DetectedSetSizes {
   long term_set_size;
@@ -671,8 +659,6 @@ struct DetectedSetSizes {
 };
 
 void restore_symbol(char *out, const char *in, char ormark, char escape);
-
-void *galloc(long size);
 
 typedef long cell;
 
@@ -706,7 +692,7 @@ static void ffree(void *y) {
   return free(y); /* { free(x); x = (void *) ULONG_MAX; } */
 }
 
-static int TOUPPER(const int c) {
+static char TOUPPER(const int c) {
   return islower(c) ? toupper(c) : c;
 }
 
@@ -726,13 +712,9 @@ static void PRNT(char *msg) {
   printf("%s\n", msg);
 }
 
-#define PRNT3(...) \
+#define PRNT2(...) \
   snprintf(msg_line, MAX_MSG_SIZE, __VA_ARGS__); \
   PRNT(msg_line);
-
-#define PRNT4(msg, size, ...) \
-  snprintf(msg, size, __VA_ARGS__); \
-  PRNT(msg);
 
 static void PRNTWNG(char *msg) {
   printf("***WARNING: %s\n", msg);
@@ -768,10 +750,6 @@ struct new_state_type {
 struct StackRoot {
   struct node *stack_root;
 };
-
-ArrayBool init_rmpself(JBitset produces);
-
-void fill_in(char string[], int amount, char character);
 
 void free_nodes(struct node *head, struct node *tail);
 
@@ -842,7 +820,7 @@ static struct TableOutput init_table_output(struct LAState* ls) {
   return (struct TableOutput) {
     .ordered_state = Allocate_long_array2(ls->max_la_state + 1),
     .state_index = Allocate_long_array2(ls->max_la_state + 1),
-    .symbol_map = Allocate_long_array2(num_symbols + 1),
+    .symbol_map = Allocate_long_array2(ls->num_symbols + 1),
     .state_list = Allocate_long_array2(ls->max_la_state + 1),
   };
 }
@@ -873,7 +851,7 @@ struct ScannerState {
 /// structure to store rule in first pass
 struct rulehdr_type {
   struct node *rhs_root;
-  short lhs;
+  long lhs;
   bool sp;
 };
 
@@ -893,7 +871,7 @@ struct defelmt_type {
 struct actelmt_type {
   long start_line;
   long end_line;
-  short rule_number;
+  long rule_number;
   short start_column;
   short end_column;
   bool header_block;
@@ -927,7 +905,25 @@ struct ParserState {
   char *string_table;
   struct symno_type *symno;
   long num_items;
+  long num_names;
+  long num_non_terminals;
+  long num_rules;
+  long num_symbols;
+  long num_terminals;
+  long num_single_productions;
 };
+
+static bool IS_A_TERMINAL_P(const int i, struct ParserState* ps) {
+  return i <= ps->num_terminals;
+}
+
+static bool IS_A_TERMINAL_L(const int i, struct LAState* ls) {
+  return i <= ls->num_terminals;
+}
+
+static bool IS_A_NON_TERMINAL(const int i, struct LAState* ls) {
+  return i > ls->num_terminals;
+}
 
 void la_traverse(int state_no, int goto_indx, int *stack_top, struct StackRoot* sr, JBitset first, struct LAIndex* lai, struct node **adequate_item, struct node **in_stat, struct statset_type *statset, struct ruletab_type *rules, struct itemtab *item_table);
 
@@ -967,7 +963,6 @@ static char knext_line[11] = " next_line";
 /// never appear in the input without being interpreted as
 /// marking the end of an input line.  When printing such a
 /// keyword, the \n is properly replaced by the escape character.
-/// See RESTORE_SYMBOL in the file LPGUTIL.C.
 static char kempty[7] = "\nempty";
 static char kerror[7] = "\nerror";
 static char keoft[5] = "\neof";
@@ -975,9 +970,9 @@ static char kaccept[5] = "\nacc";
 static char kstart_nt[7] = " start";
 static char keolt[5] = " eol";
 
-char *RETRIEVE_STRING(int indx, char *string_table, struct symno_type *symno);
+char *RETRIEVE_STRING(int indx, char *string_table, const struct symno_type *symno);
 
-char *RETRIEVE_NAME(int indx, char *string_table, int *name);
+char *RETRIEVE_NAME(int indx, char *string_table, const int *name);
 
 /// structure used to hold token information
 struct terminal_type {
@@ -994,7 +989,7 @@ void assign_symbol_no(const char *string_ptr, int image, struct ParserState* ps)
 
 void alias_map(const char *stringptr, int image, struct ParserState* ps);
 
-int symbol_image(const char *item, struct ParserState* ps);
+int symbol_image(const char *item, const struct ParserState* ps);
 
 int name_map(const char *symb, struct ParserState* ps);
 
