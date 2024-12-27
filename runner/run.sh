@@ -39,17 +39,17 @@ cd "$SRC_DIR"
 make clean > /dev/null
 make jikespg > /dev/null
 
-# Step 2: Copy jikespg to the BNF directory and run it
+echo "=== Step 2: Copy jikespg to the BNF directory and run it ==="
 cp "$SRC_DIR/jikespg" "$BNF_DIR/"
 cd "$BNF_DIR"
 ./jikespg bnf.g
 
-# Step 3: Copy jikespg to the EXPR directory and run it
+echo "=== Step 3: Copy jikespg to the EXPR directory and run it ==="
 cp "$SRC_DIR/jikespg" "$EXPR_DIR/"
 cd "$EXPR_DIR"
 ./jikespg expr.g
 
-# Step 4: Copy jikespg to the JIKESPG directory and run it
+echo "=== Step 4: Copy jikespg to the JIKESPG directory and run it ==="
 cp "$SRC_DIR/jikespg" "$JIKESPG_DIR/"
 cd "$JIKESPG_DIR"
 ./jikespg jikespg.g
@@ -57,13 +57,13 @@ cd "$JIKESPG_DIR"
 # Step 5: Copy jikespg to the FORMULACHESS directory and run it
 # cp "$SRC_DIR/jikespg" "$FORMULACHESS_DIR/"
 # cd "$FORMULACHESS_DIR"
-# echo "Running './jikespg jikespg.g' in $FORMULACHESS_DIR"
+# echo "Running './jikespg pgn.g' in $FORMULACHESS_DIR"
 # ./jikespg pgn.g
 
 # Step 6: Copy jikespg to the JAVA directory and run it
 # cp "$SRC_DIR/jikespg" "$JAVA_DIR/"
 # cd "$JAVA_DIR"
-# echo "Running './jikespg jikespg.g' in $JAVA_DIR"
+# echo "Running './jikespg java.g' in $JAVA_DIR"
 # ./jikespg java.g
 
 # Step 6: Cleanup - Remove jikespg from the example directories and clean the source directory

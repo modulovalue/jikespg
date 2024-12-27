@@ -10,7 +10,7 @@
 
 
 
-
+// region other
 int accept_image;
 
 int eoft_image;
@@ -83,6 +83,7 @@ const int LEN = PRINT_LINE_SIZE - 4;
 const int increment = 30;
 
 const long MAX_TABLE_SIZE = (USHRT_MAX < INT_MAX ? USHRT_MAX : INT_MAX) - 1;
+// endregion
 
 
 
@@ -95,10 +96,8 @@ const long MAX_TABLE_SIZE = (USHRT_MAX < INT_MAX ? USHRT_MAX : INT_MAX) - 1;
 
 
 
-// region common
 
 // region bitset
-
 typedef unsigned int BOOLEAN_CELL;
 
 struct jbitset {
@@ -240,7 +239,6 @@ static bool equal_sets(const JBitset set1, const int indx1, const JBitset set2, 
   }
   return true;
 }
-
 // endregion
 
 
@@ -248,6 +246,9 @@ static bool equal_sets(const JBitset set1, const int indx1, const JBitset set2, 
 
 
 
+
+
+// region common
 struct symno_type {
   long ptr;
   int name_index;
@@ -344,27 +345,26 @@ static const int DEFELMT_INCREMENT = 16;
 
 static const int IOBUFFER_SIZE = 655360;
 
-#define for_each_t_fw(x, ls) (int (x) = 1; (x) <= (ls)->num_terminals; (x)++)
+#define for_each_t_fw(x, ls) (long (x) = 1; (x) <= (ls)->num_terminals; (x)++)
 
-#define for_each_t_bw(x, ls) (int (x) = (ls)->num_terminals; (x) >= 1; (x)--)
+#define for_each_t_bw(x, ls) (long (x) = (ls)->num_terminals; (x) >= 1; (x)--)
 
-#define for_each_nt_fw(x, ls) (int (x) = (ls)->num_terminals + 1; (x) <= (ls)->num_symbols; (x)++)
+#define for_each_nt_fw(x, ls) (long (x) = (ls)->num_terminals + 1; (x) <= (ls)->num_symbols; (x)++)
 
-#define for_each_nt_bw(x, ls) (int (x) = (ls)->num_symbols; (x) >= (ls)->num_terminals + 1; (x)--)
+#define for_each_nt_bw(x, ls) (long (x) = (ls)->num_symbols; (x) >= (ls)->num_terminals + 1; (x)--)
 
-#define for_each_symbol(x, ls) (int (x) = 1; (x) <= (ls)->num_symbols; (x)++)
+#define for_each_symbol(x, ls) (long (x) = 1; (x) <= (ls)->num_symbols; (x)++)
 
-#define for_each_la_state(x, ls) (int (x) = (ls)->num_states + 1; (x) <= (ls)->max_la_state; (x)++)
+#define for_each_la_state(x, ls) (long (x) = (ls)->num_states + 1; (x) <= (ls)->max_la_state; (x)++)
 
-#define for_each_state(x, ls) (int (x) = 1; (x) <= (ls)->num_states; (x)++)
+#define for_each_state(x, ls) (long (x) = 1; (x) <= (ls)->num_states; (x)++)
 
-#define for_each_item(x, ls) (int (x) = 1; (x) <= (ls)->num_items; (x)++)
+#define for_each_item(x, ls) (long (x) = 1; (x) <= (ls)->num_items; (x)++)
 
-#define for_each_rule_fw(x, ls) (int (x) = 0; (x) <= (ls)->num_rules; (x)++)
+#define for_each_rule_fw(x, ls) (long (x) = 0; (x) <= (ls)->num_rules; (x)++)
 
-#define for_each_rhs(x, rule_no, rules) (int (x) = (rules)[rule_no].rhs; (x) < rules[(rule_no) + 1].rhs; (x)++)
+#define for_each_rhs(x, rule_no, rules) (long (x) = (rules)[rule_no].rhs; (x) < rules[(rule_no) + 1].rhs; (x)++)
 
-// region long array
 struct long_array {
   long *raw;
   long size;
@@ -373,7 +373,7 @@ struct long_array {
 #define ListInt struct long_array
 
 /// This function allocates an array of size "size" of int integers.
-static ListInt Allocate_long_array2(const long n) {
+static ListInt allocateListInt(const long n) {
   long *p;
   calloc0p(&p, n, long);
   return (struct long_array) {
@@ -381,27 +381,7 @@ static ListInt Allocate_long_array2(const long n) {
     .size = n,
   };
 }
-// endregion
 
-// region short array
-struct short_array {
-  short *raw;
-  long size;
-};
-
-#define ArrayShort struct short_array
-
-static ArrayShort Allocate_short_array2(const long n) {
-  short *p;
-  calloc0p(&p, n, short);
-  return (struct short_array) {
-    .raw = &p[0],
-    .size = n,
-  };
-}
-// endregion
-
-// region boolean array
 struct bool_array {
   bool *raw;
   long size;
@@ -417,7 +397,6 @@ static ListBool Allocate_bool_array2(const long n) {
     .size = n,
   };
 }
-// endregion
 
 struct node {
   struct node *next;
@@ -469,7 +448,7 @@ struct stack_element {
 struct sources_element {
   struct stack_element **configs;
   struct stack_element **stack_seen;
-  ArrayShort list;
+  ListInt list;
   short root;
 };
 
@@ -636,7 +615,6 @@ struct LAState {
 struct ConflictCounter {
   long num_sr_conflicts;
   long num_rr_conflicts;
-  struct node **in_stat;
 };
 
 struct ScopeCounter {
@@ -811,7 +789,7 @@ void free_nodes(struct node *head, struct node *tail);
 /// is defined in state S. See COMPUTE_READ for more details.
 /// LA_TOP is used to compute the number of such sets needed.
 struct LAIndex {
-  ArrayShort la_index;
+  ListInt la_index;
   JBitset la_set;
 };
 
@@ -867,10 +845,10 @@ static struct reduce_header_type Allocate_reduce_map(const long n) {
 
 static struct TableOutput init_table_output(struct LAState* ls) {
   return (struct TableOutput) {
-    .ordered_state = Allocate_long_array2(ls->max_la_state + 1),
-    .state_index = Allocate_long_array2(ls->max_la_state + 1),
-    .symbol_map = Allocate_long_array2(ls->num_symbols + 1),
-    .state_list = Allocate_long_array2(ls->max_la_state + 1),
+    .ordered_state = allocateListInt(ls->max_la_state + 1),
+    .state_index = allocateListInt(ls->max_la_state + 1),
+    .symbol_map = allocateListInt(ls->num_symbols + 1),
+    .state_list = allocateListInt(ls->max_la_state + 1),
   };
 }
 
@@ -987,8 +965,6 @@ static bool IS_A_NON_TERMINAL(const int i, struct LAState* ls) {
 
 void la_traverse(int state_no, int goto_indx, int *stack_top, struct StackRoot* sr, JBitset first, struct LAIndex* lai, struct node **adequate_item, struct node **in_stat, struct statset_type *statset, struct ruletab_type *rules, struct itemtab *item_table);
 
-void process_input(char *grm_file, struct OutputFiles *output_files, int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options, ArrayShort *rhs_sym, struct ruletab_type **rulesp, struct symno_type **symno, struct ParserState* ps, int **name);
-
 /// The following variables hold the names
 /// of keywords and predefined macros.
 static char kdefine[8] = " define";
@@ -1023,7 +999,6 @@ static char kstart_nt[7] = " start";
 static char keolt[5] = " eol";
 
 char *RETRIEVE_STRING(int indx, char *string_table, const struct symno_type *symno);
-
 // endregion
 
 
@@ -1047,10 +1022,7 @@ char *RETRIEVE_STRING(int indx, char *string_table, const struct symno_type *sym
 
 
 
-// region lpgparse
-
 // region generated parser
-
 /// HASH takes as argument a symbol and hashes it into a location in
 /// HASH_TABLE.
 static int hash(const char *symbl) {
@@ -2886,7 +2858,7 @@ static void free_line(struct line_elemt *p, struct LinePool* lp) {
 /// is found then the macro definition associated with it is returned.
 /// If the name is not found, then a message is printed, a new definition is
 /// entered to avoid more messages and NULL is returned.
-static struct line_elemt *find_macro(char *name, ArrayShort macro_table, struct LinePool* lp, struct ParserState* ps) {
+static struct line_elemt *find_macro(char *name, ListInt macro_table, struct LinePool* lp, struct ParserState* ps) {
   struct line_elemt *root = NULL;
   char macro_name[MAX_LINE_SIZE + 1];
   char *s = macro_name;
@@ -2944,7 +2916,7 @@ static struct line_elemt *find_macro(char *name, ArrayShort macro_table, struct 
 /// user defined macro names. If one is found, the macro definition is
 /// substituted for the name. The modified action text is then printed out in
 /// the action file.
-static void process_action_line(FILE *sysout, char *text, const int line_no, const int rule_no, char *grm_file, const struct CLIOptions* cli_options, ArrayShort macro_table, struct LinePool* lp, const struct ruletab_type *rules, ArrayShort rhs_sym, struct ParserState* ps) {
+static void process_action_line(FILE *sysout, char *text, const int line_no, const int rule_no, char *grm_file, const struct CLIOptions* cli_options, ListInt macro_table, struct LinePool* lp, const struct ruletab_type *rules, ListInt rhs_sym, struct ParserState* ps) {
   char temp1[MAX_LINE_SIZE + 1];
   char suffix[MAX_LINE_SIZE + 1];
   char symbol[SYMBOL_SIZE + 1];
@@ -3201,7 +3173,7 @@ next_line: {
 /// This procedure takes as argument a macro definition. If the name of the
 /// macro is one of the predefined names, it issues an error.  Otherwise, it
 /// inserts the macro definition into the table headed by MACRO_TABLE.
-static void mapmacro(const int def_index, ArrayShort macro_table, const struct ParserState* ps) {
+static void mapmacro(const int def_index, ListInt macro_table, const struct ParserState* ps) {
   if (strcmp(ps->defelmt[def_index].name, krule_text) == 0 ||
       strcmp(ps->defelmt[def_index].name, krule_number) == 0 ||
       strcmp(ps->defelmt[def_index].name, knum_rules) == 0 ||
@@ -3227,7 +3199,7 @@ static void mapmacro(const int def_index, ArrayShort macro_table, const struct P
 }
 
 /// Process all semantic actions and generate action file.
-static void process_actions(char *grm_file, struct CLIOptions *cli_options, struct ScannerState* ss, const struct ruletab_type *rules, ArrayShort rhs_sym, struct ParserState* ps) {
+static void process_actions(char *grm_file, struct CLIOptions *cli_options, struct ScannerState* ss, const struct ruletab_type *rules, ListInt rhs_sym, struct ParserState* ps) {
   struct LinePool lp = (struct LinePool) {
     .line_pool_root = NULL,
   };
@@ -3249,7 +3221,7 @@ static void process_actions(char *grm_file, struct CLIOptions *cli_options, stru
     fprintf(stderr, "***ERROR: Input file %s containing grammar is empty, undefined, or invalid\n", grm_file);
     exit(12);
   }
-  ArrayShort macro_table = Allocate_short_array2(HT_SIZE);
+  ListInt macro_table = allocateListInt(HT_SIZE);
   for (int i = 0; i < HT_SIZE; i++) {
     macro_table.raw[i] = NIL;
   }
@@ -3390,7 +3362,7 @@ static void process_actions(char *grm_file, struct CLIOptions *cli_options, stru
 }
 
 /// Actions to be taken if grammar is successfully parsed.
-static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *sysgrm, struct ScannerState* ss, ArrayShort *rhs_sym, struct ruletab_type **rulesp, struct ParserState* ps, struct symno_type *symno, int **name) {
+static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *sysgrm, struct ScannerState* ss, ListInt *rhs_sym, struct ruletab_type **rulesp, struct ParserState* ps, struct symno_type *symno, int **name) {
   if (ps->rulehdr == NULL) {
     printf("Informative: Empty grammar read in. Processing stopped.\n");
     fclose(sysgrm);
@@ -3434,7 +3406,7 @@ static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *
     struct node *ptr;
     int rhs_ct = 0;
     calloc0p(rulesp, ps->num_rules + 2, struct ruletab_type);
-    *rhs_sym = Allocate_short_array2(ps->num_items + 1);
+    *rhs_sym = allocateListInt(ps->num_items + 1);
     ps->num_items += ps->num_rules + 1;
     int ii = 0;
     struct ruletab_type *rules = *rulesp;
@@ -3494,7 +3466,7 @@ static void accept_action(char *grm_file, struct CLIOptions *cli_options, FILE *
 }
 
 /// This procedure opens all relevant files and processes the input grammar.
-void process_input(char *grm_file, struct OutputFiles *output_files, const int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options, ArrayShort *rhs_sym, struct ruletab_type **rulesp, struct symno_type **symno, struct ParserState* ps, int **name) {
+void process_input(char *grm_file, struct OutputFiles *output_files, const int argc, char *argv[], char *file_prefix, struct CLIOptions *cli_options, ListInt *rhs_sym, struct ruletab_type **rulesp, struct ParserState* ps, int **name) {
   char parm[256] = "";
 
   // Parse args.
@@ -3641,7 +3613,7 @@ void process_input(char *grm_file, struct OutputFiles *output_files, const int a
       }
       act -= ERROR_ACTION;
     } else if (act == ACCEPT_ACTION) {
-      accept_action(grm_file, cli_options, sysgrm, &ss, rhs_sym, rulesp, ps, *symno, name);
+      accept_action(grm_file, cli_options, sysgrm, &ss, rhs_sym, rulesp, ps, ps->symno, name);
       goto end;
     } else {
       // error_action
@@ -3696,7 +3668,6 @@ end: {
 }
 // endregion
 
-// endregion
 
 
 
@@ -3714,12 +3685,10 @@ end: {
 
 
 
-
+// region globals
 char *RETRIEVE_NAME(const int indx, char *string_table, const int *name) {
   return &string_table[name[indx]];
 }
-
-// region globals
 
 /// This procedure obtains more TEMPORARY space.
 bool allocate_more_space(cell ***base, long *size, long *base_size) {
@@ -3840,8 +3809,8 @@ void *galloc(const long size) {
   return &gs.global_base[i >> LOG_BLKSIZE][i];
 }
 
-///  This function frees a linked list of nodes by adding them to the free
-/// list.  Head points to head of linked list and tail to the end.
+/// This function frees a linked list of nodes by adding them to the free
+/// list. Head points to head of linked list and tail to the end.
 void free_nodes(struct node *head, struct node *tail) {
   tail->next = gs.node_pool;
   gs.node_pool = head;
@@ -3860,7 +3829,7 @@ void fill_in(char string[], const int amount, const char character) {
 /// QCKSRT is a quicksort algorithm that takes as arguments an array of
 /// integers, two numbers L and H that indicate the lower and upper bound
 /// positions in ARRAY to be sorted.
-static void qcksrt(ArrayShort array, const int l, const int h) {
+static void qcksrt(ListInt array, const int l, const int h) {
   int lostack[14];
   int histack[14];
   // 2 ** 15 - 1 elements
@@ -3965,7 +3934,7 @@ void print_large_token(char *line, char *token, const char *indent, int len) {
 }
 
 /// PRINT_ITEM takes as parameter an ITEM_NO which it prints.
-void print_item(const int item_no, struct CLIOptions* cli_options, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym, char *string_table, struct symno_type *symno) {
+void print_item(const int item_no, struct CLIOptions* cli_options, struct ruletab_type *rules, struct itemtab *item_table, ListInt rhs_sym, char *string_table, struct symno_type *symno) {
   char tempstr[PRINT_LINE_SIZE + 1];
   char line[PRINT_LINE_SIZE + 1];
   char tok[SYMBOL_SIZE + 1];
@@ -4036,7 +4005,7 @@ void print_item(const int item_no, struct CLIOptions* cli_options, struct ruleta
 /// replaced by say the GOTO or GOTO_REDUCE of A, the item above can no longer
 /// be retrieved, since transitions in a given state are reconstructed from
 /// the KERNEL and ADEQUATE items of the actions in the GOTO and SHIFT maps.
-void print_state(const int state_no, struct CLIOptions* cli_options, struct node **adequate_item, struct SRTable* srt, struct lastats_type *lastats, struct statset_type *statset, struct node **in_stat, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym, char *string_table, struct symno_type *symno, struct LAState* ls) {
+void print_state(const int state_no, struct CLIOptions* cli_options, struct node **adequate_item, struct SRTable* srt, struct lastats_type *lastats, struct statset_type *statset, struct node **in_stat, struct ruletab_type *rules, struct itemtab *item_table, ListInt rhs_sym, char *string_table, struct symno_type *symno, struct LAState* ls) {
   char buffer[PRINT_LINE_SIZE + 1];
   char line[PRINT_LINE_SIZE + 1];
   // ITEM_SEEN is used to construct sets of items, to help avoid
@@ -4047,7 +4016,7 @@ void print_state(const int state_no, struct CLIOptions* cli_options, struct node
   // productions.
   ListBool state_seen = Allocate_bool_array2(ls->max_la_state + 1);
   ListBool item_seen = Allocate_bool_array2(ls->num_items + 1);
-  ArrayShort item_list = Allocate_short_array2(ls->num_items + 1);
+  ListInt item_list = allocateListInt(ls->num_items + 1);
   // INITIALIZATION -----------------------------------------------------------
   for for_each_state(state_no, ls) {
     state_seen.raw[state_no] = false;
@@ -4196,7 +4165,6 @@ void nospace() {
 
 
 // region partset
-
 /// This procedure, PARTSET, is invoked to apply a heuristic of the
 /// Optimal Partitioning algorithm to a COLLECTION of subsets.  The
 /// size of each subset in COLLECTION is passed in a parallel vector:
@@ -4250,11 +4218,11 @@ void partset(JBitset collection, ListInt element_size, ListInt list, ListInt sta
     collection_size = ls->num_states;
   }
   const long bctype = collection.size;
-  ArrayShort size_list = Allocate_short_array2(set_size + 1);
-  ArrayShort partition = Allocate_short_array2(set_size + 1);
-  ArrayShort domain_link = Allocate_short_array2(collection_size + 1);
-  ArrayShort head = Allocate_short_array2(collection_size + 1);
-  ArrayShort next = Allocate_short_array2(collection_size + 1);
+  ListInt size_list = allocateListInt(set_size + 1);
+  ListInt partition = allocateListInt(set_size + 1);
+  ListInt domain_link = allocateListInt(collection_size + 1);
+  ListInt head = allocateListInt(collection_size + 1);
+  ListInt next = allocateListInt(collection_size + 1);
   ListBool is_a_base = Allocate_bool_array2(collection_size + 1);
   JBitset temp_set;
   calloc0_set(temp_set, 1, bctype);
@@ -4419,7 +4387,6 @@ void partset(JBitset collection, ListInt element_size, ListInt list, ListInt sta
   ffree(is_a_base.raw);
   ffree(temp_set.raw);
 }
-
 // endregion
 
 
@@ -4432,8 +4399,7 @@ void partset(JBitset collection, ListInt element_size, ListInt list, ListInt sta
 
 
 // region mkfirst
-
-void compute_produces(int symbol, struct node **direct_produces, ArrayShort stack, ArrayShort index_of, JBitset produces, struct ProduceTop* top_value);
+void compute_produces(int symbol, struct node **direct_produces, ListInt stack, ListInt index_of, JBitset produces, struct ProduceTop* top_value);
 
 long NEXT_RULE_SIZE(struct LAState* ls) {
   return ls->num_rules + 1;
@@ -4453,7 +4419,7 @@ struct f_element_type {
 /// symbol identified by the RHS_START element is a bad non-terminal it
 /// returns FALSE.  Otherwise, the whole right-hand side is traversed, and it
 /// returns the value TRUE.
-bool is_terminal_rhs(ArrayShort rhs_start, const bool *produces_terminals, const int rule_no, const struct ruletab_type *rules, ArrayShort rhs_sym, struct LAState* ls) {
+bool is_terminal_rhs(ListInt rhs_start, const bool *produces_terminals, const int rule_no, const struct ruletab_type *rules, ListInt rhs_sym, struct LAState* ls) {
   for (; rhs_start.raw[rule_no] <= rules[rule_no + 1].rhs - 1; rhs_start.raw[rule_no]++) {
     const int symbol = rhs_sym.raw[rhs_start.raw[rule_no]];
     if (IS_A_NON_TERMINAL(symbol, ls)) {
@@ -4475,9 +4441,9 @@ bool is_terminal_rhs(ArrayShort rhs_start, const bool *produces_terminals, const
 /// and Xi, for all i, is a terminal or a non-terminal that can generate a
 /// string of terminals.
 /// This routine is structurally identical to COMPUTE_NULLABLES.
-void check_non_terminals(const struct CLIOptions *cli_options, ArrayShort lhs_rule, ArrayShort next_rule, ArrayShort nt_list, struct ruletab_type *rules, ArrayShort rhs_sym, char *string_table, struct symno_type *symno, struct LAState* ls) {
+void check_non_terminals(const struct CLIOptions *cli_options, ListInt lhs_rule, ListInt next_rule, ListInt nt_list, struct ruletab_type *rules, ListInt rhs_sym, char *string_table, struct symno_type *symno, struct LAState* ls) {
   bool changed = true;
-  ArrayShort rhs_start = Allocate_short_array2(NEXT_RULE_SIZE(ls));
+  ListInt rhs_start = allocateListInt(NEXT_RULE_SIZE(ls));
   ListBool produces_terminals = Allocate_bool_array2(ls->num_non_terminals);
   produces_terminals.raw -= ls->num_terminals + 1;
   // First, mark all non-terminals as not producing terminals. Then
@@ -4563,7 +4529,7 @@ void check_non_terminals(const struct CLIOptions *cli_options, ArrayShort lhs_ru
   ffree(rhs_start.raw);
 }
 
-void no_rules_produced(const struct CLIOptions *cli_options, ArrayShort lhs_rule, ArrayShort nt_list, char *string_table, struct symno_type *symno, struct LAState* ls) {
+void no_rules_produced(const struct CLIOptions *cli_options, ListInt lhs_rule, ListInt nt_list, char *string_table, struct symno_type *symno, struct LAState* ls) {
   // Build a list of all non-terminals that do not produce any rules.
   int nt_root = NIL;
   int nt_last;
@@ -4609,8 +4575,8 @@ void no_rules_produced(const struct CLIOptions *cli_options, ArrayShort lhs_rule
 /// The closure of a non-terminal A is the set of all non-terminals Bi that
 /// can directly or indirectly start a string generated by A.
 /// I.e., A *::= Bi X where X is an arbitrary string.
-void compute_closure(const int lhs_symbol, ArrayShort stack, ArrayShort index_of, struct ProduceTop *topp, ArrayShort lhs_rule, ArrayShort next_rule, struct node **closure, struct ruletab_type *rules, ArrayShort rhs_sym, struct LAState* ls) {
-  ArrayShort nont_list = Allocate_short_array2(ls->num_non_terminals);
+void compute_closure(const int lhs_symbol, ListInt stack, ListInt index_of, struct ProduceTop *topp, ListInt lhs_rule, ListInt next_rule, struct node **closure, struct ruletab_type *rules, ListInt rhs_sym, struct LAState* ls) {
+  ListInt nont_list = allocateListInt(ls->num_non_terminals);
   nont_list.raw -= ls->num_terminals + 1; /* Temporary direct        */
   // access set for closure.
   stack.raw[++topp->top] = lhs_symbol;
@@ -4696,7 +4662,7 @@ void compute_closure(const int lhs_symbol, ArrayShort stack, ArrayShort index_of
 /// to indicate that it cannot go any further.  If it encounters a  non-null-
 /// label non-terminal, it also returns FALSE. Otherwise, the whole right-hand
 /// side is consumed, and it returns the value TRUE.
-bool is_nullable_rhs(ArrayShort rhs_start, const int rule_no, ListBool null_nt, struct ruletab_type *rules, ArrayShort rhs_sym, struct LAState* ls) {
+bool is_nullable_rhs(ListInt rhs_start, const int rule_no, ListBool null_nt, struct ruletab_type *rules, ListInt rhs_sym, struct LAState* ls) {
   for (; rhs_start.raw[rule_no] <= rules[rule_no + 1].rhs - 1; rhs_start.raw[rule_no]++) {
     const int symbol = rhs_sym.raw[rhs_start.raw[rule_no]];
     if (IS_A_TERMINAL_L(symbol, ls)) {
@@ -4713,7 +4679,7 @@ bool is_nullable_rhs(ArrayShort rhs_start, const int rule_no, ListBool null_nt, 
 /// digraph algorithm.
 /// FIRST(NT) is the set of all terminals Ti that may start a string generated
 /// by NT. That is, NT *::= Ti X where X is an arbitrary string.
-void compute_first(const int nt, struct DetectedSetSizes *dss, ArrayShort stack, ArrayShort index_of, struct ProduceTop *topp, JBitset nt_first, ArrayShort lhs_rule, ArrayShort next_rule, ListBool null_nt, struct ruletab_type *rules, ArrayShort rhs_sym, struct LAState* ls) {
+void compute_first(const int nt, struct DetectedSetSizes *dss, ListInt stack, ListInt index_of, struct ProduceTop *topp, JBitset nt_first, ListInt lhs_rule, ListInt next_rule, ListBool null_nt, struct ruletab_type *rules, ListInt rhs_sym, struct LAState* ls) {
   JBitset temp_set;
   calloc0_set(temp_set, 1, dss->term_set_size)
   stack.raw[++topp->top] = nt;
@@ -4774,7 +4740,7 @@ void compute_first(const int nt, struct DetectedSetSizes *dss, ArrayShort stack,
 /// last element in FIRST_ELEMENT that was allocated.
 /// NOTE: The suffix indentified by ROOT and TAIL is presumed not to be empty.
 ///       That is, ROOT <= TAIL !!!
-short first_map(const int root, const int tail, struct ProduceTop *topp, struct f_element_type *first_element, ArrayShort first_table, ArrayShort rhs_sym) {
+short first_map(const int root, const int tail, struct ProduceTop *topp, struct f_element_type *first_element, ListInt first_table, ListInt rhs_sym) {
   for (int i = first_table.raw[rhs_sym.raw[root]]; i != NIL; i = first_element[i].link) {
     int k;
     int jj;
@@ -4799,7 +4765,7 @@ short first_map(const int root, const int tail, struct ProduceTop *topp, struct 
 /// may immediately follow a string X generated by NT. I.e., if NT *::= X
 /// then X Ti is a valid substring of a class of strings that may be
 /// recognized by the language.
-void compute_follow(const int nt, struct DetectedSetSizes *dss, ArrayShort stack, ArrayShort index_of, struct ProduceTop *topp, JBitset follow, ArrayShort next_item, ArrayShort nt_items, JBitset first, struct ruletab_type *rules, struct itemtab *item_table) {
+void compute_follow(const int nt, struct DetectedSetSizes *dss, ListInt stack, ListInt index_of, struct ProduceTop *topp, JBitset follow, ListInt next_item, ListInt nt_items, JBitset first, struct ruletab_type *rules, struct itemtab *item_table) {
   JBitset temp_set;
   calloc0_set(temp_set, 1, dss->term_set_size);
   // FOLLOW[NT] was initialized to 0 for all non-terminals.
@@ -4834,29 +4800,25 @@ void compute_follow(const int nt, struct DetectedSetSizes *dss, ArrayShort stack
 
 /// MKFIRST constructs the FIRST and FOLLOW maps, the CLOSURE map,
 /// ADEQUATE_ITEM and ITEM_TABLE maps and all other basic maps.
-struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first, ListBool *rmpself, JBitset* first, struct FirstDeps* fd, struct ruletab_type *rules, ArrayShort rhs_sym, struct itemtab **item_tablep, char *string_table, struct symno_type *symno, struct LAState* ls) {
+struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first, JBitset* first, struct FirstDeps* fd, struct ruletab_type *rules, ListInt rhs_sym, struct itemtab **item_tablep, char *string_table, struct symno_type *symno, struct LAState* ls) {
   struct DetectedSetSizes dss = {
     .non_term_set_size = ls->num_non_terminals / SIZEOF_BC + (ls->num_non_terminals % SIZEOF_BC ? 1 : 0),
     .term_set_size = ls->num_terminals / SIZEOF_BC + (ls->num_terminals % SIZEOF_BC ? 1 : 0),
     .null_nt = NULL,
   };
   // allocate various arrays
-  ArrayShort lhs_rule = Allocate_short_array2(ls->num_non_terminals);
+  ListInt lhs_rule = allocateListInt(ls->num_non_terminals);
   lhs_rule.raw -= ls->num_terminals + 1;
-  ArrayShort next_rule = Allocate_short_array2(NEXT_RULE_SIZE(ls));
-  ArrayShort first_item_of = Allocate_short_array2(NEXT_RULE_SIZE(ls));
-  ArrayShort stack = Allocate_short_array2(ls->num_non_terminals + 1);
-  ArrayShort index_of = Allocate_short_array2(ls->num_non_terminals);
-  index_of.raw -= ls->num_terminals + 1;
+  ListInt next_rule = allocateListInt(NEXT_RULE_SIZE(ls));
   // NT_FIRST is used to construct a mapping from non-terminals to the
   // set of terminals that may appear first in a string derived from
   // the non-terminal.
   calloc0_set(nt_first, ls->num_non_terminals, dss.term_set_size);
   nt_first.raw -= (ls->num_terminals + 1) * dss.term_set_size;
-  ArrayShort next_item = Allocate_short_array2(ls->num_items + 1);
-  ArrayShort nt_items = Allocate_short_array2(ls->num_non_terminals);
+  ListInt next_item = allocateListInt(ls->num_items + 1);
+  ListInt nt_items = allocateListInt(ls->num_non_terminals);
   nt_items.raw -= ls->num_terminals + 1;
-  ArrayShort nt_list = Allocate_short_array2(ls->num_non_terminals);
+  ListInt nt_list = allocateListInt(ls->num_non_terminals);
   nt_list.raw -= ls->num_terminals + 1;
   struct f_element_type *first_element;
   calloc0p(&first_element, ls->num_items + 1, struct f_element_type);
@@ -4883,14 +4845,22 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
   // Construct the CLOSURE map of non-terminals.
   calloc0p(&(fd->closure), ls->num_non_terminals, struct node *);
   fd->closure -= ls->num_terminals + 1;
-  for for_each_nt_fw(symbol, ls) {
-    index_of.raw[symbol] = OMEGA;
-  }
-  struct ProduceTop topp = {.top = 0};
-  for for_each_nt_fw(nt, ls) {
-    if (index_of.raw[nt] == OMEGA) {
-      compute_closure(nt, stack, index_of, &topp, lhs_rule, next_rule, fd->closure, rules, rhs_sym, ls);
+  {
+    ListInt stack = allocateListInt(ls->num_non_terminals + 1);
+    ListInt index_of = allocateListInt(ls->num_non_terminals);
+    index_of.raw -= ls->num_terminals + 1;
+    for for_each_nt_fw(symbol, ls) {
+      index_of.raw[symbol] = OMEGA;
     }
+    struct ProduceTop topp = {.top = 0};
+    for for_each_nt_fw(nt, ls) {
+      if (index_of.raw[nt] == OMEGA) {
+        compute_closure(nt, stack, index_of, &topp, lhs_rule, next_rule, fd->closure, rules, rhs_sym, ls);
+      }
+    }
+    ffree(stack.raw);
+    index_of.raw += ls->num_terminals + 1;
+    ffree(index_of.raw);
   }
   // Construct the NULL_NT map for non-terminals.
   // A non-terminal B is said to be nullable if either:
@@ -4900,7 +4870,7 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
   dss.null_nt.raw -= ls->num_terminals + 1;
   // Calculate nullables
   {
-    ///   This procedure computes the set of non-terminal symbols that can
+    /// This procedure computes the set of non-terminal symbols that can
     /// generate the empty string.  Such non-terminals are said to be nullable.
     ///
     /// A non-terminal "A" can generate empty if the grammar in question contains
@@ -4908,7 +4878,7 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
     ///          A ::= B1 B2 ... Bn     n >= 0,  1 <= i <= n
     /// and Bi, for all i, is a nullable non-terminal.
     bool changed = true;
-    ArrayShort rhs_start = Allocate_short_array2(NEXT_RULE_SIZE(ls));
+    ListInt rhs_start = allocateListInt(NEXT_RULE_SIZE(ls));
     // First, mark all non-terminals as non-nullable.  Then initialize
     // RHS_START. RHS_START is a mapping from each rule in the grammar
     // into the next symbol in its right-hand side that has not yet
@@ -4949,15 +4919,24 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
   }
   // Construct the FIRST map for non-terminals and also a list
   // of non-terminals whose first set is empty.
-  for for_each_nt_fw(symbol, ls) {
-    index_of.raw[symbol] = OMEGA;
-  }
-  topp.top = 0;
-  for for_each_nt_fw(nt, ls) {
-    if (index_of.raw[nt] == OMEGA) {
-      compute_first(nt, &dss, stack, index_of, &topp, nt_first, lhs_rule, next_rule, dss.null_nt, rules, rhs_sym, ls);
+  {
+    ListInt stack = allocateListInt(ls->num_non_terminals + 1);
+    ListInt index_of = allocateListInt(ls->num_non_terminals);
+    index_of.raw -= ls->num_terminals + 1;
+    struct ProduceTop topp = {.top = 0};
+    for for_each_nt_fw(symbol, ls) {
+      index_of.raw[symbol] = OMEGA;
     }
-  }
+    topp.top = 0;
+    for for_each_nt_fw(nt, ls) {
+      if (index_of.raw[nt] == OMEGA) {
+        compute_first(nt, &dss, stack, index_of, &topp, nt_first, lhs_rule, next_rule, dss.null_nt, rules, rhs_sym, ls);
+      }
+    }
+    ffree(stack.raw);
+    index_of.raw += ls->num_terminals + 1;
+    ffree(index_of.raw);
+  };
   //  Since every input source will be followed by the EOFT
   //  symbol, FIRST[accept_image] cannot contain empty but
   //  instead must contain the EOFT symbol.
@@ -4966,215 +4945,179 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
     RESET_BIT_IN(nt_first, accept_image, empty);
     SET_BIT_IN(nt_first, accept_image, eoft_image);
   }
+
+
+
+
+
+  // TODO === check nonterminals ===
   // Check whether there are any non-terminals that do not
   // generate any terminal strings. If so, signal error and stop.
   check_non_terminals(cli_options, lhs_rule, next_rule, nt_list, rules, rhs_sym, string_table, symno, ls);
-  // Construct the ITEM_TABLE, FIRST_ITEM_OF, and NT_ITEMS maps.
-  ArrayShort first_table = Allocate_short_array2(ls->num_symbols + 1);
-  /* Initialize FIRST_TABLE to NIL */
-  for for_each_symbol(symbol, ls) {
-    first_table.raw[symbol] = NIL;
-  }
-  topp.top = 1;
-  const int first_of_empty = topp.top;
-  first_element[first_of_empty].suffix_root = 1;
-  first_element[first_of_empty].suffix_tail = 0;
-  for for_each_nt_fw(symbol, ls) {
-    nt_items.raw[symbol] = NIL;
-  }
-  int item_no = 0;
-  item_table[item_no].rule_number = 0;
-  item_table[item_no].symbol = empty;
-  item_table[item_no].dot = 0;
-  item_table[item_no].suffix_index = NIL;
-  for for_each_rule_fw(rule_no, ls) {
-    first_item_of.raw[rule_no] = item_no + 1;
-    int j = 0;
-    const int k = LAST_RHS_INDEX(rule_no, rules);
-    for for_each_rhs(i, rule_no, rules) {
-      item_no++;
-      int symbol = rhs_sym.raw[i];
-      item_table[item_no].rule_number = rule_no;
-      item_table[item_no].symbol = symbol;
-      item_table[item_no].dot = j;
-      if (cli_options->lalr_level > 1 ||
-          IS_A_NON_TERMINAL(symbol, ls) ||
-          symbol == error_image) {
-        if (i == k) {
-          item_table[item_no].suffix_index = first_of_empty;
-        } else {
-          item_table[item_no].suffix_index = first_map(i + 1, k, &topp, first_element, first_table, rhs_sym);
-        }
-      } else {
-        item_table[item_no].suffix_index = NIL;
-      }
-      if (IS_A_NON_TERMINAL(symbol, ls)) {
-        next_item.raw[item_no] = nt_items.raw[symbol];
-        nt_items.raw[symbol] = item_no;
-      }
-      j++;
+
+
+
+
+
+  long num_first_sets;
+  ListInt first_item_of = allocateListInt(NEXT_RULE_SIZE(ls));
+  {
+    ListInt stack = allocateListInt(ls->num_non_terminals + 1);
+    ListInt index_of = allocateListInt(ls->num_non_terminals);
+    index_of.raw -= ls->num_terminals + 1;
+    struct ProduceTop topp = {.top = 0};
+    // Construct the ITEM_TABLE, FIRST_ITEM_OF, and NT_ITEMS maps.
+    ListInt first_table = allocateListInt(ls->num_symbols + 1);
+    /* Initialize FIRST_TABLE to NIL */
+    for for_each_symbol(symbol, ls) {
+      first_table.raw[symbol] = NIL;
     }
-    item_table[++item_no].rule_number = rule_no;
+    topp.top = 1;
+    const int first_of_empty = topp.top;
+    first_element[first_of_empty].suffix_root = 1;
+    first_element[first_of_empty].suffix_tail = 0;
+    for for_each_nt_fw(symbol, ls) {
+      nt_items.raw[symbol] = NIL;
+    }
+    int item_no = 0;
+    item_table[item_no].rule_number = 0;
     item_table[item_no].symbol = empty;
-    item_table[item_no].dot = j;
+    item_table[item_no].dot = 0;
     item_table[item_no].suffix_index = NIL;
-  }
-  // We now compute the first set for all suffixes that were
-  // inserted in the FIRST_TABLE map. There are TOP such suffixes
-  // Extra space is also allocated to compute the first set for
-  // suffixes whose left-hand side is the ACCEPT non-terminal.
-  // The first set for these suffixes are the sets needed to
-  // construct the FOLLOW map and compute look-ahead sets.  They
-  // are placed in the FIRST table in the range 1..NUM_FIRST_SETS
-  // The first element in the FIRST table contains the first sets
-  // for the empty sequence.
-  long num_first_sets = topp.top;
-  int rule_no;
-  for (bool end_node = (rule_no = lhs_rule.raw[accept_image]) == NIL; !end_node; end_node = rule_no == lhs_rule.raw[accept_image]) {
-    rule_no = next_rule.raw[rule_no];
-    num_first_sets++;
-  }
-  calloc0_set_fn(first, num_first_sets + 1, dss.term_set_size);
-  for (int i = 1; i <= topp.top; i++) {
-    int root = first_element[i].suffix_root;
-    int tail = first_element[i].suffix_tail;
-    int index = i;
-    // S_FIRST takes as argument, two pointers: ROOT and TAIL to a sequence of
-    // symbols in the vector RHS, and INDEX which is the index of a first set.
-    // It computes the set of all terminals that can appear as the first symbol
-    // in the sequence and places the result in the FIRST set indexable by INDEX.
-    int symbol = root > tail ? empty : rhs_sym.raw[root];
-    if (IS_A_TERMINAL_L(symbol, ls)) {
-      INIT_BITSET(*first, index);
-      SET_BIT_IN(*first, index, symbol); /* add it to set */
-    } else {
-      ASSIGN_SET(*first, index, nt_first, symbol);
+    for for_each_rule_fw(rule_no, ls) {
+      first_item_of.raw[rule_no] = item_no + 1;
+      int j = 0;
+      const int k = LAST_RHS_INDEX(rule_no, rules);
+      for for_each_rhs(i, rule_no, rules) {
+        item_no++;
+        int symbol = rhs_sym.raw[i];
+        item_table[item_no].rule_number = rule_no;
+        item_table[item_no].symbol = symbol;
+        item_table[item_no].dot = j;
+        if (cli_options->lalr_level > 1 || IS_A_NON_TERMINAL(symbol, ls) || symbol == error_image) {
+          if (i == k) {
+            item_table[item_no].suffix_index = first_of_empty;
+          } else {
+            item_table[item_no].suffix_index = first_map(i + 1, k, &topp, first_element, first_table, rhs_sym);
+          }
+        } else {
+          item_table[item_no].suffix_index = NIL;
+        }
+        if (IS_A_NON_TERMINAL(symbol, ls)) {
+          next_item.raw[item_no] = nt_items.raw[symbol];
+          nt_items.raw[symbol] = item_no;
+        }
+        j++;
+      }
+      item_table[++item_no].rule_number = rule_no;
+      item_table[item_no].symbol = empty;
+      item_table[item_no].dot = j;
+      item_table[item_no].suffix_index = NIL;
     }
-    for (int i = root + 1; i <= tail && IS_IN_SET(*first, index, empty); i++) {
-      symbol = rhs_sym.raw[i];
-      RESET_BIT_IN(*first, index, empty); /* remove EMPTY */
+    // We now compute the first set for all suffixes that were
+    // inserted in the FIRST_TABLE map. There are TOP such suffixes
+    // Extra space is also allocated to compute the first set for
+    // suffixes whose left-hand side is the ACCEPT non-terminal.
+    // The first set for these suffixes are the sets needed to
+    // construct the FOLLOW map and compute look-ahead sets. They
+    // are placed in the FIRST table in the range 1..NUM_FIRST_SETS
+    // The first element in the FIRST table contains the first sets
+    // for the empty sequence.
+    num_first_sets = topp.top;
+    int rule_no;
+    for (bool end_node = (rule_no = lhs_rule.raw[accept_image]) == NIL; !end_node; end_node = rule_no == lhs_rule.raw[accept_image]) {
+      rule_no = next_rule.raw[rule_no];
+      num_first_sets++;
+    }
+    calloc0_set_fn(first, num_first_sets + 1, dss.term_set_size);
+    for (int i = 1; i <= topp.top; i++) {
+      int root = first_element[i].suffix_root;
+      int tail = first_element[i].suffix_tail;
+      int index = i;
+      // S_FIRST takes as argument, two pointers: ROOT and TAIL to a sequence of
+      // symbols in the vector RHS, and INDEX which is the index of a first set.
+      // It computes the set of all terminals that can appear as the first symbol
+      // in the sequence and places the result in the FIRST set indexable by INDEX.
+      int symbol = root > tail ? empty : rhs_sym.raw[root];
       if (IS_A_TERMINAL_L(symbol, ls)) {
+        INIT_BITSET(*first, index);
         SET_BIT_IN(*first, index, symbol); /* add it to set */
       } else {
-        SET_UNION(*first, index, nt_first, symbol);
+        ASSIGN_SET(*first, index, nt_first, symbol);
       }
-    }
-  }
-  rule_no = lhs_rule.raw[accept_image];
-  for (int i = topp.top + 1; i <= num_first_sets; i++) {
-    rule_no = next_rule.raw[rule_no];
-    item_no = first_item_of.raw[rule_no];
-    item_table[item_no].suffix_index = i;
-    INIT_BITSET(*first, i);
-    SET_BIT_IN(*first, i, eoft_image);
-  }
-  // If the READ/REDUCE option is on, we precalculate the kernel
-  // of the final states which simply consists of the last item
-  // in  the corresponding rule.  Rules with the ACCEPT
-  // non-terminal as their left-hand side are not considered
-  // to let the Accept action remain as a Reduce action
-  // instead of a Goto/Reduce action.
-  calloc0p(&(fd->adequate_item), ls->num_rules + 1, struct node *);
-  if (cli_options->read_reduce_bit) {
-    for for_each_rule_fw(rule_no, ls) {
-      const int j = RHS_SIZE(rule_no, rules);
-      if (rules[rule_no].lhs != accept_image && j > 0) {
-        item_no = first_item_of.raw[rule_no] + j;
-        struct node *p = Allocate_node();
-        p->value = item_no;
-        p->next = NULL;
-        fd->adequate_item[rule_no] = p;
-      } else
-        fd->adequate_item[rule_no] = NULL;
-    }
-  }
-  // Construct the CLITEMS map. Each element of CLITEMS points
-  // to a circular linked list of items.
-  /// CL_ITEMS is a mapping from each non-terminal to a set (linked list)
-  /// of items which are the first item of the rules generated by the
-  /// non-terminal in question.
-  calloc0p(&(fd->clitems), ls->num_non_terminals, struct node *);
-  fd->clitems -= ls->num_terminals + 1;
-  for for_each_nt_fw(nt, ls) {
-    fd->clitems[nt] = NULL;
-    for (bool end_node = (rule_no = lhs_rule.raw[nt]) == NIL; !end_node; end_node = rule_no == lhs_rule.raw[nt]) {
-      rule_no = next_rule.raw[rule_no];
-      struct node *p = Allocate_node();
-      p->value = first_item_of.raw[rule_no];
-      if (fd->clitems[nt] == NULL) {
-        p->next = p;
-      } else {
-        p->next = fd->clitems[nt]->next;
-        fd->clitems[nt]->next = p;
-      }
-      fd->clitems[nt] = p;
-    }
-  }
-  // If LALR_LEVEL > 1, we need to calculate RMPSELF, a set that
-  // identifies the nonterminals that can right-most produce
-  // themselves. In order to compute RMPSELF, the map PRODUCES
-  // must be constructed which identifies for each nonterminal
-  // the set of nonterminals that it can right-most produce.
-  if (cli_options->lalr_level > 1) {
-    JBitset produces;
-    calloc0_set(produces, ls->num_non_terminals, dss.non_term_set_size);
-    produces.raw -= (ls->num_terminals + 1) * dss.non_term_set_size;
-    struct node **direct_produces;
-    calloc0p(&direct_produces, ls->num_non_terminals, struct node *);
-    direct_produces -= ls->num_terminals + 1;
-    for for_each_nt_fw(sym_b, ls) {
-      struct node *p;
-      for (bool end_node = (p = fd->clitems[sym_b]) == NULL; !end_node; end_node = p == fd->clitems[sym_b]) {
-        p = p->next;
-        int item_no = p->value;
-        int sym_a = item_table[item_no].symbol;
-        if (IS_A_NON_TERMINAL(sym_a, ls)) {
-          const int i = item_table[item_no].suffix_index;
-          if (IS_IN_SET(*first, i, empty) && !IS_IN_SET(produces, sym_b, sym_a - ls->num_terminals)) {
-            SET_BIT_IN(produces, sym_b, sym_a - ls->num_terminals);
-            struct node *q = Allocate_node();
-            q->value = sym_a;
-            q->next = direct_produces[sym_b];
-            direct_produces[sym_b] = q;
-          }
+      for (int i = root + 1; i <= tail && IS_IN_SET(*first, index, empty); i++) {
+        symbol = rhs_sym.raw[i];
+        RESET_BIT_IN(*first, index, empty); /* remove EMPTY */
+        if (IS_A_TERMINAL_L(symbol, ls)) {
+          SET_BIT_IN(*first, index, symbol); /* add it to set */
+        } else {
+          SET_UNION(*first, index, nt_first, symbol);
         }
       }
     }
-    // Complete the construction of the RIGHT_MOST_PRODUCES map
-    // for non-terminals using the digraph algorithm.
-    for for_each_nt_fw(nt, ls) {
-      index_of.raw[nt] = OMEGA;
+    rule_no = lhs_rule.raw[accept_image];
+    for (int i = topp.top + 1; i <= num_first_sets; i++) {
+      rule_no = next_rule.raw[rule_no];
+      item_no = first_item_of.raw[rule_no];
+      item_table[item_no].suffix_index = i;
+      INIT_BITSET(*first, i);
+      SET_BIT_IN(*first, i, eoft_image);
     }
-    topp.top = 0;
-    for for_each_nt_fw(nt, ls) {
-      if (index_of.raw[nt] == OMEGA) {
-        compute_produces(nt, direct_produces, stack, index_of, produces, &topp);
+    // If the READ/REDUCE option is on, we precalculate the kernel
+    // of the final states which simply consists of the last item
+    // in  the corresponding rule.  Rules with the ACCEPT
+    // non-terminal as their left-hand side are not considered
+    // to let the Accept action remain as a Reduce action
+    // instead of a Goto/Reduce action.
+    calloc0p(&(fd->adequate_item), ls->num_rules + 1, struct node *);
+    if (cli_options->read_reduce_bit) {
+      for for_each_rule_fw(rule_no, ls) {
+        const int j = RHS_SIZE(rule_no, rules);
+        if (rules[rule_no].lhs != accept_image && j > 0) {
+          item_no = first_item_of.raw[rule_no] + j;
+          struct node *p = Allocate_node();
+          p->value = item_no;
+          p->next = NULL;
+          fd->adequate_item[rule_no] = p;
+        } else
+          fd->adequate_item[rule_no] = NULL;
       }
     }
-    /// This procedure is invoked when LALR_LEVEL > 1 to construct the
-    /// RMPSELF set which identifies the nonterminals that can right-most
-    /// produce themselves. It takes as argumen the map PRODUCES which
-    /// identifies for each nonterminal the set of nonterminals that it can
-    /// right-most produce.
-    *rmpself = Allocate_bool_array2(ls->num_non_terminals);
-    rmpself->raw -= ls->num_terminals + 1;
-    // Note that each element of the map produces is a boolean vector
-    // that is indexable in the range 1..num_non_terminals. Since each
-    // nonterminal is offset by the value num_terminals (to distinguish
-    // it from the terminals),it must therefore be adjusted accordingly
-    // when dereferencing an element in the range of the produces map.
+    // Construct the CLITEMS map. Each element of CLITEMS points
+    // to a circular linked list of items.
+    /// CL_ITEMS is a mapping from each non-terminal to a set (linked list)
+    /// of items which are the first item of the rules generated by the
+    /// non-terminal in question.
+    calloc0p(&(fd->clitems), ls->num_non_terminals, struct node *);
+    fd->clitems -= ls->num_terminals + 1;
     for for_each_nt_fw(nt, ls) {
-      rmpself->raw[nt] = IS_IN_SET(produces, nt, nt - ls->num_terminals);
+      fd->clitems[nt] = NULL;
+      for (bool end_node = (rule_no = lhs_rule.raw[nt]) == NIL; !end_node; end_node = rule_no == lhs_rule.raw[nt]) {
+        rule_no = next_rule.raw[rule_no];
+        struct node *p = Allocate_node();
+        p->value = first_item_of.raw[rule_no];
+        if (fd->clitems[nt] == NULL) {
+          p->next = p;
+        } else {
+          p->next = fd->clitems[nt]->next;
+          fd->clitems[nt]->next = p;
+        }
+        fd->clitems[nt] = p;
+      }
     }
-    produces.raw += (ls->num_terminals + 1) * dss.non_term_set_size;
-    ffree(produces.raw);
-    direct_produces += ls->num_terminals + 1;
-    ffree(direct_produces);
+    ffree(first_table.raw);
+    ffree(stack.raw);
+    index_of.raw += ls->num_terminals + 1;
+    ffree(index_of.raw);
   }
   // Construct the FOLLOW map if
   //   - Error-maps are requested
   //   - There are more than one starting symbol.
   if (cli_options->error_maps_bit || next_rule.raw[lhs_rule.raw[accept_image]] != lhs_rule.raw[accept_image]) {
+    ListInt stack = allocateListInt(ls->num_non_terminals + 1);
+    ListInt index_of = allocateListInt(ls->num_non_terminals);
+    index_of.raw -= ls->num_terminals + 1;
+    struct ProduceTop topp = {.top = 0};
     /// FOLLOW is a mapping from non-terminals to a set of terminals that
     /// may appear immediately after the non-terminal.
     JBitset follow;
@@ -5192,26 +5135,27 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
         compute_follow(nt, &dss, stack, index_of, &topp, follow, next_item, nt_items, *first, rules, item_table);
       }
     }
-    //  Initialize FIRST for suffixes that can follow each starting
+    // Initialize FIRST for suffixes that can follow each starting
     // non-terminal ( except the main symbol) with the FOLLOW set
     // of the non-terminal in question.
-    rule_no = lhs_rule.raw[accept_image];
+    int rule_no = lhs_rule.raw[accept_image];
     if (next_rule.raw[rule_no] != rule_no) {
       rule_no = next_rule.raw[rule_no]; /* first rule */
       topp.top = item_table[first_item_of.raw[rule_no]].suffix_index;
       for (int i = topp.top + 1; i <= num_first_sets; i++) {
         rule_no = next_rule.raw[rule_no];
-        item_no = first_item_of.raw[rule_no];
+        int item_no = first_item_of.raw[rule_no];
         int symbol = item_table[item_no].symbol;
         if (IS_A_NON_TERMINAL(symbol, ls)) {
           ASSIGN_SET(*first, i, follow, symbol);
         }
       }
     }
+    ffree(stack.raw);
+    index_of.raw += ls->num_terminals + 1;
+    ffree(index_of.raw);
   }
   // The unreachable symbols in the grammar are printed.
-
-  // Print unreachables.
   {
     char line[PRINT_LINE_SIZE + 1];
     char tok[SYMBOL_SIZE + 1];
@@ -5219,7 +5163,7 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
     //  1) to mark symbols that are reachable from the Accepting
     //        non-terminal.
     //  2) to construct lists of symbols that are not reachable.
-    ListInt symbol_list = Allocate_long_array2(ls->num_symbols + 1);
+    ListInt symbol_list = allocateListInt(ls->num_symbols + 1);
     for for_each_symbol(symbol, ls) {
       symbol_list.raw[symbol] = OMEGA;
     }
@@ -5318,27 +5262,21 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
     }
     ffree(symbol_list.raw);
   }
-
   // Free allocated arrays.
   nt_first.raw += (ls->num_terminals + 1) * dss.term_set_size;
   ffree(nt_first.raw);
   nt_list.raw += ls->num_terminals + 1;
   ffree(nt_list.raw);
-  ffree(first_table.raw);
   ffree(first_element);
   nt_items.raw += ls->num_terminals + 1;
   ffree(nt_items.raw);
   ffree(next_item.raw);
-  ffree(stack.raw);
-  index_of.raw += ls->num_terminals + 1;
-  ffree(index_of.raw);
   lhs_rule.raw += ls->num_terminals + 1;
   ffree(lhs_rule.raw);
   ffree(next_rule.raw);
   ffree(first_item_of.raw);
   return dss;
 }
-
 // endregion
 
 
@@ -5352,7 +5290,6 @@ struct DetectedSetSizes mkbasic(struct CLIOptions *cli_options, JBitset nt_first
 
 
 // region produce
-
 struct scope_elmt {
   short link;
   short item;
@@ -5382,7 +5319,7 @@ struct Produced {
 ///                               and
 ///
 ///                     SOURCE ->rm+ TARGET
-bool scope_check(const int lhs_symbol, const int target, const int source, ListBool symbol_seen, struct Produced* produced, ArrayShort item_of, ArrayShort next_item, struct ruletab_type *rules, struct itemtab *item_table, struct LAState* ls) {
+bool scope_check(const int lhs_symbol, const int target, const int source, ListBool symbol_seen, struct Produced* produced, ListInt item_of, ListInt next_item, struct ruletab_type *rules, struct itemtab *item_table, struct LAState* ls) {
   symbol_seen.raw[source] = true;
   if (IS_IN_SET(produced->right_produces, target, source - ls->num_terminals) && IS_IN_SET(produced->right_produces, lhs_symbol, source - ls->num_terminals)) {
     return false;
@@ -5414,7 +5351,7 @@ bool scope_check(const int lhs_symbol, const int target, const int source, ListB
 /// 3) it is not the case that whenever A is introduced through
 ///    closure, it is introduced by a nonterminal C where C =>rm* A
 ///    and C =>rm+ B.
-bool is_scope(const int item_no, ListBool symbol_seen, struct Produced* produced, ArrayShort item_of, ArrayShort next_item, ListBool null_nt, struct ruletab_type *rules, struct itemtab *item_table, struct LAState* ls) {
+bool is_scope(const int item_no, ListBool symbol_seen, struct Produced* produced, ListInt item_of, ListInt next_item, ListBool null_nt, struct ruletab_type *rules, struct itemtab *item_table, struct LAState* ls) {
   for (int i = item_no - item_table[item_no].dot; i < item_no; i++) {
     const int symbol = item_table[i].symbol;
     if (IS_A_TERMINAL_L(symbol, ls)) {
@@ -5440,7 +5377,7 @@ bool is_scope(const int item_no, ListBool symbol_seen, struct Produced* produced
 
 /// This boolean function takes two items as arguments and checks
 /// whether they have the same prefix.
-bool is_prefix_equal(const int item_no, const int item_no2, struct ruletab_type *rules, const struct itemtab *item_table, ArrayShort rhs_sym) {
+bool is_prefix_equal(const int item_no, const int item_no2, struct ruletab_type *rules, const struct itemtab *item_table, ListInt rhs_sym) {
   // a suffix
   if (item_no > 0) {
     return false;
@@ -5469,7 +5406,7 @@ bool is_prefix_equal(const int item_no, const int item_no2, struct ruletab_type 
 /// NOTE that since both prefixes and suffixes are entered in the
 /// table, the prefix of a given item, ITEM_NO, is encoded as
 /// -ITEM_NO, whereas the suffix of that item is encoded as +ITEM_NO.
-int insert_prefix(const int item_no, struct scope_elmt *scope_element, ArrayShort scope_table, struct ScopeTop* st, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym, struct ScopeCounter* sc) {
+int insert_prefix(const int item_no, struct scope_elmt *scope_element, ListInt scope_table, struct ScopeTop* st, struct ruletab_type *rules, struct itemtab *item_table, ListInt rhs_sym, struct ScopeCounter* sc) {
   unsigned long hash_address = 0;
   const int rule_no = item_table[item_no].rule_number;
   int ii;
@@ -5493,7 +5430,7 @@ int insert_prefix(const int item_no, struct scope_elmt *scope_element, ArrayShor
 
 /// This boolean function takes two items as arguments and checks
 /// whether they have the same suffix.
-bool is_suffix_equal(const int item_no1, const int item_no2, ListBool null_nt, struct ruletab_type *rules, const struct itemtab *item_table, ArrayShort rhs_sym, struct LAState* ls) {
+bool is_suffix_equal(const int item_no1, const int item_no2, ListBool null_nt, struct ruletab_type *rules, const struct itemtab *item_table, ListInt rhs_sym, struct LAState* ls) {
   if (item_no1 < 0) {
     // a prefix
     return false;
@@ -5557,7 +5494,7 @@ bool is_suffix_equal(const int item_no1, const int item_no2, ListBool null_nt, s
 /// In any case, it returns the index associated with the suffix.
 /// When inserting a suffix into the table, all nullable nonterminals
 /// in the suffix are disregarded.
-int insert_suffix(const int item_no, struct scope_elmt *scope_element, ArrayShort scope_table, struct ScopeTop* st, ListBool null_nt, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym, struct ScopeCounter* sc, struct LAState* ls) {
+int insert_suffix(const int item_no, struct scope_elmt *scope_element, ListInt scope_table, struct ScopeTop* st, ListBool null_nt, struct ruletab_type *rules, struct itemtab *item_table, ListInt rhs_sym, struct ScopeCounter* sc, struct LAState* ls) {
   int num_elements = 0;
   unsigned long hash_address = 0;
   const int rule_no = item_table[item_no].rule_number;
@@ -5592,7 +5529,7 @@ int insert_suffix(const int item_no, struct scope_elmt *scope_element, ArrayShor
 /// determines whether there is a terminal symbol t such that
 /// LHS_SYMBOL can rightmost produce a string tX.  If so, t is
 /// returned, otherwise EMPTY is returned.
-int get_shift_symbol(const int lhs_symbol, ListBool symbol_seen, struct node **clitems, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym, struct LAState* ls) {
+int get_shift_symbol(const int lhs_symbol, ListBool symbol_seen, struct node **clitems, struct ruletab_type *rules, struct itemtab *item_table, ListInt rhs_sym, struct LAState* ls) {
   if (!symbol_seen.raw[lhs_symbol]) {
     struct node *p;
     symbol_seen.raw[lhs_symbol] = true;
@@ -5620,7 +5557,7 @@ int get_shift_symbol(const int lhs_symbol, ListBool symbol_seen, struct node **c
 /// that are required as candidates for secondary error recovery.  If the
 /// option NAMES=OPTIMIZED is requested, the NAME map is optimized and SYMNO
 /// is updated accordingly.
-void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct Produced* produced, struct ScopeTop* st, JBitset first, struct scope_type *scope, struct node **clitems, ListBool null_nt, ListInt* scope_right_side, struct ruletab_type *rules, ArrayShort *scope_state, struct statset_type *statset, struct itemtab *item_table, ArrayShort rhs_sym, ArrayShort *gd_range, ArrayShort *gd_index, struct symno_type *symno, struct ScopeCounter* sc, char *string_table, int *name, struct LAState* ls) {
+void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct Produced* produced, struct ScopeTop* st, JBitset first, struct scope_type *scope, struct node **clitems, ListBool null_nt, ListInt* scope_right_side, struct ruletab_type *rules, ListInt *scope_state, struct statset_type *statset, struct itemtab *item_table, ListInt rhs_sym, ListInt *gd_range, ListInt *gd_index, struct symno_type *symno, struct ScopeCounter* sc, char *string_table, int *name, struct LAState* ls) {
   // TOP, STACK, and INDEX are used for the digraph algorithm
   // in the routines COMPUTE_PRODUCES.
   //
@@ -5639,12 +5576,12 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
   // NOTE: This is really a reverse right-most produces mapping,
   //       since given the above rule, we say that
   //       C right-most produces A.
-  ArrayShort stack = Allocate_short_array2(ls->num_symbols + 1);
-  ArrayShort index_of = Allocate_short_array2(ls->num_symbols + 1);
-  ArrayShort names_map = Allocate_short_array2(ls->num_names + 1);
+  ListInt stack = allocateListInt(ls->num_symbols + 1);
+  ListInt index_of = allocateListInt(ls->num_symbols + 1);
+  ListInt names_map = allocateListInt(ls->num_names + 1);
   ListBool name_used = Allocate_bool_array2(ls->num_names + 1);
-  ArrayShort item_list = Allocate_short_array2(ls->num_items + 1);
-  ArrayShort nt_list = Allocate_short_array2(ls->num_non_terminals + 1);
+  ListInt item_list = allocateListInt(ls->num_items + 1);
+  ListInt nt_list = allocateListInt(ls->num_non_terminals + 1);
   nt_list.raw -= ls->num_terminals + 1;
   JBitset set;
   calloc0_set(set, 1, dss->non_term_set_size);
@@ -5786,8 +5723,8 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
   // Allocate and construct the permanent goto domain structure:
   //   GD_INDEX and GD_RANGE.
   int n = 0;
-  *gd_index = Allocate_short_array2(ls->num_states + 2);
-  *gd_range = Allocate_short_array2(ls->gotodom_size + 1);
+  *gd_index = allocateListInt(ls->num_states + 2);
+  *gd_range = allocateListInt(ls->gotodom_size + 1);
   for for_each_state(state_no, ls) {
     gd_index->raw[state_no] = n + 1;
     struct node *p;
@@ -5806,17 +5743,17 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
       int n;
       int max_prefix_length = 0;
       int item_root;
-      ArrayShort prefix_index = Allocate_short_array2(ls->num_items + 1);
-      ArrayShort suffix_index = Allocate_short_array2(ls->num_items + 1);
-      ArrayShort item_of = Allocate_short_array2(ls->num_non_terminals);
+      ListInt prefix_index = allocateListInt(ls->num_items + 1);
+      ListInt suffix_index = allocateListInt(ls->num_items + 1);
+      ListInt item_of = allocateListInt(ls->num_non_terminals);
       item_of.raw -= ls->num_terminals + 1;
-      ArrayShort next_item = Allocate_short_array2(ls->num_items + 1);
+      ListInt next_item = allocateListInt(ls->num_items + 1);
       ListBool symbol_seen = Allocate_bool_array2(ls->num_non_terminals);
       symbol_seen.raw -= ls->num_terminals + 1;
       struct node **states_of;
       calloc0p(&states_of, ls->num_non_terminals, struct node *);
       states_of -= ls->num_terminals + 1;
-      ArrayShort state_index = Allocate_short_array2(ls->num_non_terminals);
+      ListInt state_index = allocateListInt(ls->num_non_terminals);
       state_index.raw -= ls->num_terminals + 1;
       struct scope_elmt *scope_element;
       calloc0p(&scope_element, ls->num_items + 1, struct scope_elmt);
@@ -5982,7 +5919,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
       // entered into a table.  We also use the SYMBOL_SEEN array to
       // identify the set of left-hand side symbols associated with the
       // scopes.
-      ArrayShort scope_table = Allocate_short_array2(SCOPE_SIZE);
+      ListInt scope_table = allocateListInt(SCOPE_SIZE);
       for (int i = 0; i < SCOPE_SIZE; i++) {
         scope_table.raw[i] = NIL;
       }
@@ -6040,13 +5977,13 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
         int state_no_inner;
         long state_set_size = ls->num_states / SIZEOF_BC + (ls->num_states % SIZEOF_BC ? 1 : 0);
         calloc0_set(collection, num_state_sets + 1, state_set_size);
-        ListInt element_size = Allocate_long_array2(num_state_sets + 1);
-        ListInt start = Allocate_long_array2(num_state_sets + 2);
-        ListInt stack = Allocate_long_array2(num_state_sets + 1);
-        ArrayShort ordered_symbol = Allocate_short_array2(num_state_sets + 1);
-        ListInt list = Allocate_long_array2(num_state_sets + 1);
-        ArrayShort state_list = Allocate_short_array2(ls->num_states + 1);
-        ArrayShort bucket = Allocate_short_array2(max_prefix_length + 1);
+        ListInt element_size = allocateListInt(num_state_sets + 1);
+        ListInt start = allocateListInt(num_state_sets + 2);
+        ListInt stack = allocateListInt(num_state_sets + 1);
+        ListInt ordered_symbol = allocateListInt(num_state_sets + 1);
+        ListInt list = allocateListInt(num_state_sets + 1);
+        ListInt state_list = allocateListInt(ls->num_states + 1);
+        ListInt bucket = allocateListInt(max_prefix_length + 1);
         for (int symbol = nt_root, i = 1; symbol != NIL; symbol = nt_list.raw[symbol], i++) {
           list.raw[i] = i;
           ordered_symbol.raw[i] = symbol;
@@ -6065,8 +6002,8 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
         }
         sc->scope_state_size = start.raw[num_state_sets + 1] - 1;
         calloc0p(&scope, sc->num_scopes + 1, struct scope_type);
-        *scope_right_side = Allocate_long_array2(sc->scope_rhs_size + 1);
-        *scope_state = Allocate_short_array2(sc->scope_state_size + 1);
+        *scope_right_side = allocateListInt(sc->scope_rhs_size + 1);
+        *scope_state = allocateListInt(sc->scope_state_size + 1);
         int k = 0;
         for (int i = 0; i <= ls->num_states; i++) {
           state_list.raw[i] = OMEGA;
@@ -6231,7 +6168,7 @@ void produce(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struc
 ///
 /// This procedure is used to compute the transitive closure of
 /// the PRODUCES, LEFT_PRODUCES and RIGHT_MOST_PRODUCES maps.
-void compute_produces(const int symbol, struct node **direct_produces, ArrayShort stack, ArrayShort index_of, JBitset produces, struct ProduceTop* top_value) {
+void compute_produces(const int symbol, struct node **direct_produces, ListInt stack, ListInt index_of, JBitset produces, struct ProduceTop* top_value) {
   stack.raw[++top_value->top] = symbol;
   const int indx = top_value->top;
   index_of.raw[symbol] = indx;
@@ -6258,7 +6195,6 @@ void compute_produces(const int symbol, struct node **direct_produces, ArrayShor
     top_value->top--;
   }
 }
-
 // endregion
 
 
@@ -6275,7 +6211,6 @@ void compute_produces(const int symbol, struct node **direct_produces, ArrayShor
 
 
 // region mkstates
-
 /// STATE_ELEMENT is used to represent states. Each state is mapped into a
 /// unique number. The components QUEUE and LINK are auxiliary:
 struct state_element {
@@ -6363,10 +6298,10 @@ void mklr0(struct CLIOptions *cli_options, struct shift_header_type* no_shifts_p
   // NT_LIST and NT_ROOT are used to build temporary lists of non-terminals.
   // Set up a pool of temporary space.
   reset_temporary_space();
-  ArrayShort list = Allocate_short_array2(ls->num_symbols + 1);
-  ArrayShort shift_action = Allocate_short_array2(ls->num_terminals + 1);
-  ArrayShort shift_list = Allocate_short_array2(ls->num_terminals + 1);
-  ArrayShort nt_list = Allocate_short_array2(ls->num_non_terminals);
+  ListInt list = allocateListInt(ls->num_symbols + 1);
+  ListInt shift_action = allocateListInt(ls->num_terminals + 1);
+  ListInt shift_list = allocateListInt(ls->num_terminals + 1);
+  ListInt nt_list = allocateListInt(ls->num_non_terminals);
   nt_list.raw -= ls->num_terminals + 1;
   struct node **partition;
   calloc0p(&partition, ls->num_symbols + 1, struct node *);
@@ -6680,6 +6615,11 @@ void mklr0(struct CLIOptions *cli_options, struct shift_header_type* no_shifts_p
     // the size of the shift map increased.
     calloc0p(&srt->shift, ls->num_states + 1, struct shift_header_type);
     srt->shift[0] = *no_shifts_ptr; /* MUST be initialized for LALR(k) */
+    // Allocate space for REDUCE which will be used to map each
+    // into its reduce map. We also initialize RULE_COUNT which
+    // will be used to count the number of reduce actions on each
+    // rule with in a given state.
+    calloc0p(&srt->reduce, ls->num_states + 1, struct reduce_header_type);
     calloc0p(&ss->statset, ls->num_states + 1, struct statset_type);
     for (p_inner = sc.state_root; p_inner != NULL; p_inner = p_inner->queue) {
       state_no = p_inner->state_number;
@@ -6701,7 +6641,7 @@ void mklr0(struct CLIOptions *cli_options, struct shift_header_type* no_shifts_p
 }
 
 /// In this procedure, we first construct the LR(0) automaton.
-void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, JBitset first, struct scope_type *scope, struct node **clitems, struct node **closure, struct SRTable* srt, ListInt* scope_right_side, ListBool null_nt, ArrayShort *scope_state, struct itemtab *item_table, struct ruletab_type *rules, ArrayShort rhs_sym, ArrayShort* gd_range, ArrayShort*gd_index, struct StatSet* ss, struct ScopeCounter* sc, struct symno_type *symno, char *string_table, int *name, struct LAState* ls) {
+void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, JBitset first, struct scope_type *scope, struct node **clitems, struct node **closure, struct SRTable* srt, ListInt* scope_right_side, ListBool null_nt, ListInt *scope_state, struct itemtab *item_table, struct ruletab_type *rules, ListInt rhs_sym, ListInt* gd_range, ListInt*gd_index, struct StatSet* ss, struct ScopeCounter* sc, struct symno_type *symno, char *string_table, int *name, struct LAState* ls) {
   struct ScopeTop st = (struct ScopeTop) {
     .top = 0
   };
@@ -6739,7 +6679,6 @@ void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, JBits
   clitems += ls->num_terminals + 1;
   ffree(clitems);
 }
-
 // endregion
 
 
@@ -6766,8 +6705,7 @@ void mkstats(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, JBits
 
 
 
-// region mkred
-
+// region red
 /// The structure STATE_ELEMENT is used to construct lookahead states.
 /// LA_STATE_ROOT point to a list of lookahead states using the LINK
 /// field. The field NEXT_SHIFT is used to hash the new shift maps
@@ -6819,7 +6757,7 @@ struct rr_conflict_element {
 ///              INIT_LALRK_PROCESS, EXIT_PROCESS
 struct visited_element {
   struct node **map;
-  ArrayShort list;
+  ListInt list;
   short root;
 };
 
@@ -6943,7 +6881,7 @@ static struct sources_element allocate_sources(const struct LAState* ls) {
   calloc0p(&sources.configs, ls->num_rules + ls->num_rules + ls->num_states + 1, struct stack_element *);
   sources.configs += ls->num_rules;
   calloc0p(&sources.stack_seen, STATE_TABLE_SIZE, struct stack_element *);
-  sources.list = Allocate_short_array2(ls->num_rules + ls->num_rules + ls->num_states + 1);
+  sources.list = allocateListInt(ls->num_rules + ls->num_rules + ls->num_states + 1);
   sources.list.raw += ls->num_rules;
   sources.root = NIL;
   return sources;
@@ -7107,7 +7045,7 @@ struct CyclicTop {
 
 /// This procedure is a modified instantiation of the digraph algorithm
 /// to compute the CYCLIC set of states.
-static void compute_cyclic(const short state_no, ArrayShort stack, ArrayShort index_of, ListBool cyclic, struct CyclicTop* topp, ListBool null_nt, struct statset_type *statset) {
+static void compute_cyclic(const long state_no, ListInt stack, ListInt index_of, ListBool cyclic, struct CyclicTop* topp, ListBool null_nt, struct statset_type *statset) {
   stack.raw[++topp->top] = state_no;
   const int indx = topp->top;
   cyclic.raw[state_no] = false;
@@ -7148,7 +7086,7 @@ static void compute_cyclic(const short state_no, ArrayShort stack, ArrayShort in
 /// array, SLR_VISITED, indexable by non-terminals, is used.  For
 /// trace-backs to the root item, the boolean array SYMBOL_SEEN, also
 /// indexable by non-terminals, is used.
-static bool trace_root(const long lhs_symbol, struct CLIOptions* cli_options, ListBool symbol_seen, ArrayShort item_list, ArrayShort nt_items, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym, char *string_table, struct symno_type *symno) {
+static bool trace_root(const long lhs_symbol, struct CLIOptions* cli_options, ListBool symbol_seen, ListInt item_list, ListInt nt_items, struct ruletab_type *rules, struct itemtab *item_table, ListInt rhs_sym, char *string_table, struct symno_type *symno) {
   if (lhs_symbol == accept_image) {
     return true;
   }
@@ -7167,7 +7105,7 @@ static bool trace_root(const long lhs_symbol, struct CLIOptions* cli_options, Li
 
 /// The procedure below is invoked to retrace a path from the initial
 /// item to a given item (ITEM_NO) passed to it as argument.
-static void print_root_path(const long item_no, struct CLIOptions* cli_options, ArrayShort item_list, ArrayShort nt_items, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym, char *string_table, struct symno_type *symno, struct LAState* ls) {
+static void print_root_path(const long item_no, struct CLIOptions* cli_options, ListInt item_list, ListInt nt_items, struct ruletab_type *rules, struct itemtab *item_table, ListInt rhs_sym, char *string_table, struct symno_type *symno, struct LAState* ls) {
   ListBool symbol_seen = Allocate_bool_array2(ls->num_non_terminals);
   symbol_seen.raw -= ls->num_terminals + 1;
   if (trace_root(rules[item_table[item_no].rule_number].lhs, cli_options, symbol_seen, item_list, nt_items, rules, item_table, rhs_sym, string_table, symno)) {
@@ -7184,7 +7122,7 @@ static void print_root_path(const long item_no, struct CLIOptions* cli_options, 
 /// to a state where the conflict symbol can be read. If a path is
 /// found, all items along the path are printed and SUCCESS is returned.
 ///  Otherwise, FAILURE is returned.
-static bool lalr_path_retraced(const int state_no, const int goto_indx, const int conflict_symbol, struct CLIOptions *cli_options, ListBool lalr_visited, ArrayShort item_list, ArrayShort nt_items, JBitset first, struct node **adequate_item, struct ruletab_type *rules, struct itemtab *item_table, struct node **in_stat, struct statset_type *statset, ArrayShort rhs_sym, char *string_table, struct symno_type *symno, struct LAState* ls) {
+static bool lalr_path_retraced(const int state_no, const int goto_indx, const int conflict_symbol, struct CLIOptions *cli_options, ListBool lalr_visited, ListInt item_list, ListInt nt_items, JBitset first, struct node **adequate_item, struct ruletab_type *rules, struct itemtab *item_table, struct node **in_stat, struct statset_type *statset, ListInt rhs_sym, char *string_table, struct symno_type *symno, struct LAState* ls) {
   struct goto_header_type go_to = statset[state_no].go_to;
   lalr_visited.raw[go_to.map[goto_indx].laptr] = true;
   bool found = false;
@@ -7229,7 +7167,7 @@ static bool lalr_path_retraced(const int state_no, const int goto_indx, const in
 /// In this procedure, we attempt to retrace an LALR conflict path
 /// (there may be more than one) of CONFLICT_SYMBOL in the state
 /// automaton that led to ITEM_NO in state STATE_NO.
-static void print_relevant_lalr_items(const int state_no, const int item_no, const int conflict_symbol, struct CLIOptions *cli_options, ArrayShort item_list, ArrayShort nt_items, JBitset first, struct node **adequate_item, struct ruletab_type *rules, struct itemtab *item_table, struct node **in_stat, struct statset_type *statset, ArrayShort rhs_sym, const long *la_top, char *string_table, struct symno_type *symno, struct LAState* ls) {
+static void print_relevant_lalr_items(const int state_no, const int item_no, const int conflict_symbol, struct CLIOptions *cli_options, ListInt item_list, ListInt nt_items, JBitset first, struct node **adequate_item, struct ruletab_type *rules, struct itemtab *item_table, struct node **in_stat, struct statset_type *statset, ListInt rhs_sym, const long *la_top, char *string_table, struct symno_type *symno, struct LAState* ls) {
   const int lhs_symbol = rules[item_table[item_no].rule_number].lhs;
   if (lhs_symbol == accept_image) {
     // Do nothing.
@@ -7439,12 +7377,12 @@ static struct stack_element *follow_sources(struct stack_element *stack, int sym
   return configs;
 }
 
-/// This function has a similar structure as FOLLOW_SOURCES.  But,
+/// This function has a similar structure as FOLLOW_SOURCES. But,
 /// instead of computing configurations that can be reached, it
-/// computes lookahead symbols that can be reached.  It takes as
+/// computes lookahead symbols that can be reached. It takes as
 /// argument a configuration STACK, a SYMBOL on which a transition can
 /// be made in the configuration and a set variable, LOOK_AHEAD, where
-/// the result is to be stored.  When NEXT_LA is invoked from the
+/// the result is to be stored. When NEXT_LA is invoked from the
 /// outside, LOOK_AHEAD is assumed to be initialized to the empty set.
 /// NEXT_LA first executes the transition on SYMBOL and thereafter, all
 /// terminal symbols that can be read are added to LOOKAHEAD.
@@ -7568,16 +7506,16 @@ static bool stack_was_seen(struct stack_element **stack_seen, struct stack_eleme
 }
 
 /// STATE_TO_RESOLVE_CONFLICTS is a function that attempts to resolve
-/// conflicts by doing more look-ahead.  If the conflict resolution
+/// conflicts by doing more look-ahead. If the conflict resolution
 /// is successful, then a new state is created and returned; otherwise,
 /// the NULL pointer is returned.
 static struct red_state_element *state_to_resolve_conflicts(struct sources_element sources, int la_symbol, int level, struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct red_state_element **shift_table, ListBool cyclic, struct StackPool* sp, struct visited_element* visited, struct STRS* strs, struct StackRoot* sr, ListBool rmpself, JBitset first, JBitset read_set, struct LAIndex* lai, struct node **adequate_item, struct SRTable* srt, ListBool null_nt, struct ruletab_type *rules, struct itemtab *item_table, struct node **in_stat, struct statset_type *statset, struct LAState* ls) {
   struct sources_element new_sources = allocate_sources(ls);
   struct node **action;
   calloc0p(&action, ls->num_terminals + 1, struct node *);
-  ArrayShort symbol_list = Allocate_short_array2(ls->num_terminals + 1);
-  ArrayShort action_list = Allocate_short_array2(ls->num_terminals + 1);
-  ArrayShort rule_count = Allocate_short_array2(ls->num_rules + 1);
+  ListInt symbol_list = allocateListInt(ls->num_terminals + 1);
+  ListInt action_list = allocateListInt(ls->num_terminals + 1);
+  ListInt rule_count = allocateListInt(ls->num_rules + 1);
   JBitset look_ahead;
   calloc0_set(look_ahead, 1, dss->term_set_size);
   struct red_state_element **la_shift_state;
@@ -7859,28 +7797,13 @@ clean_up_and_return:
   return state;
 }
 
-/// Free all support structures that were allocated to help compute
-/// additional lookahead.
-void exit_lalrk_process(const struct CLIOptions *cli_options, struct red_state_element **shift_table, ListBool cyclic, struct StackPool* sp, struct visited_element* visited, struct SourcesElementSources* ses, ListBool rmpself, struct LAState* ls) {
-  if (cli_options->lalr_level > 1) {
-    rmpself.raw += ls->num_terminals + 1;
-    ffree(rmpself.raw);
-    ffree(shift_table);
-    ffree(cyclic.raw);
-    free_sources(ses->sources, sp, ls);
-    clear_visited(visited);
-    ffree(visited->map);
-    ffree(visited->list.raw);
-  }
-}
-
 /// If conflicts were detected and LALR(k) processing was requested,
 /// where k > 1, then we attempt to resolve the conflicts by computing
 /// more lookaheads. Shift-Reduce conflicts are processed first,
 /// followed by Reduce-Reduce conflicts.
-struct ConflictCounter resolve_conflicts(const int state_no, struct node **action, const ArrayShort symbol_list, const int reduce_root, struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct red_state_element **shift_table, ListBool cyclic, ArrayShort* item_listp, struct StackPool* sp, struct ConflictPool* cp, struct visited_element* visited, struct SourcesElementSources* ses, struct STRS* strs, struct StackRoot* sr, ListBool rmpself, JBitset first, JBitset read_set, struct LAIndex* lai, struct node **conflict_symbols, struct node **adequate_item, struct SRTable* srt, struct lastats_type *lastats, ListBool null_nt, struct node **in_stat, struct ruletab_type *rules, struct itemtab *item_table, struct statset_type *statset, ArrayShort rhs_sym, long* la_top, char *string_table, struct symno_type *symno, struct LAState* ls) {
-  long num_sr_conflicts = 0;
-  long num_rr_conflicts = 0;
+struct ConflictCounter resolve_conflicts(const int state_no, struct node **action, const ListInt symbol_list, const int reduce_root, struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct red_state_element **shift_table, ListBool cyclic, ListInt* item_listp, struct StackPool* sp, struct ConflictPool* cp, struct visited_element* visited, struct SourcesElementSources* ses, struct STRS* strs, struct StackRoot* sr, ListBool rmpself, JBitset first, JBitset read_set, struct LAIndex* lai, struct node **conflict_symbols, struct node **adequate_item, struct SRTable* srt, struct lastats_type *lastats, ListBool null_nt, struct node **in_stat, struct ruletab_type *rules, struct itemtab *item_table, struct statset_type *statset, ListInt rhs_sym, long* la_top, char *string_table, struct symno_type *symno, struct LAState* ls) {
+  long reduced_num_sr_conflicts = 0;
+  long reduced_num_rr_conflicts = 0;
   // Note that a shift action to a state "S" is encoded with the
   // value (S+NUM_RULES) to help distinguish it from reduce actions.
   // Reduce actions lie in the range [0..NUM_RULES]. Shift-reduce
@@ -7957,7 +7880,7 @@ struct ConflictCounter resolve_conflicts(const int state_no, struct node **actio
           q_inner->next = sr_conflict_root;
           sr_conflict_root = q_inner;
         }
-        num_sr_conflicts++;
+        reduced_num_sr_conflicts++;
       }
       // Remove reduce actions defined on symbol so as to give
       // precedence to the shift.
@@ -8025,7 +7948,7 @@ struct ConflictCounter resolve_conflicts(const int state_no, struct node **actio
             q_inner->next = rr_conflict_root;
             rr_conflict_root = q_inner;
           }
-          num_rr_conflicts++;
+          reduced_num_rr_conflicts++;
         }
         // Remove all reduce actions that are defined on symbol
         // except the first one. That rule is the one with the
@@ -8046,18 +7969,15 @@ struct ConflictCounter resolve_conflicts(const int state_no, struct node **actio
     int symbol;
     int rule_no;
     char temp[SYMBOL_SIZE + 1];
-    // Conflicts Initialization
-    //
     /// This routine is invoked when a grammar contains conflicts, and the
     /// first conflict is detected.
-    ///
     // NT_ITEMS and ITEM_LIST are used in reporting SLR conflicts, and
     // in recreating paths from the Start item. See the routines
     // PRINT_RELEVANT_SLR_ITEMS and PRINT_ROOT_PATH.
-    ArrayShort nt_items = Allocate_short_array2(ls->num_non_terminals);
+    ListInt nt_items = allocateListInt(ls->num_non_terminals);
     nt_items.raw -= ls->num_terminals + 1;
-    *item_listp = Allocate_short_array2(ls->num_items + 1);
-    ArrayShort item_list = *item_listp;
+    *item_listp = allocateListInt(ls->num_items + 1);
+    ListInt item_list = *item_listp;
     fill_in(msg_line, (PRINT_LINE_SIZE - 11) / 2 - 1, '-');
     printf("\n%s CONFLICTS %s\n", msg_line, msg_line);
     //   SLR conflicts may be caused by a symbol in the FOLLOW set of a
@@ -8121,123 +8041,11 @@ struct ConflictCounter resolve_conflicts(const int state_no, struct node **actio
   }
   free_dangling_stack_elements(sp);
   return (struct ConflictCounter) {
-    .num_rr_conflicts = 0,
-    .num_sr_conflicts = 0,
+    .num_rr_conflicts = reduced_num_rr_conflicts,
+    .num_sr_conflicts = reduced_num_sr_conflicts,
   };
 }
-
-/// Transfer the look-ahead states to their permanent destination, the
-/// array LASTATS and update the original automaton with the relevant
-/// transitions into the lookahead states.
-void create_lastats(struct STRS* strs, struct SRTable* srt, struct statset_type *statset, struct LaStats* las, struct LAState* ls) {
-  // Allocate LASTATS structure to permanently construct lookahead
-  // states and reallocate SHIFT map as we may have to construct
-  // new shift maps.
-  calloc0p(&las->lastats, ls->max_la_state - ls->num_states, struct lastats_type);
-  las->lastats -= ls->num_states + 1;
-  realloc0p(&srt->shift, ls->max_la_state + 1, struct shift_header_type);
-  // Allocate temporary space used to construct final lookahead
-  // states.
-  struct red_state_element **new_shift_actions;
-  calloc0p(&new_shift_actions, ls->num_states + 1, struct red_state_element *);
-  ArrayShort shift_action = Allocate_short_array2(ls->num_terminals + 1);
-  ArrayShort shift_list = Allocate_short_array2(ls->num_terminals + 1);
-  ArrayShort shift_count = Allocate_short_array2(ls->max_la_state + 1);
-  ArrayShort state_list = Allocate_short_array2(ls->max_la_state + 1);
-  // The array shift_action will be used to construct a shift map
-  // for a given state. It is initialized here to the empty map.
-  // The array shift_count is used to count how many references
-  // there are to each shift map.
-  for for_each_t_fw(symbol, ls) {
-    shift_action.raw[symbol] = OMEGA;
-  }
-  for (int i = 0; i <= ls->max_la_state; i++) {
-    shift_count.raw[i] = 0;
-  }
-  for for_each_state(state_no, ls) {
-    shift_count.raw[statset[state_no].shift_number]++;
-  }
-  // Traverse the list of lookahead states and initialize the
-  // final lastat element appropriately. Also, construct a mapping
-  // from each relevant initial state into the list of lookahead
-  // states into which it can shift. We also keep track of these
-  // initial states in a list headed by state_root.
-  int state_root = NIL;
-  for (struct red_state_element *p = strs->la_state_root; p != NULL; p = p->link) {
-    las->lastats[p->state_number].in_state = p->in_state;
-    las->lastats[p->state_number].shift_number = p->shift_number;
-    las->lastats[p->state_number].reduce = p->reduce;
-    if (p->shift.size != 0) {
-      srt->shift[p->shift_number] = p->shift;
-    }
-    const int state_no = p->in_state;
-    if (state_no <= ls->num_states) {
-      if (new_shift_actions[state_no] == NULL) {
-        state_list.raw[state_no] = state_root;
-        state_root = state_no;
-      }
-      p->next_shift = new_shift_actions[state_no];
-      new_shift_actions[state_no] = p;
-    }
-  }
-  // We now traverse the list of initial states that can shift into
-  // lookahead states and update their shift map appropriately.
-  for (int state_no = state_root; state_no != NIL; state_no = state_list.raw[state_no]) {
-    // Copy the shift map associated with STATE_NO into the direct
-    // access map SHIFT_ACTION.
-    const int shift_no = statset[state_no].shift_number;
-    struct shift_header_type sh = srt->shift[shift_no];
-    int shift_root = NIL;
-    for (int i = 1; i <= sh.size; i++) {
-      const int symbol = sh.map[i].symbol;
-      shift_action.raw[symbol] = sh.map[i].action;
-      shift_list.raw[symbol] = shift_root;
-      shift_root = symbol;
-    }
-    // Add the lookahead shift transitions to the initial shift
-    // map.
-    int shift_size = sh.size;
-    for (struct red_state_element *p = new_shift_actions[state_no]; p != NULL; p = p->next_shift) {
-      if (shift_action.raw[p->symbol] == OMEGA) {
-        shift_size++;
-        shift_list.raw[p->symbol] = shift_root;
-        shift_root = p->symbol;
-      } else if (shift_action.raw[p->symbol] < 0) {
-        ls->num_shift_reduces--;
-      } else {
-        ls->num_shifts--;
-      }
-      shift_action.raw[p->symbol] = p->state_number;
-    }
-    // There are two conditions under which we have to construct
-    // a new shift map:
-    //     1. The initial shift map was shared with other states.
-    //     2. The updated shift map contains more elements than
-    //        the initial one.
-    if (shift_count.raw[shift_no] > 1) {
-      shift_count.raw[shift_no]--;
-      ls->num_shift_maps++;
-      sh = Allocate_shift_map(shift_size);
-      srt->shift[ls->num_shift_maps] = sh;
-      statset[state_no].shift_number = ls->num_shift_maps;
-    } else if (shift_size > sh.size) {
-      sh = Allocate_shift_map(shift_size);
-      srt->shift[shift_no] = sh;
-    }
-    // Reconstruct the relevant shift map.
-    for (int symbol = shift_root, i = 1; symbol != NIL; shift_action.raw[symbol] = OMEGA, symbol = shift_list.raw[symbol], i++) {
-      sh.map[i].symbol = symbol;
-      sh.map[i].action = shift_action.raw[symbol];
-    }
-  }
-  // Free all local temporary structures and return.
-  ffree(new_shift_actions);
-  ffree(shift_action.raw);
-  ffree(shift_list.raw);
-  ffree(shift_count.raw);
-  ffree(state_list.raw);
-}
-
+// endregion
 
 
 
@@ -8248,7 +8056,6 @@ void create_lastats(struct STRS* strs, struct SRTable* srt, struct statset_type 
 
 
 // region remsp
-
 struct SPData {
   int top;
   int rule_root;
@@ -8287,11 +8094,11 @@ struct StateMap {
   struct sp_state_element *sp_state_root;
 };
 
-static bool IS_SP_RHS(const long symbol, ArrayShort sp_rules) {
+static bool IS_SP_RHS(const long symbol, ListInt sp_rules) {
   return sp_rules.raw[symbol] != NIL;
 }
 
-static bool IS_SP_RULE(const long rule_no, ArrayShort rule_list) {
+static bool IS_SP_RULE(const long rule_no, ListInt rule_list) {
   return rule_list.raw[rule_no] != OMEGA;
 }
 
@@ -8324,7 +8131,7 @@ static void free_action_elements(struct remsp_action_element *head, struct remsp
 ///
 ///   2) As a side effect, it uses the ordering above to order all
 ///      the SP rules.
-static void compute_sp_map(const int symbol, struct SPData *spd, ArrayShort sp_rules, ArrayShort rule_list, ArrayShort index_of, ArrayShort next_rule, ArrayShort stack, struct ruletab_type *rules) {
+static void compute_sp_map(const int symbol, struct SPData *spd, ListInt sp_rules, ListInt rule_list, ListInt index_of, ListInt next_rule, ListInt stack, struct ruletab_type *rules) {
   stack.raw[++spd->top] = symbol;
   const int indx = spd->top;
   index_of.raw[symbol] = indx;
@@ -8381,10 +8188,10 @@ static void compute_sp_map(const int symbol, struct SPData *spd, ArrayShort sp_r
 /// transition on SYMBOL is a lookahead-shift, indicating that the
 /// parser requires extra lookahead on a particular symbol, the set of
 /// reduce actions for that symbol is calculated as the empty set.
-static void compute_sp_action(const int state_no, const short symbol, const short action, JBitset look_ahead, bool *is_conflict_symbol, ArrayShort index_of, ArrayShort* sp_action, struct StackRoot* sr, JBitset first, struct LAIndex* lai, struct node **conflict_symbols, JBitset la_set, struct node **adequate_item, struct node **in_stat, struct statset_type *statset, struct ruletab_type *rules, struct itemtab *item_table, struct LAState* ls) {
+static void compute_sp_action(const int state_no, const short symbol, const short action, JBitset look_ahead, bool *is_conflict_symbol, ListInt index_of, ListInt* sp_action, struct StackRoot* sr, JBitset first, struct LAIndex* lai, struct node **conflict_symbols, JBitset la_set, struct node **adequate_item, struct node **in_stat, struct statset_type *statset, struct ruletab_type *rules, struct itemtab *item_table, struct LAState* ls) {
   const struct goto_header_type go_to = statset[state_no].go_to;
   if (sp_action[symbol].raw == NULL) {
-    sp_action[symbol] = Allocate_short_array2(ls->num_terminals + 1);
+    sp_action[symbol] = allocateListInt(ls->num_terminals + 1);
   }
   for for_each_t_fw(i, ls) {
     // initialize sp_action to the empty map
@@ -8451,7 +8258,7 @@ static void compute_sp_action(const int state_no, const short symbol, const shor
 /// rule_no that may be reduced when the parser enters state_no.
 /// Sp_default_action tries to determine the highest rule that may be
 /// reached via a sequence of SP reductions.
-static short sp_default_action(const short state_no, short rule_no, ArrayShort rule_list, struct SRTable* srt, const struct statset_type *statset, struct ruletab_type *rules) {
+static short sp_default_action(const short state_no, short rule_no, ListInt rule_list, struct SRTable* srt, const struct statset_type *statset, struct ruletab_type *rules) {
   const struct goto_header_type go_to = statset[state_no].go_to;
   // While the rule we have at hand is a single production, ...
   while (IS_SP_RULE(rule_no, rule_list)) {
@@ -8498,7 +8305,7 @@ static short sp_default_action(const short state_no, short rule_no, ArrayShort r
 /// be processed after taking the transition. It returns the reduce
 /// action that follows the transition if an action on la_symbol is
 /// found, otherwise it returns the most suitable default action.
-static int sp_nt_action(const short state_no, const int lhs_symbol, const short la_symbol, ArrayShort rule_list, struct SRTable* srt, const struct statset_type *statset) {
+static int sp_nt_action(const short state_no, const int lhs_symbol, const short la_symbol, ListInt rule_list, struct SRTable* srt, const struct statset_type *statset) {
   const struct goto_header_type go_to = statset[state_no].go_to;
   int ii;
   for (ii = 1; go_to.map[ii].symbol != lhs_symbol; ii++) {
@@ -8530,7 +8337,7 @@ static int sp_nt_action(const short state_no, const int lhs_symbol, const short 
 /// is also executed ending with RULE2.
 /// The goal of this function is to find the greatest ancestor of
 /// BASE_RULE that is also a descendant of both RULE1 and RULE2.
-static int greatest_common_ancestor(const short base_rule, const short la_symbol, const short state1, const short rule1, const short state2, const short rule2, ArrayShort rule_list, struct SRTable* srt, struct statset_type *statset, const struct ruletab_type *rules) {
+static int greatest_common_ancestor(const short base_rule, const short la_symbol, const short state1, const short rule1, const short state2, const short rule2, ListInt rule_list, struct SRTable* srt, struct statset_type *statset, const struct ruletab_type *rules) {
   int act1 = base_rule;
   int act2 = base_rule;
   int rule_no;
@@ -8550,7 +8357,7 @@ static int greatest_common_ancestor(const short base_rule, const short la_symbol
 /// SYMBOL is the right-hand side of a SP rule and the global map
 /// sp_action[SYMBOL] yields a set of update reduce actions that may
 /// follow the transition on SYMBOL into STATE_NO.
-static void compute_update_actions(const int source_state, const int state_no, const int symbol, ArrayShort rule_list, ArrayShort* sp_action, struct update_action_element **update_action, struct SRTable* srt, struct statset_type *statset, struct ruletab_type *rules) {
+static void compute_update_actions(const int source_state, const int state_no, const int symbol, ListInt rule_list, ListInt* sp_action, struct update_action_element **update_action, struct SRTable* srt, struct statset_type *statset, struct ruletab_type *rules) {
   const struct reduce_header_type red = srt->reduce[state_no];
   for (int i = 1; i <= red.size; i++) {
     if (IS_SP_RULE(red.map[i].rule_number, rule_list)) {
@@ -8599,7 +8406,7 @@ static void compute_update_actions(const int source_state, const int state_no, c
 /// map sp_symbol[SYMBOL]. The value SP_RULE_COUNT is the number of
 /// rules in the list. The value SP_ACTION_COUNT is the number of
 /// actions in the map sp_symbol[SYMBOL].
-static short sp_state_map(const int rule_head, const int item_no, const int sp_rule_count, const int sp_action_count, const int symbol, ArrayShort next_rule, ArrayShort* sp_action, struct sp_state_element **sp_table, struct StateMap* state_map, struct AEPool* pool, struct LAState* ls) {
+static short sp_state_map(const int rule_head, const int item_no, const int sp_rule_count, const int sp_action_count, const int symbol, ListInt next_rule, ListInt* sp_action, struct sp_state_element **sp_table, struct StateMap* state_map, struct AEPool* pool, struct LAState* ls) {
   // These new SP states are defined by their reduce maps. Hash the
   // reduce map based on the set of rules in its range - simply add
   // them up and reduce modulo STATE_TABLE_SIZE.
@@ -8719,21 +8526,21 @@ static short sp_state_map(const int rule_head, const int item_no, const int sp_r
 
 /// This program is invoked to remove as many single production
 /// actions as possible for a conflict-free automaton.
-void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* sr, JBitset first, struct LAIndex* lai, struct node **conflict_symbols, JBitset la_set, struct node **adequate_item, struct SRTable* srt, struct statset_type *statset, struct lastats_type *lastats, ArrayShort gd_index, struct node **in_stat, struct ruletab_type *rules, struct itemtab *item_table, ArrayShort rhs_sym, struct LAState* ls) {
+void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* sr, JBitset first, struct LAIndex* lai, struct node **conflict_symbols, JBitset la_set, struct node **adequate_item, struct SRTable* srt, struct statset_type *statset, struct lastats_type *lastats, ListInt gd_index, struct node **in_stat, struct ruletab_type *rules, struct itemtab *item_table, ListInt rhs_sym, struct LAState* ls) {
   struct AEPool pool = {
     .action_element_pool = NULL,
   };
   // Set up a pool of temporary space.
   reset_temporary_space();
   // Allocate all other necessary temporary objects.
-  ArrayShort sp_rules = Allocate_short_array2(ls->num_symbols + 1);
-  ArrayShort stack = Allocate_short_array2(ls->num_symbols + 1);
-  ArrayShort index_of = Allocate_short_array2(ls->num_symbols + 1);
-  ArrayShort next_rule = Allocate_short_array2(ls->num_rules + 1);
-  ArrayShort rule_list = Allocate_short_array2(ls->num_rules + 1);
-  ArrayShort symbol_list = Allocate_short_array2(ls->num_symbols + 1);
-  ArrayShort shift_transition = Allocate_short_array2(ls->num_symbols + 1);
-  ArrayShort rule_count = Allocate_short_array2(ls->num_rules + 1);
+  ListInt sp_rules = allocateListInt(ls->num_symbols + 1);
+  ListInt stack = allocateListInt(ls->num_symbols + 1);
+  ListInt index_of = allocateListInt(ls->num_symbols + 1);
+  ListInt next_rule = allocateListInt(ls->num_rules + 1);
+  ListInt rule_list = allocateListInt(ls->num_rules + 1);
+  ListInt symbol_list = allocateListInt(ls->num_symbols + 1);
+  ListInt shift_transition = allocateListInt(ls->num_symbols + 1);
+  ListInt rule_count = allocateListInt(ls->num_rules + 1);
   struct new_shift_element {
     short link;
     short shift_number;
@@ -8741,8 +8548,8 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
   calloc0p(&new_shift, ls->max_la_state + 1, struct new_shift_element);
   JBitset look_ahead;
   calloc0_set(look_ahead, 1, dss->term_set_size);
-  ArrayShort* sp_action;
-  calloc0p(&sp_action, ls->num_symbols + 1, ArrayShort);
+  ListInt* sp_action;
+  calloc0p(&sp_action, ls->num_symbols + 1, ListInt);
   bool *is_conflict_symbol;
   calloc0p(&is_conflict_symbol, ls->num_symbols + 1, bool);
   struct sp_state_element **sp_table;
@@ -9035,7 +8842,7 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
   realloc0p(&srt->reduce, state_map.max_sp_state + 1, struct reduce_header_type);
   // see routine PRODUCE
   if (gd_index.raw != NULL) {
-    realloc0p(&gd_index.raw, state_map.max_sp_state + 2, short);
+    realloc0p(&gd_index.raw, state_map.max_sp_state + 2, long);
     // Each element gd_index[i] points to the starting location
     // of a slice in another array. The last element of the slice
     // can be computed as (gd_index[i+1] - 1). After extending
@@ -9272,7 +9079,6 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
   ffree(new_action);
   ffree(update_action);
 }
-
 // endregion
 
 
@@ -9288,6 +9094,7 @@ void remove_single_productions(struct DetectedSetSizes *dss, struct StackRoot* s
 
 
 
+// region mkrdcts
 /// Given an item of the form: [x .A y], where x and y are arbitrary strings,
 /// and A is a non-terminal, we pretrace the path(s) in the automaton  that
 /// will be followed in computing the look-ahead set for that item in
@@ -9356,12 +9163,12 @@ void trace_lalr_path(const int state_no, const int goto_indx, struct CLIOptions 
 /// COMPUTE_READ computes the number of intermediate look-ahead sets that
 /// will be needed (in LA_TOP), allocates space for the sets(LA_SET), and
 /// initializes them.
-///  By intermediate look-ahead set, we mean the set of terminals that may
+/// By intermediate look-ahead set, we mean the set of terminals that may
 /// follow a non-terminal in a given state.
-///  These sets are initialized to the set of terminals that can immediately
+/// These sets are initialized to the set of terminals that can immediately
 /// follow the non-terminal in the state to which it can shift (READ set).
 void compute_read(struct CLIOptions *cli_options, const struct DetectedSetSizes* dss, ListBool single_complete_item, JBitset first, JBitset read_set, struct LAIndex* lai, struct node **adequate_item, struct SRTable* srt, struct statset_type *statset, struct ruletab_type *rules, struct itemtab *item_table, struct node **in_stat, long* la_top, struct LAState* ls) {
-  //  We traverse all the states and for all complete items that requires
+  // We traverse all the states and for all complete items that requires
   // a look-ahead set, we retrace the state digraph (with the help of the
   // routine TRACE_LALR_PATH) and assign a unique number to all look-ahead
   // follow sets that it needs. A look-ahead follow set is a set of
@@ -9369,8 +9176,7 @@ void compute_read(struct CLIOptions *cli_options, const struct DetectedSetSizes*
   // and A is a non-terminal:
   //
   // [S, A] --> Follow-set
-  // Follow-set = {t | t is a terminal that can be shifted on after
-  //                      execution of a goto action on A in state S}.
+  // Follow-set = {t | t is a terminal that can be shifted on after execution of a goto action on A in state S}.
   //
   // Each follow set is initialized with the set of terminals that can be
   // shifted on in state S2, where GOTO(S, A) = S2. After initialization
@@ -9451,7 +9257,7 @@ void compute_read(struct CLIOptions *cli_options, const struct DetectedSetSizes*
       }
     }
   }
-  //   We now allocate space for LA_INDEX and LA_SET, and initialize
+  // We now allocate space for LA_INDEX and LA_SET, and initialize
   // all its elements as indicated in reduce.h. The array LA_BASE is
   // used to keep track of Follow sets that have been initialized. If
   // another set needs to be initialized with a value that has been
@@ -9655,126 +9461,172 @@ void la_traverse(const int state_no, const int goto_indx, int *stack_top, struct
 /// Build Reduce map, and detect conflicts if any
 /// MKRDCTS constructs the REDUCE map and detects conflicts in the grammar.
 /// When constructing an LALR parser, the subroutine COMPUTE_LA is invoked to
-/// compute the lalr look-ahead sets. For an SLR parser, the FOLLOW map
-/// computed earlier in the procedure MKFIRST is used.
+/// compute the lalr look-ahead sets.
 ///
 /// For a complete description of the lookahead algorithm used in this
 /// program, see Charles, PhD thesis, NYU 1991.
-struct ConflictCounter mkrdcts(struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct SourcesElementSources* ses, ListBool rmpself, JBitset first, struct node **adequate_item, struct SRTable* srt, ListBool null_nt, ArrayShort gd_index, struct ruletab_type *rules, struct statset_type *statset, struct itemtab *item_table, ArrayShort rhs_sym, struct LaStats* las, long* la_top, char *string_table, struct symno_type *symno, struct LAState* ls) {
-  struct STRS strs = (struct STRS) {
-    .highest_level = 0,
-    .la_state_root = NULL,
-  };
-  struct StackRoot sr = (struct StackRoot) {
-    .stack_root = NULL,
-  };
-  // Set up a pool of temporary space. If LALR(k), k > 1 is requested,
-  // INIT_LALRK_PROCESS sets up the necessary environment for the
-  // computation of multiple lookahead.
+struct ConflictCounter mkrdcts(
+  struct CLIOptions *cli_options,
+  struct FirstDeps* fd,
+  struct DetectedSetSizes* dss,
+  struct SourcesElementSources* ses,
+  JBitset first,
+  struct node **adequate_item,
+  struct SRTable* srt,
+  ListInt gd_index,
+  struct ruletab_type *rules,
+  struct statset_type *statset,
+  struct itemtab *item_table,
+  ListInt rhs_sym,
+  struct LaStats* las,
+  struct ParserState* ps,
+  struct LAState* ls
+) {
+  long request_lalr_level = cli_options->lalr_level;
   reset_temporary_space();
 
-  /// The boolean variable NOT_LRK is used to mark whether a grammar
-  /// is not LR(k) for any k. NOT_LRK is marked true when either:
-  ///    1. The grammar contains a nonterminal A such that A =>+rm A
-  ///    2. The automaton contains a cycle with each of its edges labeled
-  ///       with a nullable nonterminal.
-  ///
-  /// If LALR(k), k > 1, is requested, we may have to create more shift
-  /// maps. Initialize SHIFT_TABLE. Note that each element of SHIFT_TABLE
-  /// is automatically initialized to NULL by CALLOC.
-  /// (See STATE_TO_RESOLVE_CONFLICTS)
-  /// Second, we check whether the grammar is not LR(k) for any k
-  /// because there exist a nonterminal A such that
-  ///
-  ///                     A =>+rm A
-  ///
-  /// Finally, allocate and compute the CYCLIC vector which identifies
-  /// states that can enter a cycle via transitions on nullable
-  /// nonterminals. If such a cyle exists, the grammar can also be
-  /// claimed to be not LR(k) for any k.
-  bool not_lrk = false;
-  struct red_state_element **shift_table;
-  ListBool cyclic = Allocate_bool_array2(ls->num_states + 1);
-  /// NT_ITEMS and ITEM_LIST are used to construct a mapping from each
-  /// nonterminal into the set of items of which the nonterminal in
-  /// question is the dot symbol. See CONFLICTS_INITIALIZATION.
-  ArrayShort item_list;
-  struct visited_element visited;
-  if (cli_options->lalr_level > 1) {
-    calloc0p(&shift_table, SHIFT_TABLE_SIZE, struct red_state_element *);
-    for for_each_nt_fw(symbol, ls) {
-      not_lrk = not_lrk || rmpself.raw[symbol];
+
+
+
+
+  // TODO === • Calculate rmpself. ===
+  ListBool rmpself;
+  // If LALR_LEVEL > 1, we need to calculate RMPSELF, a set that
+  // identifies the nonterminals that can right-most produce
+  // themselves. In order to compute RMPSELF, the map PRODUCES
+  // must be constructed which identifies for each nonterminal
+  // the set of nonterminals that it can right-most produce.
+  if (request_lalr_level > 1) {
+    ListInt stack = allocateListInt(ls->num_non_terminals + 1);
+    ListInt index_of = allocateListInt(ls->num_non_terminals);
+    index_of.raw -= ls->num_terminals + 1;
+    JBitset produces;
+    calloc0_set(produces, ls->num_non_terminals, dss->non_term_set_size);
+    produces.raw -= (ls->num_terminals + 1) * dss->non_term_set_size;
+    struct node **direct_produces;
+    calloc0p(&direct_produces, ls->num_non_terminals, struct node *);
+    direct_produces -= ls->num_terminals + 1;
+    for for_each_nt_fw(sym_b, ls) {
+      struct node *p;
+      for (bool end_node = (p = fd->clitems[sym_b]) == NULL; !end_node; end_node = p == fd->clitems[sym_b]) {
+        p = p->next;
+        int item_no = p->value;
+        int sym_a = item_table[item_no].symbol;
+        if (IS_A_NON_TERMINAL(sym_a, ls)) {
+          const int i = item_table[item_no].suffix_index;
+          if (IS_IN_SET(first, i, empty) && !IS_IN_SET(produces, sym_b, sym_a - ls->num_terminals)) {
+            SET_BIT_IN(produces, sym_b, sym_a - ls->num_terminals);
+            struct node *q = Allocate_node();
+            q->value = sym_a;
+            q->next = direct_produces[sym_b];
+            direct_produces[sym_b] = q;
+          }
+        }
+      }
     }
-    ArrayShort index_of = Allocate_short_array2(ls->num_states + 1);
-    ArrayShort stack = Allocate_short_array2(ls->num_states + 1);
+    // Complete the construction of the RIGHT_MOST_PRODUCES map
+    // for non-terminals using the digraph algorithm.
+    for for_each_nt_fw(nt, ls) {
+      index_of.raw[nt] = OMEGA;
+    }
+    struct ProduceTop topp = {.top = 0};
+    for for_each_nt_fw(nt, ls) {
+      if (index_of.raw[nt] == OMEGA) {
+        compute_produces(nt, direct_produces, stack, index_of, produces, &topp);
+      }
+    }
+    /// This procedure is invoked when LALR_LEVEL > 1 to construct the
+    /// RMPSELF set which identifies the nonterminals that can right-most
+    /// produce themselves. It takes as argument the map PRODUCES which
+    /// identifies for each nonterminal the set of nonterminals that it can
+    /// right-most produce.
+    rmpself = Allocate_bool_array2(ls->num_non_terminals);
+    rmpself.raw -= ls->num_terminals + 1;
+    // Note that each element of the map produces is a boolean vector
+    // that is indexable in the range 1..num_non_terminals. Since each
+    // nonterminal is offset by the value num_terminals (to distinguish
+    // it from the terminals),it must therefore be adjusted accordingly
+    // when dereferencing an element in the range of the produces map.
+    for for_each_nt_fw(nt, ls) {
+      rmpself.raw[nt] = IS_IN_SET(produces, nt, nt - ls->num_terminals);
+    }
+    produces.raw += (ls->num_terminals + 1) * dss->non_term_set_size;
+    ffree(produces.raw);
+    direct_produces += ls->num_terminals + 1;
+    ffree(direct_produces);
+    ffree(stack.raw);
+    index_of.raw += ls->num_terminals + 1;
+    ffree(index_of.raw);
+  }
+  /// The grammar contains a nonterminal A such that A =>+rm A
+  bool not_lrk_due_to_rmpself = false;
+  if (request_lalr_level > 1) {
+    for for_each_nt_fw(symbol, ls) {
+      not_lrk_due_to_rmpself = not_lrk_due_to_rmpself || rmpself.raw[symbol];
+    }
+  }
+
+
+
+
+
+  /// The automaton contains a cycle with each of its edges labeled
+  /// with a nullable nonterminal.
+  bool not_lrk_due_to_cyclic = false;
+  ListBool part_of_nullable_read_cycle = Allocate_bool_array2(ls->num_states + 1);
+  if (request_lalr_level > 1) {
+    ListInt index_of = allocateListInt(ls->num_states + 1);
     for for_each_state(state_no, ls) {
       index_of.raw[state_no] = OMEGA;
     }
+    ListInt stack = allocateListInt(ls->num_states + 1);
     struct CyclicTop top = {.top = 0};
     for for_each_state(state_no, ls) {
       if (index_of.raw[state_no] == OMEGA) {
-        compute_cyclic(state_no, stack, index_of, cyclic, &top, null_nt, statset);
+        compute_cyclic(state_no, stack, index_of, part_of_nullable_read_cycle, &top, dss->null_nt, statset);
       }
-      not_lrk = not_lrk || cyclic.raw[state_no];
+      not_lrk_due_to_cyclic = not_lrk_due_to_cyclic || part_of_nullable_read_cycle.raw[state_no];
     }
     ffree(stack.raw);
     ffree(index_of.raw);
     ses->sources = allocate_sources(ls);
-    calloc0p(&visited.map, ls->num_states + 1, struct node *);
-    visited.list = Allocate_short_array2(ls->num_states + 1);
-    visited.root = NIL;
   }
+
+
+
+
+
+  // TODO === • init in_stat ===
   // IN_STAT is a mapping from each state to the set of states that have
-  // a transition into the state in question.
-  // IN_STAT is used to construct a reverse transition map. See
-  // BUILD_IN_STAT for more detail.
+  // a transition into the state in question. It is used to construct a
+  // reverse transition map. See BUILD_IN_STAT for more detail.
   struct node **in_stat = NULL;
   calloc0p(&in_stat, ls->num_states + 1, struct node *);
-  // RULE_COUNT is an array used to count the number of reductions on
-  // particular rules within a given state.
-  ArrayShort rule_count = Allocate_short_array2(ls->num_rules + 1);
+  build_in_stat(srt, statset, in_stat, ls);
+
+
+
+
+
+  // TODO === Prepare more ===
   // NO_SHIFT_ON_ERROR_SYM is a vector used to identify states that
-  // contain shift actions on the %ERROR symbol.  Such states are marked
+  // contain shift actions on the %ERROR symbol. Such states are marked
   // only when DEFAULT_OPT is 5.
   ListBool no_shift_on_error_sym = Allocate_bool_array2(ls->num_states + 1);
-  // SYMBOL_LIST is used to construct temporary lists of terminals on
-  // which reductions are defined.
-  ArrayShort symbol_list = Allocate_short_array2(ls->num_terminals + 1);
+  struct STRS strs = (struct STRS) {
+    .highest_level = 0,
+    .la_state_root = NULL,
+  };
+  // Indicates whether it is all right to take default action in
+  // states containing exactly one final item.
+  // We also check whether the grammar is LR(0). I.e., whether it needs
+  // any look-ahead at all.
+  //
   // When default actions are requested, the vector SINGLE_COMPLETE_ITEM
   // is used to identify states that contain exactly one final item.
   // NOTE that when the READ_REDUCE options is turned on, the LR(0)
   // automaton constructed contains no such state.
   ListBool single_complete_item = Allocate_bool_array2(ls->num_states + 1);
-  struct node **action;
-  // ACTION is an array that is used as the base for a mapping from
-  // each terminal symbol into a list of actions that can be executed
-  // on that symbol in a given state.
-  calloc0p(&action, ls->num_terminals + 1, struct node *);
-  // LOOK_AHEAD is used to compute lookahead sets.
-  JBitset look_ahead;
-  calloc0_set(look_ahead, 1, dss->term_set_size);
-  // If we will be removing single productions, we need to keep
-  // track of all (state, symbol) pairs on which a conflict is
-  // detected. The structure conflict_symbols is used as a base
-  // to construct that map. See ADD_CONFLICT_SYMBOL in resolve.c.
-  // NOTE that this allocation automatically initialized all
-  // elements of the conflict_symbols array to NULL.
-  /// CONFLICT_SYMBOLS is a mapping from each state into a set of terminal
-  /// symbols on which an LALR(1) conflict was detected in the state in
-  /// question.
-  struct node **conflict_symbols = NULL;
-  if (cli_options->single_productions_bit) {
-    calloc0p(&conflict_symbols, ls->num_states + 1, struct node *);
-  }
-  // First, construct the IN_STAT map. Next, iterate over the states to
-  // construct two boolean vectors.  One indicates whether there is a
-  // shift action on the ERROR symbol when the DEFAULT_OPT is 5.  The
-  // other indicates whether it is all right to take default action in
-  // states containing exactly one final item.
-  //
-  // We also check whether the grammar is LR(0). I.e., whether it needs
-  // any look-ahead at all.
-  build_in_stat(srt, statset, in_stat, ls);
   for for_each_state(state_no, ls) {
     no_shift_on_error_sym.raw[state_no] = true;
     if (cli_options->default_opt.value == OPT_5.value) {
@@ -9786,7 +9638,7 @@ struct ConflictCounter mkrdcts(struct CLIOptions *cli_options, struct DetectedSe
         }
       }
     }
-    //   Compute whether this state is a final state.  I.e., a state that
+    // Compute whether this state is a final state. I.e., a state that
     // contains only a single complete item. If so, mark it as a default
     // state. Note that if the READ-REDUCE option is used, the automaton
     // will not contain such states. Also, states are marked only when
@@ -9797,6 +9649,7 @@ struct ConflictCounter mkrdcts(struct CLIOptions *cli_options, struct DetectedSe
     // If a state has a complete item, and more than one kernel item
     // which is different from the complete item, then this state
     // requires look-ahead for the complete item.
+    // AKA this has at least one s/r or r/r conflict.
     if (strs.highest_level == 0) {
       const struct node *r = statset[state_no].complete_items;
       if (r != NULL) {
@@ -9806,34 +9659,58 @@ struct ConflictCounter mkrdcts(struct CLIOptions *cli_options, struct DetectedSe
       }
     }
   }
-  JBitset read_set = {.raw = NULL};
-  if (cli_options->lalr_level > 1 || cli_options->single_productions_bit) {
-    calloc0_set(read_set, ls->num_states + 1, dss->term_set_size);
+
+
+
+
+
+  // TODO === Can't move this below because it'll crash for whatever reason. ===
+  // LOOK_AHEAD is used to compute lookahead sets.
+  JBitset look_ahead; calloc0_set(look_ahead, 1, dss->term_set_size);
+  // If we will be removing single productions, we need to keep
+  // track of all (state, symbol) pairs on which a conflict is
+  // detected. The structure conflict_symbols is used as a base
+  // to construct that map. See ADD_CONFLICT_SYMBOL in resolve.c.
+  // NOTE that this allocation automatically initialized all
+  // elements of the conflict_symbols array to NULL.
+  /// CONFLICT_SYMBOLS is a mapping from each state into a set of terminal
+  /// symbols on which an LALR(1) conflict was detected in the state in
+  /// question.
+  struct node **conflict_symbols = NULL; // Map<State, Set<TIndex>>
+  if (cli_options->single_productions_bit) {
+    calloc0p(&conflict_symbols, ls->num_states + 1, struct node *);
   }
-  struct LAIndex lai = (struct LAIndex) {
-    .la_index = Allocate_short_array2(*la_top + 1),
-  };
+
+
+
+
+
+  // TODO === • Calculate read ===
   // We call COMPUTE_READ to perform the following tasks:
   // 1) Count how many elements are needed in LA_ELEMENT: LA_TOP
   // 2) Allocate space for and initialize LA_SET and LA_INDEX
-  compute_read(cli_options, dss, single_complete_item, first, read_set, &lai, adequate_item, srt, statset, rules, item_table, in_stat, la_top, ls);
-  // Allocate space for REDUCE which will be used to map each
-  // into its reduce map. We also initialize RULE_COUNT which
-  // will be used to count the number of reduce actions on each
-  // rule with in a given state.
-  calloc0p(&srt->reduce, ls->num_states + 1, struct reduce_header_type);
-  for for_each_rule_fw(i, ls) {
-    rule_count.raw[i] = 0;
-  }
+  JBitset read_set = {.raw = NULL}; calloc0_set(read_set, ls->num_states + 1, dss->term_set_size);
+  long la_top = 0;
+  struct LAIndex lai = (struct LAIndex) {
+    .la_index = allocateListInt(la_top + 1),
+  };
+  compute_read(cli_options, dss, single_complete_item, first, read_set, &lai, adequate_item, srt, statset, rules, item_table, in_stat, &la_top, ls);
+
+
+
+
+
+  // TODO === Do the main work, compute LA and stuff ===
+  // RULE_COUNT is an array used to count the number of reductions on
+  // particular rules within a given state.
+  ListInt rule_count = allocateListInt(ls->num_rules + 1);
+  for for_each_rule_fw(i, ls) rule_count.raw[i] = 0;
   // We are now ready to construct the reduce map. First, we
   // initialize MAX_LA_STATE to NUM_STATES. If no lookahead
   // state is added (the grammar is LALR(1)) this value will not
   // change. Otherwise, MAX_LA_STATE is incremented by 1 for each
   // lookahead state added.
   ls->max_la_state = ls->num_states;
-  // We iterate over the states, compute the lookahead sets,
-  // resolve conflicts (if multiple lookahead is requested) and/or
-  // report the conflicts if requested...
   struct StackPool sp = (struct StackPool) {
     .stack_pool = NULL,
     .dangling_stacks = NULL,
@@ -9841,8 +9718,33 @@ struct ConflictCounter mkrdcts(struct CLIOptions *cli_options, struct DetectedSe
   struct ConflictPool cp = (struct ConflictPool) {
     .conflict_element_pool = NULL,
   };
+  struct red_state_element **shift_table;
+  if (request_lalr_level > 1) {
+    calloc0p(&shift_table, SHIFT_TABLE_SIZE, struct red_state_element *);
+  }
+  // SYMBOL_LIST is used to construct temporary lists of terminals on
+  // which reductions are defined.
+  ListInt symbol_list = allocateListInt(ls->num_terminals + 1);
   long num_rr_conflicts = 0;
   long num_sr_conflicts = 0;
+  /// NT_ITEMS and ITEM_LIST are used to construct a mapping from each
+  /// nonterminal into the set of items of which the nonterminal in
+  /// question is the dot symbol. See CONFLICTS_INITIALIZATION.
+  ListInt item_list;
+  struct StackRoot sr = (struct StackRoot) {
+    .stack_root = NULL,
+  };
+  // ACTION is an array that is used as the base for a mapping from
+  // each terminal symbol into a list of actions that can be executed
+  // on that symbol in a given state.
+  struct node **action; calloc0p(&action, ls->num_terminals + 1, struct node *);
+  // We iterate over the states, compute the lookahead sets,
+  // resolve conflicts (if multiple lookahead is requested) and/or
+  // report the conflicts if requested...
+  struct visited_element visited;
+  calloc0p(&visited.map, ls->num_states + 1, struct node *);
+  visited.list = allocateListInt(ls->num_states + 1);
+  visited.root = NIL;
   for for_each_state(state_no, ls) {
     int default_rule = OMEGA;
     int symbol_root = NIL;
@@ -9871,8 +9773,7 @@ struct ConflictCounter mkrdcts(struct CLIOptions *cli_options, struct DetectedSe
       //  In the code below, we first check for category 3.  If it is not
       // satisfied, then we check for the others. Note that in any case,
       // default reductions are never taken on the ACCEPT rule.
-      int item_no = item_ptr->value;
-      int rule_no = item_table[item_no].rule_number;
+      int rule_no = item_table[item_ptr->value].rule_number;
       int symbol = rules[rule_no].lhs;
       if (single_complete_item.raw[state_no] && symbol != accept_image) {
         default_rule = rule_no;
@@ -9882,7 +9783,7 @@ struct ConflictCounter mkrdcts(struct CLIOptions *cli_options, struct DetectedSe
       // map, and check for conflicts.
       for (; item_ptr != NULL; item_ptr = item_ptr->next) {
         // for all complete items
-        item_no = item_ptr->value;
+        int item_no = item_ptr->value;
         rule_no = item_table[item_no].rule_number;
         compute_la(state_no, item_no, look_ahead, &sr, first, &lai, adequate_item, rules, in_stat, statset, item_table);
         for for_each_t_fw(symbol, ls) {
@@ -9922,12 +9823,12 @@ struct ConflictCounter mkrdcts(struct CLIOptions *cli_options, struct DetectedSe
       // element (if the conflicts were reduce-reduce conflicts, only
       // the first element in the ACTION(t) list is returned).
       if (symbol_root != NIL) {
-        struct ConflictCounter cc_ = resolve_conflicts(state_no, action, symbol_list, symbol_root, cli_options, dss, shift_table, cyclic, &item_list, &sp, &cp, &visited, ses, &strs, &sr, rmpself, first, read_set, &lai, conflict_symbols, adequate_item, srt, las->lastats, null_nt, in_stat, rules, item_table, statset, rhs_sym, la_top, string_table, symno, ls);
+        struct ConflictCounter cc_ = resolve_conflicts(state_no, action, symbol_list, symbol_root, cli_options, dss, shift_table, part_of_nullable_read_cycle, &item_list, &sp, &cp, &visited, ses, &strs, &sr, rmpself, first, read_set, &lai, conflict_symbols, adequate_item, srt, las->lastats, dss->null_nt, in_stat, rules, item_table, statset, rhs_sym, &la_top, ps->string_table, ps->symno, ls);
         num_rr_conflicts += cc_.num_rr_conflicts;
         num_sr_conflicts += cc_.num_sr_conflicts;
         for (symbol = symbol_root; symbol != NIL; symbol = symbol_list.raw[symbol]) {
           if (action[symbol] != NULL) {
-            item_no = action[symbol]->value;
+            int item_no = action[symbol]->value;
             rule_count.raw[item_table[item_no].rule_number]++;
           }
         }
@@ -9958,7 +9859,7 @@ struct ConflictCounter mkrdcts(struct CLIOptions *cli_options, struct DetectedSe
           default_rule = rule_no;
         }
       }
-      //   If the removal of single productions is requested
+      // If the removal of single productions is requested
       // and/or parsing tables will not be output, figure out
       // if the level of the default option requested permits
       // default actions, and compute how many reduce actions
@@ -9970,32 +9871,29 @@ struct ConflictCounter mkrdcts(struct CLIOptions *cli_options, struct DetectedSe
         if (q->next == NULL) {
           const int item_no = q->value;
           const int rule_no = item_table[item_no].rule_number;
-          if (cli_options->default_opt.value > OPT_2.value || /* No empty rule defined */
-              (cli_options->default_opt.value == OPT_2.value && RHS_SIZE(rule_no, rules) != 0)) {
+          if (cli_options->default_opt.value > OPT_2.value || /* No empty rule defined */ (cli_options->default_opt.value == OPT_2.value && RHS_SIZE(rule_no, rules) != 0)) {
             reduce_size -= n;
           } else {
             default_rule = OMEGA;
           }
-        } else if (cli_options->default_opt.value > OPT_3.value)
+        } else if (cli_options->default_opt.value > OPT_3.value) {
           reduce_size -= n;
+        }
       }
       ls->num_reductions += reduce_size;
     }
-    //   NOTE that the default fields are set for all states,
+    // NOTE that the default fields are set for all states,
     // whether DEFAULT actions are requested. This is
     // all right since one can always check whether (DEFAULT > 0)
     // before using these fields.
-    const struct reduce_header_type red = Allocate_reduce_map(reduce_size);
+    struct reduce_header_type red = Allocate_reduce_map(reduce_size);
     srt->reduce[state_no] = red;
     red.map[0].symbol = DEFAULT_SYMBOL;
     red.map[0].rule_number = default_rule;
     for (int symbol = symbol_root; symbol != NIL; symbol = symbol_list.raw[symbol]) {
       if (action[symbol] != NULL) {
         const int rule_no = item_table[action[symbol]->value].rule_number;
-        if (rule_no != default_rule ||
-            cli_options->table_opt.value == OPTIMIZE_SPACE.value ||
-            cli_options->table_opt.value == OPTIMIZE_TIME.value ||
-            cli_options->single_productions_bit) {
+        if (rule_no != default_rule || cli_options->table_opt.value == OPTIMIZE_SPACE.value || cli_options->table_opt.value == OPTIMIZE_TIME.value || cli_options->single_productions_bit) {
           red.map[reduce_size].symbol = symbol;
           red.map[reduce_size].rule_number = rule_no;
           reduce_size--;
@@ -10010,40 +9908,158 @@ struct ConflictCounter mkrdcts(struct CLIOptions *cli_options, struct DetectedSe
       rule_count.raw[rule_no] = 0;
     }
   }
-  printf("\n");
+  clear_visited(&visited);
+  ffree(visited.map);
+  ffree(visited.list.raw);
+  cli_options->lalr_level = strs.highest_level;
+
+
+
+
+
+  // TODO === construct permanent lookahead states ===
   // If the automaton required multiple lookahead, construct the
   // permanent lookahead states.
   if (ls->max_la_state > ls->num_states) {
-    create_lastats(&strs, srt, statset, las, ls);
+    /// Transfer the look-ahead states to their permanent destination, the
+    /// array LASTATS and update the original automaton with the relevant
+    /// transitions into the lookahead states.
+    // Allocate LASTATS structure to permanently construct lookahead
+    // states and reallocate SHIFT map as we may have to construct
+    // new shift maps.
+    calloc0p(&las->lastats, ls->max_la_state - ls->num_states, struct lastats_type);
+    las->lastats -= ls->num_states + 1;
+    realloc0p(&srt->shift, ls->max_la_state + 1, struct shift_header_type);
+    // Allocate temporary space used to construct final lookahead
+    // states.
+    struct red_state_element **new_shift_actions;
+    calloc0p(&new_shift_actions, ls->num_states + 1, struct red_state_element *);
+    ListInt shift_action = allocateListInt(ls->num_terminals + 1);
+    ListInt shift_list = allocateListInt(ls->num_terminals + 1);
+    ListInt shift_count = allocateListInt(ls->max_la_state + 1);
+    ListInt state_list = allocateListInt(ls->max_la_state + 1);
+    // The array shift_action will be used to construct a shift map
+    // for a given state. It is initialized here to the empty map.
+    // The array shift_count is used to count how many references
+    // there are to each shift map.
+    for for_each_t_fw(symbol, ls) {
+      shift_action.raw[symbol] = OMEGA;
+    }
+    for (int i = 0; i <= ls->max_la_state; i++) {
+      shift_count.raw[i] = 0;
+    }
+    for for_each_state(state_no, ls) {
+      shift_count.raw[statset[state_no].shift_number]++;
+    }
+    // Traverse the list of lookahead states and initialize the
+    // final lastat element appropriately. Also, construct a mapping
+    // from each relevant initial state into the list of lookahead
+    // states into which it can shift. We also keep track of these
+    // initial states in a list headed by state_root.
+    int state_root = NIL;
+    for (struct red_state_element *p = strs.la_state_root; p != NULL; p = p->link) {
+      las->lastats[p->state_number].in_state = p->in_state;
+      las->lastats[p->state_number].shift_number = p->shift_number;
+      las->lastats[p->state_number].reduce = p->reduce;
+      if (p->shift.size != 0) {
+        srt->shift[p->shift_number] = p->shift;
+      }
+      const int state_no = p->in_state;
+      if (state_no <= ls->num_states) {
+        if (new_shift_actions[state_no] == NULL) {
+          state_list.raw[state_no] = state_root;
+          state_root = state_no;
+        }
+        p->next_shift = new_shift_actions[state_no];
+        new_shift_actions[state_no] = p;
+      }
+    }
+    // We now traverse the list of initial states that can shift into
+    // lookahead states and update their shift map appropriately.
+    for (int state_no = state_root; state_no != NIL; state_no = state_list.raw[state_no]) {
+      // Copy the shift map associated with STATE_NO into the direct
+      // access map SHIFT_ACTION.
+      const int shift_no = statset[state_no].shift_number;
+      struct shift_header_type sh = srt->shift[shift_no];
+      int shift_root = NIL;
+      for (int i = 1; i <= sh.size; i++) {
+        const int symbol = sh.map[i].symbol;
+        shift_action.raw[symbol] = sh.map[i].action;
+        shift_list.raw[symbol] = shift_root;
+        shift_root = symbol;
+      }
+      // Add the lookahead shift transitions to the initial shift
+      // map.
+      int shift_size = sh.size;
+      for (struct red_state_element *p = new_shift_actions[state_no]; p != NULL; p = p->next_shift) {
+        if (shift_action.raw[p->symbol] == OMEGA) {
+          shift_size++;
+          shift_list.raw[p->symbol] = shift_root;
+          shift_root = p->symbol;
+        } else if (shift_action.raw[p->symbol] < 0) {
+          ls->num_shift_reduces--;
+        } else {
+          ls->num_shifts--;
+        }
+        shift_action.raw[p->symbol] = p->state_number;
+      }
+      // There are two conditions under which we have to construct
+      // a new shift map:
+      //     1. The initial shift map was shared with other states.
+      //     2. The updated shift map contains more elements than
+      //        the initial one.
+      if (shift_count.raw[shift_no] > 1) {
+        shift_count.raw[shift_no]--;
+        ls->num_shift_maps++;
+        sh = Allocate_shift_map(shift_size);
+        srt->shift[ls->num_shift_maps] = sh;
+        statset[state_no].shift_number = ls->num_shift_maps;
+      } else if (shift_size > sh.size) {
+        sh = Allocate_shift_map(shift_size);
+        srt->shift[shift_no] = sh;
+      }
+      // Reconstruct the relevant shift map.
+      for (int symbol = shift_root, i = 1; symbol != NIL; shift_action.raw[symbol] = OMEGA, symbol = shift_list.raw[symbol], i++) {
+        sh.map[i].symbol = symbol;
+        sh.map[i].action = shift_action.raw[symbol];
+      }
+    }
+    // Free all local temporary structures and return.
+    ffree(new_shift_actions);
+    ffree(shift_action.raw);
+    ffree(shift_list.raw);
+    ffree(shift_count.raw);
+    ffree(state_list.raw);
   }
-  // We are now finished with the LALR(k) construction of the
-  // automaton. Clear all temporary space that was used in that
-  // process and calculate the maximum lookahead level that was
-  // needed.
-  exit_lalrk_process(cli_options, shift_table, cyclic, &sp, &visited, ses, rmpself, ls);
-  cli_options->lalr_level = strs.highest_level;
+
+
+
+
+
+  // TODO === remove single productions ===
   // If the removal of single productions is requested, do that.
   if (cli_options->single_productions_bit) {
     remove_single_productions(dss, &sr, first, &lai, conflict_symbols, lai.la_set, adequate_item, srt, statset, las->lastats, gd_index, in_stat, rules, item_table, rhs_sym, ls);
   }
-  // If either more than one lookahead was needed or the removal
-  // of single productions was requested, the automaton was
-  // transformed with the addition of new states and new
-  // transitions. In such a case, we reconstruct the IN_STAT map.
-  if (cli_options->lalr_level > 1 || cli_options->single_productions_bit) {
-    for for_each_state(state_no, ls) {
-      // First, clear out the previous map
-      if (in_stat[state_no] != NULL) {
-        struct node *q = in_stat[state_no]->next; /* point to root */
-        free_nodes(q, in_stat[state_no]);
-        in_stat[state_no] = NULL;
-      }
-    }
-    build_in_stat(srt, statset, in_stat, ls); /* rebuild in_stat map */
-  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   // Print informational messages and free all temporary space that
   // was used to compute lookahead information.
-  if (not_lrk) {
+  printf("\n");
+  if (not_lrk_due_to_cyclic || not_lrk_due_to_rmpself) {
     printf("This grammar is not LR(K).\n\n");
   } else {
     if (num_rr_conflicts > 0 || num_sr_conflicts > 0) {
@@ -10060,31 +10076,38 @@ struct ConflictCounter mkrdcts(struct CLIOptions *cli_options, struct DetectedSe
       }
     }
   }
+  // region free things
+  if (request_lalr_level > 1) {
+    rmpself.raw += ls->num_terminals + 1;
+    ffree(rmpself.raw);
+    ffree(shift_table);
+    ffree(part_of_nullable_read_cycle.raw);
+    free_sources(ses->sources, &sp, ls);
+  }
   ffree(rule_count.raw);
   ffree(no_shift_on_error_sym.raw);
   ffree(symbol_list.raw);
   ffree(single_complete_item.raw);
   ffree(action);
   ffree(look_ahead.raw);
-  if (conflict_symbols != NULL) {
-    ffree(conflict_symbols);
+  if (conflict_symbols != NULL) ffree(conflict_symbols);
+  if (read_set.raw != NULL) ffree(read_set.raw);
+  if (lai.la_index.raw != NULL) ffree(lai.la_index.raw);
+  if (lai.la_set.raw != NULL) ffree(lai.la_set.raw);
+  for for_each_state(state_no, ls) {
+    struct node *head = in_stat[state_no];
+    if (head != NULL) {
+      head = head->next;
+      free_nodes(head, in_stat[state_no]);
+    }
   }
-  if (read_set.raw != NULL) {
-    ffree(read_set.raw);
-  }
-  if (lai.la_index.raw != NULL) {
-    ffree(lai.la_index.raw);
-  }
-  if (lai.la_set.raw != NULL) {
-    ffree(lai.la_set.raw);
-  }
+  ffree(in_stat);
   return (struct ConflictCounter) {
     .num_rr_conflicts = num_rr_conflicts,
     .num_sr_conflicts = num_sr_conflicts,
-    .in_stat = in_stat,
   };
+  // endregion
 }
-
 // endregion
 
 
@@ -10118,7 +10141,6 @@ struct ConflictCounter mkrdcts(struct CLIOptions *cli_options, struct DetectedSe
 
 
 // region ctabs
-
 struct OutputPtr {
   char **output_ptr;
   char **output_buffer;
@@ -10210,7 +10232,7 @@ static void prnt_longs(const char *title, const int init, const int bound, const
 /// is organized as a circular list where the smallest sets appear
 /// first in the list.
 static void compute_action_symbols_range(const ListInt state_start, const ListInt state_stack, const ListInt state_list, ListInt action_symbols_range, struct SRTable* srt, const struct statset_type *statset, struct LAState* ls) {
-  ArrayShort symbol_list = Allocate_short_array2(ls->num_symbols + 1);
+  ListInt symbol_list = allocateListInt(ls->num_symbols + 1);
   // We now write out the range elements of the ACTION_SYMBOLS map.
   // Recall that if STATE_START has a negative value, then the set in
   // question is sharing elements and does not need to be processed.
@@ -10260,8 +10282,8 @@ static void compute_action_symbols_range(const ListInt state_start, const ListIn
 
 /// This procedure computes the range of the NACTION_SYMBOLS map. It
 /// organization is analoguous to COMPUTE_ACTION_SYMBOLS_RANGE.
-static void compute_naction_symbols_range(const ListInt state_start, const ListInt state_stack, const ListInt state_list, ListInt naction_symbols_range, ArrayShort gd_index, ArrayShort gd_range, struct LAState* ls) {
-  ArrayShort symbol_list = Allocate_short_array2(ls->num_symbols + 1);
+static void compute_naction_symbols_range(const ListInt state_start, const ListInt state_stack, const ListInt state_list, ListInt naction_symbols_range, ListInt gd_index, ListInt gd_range, struct LAState* ls) {
+  ListInt symbol_list = allocateListInt(ls->num_symbols + 1);
   // We now write out the range elements of the NACTION_SYMBOLS map.
   // Recall that if STATE_START has a negative value, then the set in
   // question is sharing elements and does not need to be processed.
@@ -10306,17 +10328,17 @@ static void exit_file(FILE **file, char *file_tag, struct CLIOptions *cli_option
   }
 }
 
-static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct ByteTerminalRange* btr, struct scope_type *scope, struct SRTable* srt, ListInt scope_right_side, struct statset_type *statset, ArrayShort gd_index, ArrayShort gd_range, ArrayShort scope_state, struct itemtab *item_table, struct symno_type *symno, bool error_maps_bit, struct ScopeCounter* sc, struct OutputPtr output_ptr2, char *string_table, int *name, struct LAState* ls) {
-  ListInt state_start = Allocate_long_array2(ls->num_states + 2);
-  ListInt state_stack = Allocate_long_array2(ls->num_states + 1);
+static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct ByteTerminalRange* btr, struct scope_type *scope, struct SRTable* srt, ListInt scope_right_side, struct statset_type *statset, ListInt gd_index, ListInt gd_range, ListInt scope_state, struct itemtab *item_table, struct symno_type *symno, bool error_maps_bit, struct ScopeCounter* sc, struct OutputPtr output_ptr2, char *string_table, int *name, struct LAState* ls) {
+  ListInt state_start = allocateListInt(ls->num_states + 2);
+  ListInt state_stack = allocateListInt(ls->num_states + 1);
   PRNT("\nError maps storage:");
   // We now construct a bit map for the set of terminal symbols that
   // may appear in each state. Then, we invoke PARTSET to apply the
   // Partition Heuristic and print it.
-  ListInt as_size = Allocate_long_array2(ls->num_states + 1);
+  ListInt as_size = allocateListInt(ls->num_states + 1);
   ListInt original;
   if (cli_options->table_opt.value == OPTIMIZE_TIME.value) {
-    original = Allocate_long_array2(ls->num_symbols + 1);
+    original = allocateListInt(ls->num_symbols + 1);
     // In a compressed TIME table, the terminal and non-terminal
     // symbols are mixed together when they are remapped.
     // We shall now recover the original number associated with
@@ -10362,7 +10384,7 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
   partset(action_symbols, as_size, toutput->state_list, state_start, state_stack, ls->num_terminals, false, ls);
   ffree(action_symbols.raw);
   // Compute and write out the base of the ACTION_SYMBOLS map.
-  ListInt action_symbols_base = Allocate_long_array2(ls->num_states + 1);
+  ListInt action_symbols_base = allocateListInt(ls->num_states + 1);
   for for_each_state(state_no, ls) {
     action_symbols_base.raw[toutput->state_list.raw[state_no]] = ABS(state_start.raw[toutput->state_list.raw[state_no]]);
   }
@@ -10374,7 +10396,7 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
   ffree(action_symbols_base.raw);
   // Compute and write out the range of the ACTION_SYMBOLS map.
   int offset = state_start.raw[ls->num_states + 1];
-  ListInt action_symbols_range = Allocate_long_array2(offset);
+  ListInt action_symbols_range = allocateListInt(offset);
   compute_action_symbols_range(state_start, state_stack, toutput->state_list, action_symbols_range, srt, statset, ls);
   for (int i = 0; i < offset - 1; i++) {
     if (action_symbols_range.raw[i] > (cli_options->java_bit ? 127 : 255)) {
@@ -10430,7 +10452,7 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
     }
   }
   // Compute and write out the base of the NACTION_SYMBOLS map.
-  ListInt naction_symbols_base = Allocate_long_array2(ls->num_states + 1);
+  ListInt naction_symbols_base = allocateListInt(ls->num_states + 1);
   for for_each_state(state_no, ls) {
     naction_symbols_base.raw[toutput->state_list.raw[state_no]] = ABS(state_start.raw[toutput->state_list.raw[state_no]]);
   }
@@ -10442,7 +10464,7 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
   ffree(naction_symbols_base.raw);
   // Compute and write out the range of the NACTION_SYMBOLS map.
   offset = state_start.raw[ls->num_states + 1];
-  ListInt naction_symbols_range = Allocate_long_array2(offset);
+  ListInt naction_symbols_range = allocateListInt(offset);
   compute_naction_symbols_range(state_start, state_stack, toutput->state_list, naction_symbols_range, gd_index, gd_range, ls);
   if (cli_options->java_bit) {
     prnt_longs("\n    public final static char nasr[] = {0,\n", 0, offset - 2, 10, naction_symbols_range, cli_options, of, output_ptr2);
@@ -10456,7 +10478,7 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
   // is used to remap the NAME_INDEX values based on the new symbol
   // numberings. If time tables are requested, the terminals and non-
   // terminals are mixed together.
-  ListInt temp = Allocate_long_array2(ls->num_symbols + 1);
+  ListInt temp = allocateListInt(ls->num_symbols + 1);
   if (cli_options->table_opt.value == OPTIMIZE_SPACE.value) {
     for for_each_t_fw(symbol, ls) {
       temp.raw[toutput->symbol_map.raw[symbol]] = symno[symbol].name_index;
@@ -10533,7 +10555,7 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
   }
   if (sc->num_scopes > 0) {
     short root = 0;
-    ArrayShort list = Allocate_short_array2(sc->scope_rhs_size + 1);
+    ListInt list = allocateListInt(sc->scope_rhs_size + 1);
     for (int i = 1; i <= sc->scope_rhs_size; i++) {
       if (scope_right_side.raw[i] != 0) {
         scope_right_side.raw[i] = toutput->symbol_map.raw[scope_right_side.raw[i]];
@@ -10618,7 +10640,7 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
     PRNT2("    Storage required for STRING_BUFFER map: %ld Bytes", num_bytes);
   } else {
     // Print C names.
-    ListInt name_len = Allocate_long_array2(ls->num_names + 1);
+    ListInt name_len = allocateListInt(ls->num_names + 1);
     long num_bytes = 0;
     long max_name_length = 0;
     mystrcpy("\nconst char  CLASS_HEADER string_buffer[] = {0,\n", of, output_ptr2);
@@ -10969,7 +10991,7 @@ static void print_error_maps(struct CLIOptions *cli_options, struct TableOutput*
   }
 }
 
-static void common(const bool byte_check_bit, struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ListInt scope_right_side, struct statset_type *statset, ArrayShort gd_index, ArrayShort gd_range, ArrayShort scope_state, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer, struct OutputPtr output_ptr2, struct symno_type *symno, char *string_table, int *name, struct LAState* ls) {
+static void common(const bool byte_check_bit, struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ListInt scope_right_side, struct statset_type *statset, ListInt gd_index, ListInt gd_range, ListInt scope_state, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer, struct OutputPtr output_ptr2, struct symno_type *symno, char *string_table, int *name, struct LAState* ls) {
   struct ByteTerminalRange btr = (struct ByteTerminalRange) {
     .value = true
   };
@@ -11773,8 +11795,8 @@ static void common(const bool byte_check_bit, struct CLIOptions *cli_options, st
 void sortdes(ListInt array, ListInt count, const long low, const long high, const long max) {
   // BUCKET is used to hold the roots of lists that contain the
   // elements of each bucket.  LIST is used to hold these lists.
-  ListInt bucket = Allocate_long_array2(max + 1);
-  ListInt list = Allocate_long_array2(high - low + 1);
+  ListInt bucket = allocateListInt(max + 1);
+  ListInt list = allocateListInt(high - low + 1);
   for (int i = 0; i <= max; i++) {
     bucket.raw[i] = NIL;
   }
@@ -11820,8 +11842,8 @@ void reallocate(struct CLIOptions *cli_options, struct CTabsProps* ctp, struct N
   } else {
     PRNT2("Reallocating storage for SPACE table, adding %ld entries", ctp->table_size - old_size);
   }
-  ListInt n = Allocate_long_array2(ctp->table_size + 1);
-  ListInt p = Allocate_long_array2(ctp->table_size + 1);
+  ListInt n = allocateListInt(ctp->table_size + 1);
+  ListInt p = allocateListInt(ctp->table_size + 1);
   // Copy old information
   for (int i = 1; i <= old_size; i++) {
     n.raw[i] = np->next.raw[i];
@@ -11855,7 +11877,7 @@ void populate_start_file(FILE **file, char *file_tag, struct CLIOptions *cli_opt
   }
 }
 
-void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, ListInt term_state_index, ListInt shift_check_index, struct CTabsProps* ctp, struct new_state_type *new_state_element, ArrayShort shift_image, ArrayShort real_shift_number, struct OutputFiles* of, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ListInt scope_right_side, ArrayShort shiftdf, ListInt gotodef, ArrayShort gd_index, ArrayShort gd_range, struct ruletab_type *rules, ArrayShort scope_state, struct statset_type *statset, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer, struct OutputPtr output_ptr2, struct symno_type *symno, char *string_table, int *name, struct LAState* ls)  {
+void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, ListInt term_state_index, ListInt shift_check_index, struct CTabsProps* ctp, struct new_state_type *new_state_element, ListInt shift_image, ListInt real_shift_number, struct OutputFiles* of, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ListInt scope_right_side, ListInt shiftdf, ListInt gotodef, ListInt gd_index, ListInt gd_range, struct ruletab_type *rules, ListInt scope_state, struct statset_type *statset, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer, struct OutputPtr output_ptr2, struct symno_type *symno, char *string_table, int *name, struct LAState* ls)  {
   bool byte_check_bit = true;
   populate_start_file(&of->sysdcl, of->dcl_tag, cli_options);
   populate_start_file(&of->syssym, of->sym_tag, cli_options);
@@ -11868,8 +11890,8 @@ void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* tout
   int la_shift_count = 0;
   int shift_count = 0;
   int shift_reduce_count = 0;
-  ListInt check = Allocate_long_array2(ctp->table_size + 1);
-  ListInt action = Allocate_long_array2(ctp->table_size + 1);
+  ListInt check = allocateListInt(ctp->table_size + 1);
+  ListInt action = allocateListInt(ctp->table_size + 1);
   (*output_ptr2.output_ptr) = &output_buffer[0];
   // Prepare header card with proper information, and write it out.
   long offset = ia->error_act;
@@ -12390,7 +12412,7 @@ void print_space_parser(struct CLIOptions *cli_options, struct TableOutput* tout
   common(byte_check_bit, cli_options, toutput, dss, ctp, of, scope, ia, srt, scope_right_side, statset, gd_index, gd_range, scope_state, item_table, sc, output_buffer, output_ptr2, symno, string_table, name, ls);
 }
 
-void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ListInt scope_right_side, struct lastats_type *lastats, ListInt gotodef, ArrayShort gd_index, ArrayShort gd_range, struct ruletab_type *rules, ArrayShort scope_state, struct statset_type *statset, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer, struct OutputPtr output_ptr2, struct symno_type *symno, char *string_table, int *name, struct LAState* ls) {
+void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ListInt scope_right_side, struct lastats_type *lastats, ListInt gotodef, ListInt gd_index, ListInt gd_range, struct ruletab_type *rules, ListInt scope_state, struct statset_type *statset, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer, struct OutputPtr output_ptr2, struct symno_type *symno, char *string_table, int *name, struct LAState* ls) {
   bool byte_check_bit = true;
   populate_start_file(&of->sysdcl, of->dcl_tag, cli_options);
   populate_start_file(&of->syssym, of->sym_tag, cli_options);
@@ -12701,7 +12723,7 @@ void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutp
   *(*output_ptr2.output_ptr)++ = '\n';
   // If GOTO_DEFAULT is requested, we print out the GOTODEF vector.
   if (cli_options->goto_default_bit) {
-    ArrayShort default_map = Allocate_short_array2(ls->num_symbols + 1);
+    ListInt default_map = allocateListInt(ls->num_symbols + 1);
     if (cli_options->java_bit) {
       mystrcpy("\n    public final static char default_goto[] = {0,\n", of, output_ptr2);
     } else {
@@ -12749,11 +12771,9 @@ void print_time_parser(struct CLIOptions *cli_options, struct TableOutput* toutp
   ffree(np->previous.raw);
   common(byte_check_bit, cli_options, toutput, dss, ctp, of, scope, ia, srt, scope_right_side, statset, gd_index, gd_range, scope_state, item_table, sc, output_buffer, output_ptr2, symno, string_table, name, ls);
 }
-
 // endregion
 
 // region spacetab
-
 struct NumTableEntries {
   long value;
 };
@@ -12772,13 +12792,13 @@ static long remap_non_terminals(const struct CLIOptions *cli_options, struct Tab
   // in the grammar, and  FREQUENCY_COUNT is used correspondingly to
   // hold the number of actions defined on each non-terminal.
   // ORDERED_STATE and ROW_SIZE are used in a similar fashion for states
-  ListInt frequency_symbol = Allocate_long_array2(ls->num_non_terminals);
+  ListInt frequency_symbol = allocateListInt(ls->num_non_terminals);
   // TODO • The size in the arraylong will be wrong?
   frequency_symbol.raw -= ls->num_terminals + 1;
-  ListInt frequency_count = Allocate_long_array2(ls->num_non_terminals);
+  ListInt frequency_count = allocateListInt(ls->num_non_terminals);
   // TODO • The size in the arraylong will be wrong?
   frequency_count.raw -= ls->num_terminals + 1;
-  ListInt row_size = Allocate_long_array2(ls->num_states + 1);
+  ListInt row_size = allocateListInt(ls->num_states + 1);
   for for_each_nt_fw(i, ls) {
     frequency_symbol.raw[i] = i;
     frequency_count.raw[i] = 0;
@@ -12815,7 +12835,7 @@ static long remap_non_terminals(const struct CLIOptions *cli_options, struct Tab
   // based on the new mapping of the non-terminals.
   long last_symbol;
   if (cli_options->goto_default_bit) {
-    ListInt temp_goto_default = Allocate_long_array2(ls->num_non_terminals);
+    ListInt temp_goto_default = allocateListInt(ls->num_non_terminals);
     temp_goto_default.raw -= ls->num_terminals + 1;
     for (last_symbol = ls->num_symbols; last_symbol > ls->num_terminals; last_symbol--) {
       if (frequency_count.raw[last_symbol] != 0) {
@@ -12861,8 +12881,8 @@ static void overlap_nt_rows(struct CLIOptions *cli_options, struct TableOutput *
   // list.
   //   The variable MAX_INDX is used to keep track of the maximum starting
   // position for a row that has been used.
-  np->next = Allocate_long_array2(ctp->table_size + 1);
-  np->previous = Allocate_long_array2(ctp->table_size + 1);
+  np->next = allocateListInt(ctp->table_size + 1);
+  np->previous = allocateListInt(ctp->table_size + 1);
   ia->first_index = 1;
   np->previous.raw[ia->first_index] = NIL;
   np->next.raw[ia->first_index] = ia->first_index + 1;
@@ -12962,7 +12982,7 @@ static void overlap_nt_rows(struct CLIOptions *cli_options, struct TableOutput *
 /// REDUCE(S1, t) and REDUCE(S2, t) are defined, and
 /// REDUCE(S1, t) ^= REDUCE(S2, t)
 static void merge_similar_t_rows(const struct CLIOptions *cli_options, struct TableOutput *toutput, ListBool shift_on_error_symbol, struct node **new_state_element_reduce_nodes, struct TResult *tresult, struct new_state_type *new_state_element, struct SRTable* srt, struct lastats_type *lastats, struct statset_type *statset, struct LAState* ls) {
-  ArrayShort table = Allocate_short_array2(ls->num_shift_maps + 1);
+  ListInt table = allocateListInt(ls->num_shift_maps + 1);
   tresult->top = 0;
   for (int i = 1; i <= ls->max_la_state; i++) {
     shift_on_error_symbol.raw[i] = false;
@@ -13094,7 +13114,7 @@ static void merge_similar_t_rows(const struct CLIOptions *cli_options, struct Ta
 /// If we can determine that there is a shift action on a pair (S, t)
 /// we can apply shift default to the Shift actions just like we did
 /// for the Goto actions.
-static void merge_shift_domains(struct CLIOptions *cli_options, struct TableOutput *toutput, ListInt row_size, ListInt frequency_symbol, ListInt frequency_count, struct NumTableEntries *nte, ListInt shift_check_index, struct CTabsProps *ctp, struct new_state_type *new_state_element, ArrayShort shift_image, ArrayShort real_shift_number, struct NextPrevious* np, struct ImportantAspects* ia, struct SRTable* srt, ArrayShort shiftdf, struct LAState* ls) {
+static void merge_shift_domains(struct CLIOptions *cli_options, struct TableOutput *toutput, ListInt row_size, ListInt frequency_symbol, ListInt frequency_count, struct NumTableEntries *nte, ListInt shift_check_index, struct CTabsProps *ctp, struct new_state_type *new_state_element, ListInt shift_image, ListInt real_shift_number, struct NextPrevious* np, struct ImportantAspects* ia, struct SRTable* srt, ListInt shiftdf, struct LAState* ls) {
   // Some of the rows in the shift action map have already been merged
   // by the merging of compatible states... We simply need to increase
   // the size of the granularity by merging these new terminal states
@@ -13117,8 +13137,8 @@ static void merge_shift_domains(struct CLIOptions *cli_options, struct TableOutp
   //
   // The arrays ORDERED_SHIFT and ROW_SIZE are also initialized here.
   // They are used to sort the rows of the shift actions map later...
-  ArrayShort shift_domain_link = Allocate_short_array2(ctp->num_terminal_states + 1);
-  ListInt ordered_shift = Allocate_long_array2(ls->num_shift_maps + 1);
+  ListInt shift_domain_link = allocateListInt(ctp->num_terminal_states + 1);
+  ListInt ordered_shift = allocateListInt(ls->num_shift_maps + 1);
   ListBool shift_symbols = Allocate_bool_array2(ls->num_terminals + 1);
   short shift_domain_table[SHIFT_TABLE_SIZE];
   for (int i = 0; i <= SHIFT_TABLE_UBOUND; i++) {
@@ -13212,7 +13232,7 @@ static void merge_shift_domains(struct CLIOptions *cli_options, struct TableOutp
     }
   }
   // Remap the SHIFT_DEFAULT map.
-  ArrayShort temp_shift_default = Allocate_short_array2(ls->num_terminals + 1);
+  ListInt temp_shift_default = allocateListInt(ls->num_terminals + 1);
   for for_each_t_fw(symbol, ls) {
     temp_shift_default.raw[toutput->symbol_map.raw[symbol]] = shiftdf.raw[symbol];
   }
@@ -13228,8 +13248,8 @@ static void merge_shift_domains(struct CLIOptions *cli_options, struct TableOutp
   if ((int) ctp->table_size > old_table_size) {
     ffree(np->previous.raw);
     ffree(np->next.raw);
-    np->previous = Allocate_long_array2(ctp->table_size + 1);
-    np->next = Allocate_long_array2(ctp->table_size + 1);
+    np->previous = allocateListInt(ctp->table_size + 1);
+    np->next = allocateListInt(ctp->table_size + 1);
   } else {
     ctp->table_size = old_table_size;
   }
@@ -13329,12 +13349,12 @@ static void merge_shift_domains(struct CLIOptions *cli_options, struct TableOutp
 /// We iterate over each of these lists and construct new states out
 /// of these groups of similar states when they are compatible. Then,
 /// we remap the terminal symbols.
-static void overlay_sim_t_rows(struct CLIOptions *cli_options, struct TableOutput *toutput, ListBool shift_on_error_symbol, struct node **new_state_element_reduce_nodes, struct TResult *tresult, struct NumTableEntries *nte, ListInt shift_check_index, struct CTabsProps *ctp, struct new_state_type *new_state_element, ArrayShort shift_image, ArrayShort real_shift_number, struct NextPrevious* np, struct ImportantAspects* ia, struct SRTable* srt, struct ruletab_type *rules, struct lastats_type *lastats, ArrayShort shiftdf, struct statset_type *statset, struct LAState* ls) {
+static void overlay_sim_t_rows(struct CLIOptions *cli_options, struct TableOutput *toutput, ListBool shift_on_error_symbol, struct node **new_state_element_reduce_nodes, struct TResult *tresult, struct NumTableEntries *nte, ListInt shift_check_index, struct CTabsProps *ctp, struct new_state_type *new_state_element, ListInt shift_image, ListInt real_shift_number, struct NextPrevious* np, struct ImportantAspects* ia, struct SRTable* srt, struct ruletab_type *rules, struct lastats_type *lastats, ListInt shiftdf, struct statset_type *statset, struct LAState* ls) {
   int num_shifts_saved = 0;
   int num_reductions_saved = 0;
   int default_saves = 0;
-  ArrayShort rule_count = Allocate_short_array2(ls->num_rules + 1);
-  ArrayShort reduce_action = Allocate_short_array2(ls->num_terminals + 1);
+  ListInt rule_count = allocateListInt(ls->num_rules + 1);
+  ListInt reduce_action = allocateListInt(ls->num_terminals + 1);
   //     We first iterate over the groups of similar states in the
   // MULTI_ROOT list.  These states have been grouped together,
   // because they have the same Shift map, and reduce to the same
@@ -13548,9 +13568,9 @@ static void overlay_sim_t_rows(struct CLIOptions *cli_options, struct TableOutpu
     new_state_element[i].reduce = red;
   }
   ctp->num_terminal_states = tresult->top;
-  ListInt frequency_symbol = Allocate_long_array2(ls->num_terminals + 1);
-  ListInt frequency_count = Allocate_long_array2(ls->num_terminals + 1);
-  ListInt row_size = Allocate_long_array2(ls->max_la_state + 1);
+  ListInt frequency_symbol = allocateListInt(ls->num_terminals + 1);
+  ListInt frequency_count = allocateListInt(ls->num_terminals + 1);
+  ListInt row_size = allocateListInt(ls->max_la_state + 1);
   if (cli_options->shift_default_bit) {
     merge_shift_domains(cli_options, toutput, row_size, frequency_symbol, frequency_count, nte, shift_check_index, ctp, new_state_element, shift_image, real_shift_number, np, ia, srt, shiftdf, ls);
   }
@@ -13642,16 +13662,16 @@ static void overlay_sim_t_rows(struct CLIOptions *cli_options, struct TableOutpu
 /// We now compute the starting position for each terminal state just
 /// as we did for the non-terminal states.
 /// The starting positions are stored in the vector TERM_STATE_INDEX.
-static void overlap_t_rows(struct CLIOptions *cli_options, struct TableOutput *toutput, struct NumTableEntries *nte, ListInt term_state_index, struct CTabsProps *ctp, struct new_state_type *new_state_element, struct NextPrevious* np, struct ImportantAspects* ia, struct SRTable* srt, ArrayShort shiftdf, struct LAState* ls) {
-  ArrayShort terminal_list = Allocate_short_array2(ls->num_terminals + 1);
+static void overlap_t_rows(struct CLIOptions *cli_options, struct TableOutput *toutput, struct NumTableEntries *nte, ListInt term_state_index, struct CTabsProps *ctp, struct new_state_type *new_state_element, struct NextPrevious* np, struct ImportantAspects* ia, struct SRTable* srt, ListInt shiftdf, struct LAState* ls) {
+  ListInt terminal_list = allocateListInt(ls->num_terminals + 1);
   ctp->increment_size = MAX(nte->value * increment / 100, ls->num_terminals + 1);
   const long old_size = ctp->table_size;
   ctp->table_size = MIN(nte->value + ctp->increment_size, MAX_TABLE_SIZE);
   if ((int) ctp->table_size > old_size) {
     ffree(np->previous.raw);
     ffree(np->next.raw);
-    np->next = Allocate_long_array2(ctp->table_size + 1);
-    np->previous = Allocate_long_array2(ctp->table_size + 1);
+    np->next = allocateListInt(ctp->table_size + 1);
+    np->previous = allocateListInt(ctp->table_size + 1);
   } else {
     ctp->table_size = old_size;
   }
@@ -13765,7 +13785,7 @@ static void overlap_t_rows(struct CLIOptions *cli_options, struct TableOutput *t
   ffree(np->previous.raw);
 }
 
-void cmprspa(struct CLIOptions *cli_options, struct TableOutput *toutput, struct DetectedSetSizes *dss, struct CTabsProps *ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ListInt scope_right_side, struct lastats_type *lastats, ArrayShort shiftdf, ListInt gotodef, ArrayShort gd_index, ArrayShort gd_range, ArrayShort scope_state, struct statset_type *statset, struct ruletab_type *rules, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer, struct OutputPtr output_ptr2, struct symno_type *symno, char *string_table, int *name, struct LAState* ls) {
+void cmprspa(struct CLIOptions *cli_options, struct TableOutput *toutput, struct DetectedSetSizes *dss, struct CTabsProps *ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ListInt scope_right_side, struct lastats_type *lastats, ListInt shiftdf, ListInt gotodef, ListInt gd_index, ListInt gd_range, ListInt scope_state, struct statset_type *statset, struct ruletab_type *rules, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer, struct OutputPtr output_ptr2, struct symno_type *symno, char *string_table, int *name, struct LAState* ls) {
   ListBool shift_on_error_symbol = Allocate_bool_array2(ls->max_la_state + 1);
   struct new_state_type *new_state_element;
   calloc0p(&new_state_element, ls->max_la_state + 1, struct new_state_type);
@@ -13782,19 +13802,17 @@ void cmprspa(struct CLIOptions *cli_options, struct TableOutput *toutput, struct
     .empty_root = NIL,
   };
   merge_similar_t_rows(cli_options, toutput, shift_on_error_symbol, new_state_element_reduce_nodes, &tresult, new_state_element, srt, lastats, statset, ls);
-  ListInt shift_check_index = Allocate_long_array2(ls->num_shift_maps + 1);
-  ArrayShort shift_image = Allocate_short_array2(ls->max_la_state + 1);
-  ArrayShort real_shift_number = Allocate_short_array2(ls->num_shift_maps + 1);
+  ListInt shift_check_index = allocateListInt(ls->num_shift_maps + 1);
+  ListInt shift_image = allocateListInt(ls->max_la_state + 1);
+  ListInt real_shift_number = allocateListInt(ls->num_shift_maps + 1);
   overlay_sim_t_rows(cli_options, toutput, shift_on_error_symbol, new_state_element_reduce_nodes, &tresult, &nte, shift_check_index, ctp, new_state_element, shift_image, real_shift_number, np, ia, srt, rules, lastats, shiftdf, statset, ls);
-  ListInt term_state_index = Allocate_long_array2(ls->max_la_state + 1);
+  ListInt term_state_index = allocateListInt(ls->max_la_state + 1);
   overlap_t_rows(cli_options, toutput, &nte, term_state_index, ctp, new_state_element, np, ia, srt, shiftdf, ls);
   print_space_parser(cli_options, toutput, dss, term_state_index, shift_check_index, ctp, new_state_element, shift_image, real_shift_number, of, scope, ia, srt, scope_right_side, shiftdf, gotodef, gd_index, gd_range, rules, scope_state, statset, item_table, sc, output_buffer, output_ptr2, symno, string_table, name, ls);
 }
-
 // endregion
 
 // region timetab
-
 /// We now remap the symbols in the unified Table based on frequency.
 /// We also remap the states based on frequency.
 struct DefaultSaves {
@@ -13802,9 +13820,9 @@ struct DefaultSaves {
   int last_symbol;
 } remap_symbols(struct TableOutput* toutput, ListBool is_terminal, struct SRTable* srt, struct lastats_type *lastats, struct statset_type *statset, struct CLIOptions* cli_options, struct LAState* ls) {
   int default_saves = 0;
-  ListInt frequency_symbol = Allocate_long_array2(ls->num_symbols + 1);
-  ListInt frequency_count = Allocate_long_array2(ls->num_symbols + 1);
-  ListInt row_size = Allocate_long_array2(ls-> max_la_state + 1);
+  ListInt frequency_symbol = allocateListInt(ls->num_symbols + 1);
+  ListInt frequency_count = allocateListInt(ls->num_symbols + 1);
+  ListInt row_size = allocateListInt(ls-> max_la_state + 1);
   printf("\n");
   //     The variable FREQUENCY_SYMBOL is used to hold the symbols
   // in the grammar,  and the variable FREQUENCY_COUNT is used
@@ -13956,7 +13974,7 @@ struct DefaultSaves {
 /// may be placed without clobbering elements in another row.
 /// The starting positions are stored in the vector STATE_INDEX.
 static void overlap_tables(struct CLIOptions *cli_options, struct TableOutput* toutput, ListBool is_terminal, struct DefaultSaves default_saves, struct CTabsProps* ctp, long last_symbol, struct NextPrevious* np, struct ImportantAspects* ia, struct SRTable* srt, struct lastats_type *lastats, struct statset_type *statset, struct LAState* ls) {
-  ListInt symbol_list = Allocate_long_array2(ls->num_symbols + 1);
+  ListInt symbol_list = allocateListInt(ls->num_symbols + 1);
   ls->num_entries -= default_saves.default_saves;
   ctp->increment_size = MAX(ls->num_entries * increment / 100, ls->num_symbols + 1);
   ctp->table_size = MIN(ls->num_entries + ctp->increment_size, MAX_TABLE_SIZE);
@@ -13966,8 +13984,8 @@ static void overlap_tables(struct CLIOptions *cli_options, struct TableOutput* t
   // element in the list.
   // The variable MAX_INDX is used to keep track of the maximum
   // starting position for a row that has been used.
-  np->next = Allocate_long_array2(ctp->table_size + 1);
-  np->previous = Allocate_long_array2(ctp->table_size + 1);
+  np->next = allocateListInt(ctp->table_size + 1);
+  np->previous = allocateListInt(ctp->table_size + 1);
   ia->first_index = 1;
   np->next.raw[ia->first_index] = ia->first_index + 1; /* Should be constant-folded */
   np->previous.raw[ia->first_index] = NIL;
@@ -14112,17 +14130,15 @@ static void overlap_tables(struct CLIOptions *cli_options, struct TableOutput* t
 /// together, to achieve maximum speed efficiency.
 /// Otherwise, the compression technique used in this table is
 /// analogous to the technique used in the routine CMPRSPA.
-void cmprtim(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ListInt scope_right_side, struct lastats_type *lastats, ListInt gotodef, ArrayShort gd_index, ArrayShort gd_range, ArrayShort scope_state, struct statset_type *statset, struct ruletab_type *rules, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer, struct OutputPtr output_ptr2, struct symno_type *symno, char *string_table, int *name, struct LAState* ls) {
+void cmprtim(struct CLIOptions *cli_options, struct TableOutput* toutput, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, struct ImportantAspects* ia, struct SRTable* srt, ListInt scope_right_side, struct lastats_type *lastats, ListInt gotodef, ListInt gd_index, ListInt gd_range, ListInt scope_state, struct statset_type *statset, struct ruletab_type *rules, struct itemtab *item_table, struct ScopeCounter* sc, char *output_buffer, struct OutputPtr output_ptr2, struct symno_type *symno, char *string_table, int *name, struct LAState* ls) {
   ListBool is_terminal = Allocate_bool_array2(ls->num_symbols + 1);
   struct DefaultSaves default_saves = remap_symbols(toutput, is_terminal, srt, lastats, statset, cli_options, ls);
   overlap_tables(cli_options, toutput, is_terminal, default_saves, ctp, default_saves.last_symbol, np, ia, srt, lastats, statset, ls);
   print_time_parser(cli_options, toutput, dss, ctp, of, np, scope, ia, srt, scope_right_side, lastats, gotodef, gd_index, gd_range, rules, scope_state, statset, item_table, sc, output_buffer, output_ptr2, symno, string_table, name, ls);
 }
-
 // endregion
 
 // region ptables
-
 struct ptables_action_element {
   struct ptables_action_element *next;
   short count;
@@ -14158,12 +14174,12 @@ static void process_shift_actions(struct ptables_action_element **action_count, 
 /// This procedure updates the vector SHIFTDF, indexable by the terminals in
 /// the grammar. Its task is to assign to each element of SHIFTDF, the action
 /// most frequently defined on the symbol in question.
-static void compute_shift_default(struct SRTable* srt, struct lastats_type *lastats, ArrayShort* shiftdf, struct statset_type *statset, struct LAState* ls) {
+static void compute_shift_default(struct SRTable* srt, struct lastats_type *lastats, ListInt* shiftdf, struct statset_type *statset, struct LAState* ls) {
   // Set up a pool of temporary space.
   reset_temporary_space();
   int shift_count = 0;
   int shift_reduce_count = 0;
-  *shiftdf = Allocate_short_array2(ls->num_terminals + 1);
+  *shiftdf = allocateListInt(ls->num_terminals + 1);
   struct ptables_action_element **action_count;
   calloc0p(&action_count, ls->num_terminals + 1, struct ptables_action_element *);
   // For each state, invoke PROCESS_SHIFT_ACTIONS to process the
@@ -14211,7 +14227,7 @@ static void compute_goto_default(ListInt* gotodef, struct statset_type *statset,
   reset_temporary_space();
   int goto_count = 0;
   int goto_reduce_count = 0;
-  *gotodef = Allocate_long_array2(ls->num_non_terminals);
+  *gotodef = allocateListInt(ls->num_non_terminals);
   gotodef->raw -= ls->num_terminals + 1;
   struct ptables_action_element **action_count;
   calloc0p(&action_count, ls->num_non_terminals, struct ptables_action_element *);
@@ -14304,7 +14320,7 @@ static void init_file(FILE **file, char *file_name, char *file_tag) {
 
 /// Remap symbols, apply transition default actions  and call
 /// appropriate table compression routine.
-void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, ArrayShort gd_range, struct SRTable* srt, ListInt scope_right_side, struct lastats_type *lastats, ArrayShort* shiftdf, ListInt* gotodef, ArrayShort gd_index, struct statset_type *statset, ArrayShort scope_state, struct ruletab_type *rules, struct itemtab *item_table, struct symno_type *symno, struct ScopeCounter* sc, char *string_table, int *name, struct LAState* ls) {
+void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLIOptions *cli_options, struct DetectedSetSizes* dss, struct CTabsProps* ctp, struct OutputFiles* of, struct NextPrevious* np, struct scope_type *scope, ListInt gd_range, struct SRTable* srt, ListInt scope_right_side, struct lastats_type *lastats, ListInt* shiftdf, ListInt* gotodef, ListInt gd_index, struct statset_type *statset, ListInt scope_state, struct ruletab_type *rules, struct itemtab *item_table, struct symno_type *symno, struct ScopeCounter* sc, char *string_table, int *name, struct LAState* ls) {
   // First, we decrease by 1 the constants NUM_SYMBOLS
   // and NUM_TERMINALS, remove the EMPTY symbol(1) and remap the
   // other symbols beginning at 1.  If default reduction is
@@ -14410,7 +14426,6 @@ void process_tables(char *tab_file, struct OutputFiles *output_files, struct CLI
     fclose(systab);
   }
 }
-
 // endregion
 
 
@@ -14489,13 +14504,9 @@ int main(const int argc, char *argv[]) {
       .dcl_file = "",
     };
     char tab_file[80];
-
     struct scope_type *scope;
-
-    ArrayShort rhs_sym;
-
+    ListInt rhs_sym;
     struct ruletab_type *rules;
-
     struct ParserState ps = (struct ParserState) {
       .hash_table = NULL,
       .error_maps_bit = cli_options.error_maps_bit,
@@ -14513,12 +14524,49 @@ int main(const int argc, char *argv[]) {
       .num_symbols = 0,
       .num_terminals = 0,
     };
+    /// NAME is an array containing names to be associated with symbols.
+    int *name;
+    char grm_file[80];
+    // Create file names for output files
+    strcpy(grm_file, argv[argc - 1]);
+    const char *slash = strrchr(grm_file, '/');
+    char tmpbuf[20];
+    if (slash != NULL) {
+      strcpy(tmpbuf, slash + 1);
+    } else {
+      strcpy(tmpbuf, grm_file);
+    }
+    const char *dot = strrchr(tmpbuf, '.');
+    // if filename has no extension, copy it.
+    char file_prefix[80] = "";
+    if (dot == NULL) {
+      strcpy(tab_file, tmpbuf);
+      int ii;
+      for (ii = 0; ii < 5; ii++) {
+        file_prefix[ii] = tmpbuf[ii];
+      }
+      file_prefix[ii] = '\0';
+    } else {
+      int ii;
+      // if file name contains an extension copy up to the dot
+      for (ii = 0; ii < 5 && tmpbuf + ii != dot; ii++) {
+        file_prefix[ii] = tmpbuf[ii];
+      }
+      file_prefix[ii] = '\0';
+      memcpy(tab_file, tmpbuf, dot - tmpbuf);
+      tab_file[dot - tmpbuf] = '\0';
+    }
+    strcat(tab_file, ".t"); /* add .t extension for table file */
+    // This routine is invoked to allocate space for the global structures
+    // needed to process the input grammar.
+    //
+    // Set up a pool of temporary space.
+    reset_temporary_space();
+    process_input(grm_file, &of, argc, argv, file_prefix, &cli_options, &rhs_sym, &rules, &ps, &name);
     struct LAState ls = (struct LAState) {
       .max_la_state = 0,
-      .num_items = 0,
       .num_states = 0,
       .num_shifts = 0,
-      .num_single_productions = 0,
       .gotodom_size = 0,
       .num_shift_maps = 0,
       .num_shift_reduces = 0,
@@ -14526,108 +14574,47 @@ int main(const int argc, char *argv[]) {
       .num_goto_reduces = 0,
       .num_reductions = 0,
       .num_entries = 0,
-      .num_symbols = 0,
+      .num_items = ps.num_items,
+      .num_single_productions = ps.num_single_productions,
+      .num_symbols = ps.num_symbols,
+      .num_names = ps.num_names,
+      .num_non_terminals = ps.num_non_terminals,
+      .num_rules = ps.num_rules,
+      .num_terminals = ps.num_terminals,
     };
-    /// NAME is an array containing names to be associated with symbols.
-    int *name;
-
-    // Process input.
-    {
-      char grm_file[80];
-      // Create file names for output files
-      strcpy(grm_file, argv[argc - 1]);
-      const char *slash = strrchr(grm_file, '/');
-      char tmpbuf[20];
-      if (slash != NULL) {
-        strcpy(tmpbuf, slash + 1);
-      } else {
-        strcpy(tmpbuf, grm_file);
-      }
-      const char *dot = strrchr(tmpbuf, '.');
-      // if filename has no extension, copy it.
-      char file_prefix[80] = "";
-      if (dot == NULL) {
-        strcpy(tab_file, tmpbuf);
-        int ii;
-        for (ii = 0; ii < 5; ii++) {
-          file_prefix[ii] = tmpbuf[ii];
-        }
-        file_prefix[ii] = '\0';
-      } else {
-        int ii;
-        // if file name contains an extension copy up to the dot
-        for (ii = 0; ii < 5 && tmpbuf + ii != dot; ii++) {
-          file_prefix[ii] = tmpbuf[ii];
-        }
-        file_prefix[ii] = '\0';
-        memcpy(tab_file, tmpbuf, dot - tmpbuf);
-        tab_file[dot - tmpbuf] = '\0';
-      }
-      strcat(tab_file, ".t"); /* add .t extension for table file */
-      // This routine is invoked to allocate space for the global structures
-      // needed to process the input grammar.
-      //
-      // Set up a pool of temporary space.
-      reset_temporary_space();
-      process_input(grm_file, &of, argc, argv, file_prefix, &cli_options, &rhs_sym, &rules, &ps.symno, &ps, &name);
-      ls.num_items = ps.num_items;
-      ls.num_names = ps.num_names;
-      ls.num_non_terminals = ps.num_non_terminals;
-      ls.num_rules = ps.num_rules;
-      ls.num_symbols = ps.num_symbols;
-      ls.num_terminals = ps.num_terminals;
-      ls.num_single_productions = ps.num_single_productions;
-    }
-
-    /// FOLLOW is a mapping from non-terminals to a set of terminals that
-    /// may appear immediately after the non-terminal.
     JBitset follow = {.raw = NULL};
-
-    ListBool rmpself;
     JBitset first;
-
     struct FirstDeps fd = (struct FirstDeps) {
       .adequate_item = NULL,
       .clitems = NULL,
       .closure = NULL,
     };
-
     struct itemtab *item_table = NULL;
-
-    struct DetectedSetSizes dss = mkbasic(&cli_options, follow, &rmpself, &first, &fd, rules, rhs_sym, &item_table, ps.string_table, ps.symno, &ls);
-
+    struct DetectedSetSizes dss = mkbasic(&cli_options, follow, &first, &fd, rules, rhs_sym, &item_table, ps.string_table, ps.symno, &ls);
     struct SRTable srt = (struct SRTable) {
       .reduce = NULL,
       .shift = NULL,
     };
-
     ListInt scope_right_side;
-
-    ArrayShort scope_state;
-
-    ArrayShort gd_range;
-    ArrayShort gd_index;
-
+    ListInt scope_state;
+    ListInt gd_range;
+    ListInt gd_index;
     struct StatSet ss = (struct StatSet) {
       .statset = NULL,
     };
-
     struct ScopeCounter sc = (struct ScopeCounter) {
       .num_scopes = 0,
       .scope_rhs_size = 0,
       .scope_state_size = 0,
     };
-
     mkstats(&cli_options, &dss, first, scope, fd.clitems, fd.closure, &srt, &scope_right_side, dss.null_nt, &scope_state, item_table, rules, rhs_sym, &gd_range, &gd_index, &ss, &sc, ps.symno, ps.string_table, name, &ls);
-
     struct SourcesElementSources ses = (struct SourcesElementSources) {
       .sources = NULL,
     };
     struct LaStats las = (struct LaStats) {
       .lastats = NULL,
     };
-    long la_top = 0;
-    struct ConflictCounter conflicts = mkrdcts(&cli_options, &dss, &ses, rmpself, first, fd.adequate_item, &srt, dss.null_nt, gd_index, rules, ss.statset, item_table, rhs_sym, &las, &la_top, ps.string_table, ps.symno, &ls);
+    struct ConflictCounter conflicts = mkrdcts(&cli_options, &fd, &dss, &ses, first, fd.adequate_item, &srt, gd_index, rules, ss.statset, item_table, rhs_sym, &las, &ps, &ls);
     // Output more basic statistics.
     {
       PRNT2("Number of Terminals: %ld", ls.num_terminals - 1); /*-1 for %empty */
@@ -14654,7 +14641,6 @@ int main(const int argc, char *argv[]) {
       PRNT2("Number of Shift-Reduce conflicts: %ld", conflicts.num_sr_conflicts);
       PRNT2("Number of Reduce-Reduce conflicts: %ld", conflicts.num_rr_conflicts);
     }
-
     if (cli_options.table_opt.value != OPTIMIZE_NO_TABLE.value) {
       if (cli_options.goto_default_bit && cli_options.nt_check_bit) {
         PRNTERR("The options GOTO_DEFAULT and NT_CHECK are incompatible. Tables not generated");
@@ -14664,7 +14650,7 @@ int main(const int argc, char *argv[]) {
           ls.num_entries = ls.max_la_state + ls.num_shifts + ls.num_shift_reduces + ls.num_gotos + ls.num_goto_reduces + ls.num_reductions;
           // We release space used by RHS_SYM, the ADEQUATE_ITEM
           // map, ITEM_TABLE (if we don't have to dump error maps),
-          // IN_STAT, FIRST, NULL_NT and FOLLOW (if it's no longer
+          // FIRST, NULL_NT and FOLLOW (if it's no longer
           // needed).
           ffree(rhs_sym.raw);
           if (fd.adequate_item != NULL) {
@@ -14679,14 +14665,6 @@ int main(const int argc, char *argv[]) {
           if (!cli_options.error_maps_bit) {
             ffree(item_table);
           }
-          for for_each_state(state_no, &ls) {
-            struct node *head = conflicts.in_stat[state_no];
-            if (head != NULL) {
-              head = head->next;
-              free_nodes(head, conflicts.in_stat[state_no]);
-            }
-          }
-          ffree(conflicts.in_stat);
           ffree(first.raw);
           dss.null_nt.raw += ls.num_terminals + 1;
           ffree(dss.null_nt.raw);
@@ -14705,13 +14683,11 @@ int main(const int argc, char *argv[]) {
           .previous = NULL,
           .next = NULL,
         };
-
-        ArrayShort shiftdf;
+        ListInt shiftdf;
         ListInt gotodef;
         process_tables(tab_file, &of, &cli_options, &dss, &ctp, &of, &np, scope, gd_range, &srt, scope_right_side, las.lastats, &shiftdf, &gotodef, gd_index, ss.statset, scope_state, rules, item_table, ps.symno, &sc, ps.string_table, name, &ls);
       }
     }
-
     return 0;
   }
 }
