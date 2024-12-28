@@ -6,8 +6,6 @@ interface exprdef
       NUM_STATES        = 13,
 
       NT_OFFSET         = 9,
-      SCOPE_UBOUND      = -1,
-      SCOPE_SIZE        = 0,
       LA_STATE_OFFSET   = 39,
       MAX_LA            = 1,
       NUM_RULES         = 11,

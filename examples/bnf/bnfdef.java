@@ -6,8 +6,6 @@ interface bnfdef
       NUM_STATES        = 8,
 
       NT_OFFSET         = 5,
-      SCOPE_UBOUND      = -1,
-      SCOPE_SIZE        = 0,
       LA_STATE_OFFSET   = 29,
       MAX_LA            = 2,
       NUM_RULES         = 7,
