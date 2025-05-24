@@ -50,12 +50,12 @@ abstract class exprdcl implements exprdef
     };
 
     public final static char nasb[] = {0,
-            1,4,1,4,4,4,4,3,3,1,
-            1,4,4
+            1,1,1,1,1,1,1,1,1,1,
+            1,1,1
     };
 
     public final static char nasr[] = {0,
-            2,0,1,0
+            0
     };
 
     public final static byte terminal_index[] = {0,

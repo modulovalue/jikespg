@@ -44,11 +44,11 @@ abstract class bnfdcl implements bnfdef
     };
 
     public final static char nasb[] = {0,
-            5,1,4,4,3,3,4,4
+            1,1,1,1,1,1,1,1
     };
 
     public final static char nasr[] = {0,
-            3,0,1,0,2,0
+            0
     };
 
     public final static byte terminal_index[] = {0,
